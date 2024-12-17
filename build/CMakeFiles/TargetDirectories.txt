@@ -1,0 +1,3 @@
+/home/tom/Coding/c++/triangle/build/CMakeFiles/triangle.dir
+/home/tom/Coding/c++/triangle/build/CMakeFiles/edit_cache.dir
+/home/tom/Coding/c++/triangle/build/CMakeFiles/rebuild_cache.dir
