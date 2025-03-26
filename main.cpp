@@ -164,7 +164,7 @@ int main()
 	glViewport(0, 0, WIDTH, HEIGHT);
 
 	// Generates Shader object using shaders defualt.vert and default.frag
-	Shader shaderProgram("/home/tom/Coding/c++/triangle/Shaders/default.vert", "/home/tom/Coding/c++/triangle/Shaders/default.frag");
+	Shader shaderProgram("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/default.frag");
 
 	// Shader shaderProgram2("/home/tom/Coding/c++/triangle/Shaders/default.vert", "/home/tom/Coding/c++/triangle/Shaders/yellow.frag");
 
@@ -197,15 +197,15 @@ int main()
 
 	glActiveTexture(GL_TEXTURE0);
 	texture1.Bind();
-	texture1.Load("/home/tom/Coding/c++/triangle/container.jpg", false);
+	texture1.Load("/home/tom/Coding/c++/opengl/container.jpg", false);
 
 	glActiveTexture(GL_TEXTURE1);
 	texture2.Bind();
-	texture2.Load("/home/tom/Coding/c++/triangle/awesomeface.png", true);
+	texture2.Load("/home/tom/Coding/c++/opengl/awesomeface.png", true);
 
 	glActiveTexture(GL_TEXTURE2);
 	texture3.Bind();
-	texture3.Load("/home/tom/Coding/c++/triangle/cat.jpg", false);
+	texture3.Load("/home/tom/Coding/c++/opengl/cat.jpg", false);
 
 	// Tell OpenGL which Shader Program we want to use
 	shaderProgram.use();
