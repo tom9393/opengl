@@ -95,6 +95,11 @@ int main()
 
 	// Generates Shader object using shaders defualt.vert and default.frag
 	Shader shaderProgram("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/default.frag");
+    
+	// Generates Shader object using shaders defualt.vert and default.frag
+	Shader shaderProgram2("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/colors.fs");
+	// Generates Shader object using shaders defualt.vert and default.frag
+	Shader shaderProgram3("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/light.fs");
 
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
@@ -145,37 +150,46 @@ int main()
 		glm::mat4 projection;
 		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-		// shaderProgram.setMatrix("model", model);
-		shaderProgram.setMatrix("view", view);
-		shaderProgram.setMatrix("projection", projection);
+		// shaderProgram.setMat4("view", view);
+		// shaderProgram.setMat4("projection", projection);
+		shaderProgram2.use();
+
+		shaderProgram2.setMat4("projection", projection);
+		shaderProgram2.setMat4("view", view);
 
 		// Specify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
 		// Clean the back buffer and assign the new color to it
 		glClear(GL_COLOR_BUFFER_BIT);
-		// shaderProgram.recalculateColor();
-		// Bind the VAO so OpenGL knows to use it
-		VAO1.Bind();
 
-		shaderProgram.setInt("texture1", 0);
-		shaderProgram.setInt("texture2", 1);
+		// shaderProgram.setInt("texture1", 0);
+		// shaderProgram.setInt("texture2", 1);
+
+		shaderProgram2.setVec3("objectColor", glm::vec3(1.0f, 0.5f, (float)sin(glfwGetTime())));
+		shaderProgram2.setVec3("lightColor",  glm::vec3(1.0f, 1.0f, 1.0f));
 
 		for (int i = 0; i < 10; i++) {
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubePositions[i]);
 			float angle = 20.0f * glfwGetTime() * i;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			shaderProgram.setMatrix("model", model);
+			// shaderProgram.setMat4("model", model);
+			shaderProgram2.setMat4("model", model);
 
+			VAO1.Bind();
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+
+		shaderProgram3.use();
+	        shaderProgram3.setMat4("projection", projection);
+		shaderProgram3.setMat4("view", view);
 
 		shaderProgram.setInt("texture1", 2);
 		shaderProgram.setInt("texture2", 2);
 
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(2.0f, sin(glfwGetTime()) * 10.0f, 0.0f));
-		shaderProgram.setMatrix("model", model);
+		shaderProgram3.setMat4("model", model);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
