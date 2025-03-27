@@ -9,6 +9,8 @@
 #include "Headers/EBO.h"
 #include "Headers/Camera.h"
 #include "Headers/Texture.h"
+#include "Headers/Window.h"
+#include "Headers/Input.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -76,97 +78,23 @@ unsigned int indices[] = {  // note that we start from 0!
     1, 2, 3    // second triangle
 };
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-float lastX = 400;
-float lastY = 300;
-bool firstMouse = true;
-
-const unsigned int HEIGHT = 800;
-const unsigned int WIDTH = 800;
-
 float randomFloat()
 {
     return (float)(rand()) / (float)(RAND_MAX);
 }
 
-Camera_Movement processInput(GLFWwindow *window)
-{
-	Camera_Movement direction;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		direction = FORWARD;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		direction = BACKWARD;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		direction = LEFT;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		direction = RIGHT;
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) 
-		direction = UP;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) 
-		direction = DOWN;
-	
-	return direction;
-}
-
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
-
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(xoffset, yoffset, true);
-}
-
 int main()
 {
-	// Initialize GLFW
-	glfwInit();
-
-	// Tell GLFW what version of OpenGL we are using 
-	// In this case we are using OpenGL 3.3
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	// Tell GLFW we are using the CORE profile
-	// So that means we only have the modern functions
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Triangle", NULL, NULL);
-	// Error check if the window fails to create
-	if (window == NULL)
-	{
-		std::cout << "Failed to create GLFW window" << std::endl;
-		glfwTerminate();
-		return -1;
+	Window windowMaker = Window();
+	windowMaker.initialize(800, 800, "Opengl");
+	GLFWwindow* window = windowMaker.getWindow();
+	if (window == NULL) {
+	    std::cout << "Could not create window" << std::endl;
+	    return -1;
 	}
-	// Introduce the window into the current context
-	glfwMakeContextCurrent(window);
-
-	//Load GLAD so it configures OpenGL
-	gladLoadGL();
-	// Specify the viewport of OpenGL in the Window
-	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-	glViewport(0, 0, WIDTH, HEIGHT);
 
 	// Generates Shader object using shaders defualt.vert and default.frag
 	Shader shaderProgram("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/default.frag");
-
-	// Shader shaderProgram2("/home/tom/Coding/c++/triangle/Shaders/default.vert", "/home/tom/Coding/c++/triangle/Shaders/yellow.frag");
 
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
@@ -186,47 +114,29 @@ int main()
 
 	stbi_set_flip_vertically_on_load(true);
 
-	Texture texture1 = Texture();
-	Texture texture2 = Texture();
-	Texture texture3 = Texture();
+	Texture texture1 = Texture("/home/tom/Coding/c++/opengl/container.jpg", false, GL_TEXTURE0);
+	Texture texture2 = Texture("/home/tom/Coding/c++/opengl/awesomeface.png", true, GL_TEXTURE1);
+	Texture texture3 = Texture("/home/tom/Coding/c++/opengl/cat.jpg", false, GL_TEXTURE2);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glActiveTexture(GL_TEXTURE0);
-	texture1.Bind();
-	texture1.Load("/home/tom/Coding/c++/opengl/container.jpg", false);
-
-	glActiveTexture(GL_TEXTURE1);
-	texture2.Bind();
-	texture2.Load("/home/tom/Coding/c++/opengl/awesomeface.png", true);
-
-	glActiveTexture(GL_TEXTURE2);
-	texture3.Bind();
-	texture3.Load("/home/tom/Coding/c++/opengl/cat.jpg", false);
-
 	// Tell OpenGL which Shader Program we want to use
 	shaderProgram.use();
-	shaderProgram.setInt("texture1", 0);
-	shaderProgram.setInt("texture2", 1);
 
 	glEnable(GL_DEPTH_TEST);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
-		float currentFrame = glfwGetTime();
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+		InputHandler::process(window);
 
-		Camera_Movement direction = processInput(window);
-
-		camera.ProcessKeyboard(direction, deltaTime);
+		Camera camera = InputHandler::getCamera();
 
 		// Move around
 		glm::mat4 view = camera.getViewMatrix();

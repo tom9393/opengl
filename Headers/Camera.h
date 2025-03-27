@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -48,6 +48,7 @@ class Camera
     void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch);
     void ProcessKeyboard(Camera_Movement direction, float deltaTime);
     void ProcessMouseScroll(float yoffset);
+    static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
     glm::mat4 getViewMatrix();
 
     private:

@@ -17,6 +17,7 @@ class Texture
     int nrChannels;
 
     Texture();
+    Texture(const char* filePath, bool rgba, int position);
     void Load(const char* filePath, bool rgba);
     void Unload();
     void Bind();

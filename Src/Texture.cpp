@@ -4,6 +4,13 @@ Texture::Texture() {
     glGenTextures(1, &texture);
 }
 
+Texture::Texture(const char* filePath, bool rgba, int position) {
+    glGenTextures(1, &texture);
+    glActiveTexture(position);
+    this->Bind();
+    this->Load(filePath, rgba);
+}
+
 void Texture::Load(const char* filePath, bool rgba) {
 
     textureData = stbi_load(filePath, &width, &height, &nrChannels, 0);
