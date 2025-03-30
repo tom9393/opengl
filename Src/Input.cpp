@@ -1,7 +1,7 @@
 #include "../Headers/Input.h"
 #include "../Headers/Camera.h"
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -49,9 +49,8 @@ void InputHandler::mouse_callback(GLFWwindow* window, double xposIn, double ypos
     camera.ProcessMouseMovement(xoffset, yoffset, true);
 }
 
-Camera InputHandler::getCamera()
-{
-    return camera;
+Camera InputHandler::getCamera() {
+	    return camera;
 }
 
 void InputHandler::process(GLFWwindow* window)
