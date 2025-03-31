@@ -96,7 +96,7 @@ int main()
 
 	// Generates Shader object using shaders defualt.vert and default.frag for object
 	Shader shaderProgram("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/default.frag");
-    
+	
 	// Generate shader for the light
 	Shader shaderProgram2("/home/tom/Coding/c++/opengl/Shaders/light.vert", "/home/tom/Coding/c++/opengl/Shaders/light.frag");
 
@@ -202,15 +202,18 @@ int main()
 		shaderProgram.setMat4("view", view);
 		shaderProgram.setMat4("projection", projection);
 
-		float lightX = 7.5f * sin(2 * glfwGetTime());
+		float lightX = 5.0f * sin(2 * glfwGetTime());
 		float lightY = 0.0f;
-		float lightZ = 7.5f * cos(2 * glfwGetTime());
+		float lightZ = 5.0f * cos(2 * glfwGetTime());
 		glm::vec3 lightPos = glm::vec3(lightX, lightY, lightZ);
 
 		glm::vec3 lightColor;
-		lightColor.x = sin(glfwGetTime() * 2.0f);
-		lightColor.y = sin(glfwGetTime() * 0.7f);
-		lightColor.z = sin(glfwGetTime() * 1.3f);
+		// lightColor.x = sin(glfwGetTime() * 2.0f);
+		// lightColor.y = sin(glfwGetTime() * 0.7f);
+		// lightColor.z = sin(glfwGetTime() * 1.3f);
+		lightColor.x = 1.0f;
+		lightColor.y = 1.0f;
+		lightColor.z = 1.0f;
 		  
 		glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); 
 		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
@@ -218,12 +221,15 @@ int main()
 		shaderProgram.setVec3("light.ambient",  ambientColor);
 		shaderProgram.setVec3("light.diffuse",  diffuseColor);
 		shaderProgram.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		shaderProgram.setFloat("light.constant",  1.0f);
+		shaderProgram.setFloat("light.linear",    0.09f);
+		shaderProgram.setFloat("light.quadratic", 0.032f);
 
 		shaderProgram.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
 		shaderProgram.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
 		shaderProgram.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
 		shaderProgram.setFloat("material.shininess", 32.0f);
-		shaderProgram.setVec3("lightPos", lightPos);
+		shaderProgram.setVec3("light.position", lightPos);
 		shaderProgram.setVec3("viewPos", camera.Position);
 
 		// Specify the color of the background
