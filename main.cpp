@@ -229,8 +229,13 @@ int main()
 		shaderProgram.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
 		shaderProgram.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
 		shaderProgram.setFloat("material.shininess", 32.0f);
-		shaderProgram.setVec3("light.position", lightPos);
+		// shaderProgram.setVec3("light.position", lightPos);
 		shaderProgram.setVec3("viewPos", camera.Position);
+
+		shaderProgram.setVec3("light.position",  camera.Position);
+		shaderProgram.setVec3("light.direction", camera.Front);
+	        shaderProgram.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+		shaderProgram.setFloat("light.cutoff",   glm::cos(glm::radians(12.5f)));
 
 		// Specify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
