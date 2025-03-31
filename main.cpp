@@ -202,13 +202,27 @@ int main()
 		shaderProgram.setMat4("view", view);
 		shaderProgram.setMat4("projection", projection);
 
-		float lightX = 7.5f * sin(3 * glfwGetTime());
+		float lightX = 7.5f * sin(2 * glfwGetTime());
 		float lightY = 0.0f;
-		float lightZ = 7.5f * cos(3 * glfwGetTime());
+		float lightZ = 7.5f * cos(2 * glfwGetTime());
 		glm::vec3 lightPos = glm::vec3(lightX, lightY, lightZ);
 
-		shaderProgram.setVec3("objectColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		shaderProgram.setVec3("lightColor", glm::vec3(1.0f, 0.33f, 0.33f));
+		glm::vec3 lightColor;
+		lightColor.x = sin(glfwGetTime() * 2.0f);
+		lightColor.y = sin(glfwGetTime() * 0.7f);
+		lightColor.z = sin(glfwGetTime() * 1.3f);
+		  
+		glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); 
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
+
+		shaderProgram.setVec3("light.ambient",  ambientColor);
+		shaderProgram.setVec3("light.diffuse",  diffuseColor);
+		shaderProgram.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+
+		shaderProgram.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+		shaderProgram.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+		shaderProgram.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+		shaderProgram.setFloat("material.shininess", 32.0f);
 		shaderProgram.setVec3("lightPos", lightPos);
 		shaderProgram.setVec3("viewPos", camera.Position);
 
