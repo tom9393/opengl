@@ -6,6 +6,7 @@
 #include "Headers/shaderClass.h"
 #include "Headers/VAO.h"
 #include "Headers/VBO.h"
+#include "Headers/EBO.h"
 #include "Headers/Camera.h"
 #include "Headers/Texture.h"
 #include "Headers/Window.h"
@@ -74,16 +75,6 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-1.3f,  1.0f, -1.5f)  
 };
 
-unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};
-
-float randomFloat()
-{
-    return (float)(rand()) / (float)(RAND_MAX);
-}
-
 int main()
 {
 	Window windowMaker = Window();
@@ -107,6 +98,17 @@ int main()
 	// Generates Vertex Buffer Object and links it to vertices
 	VBO VBO1(vertices, sizeof(vertices));
 
+	unsigned int indices[] = {
+	     0,  1,  2,  3,  4,  5,   // Back face
+	     6,  7,  8,  9, 10, 11,   // Front face
+	    12, 13, 14, 15, 16, 17,   // Left face
+	    18, 19, 20, 21, 22, 23,   // Right face
+	    24, 25, 26, 27, 28, 29,   // Bottom face
+	    30, 31, 32, 33, 34, 35    // Top face
+	};
+
+	EBO EBO1(indices, sizeof(indices));
+	EBO1.Unbind();
 
 	// Links VBO to VAO
 	VAO1.LinkVBO(VBO1);
@@ -254,7 +256,10 @@ int main()
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 			shaderProgram.setMat4("model", model);
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			// glDrawArrays(GL_TRIANGLES, 0, 36);
+			EBO1.Bind();
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+			EBO1.Unbind();
 		}
 
 		VAO1.Unbind();
@@ -298,6 +303,7 @@ int main()
 	VAO1.Delete();
 	VAO2.Delete();
 	VBO1.Delete();
+	EBO1.Delete();
 	shaderProgram.remove();
 	shaderProgram2.remove();
 	glfwDestroyWindow(window);
