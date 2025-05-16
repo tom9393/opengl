@@ -3,14 +3,14 @@
 #include <GLFW/glfw3.h>
 #include <math.h>
 
-#include "Headers/shaderClass.h"
-#include "Headers/VAO.h"
-#include "Headers/VBO.h"
-#include "Headers/EBO.h"
-#include "Headers/Camera.h"
-#include "Headers/Texture.h"
-#include "Headers/Window.h"
-#include "Headers/Input.h"
+#include "include/shaderClass.h"
+#include "include/VAO.h"
+#include "include/VBO.h"
+#include "include/EBO.h"
+#include "include/Camera.h"
+#include "include/Texture.h"
+#include "include/Window.h"
+#include "include/Input.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -86,10 +86,10 @@ int main()
 	}
 
 	// Generates Shader object using shaders defualt.vert and default.frag for object
-	Shader shaderProgram("/home/tom/Coding/c++/opengl/Shaders/default.vert", "/home/tom/Coding/c++/opengl/Shaders/default.frag");
+	Shader shaderProgram("/home/tom/Coding/c++/opengl/shaders/default.vert", "/home/tom/Coding/c++/opengl/shaders/default.frag");
 	
 	// Generate shader for the light
-	Shader shaderProgram2("/home/tom/Coding/c++/opengl/Shaders/light.vert", "/home/tom/Coding/c++/opengl/Shaders/light.frag");
+	Shader shaderProgram2("/home/tom/Coding/c++/opengl/shaders/light.vert", "/home/tom/Coding/c++/opengl/shaders/light.frag");
 
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;

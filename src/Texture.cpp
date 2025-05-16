@@ -1,4 +1,4 @@
-#include "../Headers/Texture.h"
+#include "../include/Texture.h"
 
 Texture::Texture() {
     glGenTextures(1, &texture);

@@ -1,4 +1,4 @@
-#include "../Headers/Window.h"
+#include "../include/Window.h"
 
 void Window::initialize(unsigned int height, unsigned int width, const char* title)
     {

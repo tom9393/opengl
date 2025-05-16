@@ -1,5 +1,5 @@
-#include "../Headers/Input.h"
-#include "../Headers/Camera.h"
+#include "../include/Input.h"
+#include "../include/Camera.h"
 
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
