@@ -39,7 +39,7 @@ int main()
 	    return -1;
 	}
 
-	OldShader shaderProgram2("/home/tom/Coding/c++/opengl/shaders/light.vert", "/home/tom/Coding/c++/opengl/shaders/light.frag");
+	OldShader lightShader("/home/tom/Coding/c++/opengl/shaders/light.vert", "/home/tom/Coding/c++/opengl/shaders/light.frag");
 
 	Cube cube;
 	cube.init();
@@ -111,21 +111,45 @@ int main()
 	material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	material.shininess = 32.0f;
 
-	Light light;
-	light.constant = 1.0f;
-	light.linear = 0.09f;
-	light.quadratic = 0.032f;
-	light.diffuse = glm::vec3(0.5f);
-	light.ambient = light.diffuse * glm::vec3(0.2f);
-	light.specular = glm::vec3(1.0f);
-	light.cutoff = glm::cos(glm::radians(12.5f));
-	light.outerCutOff = glm::cos(glm::radians(17.5f));
-
 	Lighting lighting;
 
 	if (!lighting.Init()) {
 	    return 1;
 	};
+
+	PointLight pl;
+	pl.ambient = glm::vec3(0.05f);
+	pl.diffuse = glm::vec3(0.8f);
+	pl.specular = glm::vec3(1.0f);
+	pl.constant = 1.0f;
+	pl.linear = 0.09f;
+	pl.quadratic = 0.032f;
+	pl.position = glm::vec3(0.0f, 2.5f, 0.0f);
+
+	PointLight pl2;
+	pl2.ambient = glm::vec3(0.05f);
+	pl2.diffuse = glm::vec3(0.8f);
+	pl2.specular = glm::vec3(1.0f);
+	pl2.constant = 1.0f;
+	pl2.linear = 0.09f;
+	pl2.quadratic = 0.032f;
+	pl2.position = glm::vec3(0.0f, 2.5f, 0.0f);
+
+	DirLight dl;
+	dl.direction = glm::vec3(-0.2f, -3.0f, -2.0f);
+	dl.ambient = glm::vec3(0.01f);
+	dl.diffuse = glm::vec3(0.2f);
+	dl.specular = glm::vec3(0.25f);
+
+	SpotLight sl;
+	sl.ambient = glm::vec3(0.0f);
+	sl.specular = glm::vec3(1.0f);
+	sl.diffuse = glm::vec3(1.0f);
+	sl.constant = 1.0f;
+	sl.quadratic = 0.032f;
+	sl.linear = 0.09f;
+	sl.cutOff = glm::cos(glm::radians(12.5f));
+	sl.outerCutOff = glm::cos(glm::radians(17.5f));
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -134,22 +158,72 @@ int main()
 
 		InputHandler::process(window);
 		Camera camera = InputHandler::getCamera();
-		light.position = camera.Position;
-		light.direction = camera.Front;
+
+		sl.position = camera.Position;
+		sl.direction = camera.Front;
 
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection;
 		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
+		lightShader.use();
+		lightShader.setMat4("projection", projection);
+		lightShader.setMat4("view", view);
+
+		float lightX = 5.0f * sin(2 * glfwGetTime());
+		float lightY = 0.0f;
+		float lightZ = 5.0f * cos(2 * glfwGetTime());
+		float lightX2 = 5.0f * cos(5 * glfwGetTime());
+		glm::vec3 lightPos = glm::vec3(lightX, lightY, lightZ);
+		glm::vec3 lightPos2 = glm::vec3(lightZ, lightX2, lightY);
+
+		pl.position = lightPos;
+		pl2.position = lightPos2;
+
+		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::mat4 viewMatrix = glm::lookAt(lightPos, target, up);
+
+		glm::mat4 rotationMatrix = glm::inverse(viewMatrix);
+
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, lightPos);
+		model *= rotationMatrix;  // Apply rotation to face the center
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		lightShader.setMat4("model", model);
+
+	        glBindVertexArray(lightCubeVAO);
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		viewMatrix = glm::lookAt(lightPos2, target, up);
+
+		rotationMatrix = glm::inverse(viewMatrix);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, lightPos2);
+		model *= rotationMatrix;  // Apply rotation to face the center
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		lightShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glBindVertexArray(0);
+
 		lighting.Enable();
+		lighting.setPointlight(0, pl);
+		lighting.setPointlight(1, pl2);
+		lighting.setDirlight(0, dl);
+		lighting.setSpotlight(0, sl);
+
+		lighting.SetCameraLocalPos(camera.Position);
 
 		lighting.SetView(view);
 		lighting.SetProjection(projection);
 	
-		lighting.SetTexture("texture1", 0);
-		lighting.SetTexture("texture2", 1);
-		lighting.SetMaterial(material);
-		lighting.SetDirectionalLight(light);
+		lighting.SetTexture("material.diffuse", 0);
+		lighting.SetTexture("material.specular", 1);
 
 		cube.activate();
 
@@ -165,41 +239,13 @@ int main()
 
 		cube.deactivate();
 
-		shaderProgram2.use();
-		shaderProgram2.setMat4("projection", projection);
-		shaderProgram2.setMat4("view", view);
-
-		float lightX = 5.0f * sin(2 * glfwGetTime());
-		float lightY = 0.0f;
-		float lightZ = 5.0f * cos(2 * glfwGetTime());
-		glm::vec3 lightPos = glm::vec3(lightX, lightY, lightZ);
-
-		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::mat4 viewMatrix = glm::lookAt(lightPos, target, up);
-
-		glm::mat4 rotationMatrix = glm::inverse(viewMatrix);
-
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, lightPos);
-		model *= rotationMatrix;  // Apply rotation to face the center
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-		shaderProgram2.setMat4("model", model);
-
-	        glBindVertexArray(lightCubeVAO);
-
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		glBindVertexArray(0);
-
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
-	shaderProgram2.remove();
+	lightShader.remove();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	texture1.Unload();

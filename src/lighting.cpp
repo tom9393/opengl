@@ -1,6 +1,7 @@
 
 #include "../include/lighting.h"
 #include <glm/glm.hpp>
+#include <string>
 
 Lighting::Lighting()
 {
@@ -27,7 +28,6 @@ bool Lighting::Init()
     Model = GetUniformLocation("model");
     View = GetUniformLocation("view");
     Projection = GetUniformLocation("projection");
-    materialLoc.AmbientColor = GetUniformLocation("material.ambient");
     materialLoc.DiffuseColor = GetUniformLocation("material.diffuse");
     materialLoc.SpecularColor = GetUniformLocation("material.specular");
     materialLoc.Shininess = GetUniformLocation("material.shininess");
@@ -42,33 +42,54 @@ bool Lighting::Init()
     dirLightLoc.Quadratic = GetUniformLocation("light.quadratic");
     dirLightLoc.Position = GetUniformLocation("light.position");
     dirLightLoc.Direction = GetUniformLocation("light.direction");
-    dirLightLoc.Cutoff = GetUniformLocation("light.cutoff");
+    dirLightLoc.Cutoff = GetUniformLocation("light.cutOff");
     dirLightLoc.OuterCutoff = GetUniformLocation("light.outerCutOff");
 
     if (Model == 0xFFFFFFFF ||
         View == 0xFFFFFFFF ||
-        Projection == 0xFFFFFFFF ||
-        samplerLoc == 0xFFFFFFFF ||
-        samplerSpecularExponentLoc == 0xFFFFFFFF ||
-        materialLoc.AmbientColor == 0xFFFFFFFF ||
-        materialLoc.DiffuseColor == 0xFFFFFFFF ||
-        materialLoc.SpecularColor == 0xFFFFFFFF ||
-        CameraLocalPosLoc == 0xFFFFFFFF ||
-        dirLightLoc.Ambient == 0xFFFFFFFF ||
-        dirLightLoc.Diffuse == 0xFFFFFFFF ||
-        dirLightLoc.Specular == 0xFFFFFFFF ||
-        dirLightLoc.Constant == 0xFFFFFFFF ||
-        dirLightLoc.Linear == 0xFFFFFFFF ||
-        dirLightLoc.Quadratic == 0xFFFFFFFF ||
-        dirLightLoc.Position == 0xFFFFFFFF ||
-        dirLightLoc.Direction == 0xFFFFFFFF ||
-        dirLightLoc.Cutoff == 0xFFFFFFFF ||
-        dirLightLoc.OuterCutoff == 0xFFFFFFFF)
+        Projection == 0xFFFFFFFF)
     {
         return false;
     }
 
     return true;
+}
+
+void Lighting::setSpotlight(unsigned int index, SpotLight light)
+{
+        glUniform3fv(GetUniformLocation("spotLight.position"), 1, &light.position[0]); 
+        glUniform3fv(GetUniformLocation("spotLight.direction"), 1, &light.direction[0]); 
+        glUniform3fv(GetUniformLocation("spotLight.ambient"), 1, &light.ambient[0]); 
+        glUniform3fv(GetUniformLocation("spotLight.diffuse"), 1, &light.diffuse[0]); 
+        glUniform3fv(GetUniformLocation("spotLight.specular"), 1, &light.specular[0]); 
+        glUniform1f(glGetUniformLocation(id, "spotLight.constant"), light.constant);
+        glUniform1f(glGetUniformLocation(id, "spotLight.linear"), light.linear);
+        glUniform1f(glGetUniformLocation(id, "spotLight.quadratic"), light.quadratic);
+
+}
+
+void Lighting::setPointlight(unsigned int index, PointLight light)
+{
+        std::string prefix = "pointLights[" + std::to_string(index) + "].";
+
+        glUniform3fv(GetUniformLocation((prefix + "position").c_str()), 1, &light.position[0]);
+        glUniform3fv(GetUniformLocation((prefix + "ambient").c_str()), 1, &light.ambient[0]);
+        glUniform3fv(GetUniformLocation((prefix + "diffuse").c_str()), 1, &light.diffuse[0]);
+        glUniform3fv(GetUniformLocation((prefix + "specular").c_str()), 1, &light.specular[0]);
+
+        glUniform1f(glGetUniformLocation(id, (prefix + "constant").c_str()), light.constant);
+        glUniform1f(glGetUniformLocation(id, (prefix + "linear").c_str()), light.linear);
+        glUniform1f(glGetUniformLocation(id, (prefix + "quadratic").c_str()), light.quadratic);
+
+        glUniform1f(glGetUniformLocation(id, "material.shininess"), 1.0f);
+}
+
+void Lighting::setDirlight(unsigned int index, DirLight light)
+{
+        glUniform3fv(GetUniformLocation("dirLight.direction"), 1, &light.direction[0]); 
+        glUniform3fv(GetUniformLocation("dirLight.ambient"), 1, &light.ambient[0]); 
+        glUniform3fv(GetUniformLocation("dirLight.diffuse"), 1, &light.diffuse[0]); 
+        glUniform3fv(GetUniformLocation("dirLight.specular"), 1, &light.specular[0]); 
 }
 
 void Lighting::SetModel(const glm::mat4& model)
@@ -103,6 +124,7 @@ void Lighting::SetSpecularExponentTextureUnit(unsigned int TextureUnit)
 }
 
 
+/*
 void Lighting::SetDirectionalLight(const Light& Light)
 {
     glUniform3fv(dirLightLoc.Ambient, 1, &Light.ambient[0]); 
@@ -116,6 +138,7 @@ void Lighting::SetDirectionalLight(const Light& Light)
     glUniform1f(dirLightLoc.Linear, Light.linear);
     glUniform1f(dirLightLoc.Quadratic, Light.quadratic);
 }
+*/
 
 
 void Lighting::SetCameraLocalPos(const glm::vec3& CameraLocalPos)
@@ -124,6 +147,7 @@ void Lighting::SetCameraLocalPos(const glm::vec3& CameraLocalPos)
 }
 
 
+/*
 void Lighting::SetMaterial(const Material& material)
 {
     glUniform3fv(materialLoc.AmbientColor, 1, &material.ambient[0]); 
@@ -131,3 +155,4 @@ void Lighting::SetMaterial(const Material& material)
     glUniform3fv(materialLoc.SpecularColor, 1, &material.specular[0]); 
     glUniform1f(materialLoc.Shininess, material.shininess);
 }
+*/
