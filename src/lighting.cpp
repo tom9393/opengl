@@ -57,14 +57,17 @@ bool Lighting::Init()
 
 void Lighting::setSpotlight(unsigned int index, SpotLight light)
 {
-        glUniform3fv(GetUniformLocation("spotLight.position"), 1, &light.position[0]); 
-        glUniform3fv(GetUniformLocation("spotLight.direction"), 1, &light.direction[0]); 
-        glUniform3fv(GetUniformLocation("spotLight.ambient"), 1, &light.ambient[0]); 
-        glUniform3fv(GetUniformLocation("spotLight.diffuse"), 1, &light.diffuse[0]); 
-        glUniform3fv(GetUniformLocation("spotLight.specular"), 1, &light.specular[0]); 
-        glUniform1f(glGetUniformLocation(id, "spotLight.constant"), light.constant);
-        glUniform1f(glGetUniformLocation(id, "spotLight.linear"), light.linear);
-        glUniform1f(glGetUniformLocation(id, "spotLight.quadratic"), light.quadratic);
+        std::string prefix = "spotLight[" + std::to_string(index) + "]";
+
+        glUniform3fv(GetUniformLocation((prefix + ".position").c_str()), 1, &light.position[0]);
+        glUniform3fv(GetUniformLocation((prefix + ".direction").c_str()), 1, &light.direction[0]);
+        glUniform3fv(GetUniformLocation((prefix + ".ambient").c_str()), 1, &light.ambient[0]);
+        glUniform3fv(GetUniformLocation((prefix + ".diffuse").c_str()), 1, &light.diffuse[0]);
+        glUniform3fv(GetUniformLocation((prefix + ".specular").c_str()), 1, &light.specular[0]);
+
+        glUniform1f(glGetUniformLocation(id, (prefix + ".constant").c_str()), light.constant);
+        glUniform1f(glGetUniformLocation(id, (prefix + ".linear").c_str()), light.linear);
+        glUniform1f(glGetUniformLocation(id, (prefix + ".quadratic").c_str()), light.quadratic);
 
 }
 

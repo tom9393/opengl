@@ -151,6 +151,16 @@ int main()
 	sl.cutOff = glm::cos(glm::radians(12.5f));
 	sl.outerCutOff = glm::cos(glm::radians(17.5f));
 
+	SpotLight sl2;
+	sl2.ambient = glm::vec3(0.0f);
+	sl2.specular = glm::vec3(1.0f);
+	sl2.diffuse = glm::vec3(1.0f);
+	sl2.constant = 1.0f;
+	sl2.quadratic = 0.032f;
+	sl2.linear = 0.09f;
+	sl2.cutOff = glm::cos(glm::radians(12.5f));
+	sl2.outerCutOff = glm::cos(glm::radians(17.5f));
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -158,9 +168,6 @@ int main()
 
 		InputHandler::process(window);
 		Camera camera = InputHandler::getCamera();
-
-		sl.position = camera.Position;
-		sl.direction = camera.Front;
 
 		glm::mat4 view = camera.getViewMatrix();
 		glm::mat4 projection;
@@ -211,11 +218,20 @@ int main()
 
 		glBindVertexArray(0);
 
+		sl.position = lightPos;
+		sl.direction = glm::vec3(1.0f, 0.0f, 0.0f);
+
+		sl2.position = lightPos2;
+		sl2.direction = glm::vec3(1.0f, 0.0f, 0.0f);
+
+		sl2.ambient = glm::vec3(cos(10 * glfwGetTime()));
+
 		lighting.Enable();
 		lighting.setPointlight(0, pl);
-		lighting.setPointlight(1, pl2);
+		// lighting.setPointlight(1, pl2);
 		lighting.setDirlight(0, dl);
 		lighting.setSpotlight(0, sl);
+		lighting.setSpotlight(1, sl2);
 
 		lighting.SetCameraLocalPos(camera.Position);
 
