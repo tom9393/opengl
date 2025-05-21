@@ -1,17 +1,17 @@
-#include "../include/Texture.h"
+#include "../include/oldtexture.h"
 
-Texture::Texture() {
+OldTexture::OldTexture() {
     glGenTextures(1, &texture);
 }
 
-Texture::Texture(const char* filePath, bool rgba, int position) {
+OldTexture::OldTexture(const char* filePath, bool rgba, int position) {
     glGenTextures(1, &texture);
     glActiveTexture(position);
     this->Bind();
     this->Load(filePath, rgba);
 }
 
-void Texture::Load(const char* filePath, bool rgba) {
+void OldTexture::Load(const char* filePath, bool rgba) {
 
     textureData = stbi_load(filePath, &width, &height, &nrChannels, 0);
 
@@ -30,14 +30,14 @@ void Texture::Load(const char* filePath, bool rgba) {
 
 }
 
-void Texture::Unload() {
+void OldTexture::Unload() {
     stbi_image_free(textureData);
 }
 
-void Texture::Bind() {
+void OldTexture::Bind() {
     glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-void Texture::Unbind() {
+void OldTexture::Unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }

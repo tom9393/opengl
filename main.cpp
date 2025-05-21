@@ -4,13 +4,13 @@
 #include <math.h>
 
 #include "include/cube.h"
-#include "include/material.h"
 #include "include/shaderClass.h"
 #include "include/Camera.h"
-#include "include/Texture.h"
+#include "include/oldtexture.h"
 #include "include/Window.h"
 #include "include/Input.h"
 #include "include/lighting.h"
+#include "include/model.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,7 +18,7 @@
 
 glm::vec3 cubePositions[] = {
     glm::vec3( 0.0f,  0.0f,  0.0f), 
-    glm::vec3( 2.0f,  5.0f, -15.0f), 
+    glm::vec3( 2.0f,  5.0f, -4.0f), 
     glm::vec3(-1.5f, -2.2f, -2.5f),  
     glm::vec3(-3.8f, -2.0f, -12.3f),  
     glm::vec3( 2.4f, -0.4f, -3.5f),  
@@ -90,9 +90,11 @@ int main()
 
 	stbi_set_flip_vertically_on_load(true);
 
-	Texture texture1 = Texture("/home/tom/Coding/c++/opengl/assets/container.jpg", false, GL_TEXTURE0);
-	Texture texture2 = Texture("/home/tom/Coding/c++/opengl/assets/awesomeface.png", true, GL_TEXTURE1);
-	Texture texture3 = Texture("/home/tom/Coding/c++/opengl/assets/cat.jpg", false, GL_TEXTURE2);
+	/*
+	OldTexture texture1 = OldTexture("/home/tom/Coding/c++/opengl/assets/container.jpg", false, GL_TEXTURE0);
+	OldTexture texture2 = OldTexture("/home/tom/Coding/c++/opengl/assets/awesomeface.png", true, GL_TEXTURE1);
+	OldTexture texture3 = OldTexture("/home/tom/Coding/c++/opengl/assets/cat.jpg", false, GL_TEXTURE2);
+	*/
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -104,13 +106,6 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
-	Material material;
-	material.name = "Somename";
-	material.ambient = glm::vec3(1.0f, 0.5f, 0.31f);
-	material.diffuse = glm::vec3(1.0f, 0.5f, 0.31f);
-	material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-	material.shininess = 32.0f;
-
 	Lighting lighting;
 
 	if (!lighting.Init()) {
@@ -118,48 +113,20 @@ int main()
 	};
 
 	PointLight pl;
-	pl.ambient = glm::vec3(0.05f);
-	pl.diffuse = glm::vec3(0.8f);
-	pl.specular = glm::vec3(1.0f);
-	pl.constant = 1.0f;
-	pl.linear = 0.09f;
-	pl.quadratic = 0.032f;
-	pl.position = glm::vec3(0.0f, 2.5f, 0.0f);
+	pl.setPosition(glm::vec3(0.0f, 2.5f, 0.0f));
 
 	PointLight pl2;
-	pl2.ambient = glm::vec3(0.05f);
-	pl2.diffuse = glm::vec3(0.8f);
-	pl2.specular = glm::vec3(1.0f);
-	pl2.constant = 1.0f;
-	pl2.linear = 0.09f;
-	pl2.quadratic = 0.032f;
-	pl2.position = glm::vec3(0.0f, 2.5f, 0.0f);
+	pl2.setPosition(glm::vec3(0.0f, 2.5f, 0.0f));
 
 	DirLight dl;
-	dl.direction = glm::vec3(-0.2f, -3.0f, -2.0f);
-	dl.ambient = glm::vec3(0.01f);
-	dl.diffuse = glm::vec3(0.2f);
-	dl.specular = glm::vec3(0.25f);
 
 	SpotLight sl;
-	sl.ambient = glm::vec3(0.0f);
-	sl.specular = glm::vec3(1.0f);
-	sl.diffuse = glm::vec3(1.0f);
-	sl.constant = 1.0f;
-	sl.quadratic = 0.032f;
-	sl.linear = 0.09f;
-	sl.cutOff = glm::cos(glm::radians(12.5f));
-	sl.outerCutOff = glm::cos(glm::radians(17.5f));
 
 	SpotLight sl2;
-	sl2.ambient = glm::vec3(0.0f);
-	sl2.specular = glm::vec3(1.0f);
-	sl2.diffuse = glm::vec3(1.0f);
-	sl2.constant = 1.0f;
-	sl2.quadratic = 0.032f;
-	sl2.linear = 0.09f;
-	sl2.cutOff = glm::cos(glm::radians(12.5f));
-	sl2.outerCutOff = glm::cos(glm::radians(17.5f));
+
+	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.obj");
+	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj");
+	Model floor("/home/tom/Coding/c++/opengl/assets/floor.obj");
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -177,15 +144,18 @@ int main()
 		lightShader.setMat4("projection", projection);
 		lightShader.setMat4("view", view);
 
-		float lightX = 5.0f * sin(2 * glfwGetTime());
+		float lightX = 5.0f * sin(1 * glfwGetTime());
 		float lightY = 0.0f;
-		float lightZ = 5.0f * cos(2 * glfwGetTime());
-		float lightX2 = 5.0f * cos(5 * glfwGetTime());
+		float lightZ = 5.0f * cos(1 * glfwGetTime());
 		glm::vec3 lightPos = glm::vec3(lightX, lightY, lightZ);
-		glm::vec3 lightPos2 = glm::vec3(lightZ, lightX2, lightY);
 
-		pl.position = lightPos;
-		pl2.position = lightPos2;
+		float lightX2 = 0.0f;
+		float lightY2 = 0.0f;
+		float lightZ2 = 5.0f * cos(1 * glfwGetTime());
+		glm::vec3 lightPos2 = glm::vec3(lightX2, lightY2, lightZ2);
+
+		pl.setPosition(lightPos);
+		pl2.setPosition(lightPos2);
 
 		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -218,13 +188,11 @@ int main()
 
 		glBindVertexArray(0);
 
-		sl.position = lightPos;
-		sl.direction = glm::vec3(1.0f, 0.0f, 0.0f);
+		sl.setPosition(lightPos);
+		sl.setDirection(glm::vec3(0.0f));
 
-		sl2.position = lightPos2;
-		sl2.direction = glm::vec3(1.0f, 0.0f, 0.0f);
-
-		sl2.ambient = glm::vec3(cos(10 * glfwGetTime()));
+		sl2.setPosition(lightPos2);
+		sl2.setDirection(glm::vec3(0.0f, 0.0f, 1.0f));
 
 		lighting.Enable();
 		lighting.setPointlight(0, pl);
@@ -238,9 +206,24 @@ int main()
 		lighting.SetView(view);
 		lighting.SetProjection(projection);
 	
-		lighting.SetTexture("material.diffuse", 0);
-		lighting.SetTexture("material.specular", 1);
+		glm::mat4 mm = glm::mat4(1.0f);
+		model = glm::translate(mm, cubePositions[0]);
+		lighting.SetModel(model);
 
+		tank.Draw(lighting);
+
+		mm = glm::mat4(1.0f);
+		model = glm::translate(mm, cubePositions[1]);
+		lighting.SetModel(model);
+
+		sukhoi.Draw(lighting);
+
+		mm = glm::mat4(1.0f);
+		model = glm::translate(mm, glm::vec3(0.0f, -1.55f, 0.0f));
+		lighting.SetModel(model);
+
+		floor.Draw(lighting);
+		/*
 		cube.activate();
 
 		for (int i = 0; i < 10; i++) {
@@ -254,6 +237,7 @@ int main()
 		}
 
 		cube.deactivate();
+		*/
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -264,8 +248,10 @@ int main()
 	lightShader.remove();
 	glfwDestroyWindow(window);
 	glfwTerminate();
+	/*
 	texture1.Unload();
 	texture2.Unload();
 	texture3.Unload();
+	*/
 	return 0;
 }

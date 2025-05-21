@@ -7,7 +7,7 @@
 #include <math.h>
 #include "stb_image.h"
 
-class Texture
+class OldTexture
 {
     public:
     unsigned int texture;
@@ -16,8 +16,8 @@ class Texture
     int height;
     int nrChannels;
 
-    Texture();
-    Texture(const char* filePath, bool rgba, int position);
+    OldTexture();
+    OldTexture(const char* filePath, bool rgba, int position);
     void Load(const char* filePath, bool rgba);
     void Unload();
     void Bind();
