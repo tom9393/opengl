@@ -1,6 +1,7 @@
 #ifndef OLDSHADER_H
 #define OLDSHADER_H
 
+#include "shader.h"
 #include <glad/glad.h>
 #include <glm/fwd.hpp>
 #include <string>
@@ -12,7 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
   
-class OldShader
+class OldShader : public Shader
 {
 public:
     // the program ID
