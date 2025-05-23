@@ -1,4 +1,3 @@
-
 #include "../include/lighting.h"
 #include <glm/glm.hpp>
 #include <string>

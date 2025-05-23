@@ -48,7 +48,9 @@ struct SpotLight {
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
+in vec4 FragPosLightSpace;
 
+uniform sampler2D shadowMap;
 uniform vec3 viewPos;
 uniform DirLight dirLight;
 uniform PointLight pointLights[NR_POINT_LIGHTS];
@@ -60,11 +62,44 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
+float ShadowCalculation(vec4 fragPosLightSpace)
+{
+    // Perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // Transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // Get closest depth value from light's perspective
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    // Bias to prevent shadow acne
+    float bias = 0.005;
+    // PCF (Percentage Closer Filtering)
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+
+    // Outside of light's frustum
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
+
+    return shadow;
+}
+
 void main()
 {    
     // properties
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
+
+    float shadow = ShadowCalculation(FragPosLightSpace);
     
     // == =====================================================
     // Our lighting is set up in 3 phases: directional, point lights and an optional flashlight
@@ -74,6 +109,7 @@ void main()
     // == =====================================================
     // phase 1: directional lighting
     vec3 result = CalcDirLight(dirLight, norm, viewDir);
+    result *= (1.0 - shadow);
     // phase 2: point lights
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
         result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);    
@@ -83,13 +119,12 @@ void main()
     
     FragColor = vec4(result, 1.0);
     // FragColor = texture(material.diffuse, TexCoords); // Testing purposes
-
 }
 
 // calculates the color when using a directional light.
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
-    vec3 lightDir = normalize(-light.direction);
+    vec3 lightDir = normalize(light.direction); // ????
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
