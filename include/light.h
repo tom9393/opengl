@@ -1,7 +1,9 @@
 #ifndef LIGHT
 #define LIGHT
 
+#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 class Light
 {
@@ -38,11 +40,19 @@ private:
 class DirLight : public Light
 {
 public:
-    DirLight();
+    DirLight(glm::vec3 dir = glm::vec3(-2.0f, 4.0f, -1.0f))
+    {
+        direction = dir;
+        float near = 1.0f;
+        float far = 25.0f;
+	projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near, far);
+    }
     glm::vec3 getDirection();
+    glm::mat4 getMatrix();
 
 private:
     glm::vec3 direction;
+    glm::mat4 projection;
 };
 
 class PointLight : public AttenuatingLight
@@ -59,16 +69,29 @@ private:
 class SpotLight : public PointLight
 {
 public:
-    SpotLight();
+    SpotLight(glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f))
+    {
+        projection = proj;
+        target = glm::vec3(0.0f);
+        cutoff = glm::cos(glm::radians(12.5f));
+        outerCutoff = glm::cos(glm::radians(17.5f));
+    }
+
     glm::vec3 getDirection();
     void setDirection(glm::vec3 dir);
     float getCutoff();
     float getOutercutoff();
+    glm::mat4 getMatrix();
+    void setTarget(glm::vec3 target);
+    glm::vec3 getTarget();
+    glm::vec3 getDirectionToTarget(glm::mat4 mat);
     
 private:
     glm::vec3 direction;
     float cutoff;
     float outerCutoff;
+    glm::mat4 projection;
+    glm::vec3 target;
 };
 
 #endif

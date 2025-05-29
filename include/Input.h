@@ -9,6 +9,7 @@ public:
     static Camera_Movement processInput(GLFWwindow* window);
     static void process(GLFWwindow* window);
     static Camera getCamera();
+    static bool getOn();
     static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 };
 

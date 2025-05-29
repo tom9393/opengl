@@ -1,4 +1,5 @@
 #include "../include/light.h"
+#include <glm/ext/matrix_transform.hpp>
 
 Light::Light()
 {
@@ -44,14 +45,17 @@ float AttenuatingLight::getQuadratic()
     return quadratic;
 }
 
-DirLight::DirLight()
-{
-    direction = glm::vec3(-2.0f, 4.0f, -1.0f);
-}
-
 glm::vec3 DirLight::getDirection()
 {
     return direction;
+}
+
+glm::mat4 DirLight::getMatrix()
+{
+    glm::mat4 view = glm::lookAt(getDirection(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f,  0.0f));
+    return projection * view;
+
+
 }
 
 PointLight::PointLight()
@@ -67,12 +71,6 @@ glm::vec3 PointLight::getPosition()
 void PointLight::setPosition(glm::vec3 pos)
 {
     position = pos;
-}
-
-SpotLight::SpotLight()
-{
-    cutoff = glm::cos(glm::radians(12.5f));
-    outerCutoff = glm::cos(glm::radians(17.5f));
 }
 
 glm::vec3 SpotLight::getDirection()
@@ -93,4 +91,27 @@ float SpotLight::getCutoff()
 float SpotLight::getOutercutoff()
 {
     return outerCutoff;
+}
+
+void SpotLight::setTarget(glm::vec3 target)
+{
+    target = target;
+}
+
+glm::vec3 SpotLight::getTarget()
+{
+    return target;
+}
+
+glm::mat4 SpotLight::getMatrix()
+{
+    glm::mat4 view = glm::lookAt(getPosition(), getTarget(), glm::vec3(0.0f, 1.0f,  0.0f));
+    return projection * view;
+}
+
+glm::vec3 SpotLight::getDirectionToTarget(glm::mat4 mat)
+{
+    glm::vec3 positionInversed = glm::vec3(glm::inverse(mat)[3]);
+    return glm::normalize(target - positionInversed);
+
 }

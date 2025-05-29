@@ -1,5 +1,6 @@
 #include "../include/Input.h"
 #include "../include/Camera.h"
+#include <GLFW/glfw3.h>
 
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
@@ -8,6 +9,7 @@ float lastFrame = 0.0f;
 float lastX = 400;
 float lastY = 300;
 bool firstMouse = true;
+bool on = false;
 
 Camera_Movement InputHandler::processInput(GLFWwindow *window)
 {
@@ -24,6 +26,8 @@ Camera_Movement InputHandler::processInput(GLFWwindow *window)
 		direction = UP;
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) 
 		direction = DOWN;
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) 
+		on = !on;
 	
 	return direction;
 }
@@ -51,6 +55,11 @@ void InputHandler::mouse_callback(GLFWwindow* window, double xposIn, double ypos
 
 Camera InputHandler::getCamera() {
 	    return camera;
+}
+
+bool InputHandler::getOn()
+{
+	    return on;
 }
 
 void InputHandler::process(GLFWwindow* window)
