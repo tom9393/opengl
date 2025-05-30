@@ -68,8 +68,6 @@ int main()
 	glm::vec3 lightPos, lightPos2;
 
 	Cube cube, cube2;
-	cube.init();
-	cube2.init();
 	cube.setLocation(&lightPos);
 	cube2.setLocation(&lightPos2);
 	cubeshader.addCube(&cube);
@@ -77,15 +75,15 @@ int main()
 
 	ShadowMap shadowMap, m1, m2;
 
-	lighting.addDirMap(shadowMap);
+	lighting.addShadowMap(shadowMap);
 	lighting.addShadowMap(m1);
 	lighting.addShadowMap(m2);
 
-	lighting.addDirLight(&dl);
-	lighting.addSpotLight(&sl);
-	lighting.addSpotLight(&sl2);
-	lighting.addPointLight(&pl);
-	lighting.addPointLight(&pl2);
+	lighting.addLight(&dl);
+	lighting.addLight(&sl);
+	lighting.addLight(&sl2);
+	lighting.addLight(&pl);
+	lighting.addLight(&pl2);
 
 	lighting.addObj(sukhoi);
 	lighting.addObj(tank);

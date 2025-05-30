@@ -69,34 +69,45 @@ void Lighting::setDirlight(unsigned int index, DirLight &light)
 
 void Lighting::setup()
 {
-    for (unsigned int i = 0; i < dirLights.size(); i++)
+    unsigned int spot = 0;
+    unsigned int point = 0;
+    unsigned int map = 20;
+
+    for (unsigned int i = 0; i < lights.size() && map < 32; i++)
     {
-        DirLight *light = dirLights[i];
-        ShadowMap &shadowMap = dirMaps[0];
-        setDirlight(i, *light);
-	shadowMap.BindForReading(GL_TEXTURE25);
-        setInt("shadowMap", 25);
-        setMat4("lightSpaceMatrix", light->getMatrix());
-    }
-    unsigned int text = 26;
-    for (unsigned int i = 0; i < spotLights.size(); i++)
-    {
-        SpotLight *light = spotLights[i];
+        ILight *light = lights[i];
         ShadowMap &shadowMap = shadowMaps[i];
-        setSpotlight(i, *light);
+        Shader* shad = this;
 
-        std::string prefix = "shadowMapSpot[" + std::to_string(i) + "]";
-        std::string prefix2 = "spotLightSpaceMatrices[" + std::to_string(i) + "]";
-        shadowMap.BindForReading(GL_TEXTURE0 + text);
-        setInt(prefix, text);
-        setMat4(prefix2, light->getMatrix());
-
-        text++;
-    }
-    for (unsigned int i = 0; i < pointLights.size(); i++)
-    {
-        PointLight *light = pointLights[i];
-        setPointlight(i, *light);
+        switch(light->getType())
+        {
+            case DIRECTIONAL: { // For now there will only ever be one directional light
+                DirLight *dl = (DirLight*) light;
+                setDirlight(0, *dl);
+                shadowMap.BindForReading(GL_TEXTURE0 + map);
+                setInt("shadowMap", map);
+                dl->setLight(shad, "lightSpaceMatrix");
+                break;
+            }
+            case SPOTLIGHT: {
+                SpotLight *sl = (SpotLight*) light;
+                setSpotlight(spot, *sl);
+                std::string prefix = "shadowMapSpot[" + std::to_string(spot) + "]";
+                std::string prefix2 = "spotLightSpaceMatrices[" + std::to_string(spot) + "]";
+                shadowMap.BindForReading(GL_TEXTURE0 + map);
+                setInt(prefix, map);
+                sl->setLight(shad, prefix2);
+                spot++;
+                break;
+            }
+            case POINTLIGHT: {
+                PointLight *pl = (PointLight*) light;
+                setPointlight(point, *pl);
+                point++;
+                break;
+            }
+        }
+        map++;
     }
 }
 
@@ -113,28 +124,15 @@ void Lighting::draw()
 void Lighting::cleanup()
 {
 }
-
-void Lighting::addDirLight(DirLight *light)
-{
-    dirLights.push_back(light);
-}
-void Lighting::addPointLight(PointLight *light)
-{
-    pointLights.push_back(light);
-}
-void Lighting::addSpotLight(SpotLight *light)
-{
-    spotLights.push_back(light);
-}
 void Lighting::addShadowMap(ShadowMap &shadowMap)
 {
     shadowMaps.push_back(shadowMap);
 }
-void Lighting::addDirMap(ShadowMap &shadowMap)
-{
-    dirMaps.push_back(shadowMap);
-}
 void Lighting::addObj(Obj &object)
 {
     objs.push_back(object);
+}
+void Lighting::addLight(ILight *light)
+{
+    lights.push_back(light);
 }

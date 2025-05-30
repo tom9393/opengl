@@ -2,6 +2,7 @@
 
 Cube::Cube()
 {
+    init();
 }
 
 void Cube::init()

@@ -1,6 +1,7 @@
 #include "../include/light.h"
 #include <glm/ext/matrix_transform.hpp>
 
+// Light
 Light::Light()
 {
     ambient = glm::vec3(0.05f);
@@ -23,6 +24,7 @@ glm::vec3 Light::getSpecular()
     return specular;
 }
 
+// Attenuating light
 AttenuatingLight::AttenuatingLight()
 {
     constant = 1.0f;
@@ -45,6 +47,7 @@ float AttenuatingLight::getQuadratic()
     return quadratic;
 }
 
+// Directional light
 glm::vec3 DirLight::getDirection()
 {
     return direction;
@@ -56,6 +59,17 @@ glm::mat4 DirLight::getMatrix()
     return projection * view;
 }
 
+void DirLight::setLight(Shader *shader, const std::string &name)
+{
+    shader->setMat4(name.c_str(), this->getMatrix());
+}
+
+LightType DirLight::getType()
+{
+    return type;
+}
+
+// Point light
 PointLight::PointLight()
 {
     position = glm::vec3(0.0f);
@@ -71,6 +85,17 @@ void PointLight::setPosition(glm::vec3 pos)
     position = pos;
 }
 
+void PointLight::setLight(Shader *shader, const std::string &name)
+{
+    // Not implemented yet
+}
+
+LightType PointLight::getType()
+{
+    return type;
+}
+
+// Spot light
 glm::vec3 SpotLight::getDirection()
 {
     return direction;
@@ -96,6 +121,16 @@ void SpotLight::setTarget(glm::vec3 target)
     target = target;
 }
 
+glm::vec3 SpotLight::getPosition()
+{
+    return position;
+}
+
+void SpotLight::setPosition(glm::vec3 pos)
+{
+    position = pos;
+}
+
 glm::vec3 SpotLight::getTarget()
 {
     return target;
@@ -111,4 +146,14 @@ glm::vec3 SpotLight::getDirectionToTarget(glm::mat4 mat)
 {
     glm::vec3 positionInversed = glm::vec3(glm::inverse(mat)[3]);
     return glm::normalize(target - positionInversed);
+}
+
+void SpotLight::setLight(Shader* shader, const std::string &name)
+{
+    shader->setMat4(name.c_str(), this->getMatrix());
+}
+
+LightType SpotLight::getType()
+{
+    return type;
 }
