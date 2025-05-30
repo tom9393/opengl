@@ -5,6 +5,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+class ILight
+{
+public:
+    virtual glm::mat4 getMatrix() = 0;
+};
+
 class Light
 {
 public:
@@ -37,7 +43,7 @@ private:
 
 };
 
-class DirLight : public Light
+class DirLight : public Light, public ILight
 {
 public:
     DirLight(glm::vec3 dir = glm::vec3(-2.0f, 4.0f, -1.0f))
@@ -66,7 +72,7 @@ private:
     glm::vec3 position;
 };
 
-class SpotLight : public PointLight
+class SpotLight : public PointLight, public ILight
 {
 public:
     SpotLight(glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f))

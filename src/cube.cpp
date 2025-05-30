@@ -24,7 +24,7 @@ void Cube::deactivate()
     ebo.Unbind();
 }
 
-void Cube::setLocation(glm::vec3 loc)
+void Cube::setLocation(glm::vec3 *loc)
 {
     location = loc;
 }
@@ -32,12 +32,12 @@ void Cube::setLocation(glm::vec3 loc)
 void Cube::setRotationTarget(glm::vec3 target)
 {
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::mat4 viewMatrix = glm::lookAt(location, target, up);
+    glm::mat4 viewMatrix = glm::lookAt(*location, target, up);
 
     glm::mat4 rotationMatrix = glm::inverse(viewMatrix);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, location);
+    model = glm::translate(model, *location);
     model *= rotationMatrix;  // Apply rotation to face the center
     model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 }
@@ -47,7 +47,7 @@ glm::mat4 Cube::getModel()
     return model;
 }
 
-void Cube::draw(OldShader &shader)
+void Cube::draw(Shader &shader)
 {
     shader.setMat4("model", getModel());
 

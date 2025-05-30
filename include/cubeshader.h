@@ -1,6 +1,7 @@
-#ifndef OLDSHADER_H
-#define OLDSHADER_H
+#ifndef CUBESHADER_H
+#define CUBESHADER_H
 
+#include "cube.h"
 #include "shader.h"
 #include <glad/glad.h>
 #include <glm/fwd.hpp>
@@ -12,12 +13,22 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <vector>
   
-class OldShader : public Shader
+class Cubeshader : public Shader
 {
 public:
-    OldShader();
+    Cubeshader();
     virtual bool Init();
+
+    void setup();
+    void draw();
+    void cleanup();
+
+    void addCube(Cube *cube);
+
+private:
+    std::vector<Cube*> cubes;
 };
   
 #endif

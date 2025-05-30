@@ -5,6 +5,12 @@ Shader::Shader()
     id = 0;
 }
 
+void Shader::setup()
+{}
+void Shader::draw()
+{}
+void Shader::cleanup()
+{}
 
 Shader::~Shader()
 {

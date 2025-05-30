@@ -9,7 +9,6 @@
 #include "VBO.h"
 #include "EBO.h"
 #include "shader.h"
-#include "shaderClass.h"
 
 class Cube
 {
@@ -21,9 +20,9 @@ public:
     void activate();
     void deactivate();
     glm::mat4 getModel();
-    void setLocation(glm::vec3 loc);
+    void setLocation(glm::vec3 *loc);
     void setRotationTarget(glm::vec3 target);
-    void draw(OldShader &shader);
+    void draw(Shader &shader);
 
     float vertices[288] = {
         // Positions        // Normals         // Texture Coords
@@ -82,7 +81,7 @@ public:
     VBO vbo = VBO(vertices, sizeof(vertices));
     EBO ebo = EBO(indices, sizeof(indices));
 
-    glm::vec3 location;
+    glm::vec3 *location;
     glm::mat4 model;
 
 };

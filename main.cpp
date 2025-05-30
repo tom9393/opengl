@@ -4,11 +4,13 @@
 #include <math.h>
 
 #include "include/cube.h"
-#include "include/Camera.h"
+#include "include/cubeshader.h"
 #include "include/obj.h"
 #include "include/Window.h"
 #include "include/Input.h"
 #include "include/lighting.h"
+#include "include/scene.h"
+#include "include/cubeshader.h"
 #include "include/shadowmap.h"
 #include "include/shadowshader.h"
 
@@ -36,7 +38,7 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
-	OldShader cubeshader;
+	Cubeshader cubeshader;
 	Lighting lighting;
 	Shadowshader shadowshader;
 
@@ -45,9 +47,11 @@ int main()
 	    return 1;
 	};
 
+	glm::vec3 asdf = glm::vec3(0.0f, -500.0f, 0.0f);
+
 	PointLight pl, pl2;
-	pl.setPosition(glm::vec3(0.0f, 2.5f, 0.0f));
-	pl2.setPosition(glm::vec3(0.0f, 2.5f, 0.0f));
+	pl.setPosition(asdf);
+	pl2.setPosition(asdf);
 
 	DirLight dl;
 
@@ -61,103 +65,58 @@ int main()
 	Obj tank(tank_m, glm::vec3(0.0f));
 	Obj floor(floor_m, glm::vec3(0.0f, -1.55f, 0.0f));
 
+	glm::vec3 lightPos, lightPos2;
+
 	Cube cube, cube2;
 	cube.init();
 	cube2.init();
+	cube.setLocation(&lightPos);
+	cube2.setLocation(&lightPos2);
+	cubeshader.addCube(&cube);
+	cubeshader.addCube(&cube2);
 
 	ShadowMap shadowMap, m1, m2;
 
+	lighting.addDirMap(shadowMap);
+	lighting.addShadowMap(m1);
+	lighting.addShadowMap(m2);
+
+	lighting.addDirLight(&dl);
+	lighting.addSpotLight(&sl);
+	lighting.addSpotLight(&sl2);
+	lighting.addPointLight(&pl);
+	lighting.addPointLight(&pl2);
+
+	lighting.addObj(sukhoi);
+	lighting.addObj(tank);
+	lighting.addObj(floor);
+
+	shadowshader.addDirLight(&dl);
+	shadowshader.addSpotLight(&sl);
+	shadowshader.addSpotLight(&sl2);
+	shadowshader.addShadowMap(&shadowMap);
+	shadowshader.addShadowMap(&m1);
+	shadowshader.addShadowMap(&m2);
+	shadowshader.addObj(&sukhoi);
+	shadowshader.addObj(&tank);
+	shadowshader.addObj(&floor);
+
+	Scene scene;
+	scene.addWindow(window);
+	scene.addShader(&shadowshader);
+	scene.addShader(&cubeshader);
+	scene.addShader(&lighting);
+
 	while (!glfwWindowShouldClose(window))
 	{
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		InputHandler::process(window);
-		Camera camera = InputHandler::getCamera();
-
-		glm::vec3 lightPos = glm::vec3(5.0f * sin(glfwGetTime()), -0.25f, 5.0f * cos(glfwGetTime()));
-		glm::vec3 lightPos2 = glm::vec3(0.0f, 3.0f, -1.0f * 1.0f * cos(glfwGetTime()));
+		lightPos = glm::vec3(5.0f * sin(glfwGetTime()), -0.25f, 5.0f * cos(glfwGetTime()));
+		lightPos2 = glm::vec3(0.0f, 3.0f, -1.0f * 1.0f * cos(glfwGetTime()));
 		sl.setPosition(lightPos);
 		sl2.setPosition(lightPos2);
-
-		glm::mat4 view = camera.getViewMatrix();
-		glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-
-		shadowshader.Enable();
-
-		shadowMap.BindForWriting();
-		shadowshader.setMat4("lightSpaceMatrix", dl.getMatrix());
-		sukhoi.draw(shadowshader);
-		tank.draw(shadowshader);
-		floor.draw(shadowshader);
-
-		m1.BindForWriting();
-		shadowshader.setMat4("lightSpaceMatrix", sl.getMatrix());
-		sukhoi.draw(shadowshader);
-		tank.draw(shadowshader);
-		floor.draw(shadowshader);
-
-		m2.BindForWriting();
-		shadowshader.setMat4("lightSpaceMatrix", sl2.getMatrix());
-		sukhoi.draw(shadowshader);
-		tank.draw(shadowshader);
-		floor.draw(shadowshader);
-
-		// Reset
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		cubeshader.Enable();
-
-		glm::vec3 asdf = glm::vec3(0.0f, 5.0f, 0.0f);
-
-		pl.setPosition(asdf);
-		pl2.setPosition(asdf);
-
-		cube.setLocation(lightPos);
-		cube.setRotationTarget(glm::vec3(0.0f));
-		cube.draw(cubeshader);
-
-		cube2.setLocation(lightPos2);
-		cube2.setRotationTarget(glm::vec3(0.0f));
-		cube2.draw(cubeshader);
-
-		sl.setPosition(lightPos);
 		sl.setDirection(sl.getDirectionToTarget(sl.getMatrix()));
-
-		sl2.setPosition(lightPos2);
 		sl2.setDirection(sl2.getDirectionToTarget(sl2.getMatrix()));
 
-		lighting.Enable();
-		lighting.setPointlight(0, pl);
-		// lighting.setPointlight(1, pl2);
-		lighting.setDirlight(0, dl);
-		lighting.setSpotlight(0, sl);
-		lighting.setSpotlight(1, sl2);
-
-		lighting.SetCameraLocalPos(camera.Position);
-		shadowMap.BindForReading(GL_TEXTURE30);
-		lighting.setInt("shadowMap", 30);
-		lighting.setMat4("lightSpaceMatrix", dl.getMatrix());
-		m1.BindForReading(GL_TEXTURE28);
-		lighting.setInt("shadowMapSpot[0]", 28);
-		m2.BindForReading(GL_TEXTURE29);
-		lighting.setInt("shadowMapSpot[1]", 29);
-		lighting.setMat4("spotLightSpaceMatrices[0]", sl.getMatrix());
-		lighting.setMat4("spotLightSpaceMatrices[1]", sl2.getMatrix());
-
-		lighting.SetView(view);
-		lighting.SetProjection(projection);
-	
-		tank.draw(lighting);
-		sukhoi.draw(lighting);
-		floor.draw(lighting);
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		scene.draw();
 	}
 
 	glfwDestroyWindow(window);

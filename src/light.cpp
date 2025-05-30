@@ -54,8 +54,6 @@ glm::mat4 DirLight::getMatrix()
 {
     glm::mat4 view = glm::lookAt(getDirection(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f,  0.0f));
     return projection * view;
-
-
 }
 
 PointLight::PointLight()
@@ -113,5 +111,4 @@ glm::vec3 SpotLight::getDirectionToTarget(glm::mat4 mat)
 {
     glm::vec3 positionInversed = glm::vec3(glm::inverse(mat)[3]);
     return glm::normalize(target - positionInversed);
-
 }

@@ -24,37 +24,10 @@ bool Lighting::Init()
         return false;
     }
 
-    Model = GetUniformLocation("model");
-    View = GetUniformLocation("view");
-    Projection = GetUniformLocation("projection");
-    materialLoc.DiffuseColor = GetUniformLocation("material.diffuse");
-    materialLoc.SpecularColor = GetUniformLocation("material.specular");
-    materialLoc.Shininess = GetUniformLocation("material.shininess");
-
-    CameraLocalPosLoc = GetUniformLocation("viewPos");
-
-    dirLightLoc.Ambient = GetUniformLocation("light.ambient");
-    dirLightLoc.Diffuse = GetUniformLocation("light.diffuse");
-    dirLightLoc.Specular = GetUniformLocation("light.specular");
-    dirLightLoc.Constant = GetUniformLocation("light.constant");
-    dirLightLoc.Linear = GetUniformLocation("light.linear");
-    dirLightLoc.Quadratic = GetUniformLocation("light.quadratic");
-    dirLightLoc.Position = GetUniformLocation("light.position");
-    dirLightLoc.Direction = GetUniformLocation("light.direction");
-    dirLightLoc.Cutoff = GetUniformLocation("light.cutOff");
-    dirLightLoc.OuterCutoff = GetUniformLocation("light.outerCutOff");
-
-    if (Model == 0xFFFFFFFF ||
-        View == 0xFFFFFFFF ||
-        Projection == 0xFFFFFFFF)
-    {
-        return false;
-    }
-
     return true;
 }
 
-void Lighting::setSpotlight(unsigned int index, SpotLight light)
+void Lighting::setSpotlight(unsigned int index, SpotLight &light)
 {
         std::string prefix = "spotLight[" + std::to_string(index) + "]";
 
@@ -70,7 +43,7 @@ void Lighting::setSpotlight(unsigned int index, SpotLight light)
 
 }
 
-void Lighting::setPointlight(unsigned int index, PointLight light)
+void Lighting::setPointlight(unsigned int index, PointLight &light)
 {
         std::string prefix = "pointLights[" + std::to_string(index) + "].";
 
@@ -86,7 +59,7 @@ void Lighting::setPointlight(unsigned int index, PointLight light)
         glUniform1f(glGetUniformLocation(id, "material.shininess"), 32.0f);
 }
 
-void Lighting::setDirlight(unsigned int index, DirLight light)
+void Lighting::setDirlight(unsigned int index, DirLight &light)
 {
         glUniform3fv(GetUniformLocation("dirLight.direction"), 1, &light.getDirection()[0]); 
         glUniform3fv(GetUniformLocation("dirLight.ambient"), 1, &light.getAmbient()[0]); 
@@ -94,67 +67,74 @@ void Lighting::setDirlight(unsigned int index, DirLight light)
         glUniform3fv(GetUniformLocation("dirLight.specular"), 1, &light.getSpecular()[0]); 
 }
 
-void Lighting::SetModel(const glm::mat4& model)
+void Lighting::setup()
 {
-    glUniformMatrix4fv(Model, 1, GL_FALSE, &model[0][0]);
+    for (unsigned int i = 0; i < dirLights.size(); i++)
+    {
+        DirLight *light = dirLights[i];
+        ShadowMap &shadowMap = dirMaps[0];
+        setDirlight(i, *light);
+	shadowMap.BindForReading(GL_TEXTURE25);
+        setInt("shadowMap", 25);
+        setMat4("lightSpaceMatrix", light->getMatrix());
+    }
+    unsigned int text = 26;
+    for (unsigned int i = 0; i < spotLights.size(); i++)
+    {
+        SpotLight *light = spotLights[i];
+        ShadowMap &shadowMap = shadowMaps[i];
+        setSpotlight(i, *light);
+
+        std::string prefix = "shadowMapSpot[" + std::to_string(i) + "]";
+        std::string prefix2 = "spotLightSpaceMatrices[" + std::to_string(i) + "]";
+        shadowMap.BindForReading(GL_TEXTURE0 + text);
+        setInt(prefix, text);
+        setMat4(prefix2, light->getMatrix());
+
+        text++;
+    }
+    for (unsigned int i = 0; i < pointLights.size(); i++)
+    {
+        PointLight *light = pointLights[i];
+        setPointlight(i, *light);
+    }
 }
 
-void Lighting::SetView(const glm::mat4& view)
+void Lighting::draw()
 {
-    glUniformMatrix4fv(View, 1, GL_FALSE, &view[0][0]);
+    setup();
+    for (unsigned int i = 0; i < objs.size(); i++)
+    {
+        Obj &object = objs[i];
+        object.draw(*this);
+    }
 }
 
-void Lighting::SetProjection(const glm::mat4& projection)
+void Lighting::cleanup()
 {
-    glUniformMatrix4fv(Projection, 1, GL_FALSE, &projection[0][0]);
 }
 
-
-void Lighting::SetTextureUnit(unsigned int TextureUnit)
+void Lighting::addDirLight(DirLight *light)
 {
-    glUniform1i(samplerLoc, TextureUnit);
+    dirLights.push_back(light);
 }
-
-void Lighting::SetTexture(const std::string &name, int value)
+void Lighting::addPointLight(PointLight *light)
 {
-    glUniform1i(glGetUniformLocation(id, name.c_str()), value); 
+    pointLights.push_back(light);
 }
-
-void Lighting::SetSpecularExponentTextureUnit(unsigned int TextureUnit)
+void Lighting::addSpotLight(SpotLight *light)
 {
-    glUniform1i(samplerSpecularExponentLoc, TextureUnit);
+    spotLights.push_back(light);
 }
-
-
-/*
-void Lighting::SetDirectionalLight(const Light& Light)
+void Lighting::addShadowMap(ShadowMap &shadowMap)
 {
-    glUniform3fv(dirLightLoc.Ambient, 1, &Light.ambient[0]); 
-    glUniform3fv(dirLightLoc.Diffuse, 1, &Light.diffuse[0]); 
-    glUniform3fv(dirLightLoc.Specular, 1, &Light.specular[0]); 
-    glUniform3fv(dirLightLoc.Position, 1, &Light.position[0]); 
-    glUniform3fv(dirLightLoc.Direction, 1, &Light.direction[0]); 
-    glUniform1f(dirLightLoc.Cutoff, Light.cutoff);
-    glUniform1f(dirLightLoc.OuterCutoff, Light.outerCutOff);
-    glUniform1f(dirLightLoc.Constant, Light.constant);
-    glUniform1f(dirLightLoc.Linear, Light.linear);
-    glUniform1f(dirLightLoc.Quadratic, Light.quadratic);
+    shadowMaps.push_back(shadowMap);
 }
-*/
-
-
-void Lighting::SetCameraLocalPos(const glm::vec3& CameraLocalPos)
+void Lighting::addDirMap(ShadowMap &shadowMap)
 {
-    glUniform3f(CameraLocalPosLoc, CameraLocalPos.x, CameraLocalPos.y, CameraLocalPos.z);
+    dirMaps.push_back(shadowMap);
 }
-
-
-/*
-void Lighting::SetMaterial(const Material& material)
+void Lighting::addObj(Obj &object)
 {
-    glUniform3fv(materialLoc.AmbientColor, 1, &material.ambient[0]); 
-    glUniform3fv(materialLoc.DiffuseColor, 1, &material.diffuse[0]); 
-    glUniform3fv(materialLoc.SpecularColor, 1, &material.specular[0]); 
-    glUniform1f(materialLoc.Shininess, material.shininess);
+    objs.push_back(object);
 }
-*/
