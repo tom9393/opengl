@@ -11,6 +11,7 @@
 
 #include "../include/mesh.h"
 #include "../include/shader.h"
+#include "drawable.h"
 #include "stb_image.h"
 
 #include <string>
@@ -19,9 +20,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
-using namespace std;
 
-class Model 
+class Model : public IDrawable
 {
 public:
     // model data 
@@ -37,7 +37,7 @@ public:
     }
 
     // draws the model, and thus all its meshes
-    void Draw(Shader &shader)
+    void draw(Shader &shader) override
     {
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
@@ -53,7 +53,7 @@ private:
         // check for errors
         if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
-            cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
+            std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
             return;
         }
         // retrieve the directory path of the filepath

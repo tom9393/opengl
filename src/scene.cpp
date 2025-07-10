@@ -11,7 +11,7 @@ void Scene::draw()
     glClear(GL_COLOR_BUFFER_BIT);
     for (unsigned int i = 0; i < shaders.size(); i++)
     {
-        Shader *shader = shaders[i];
+        Lighting *shader = shaders[i];
         shader->Enable();
 
         shader->setMat4("view", view);
@@ -28,13 +28,29 @@ void Scene::draw()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Scene::addShader(Shader* shader)
+void Scene::addShader(Lighting* shader)
 {
     shaders.push_back(shader);
 }
 void Scene::addWindow(GLFWwindow* win)
 {
     window = win;
+}
+
+void Scene::addObject(Obj* object) {
+    for (unsigned int i = 0; i < shaders.size(); i++) {
+        Lighting* shader = shaders[i];
+        shader->addObj(object);
+    }
+}
+
+void Scene::addLight(ILight* light) {
+    IShadowMap* map = new ShadowMap();
+    for (unsigned int i = 0; i < shaders.size(); i++) {
+        Lighting* shader = shaders[i];
+        shader->addLight(light);
+        shader->addShadowMap(map);
+    }
 }
 
 void Scene::predraw()

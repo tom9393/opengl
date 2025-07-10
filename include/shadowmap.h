@@ -4,7 +4,15 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 
-class ShadowMap {
+class IShadowMap {
+
+public:
+    virtual void BindForWriting() const = 0;
+    virtual void BindForReading(GLenum textureUnit) const = 0;
+    virtual GLuint getDepthMap() = 0;
+};
+
+class ShadowMap : public IShadowMap {
 public:
     GLuint depthMapFBO;
     GLuint depthMap;
@@ -46,7 +54,7 @@ public:
     }
 };
 
-class SpotLightShadowMap {
+class SpotLightShadowMap : public IShadowMap {
 public:
     GLuint FBO;
     GLuint depthMap;
@@ -77,9 +85,13 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glClear(GL_DEPTH_BUFFER_BIT);
     }
+    void BindForReading(GLenum textureUnit) const {}
+    GLuint getDepthMap() {
+        return depthMap;
+    }
 };
 
-class PointLightShadowMap {
+class PointLightShadowMap : public IShadowMap {
 public:
     GLuint FBO;
     GLuint depthCubemap;
@@ -111,8 +123,10 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glClear(GL_DEPTH_BUFFER_BIT);
     }
+    void BindForReading(GLenum textureUnit) const {}
+    GLuint getDepthMap() {
+        return depthCubemap;
+    }
 };
-
-
 
 #endif

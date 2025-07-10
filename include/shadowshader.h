@@ -2,6 +2,7 @@
 #define SHADOWSHADER
 
 #include "light.h"
+#include "lighting.h"
 #include "obj.h"
 #include "shader.h"
 #include "shadowmap.h"
@@ -9,7 +10,7 @@
 #include <glad/glad.h>
 #include <vector>
 
-class Shadowshader : public Shader
+class Shadowshader : public Lighting
 {
 public:
 
@@ -19,18 +20,6 @@ public:
     void setup();
     void draw();
     void cleanup();
-
-    void addShadowMap(ShadowMap *shadowMap);
-    void addSpotLight(SpotLight *light);
-    void addDirLight(DirLight *light);
-    void addObj(Obj *light);
-
-private:
-    std::vector<ShadowMap*> shadowMaps;
-    std::vector<SpotLight*> spotLights;
-    std::vector<DirLight*> dirLights;
-    std::vector<PointLight*> pointLights;
-    std::vector<Obj*> objs;
 };
 
 

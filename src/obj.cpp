@@ -14,5 +14,5 @@ glm::mat4 Obj::getMatrix()
 void Obj::draw(Shader &shader)
 {
     shader.setMat4("model", getMatrix());
-    model->Draw(shader);
+    drawable->draw(shader);
 }

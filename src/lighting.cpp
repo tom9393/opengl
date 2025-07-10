@@ -73,20 +73,19 @@ void Lighting::setup()
     unsigned int point = 0;
     unsigned int map = 20;
 
-    for (unsigned int i = 0; i < lights.size() && map < 32; i++)
+    for (unsigned int i = 0; i < shadowMaps.size() && map < 32; i++)
     {
         ILight *light = lights[i];
-        ShadowMap &shadowMap = shadowMaps[i];
-        Shader* shad = this;
+        IShadowMap *shadowMap = shadowMaps[i];
 
         switch(light->getType())
         {
             case DIRECTIONAL: { // For now there will only ever be one directional light
                 DirLight *dl = (DirLight*) light;
                 setDirlight(0, *dl);
-                shadowMap.BindForReading(GL_TEXTURE0 + map);
+                shadowMap->BindForReading(GL_TEXTURE0 + map);
                 setInt("shadowMap", map);
-                dl->setLight(shad, "lightSpaceMatrix");
+                dl->setLight((Shader*)this, "lightSpaceMatrix");
                 break;
             }
             case SPOTLIGHT: {
@@ -94,9 +93,9 @@ void Lighting::setup()
                 setSpotlight(spot, *sl);
                 std::string prefix = "shadowMapSpot[" + std::to_string(spot) + "]";
                 std::string prefix2 = "spotLightSpaceMatrices[" + std::to_string(spot) + "]";
-                shadowMap.BindForReading(GL_TEXTURE0 + map);
+                shadowMap->BindForReading(GL_TEXTURE0 + map);
                 setInt(prefix, map);
-                sl->setLight(shad, prefix2);
+                sl->setLight((Shader*)this, prefix2);
                 spot++;
                 break;
             }
@@ -113,22 +112,21 @@ void Lighting::setup()
 
 void Lighting::draw()
 {
-    setup();
     for (unsigned int i = 0; i < objs.size(); i++)
     {
-        Obj &object = objs[i];
-        object.draw(*this);
+        Obj *object = objs[i];
+        object->draw(*this);
     }
 }
 
 void Lighting::cleanup()
 {
 }
-void Lighting::addShadowMap(ShadowMap &shadowMap)
+void Lighting::addShadowMap(IShadowMap *shadowMap)
 {
     shadowMaps.push_back(shadowMap);
 }
-void Lighting::addObj(Obj &object)
+void Lighting::addObj(Obj *object)
 {
     objs.push_back(object);
 }

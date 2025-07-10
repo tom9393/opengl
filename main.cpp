@@ -3,15 +3,11 @@
 #include <GLFW/glfw3.h>
 #include <math.h>
 
-#include "include/cube.h"
-#include "include/cubeshader.h"
 #include "include/obj.h"
 #include "include/Window.h"
 #include "include/Input.h"
 #include "include/lighting.h"
 #include "include/scene.h"
-#include "include/cubeshader.h"
-#include "include/shadowmap.h"
 #include "include/shadowshader.h"
 
 #include <glm/glm.hpp>
@@ -38,23 +34,21 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
-	Cubeshader cubeshader;
 	Lighting lighting;
 	Shadowshader shadowshader;
 
-	if (!lighting.Init() || !shadowshader.Init() || !cubeshader.Init())
+	if (!lighting.Init() || !shadowshader.Init())
 	{
 	    return 1;
 	};
 
-	glm::vec3 asdf = glm::vec3(0.0f, -500.0f, 0.0f);
+	glm::vec3 asdf = glm::vec3(0.0f, -50.0f, 0.0f);
 
 	PointLight pl, pl2;
 	pl.setPosition(asdf);
 	pl2.setPosition(asdf);
 
 	DirLight dl;
-
 	SpotLight sl, sl2;
 
 	Model sukhoi_m("/home/tom/Coding/c++/opengl/assets/sukhoi.obj");
@@ -67,43 +61,20 @@ int main()
 
 	glm::vec3 lightPos, lightPos2;
 
-	Cube cube, cube2;
-	cube.setLocation(&lightPos);
-	cube2.setLocation(&lightPos2);
-	cubeshader.addCube(&cube);
-	cubeshader.addCube(&cube2);
-
-	ShadowMap shadowMap, m1, m2;
-
-	lighting.addShadowMap(shadowMap);
-	lighting.addShadowMap(m1);
-	lighting.addShadowMap(m2);
-
-	lighting.addLight(&dl);
-	lighting.addLight(&sl);
-	lighting.addLight(&sl2);
-	lighting.addLight(&pl);
-	lighting.addLight(&pl2);
-
-	lighting.addObj(sukhoi);
-	lighting.addObj(tank);
-	lighting.addObj(floor);
-
-	shadowshader.addDirLight(&dl);
-	shadowshader.addSpotLight(&sl);
-	shadowshader.addSpotLight(&sl2);
-	shadowshader.addShadowMap(&shadowMap);
-	shadowshader.addShadowMap(&m1);
-	shadowshader.addShadowMap(&m2);
-	shadowshader.addObj(&sukhoi);
-	shadowshader.addObj(&tank);
-	shadowshader.addObj(&floor);
-
 	Scene scene;
 	scene.addWindow(window);
 	scene.addShader(&shadowshader);
-	scene.addShader(&cubeshader);
 	scene.addShader(&lighting);
+
+	scene.addLight(&dl);
+	scene.addLight(&sl);
+	scene.addLight(&sl2);
+	scene.addLight(&pl);
+	scene.addLight(&pl2);
+
+	scene.addObject(&sukhoi);
+	scene.addObject(&tank);
+	scene.addObject(&floor);
 
 	while (!glfwWindowShouldClose(window))
 	{

@@ -30,36 +30,37 @@ void Shadowshader::setup()
 }
 void Shadowshader::draw()
 {
-
-    unsigned int offset = 0;
-
-    for (unsigned int i = 0; i < dirLights.size(); i++)
+    for (unsigned int i = 0; i < shadowMaps.size(); i++)
     {
-        ShadowMap *map = shadowMaps[i];
-        DirLight *light = dirLights[i];
+        ILight *light = lights[i];
+        IShadowMap *map = shadowMaps[i];
+
         map->BindForWriting();
-        setMat4("lightSpaceMatrix", light->getMatrix());
+
+        switch(light->getType())
+        {
+            case DIRECTIONAL: { // For now there will only ever be one directional light
+                DirLight *dirlight = (DirLight*) light;
+                setMat4("lightSpaceMatrix", dirlight->getMatrix());
+                break;
+            }
+            case SPOTLIGHT: {
+                SpotLight *spotlight = (SpotLight*) light;
+                setMat4("lightSpaceMatrix", spotlight->getMatrix());
+                break;
+            }
+            case POINTLIGHT: {
+                PointLight *pointLight = (PointLight*) light;
+                setMat4("lightSpaceMatrix", glm::mat4(0.0f));
+                break;
+            }
+        }
         for (unsigned int j = 0; j < objs.size(); j++)
         {
             Obj *obj = objs[j];
             obj->draw(*this);
         }
-        offset++;
     }
-    
-    for (unsigned int i = 0; i < spotLights.size(); i++)
-    {
-        ShadowMap *map = shadowMaps[i + offset];
-        SpotLight *light = spotLights[i];
-        map->BindForWriting();
-        setMat4("lightSpaceMatrix", light->getMatrix());
-        for (unsigned int j = 0; j < objs.size(); j++)
-        {
-            Obj *obj = objs[j];
-            obj->draw(*this);
-        }
-    }
-    cleanup();
 }
 void Shadowshader::cleanup()
 {
@@ -67,24 +68,4 @@ void Shadowshader::cleanup()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, 1600, 1600);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void Shadowshader::addShadowMap(ShadowMap *shadowMap)
-{
-    shadowMaps.push_back(shadowMap);
-}
-
-void Shadowshader::addDirLight(DirLight *light)
-{
-    dirLights.push_back(light);
-}
-
-void Shadowshader::addSpotLight(SpotLight *light)
-{
-    spotLights.push_back(light);
-}
-
-void Shadowshader::addObj(Obj *obj)
-{
-    objs.push_back(obj);
 }

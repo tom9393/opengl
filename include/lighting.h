@@ -25,14 +25,14 @@ public:
     void setPointlight(unsigned int index, PointLight &light);
     void setDirlight(unsigned int index, DirLight &light);
 
-    void addShadowMap(ShadowMap &shadowMap);
-    void addObj(Obj &object);
+    void addShadowMap(IShadowMap *shadowMap);
+    void addObj(Obj *object);
     void addLight(ILight *light);
 
-private:
+protected:
     std::vector<ILight*> lights;
-    std::vector<ShadowMap> shadowMaps;
-    std::vector<Obj> objs;
+    std::vector<IShadowMap*> shadowMaps;
+    std::vector<Obj*> objs;
 };
 
 #endif
