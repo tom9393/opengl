@@ -4,7 +4,6 @@
 #include "light.h"
 #include "lighting.h"
 #include "obj.h"
-#include "shader.h"
 #include "shadowmap.h"
 #include <glm/glm.hpp>
 #include <glad/glad.h>

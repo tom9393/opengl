@@ -45,11 +45,30 @@ void Scene::addObject(Obj* object) {
 }
 
 void Scene::addLight(ILight* light) {
-    IShadowMap* map = new ShadowMap();
+
+    IMappedLight* l;
+
+    switch (light->getType()) {
+        case DIRECTIONAL: {
+            l = new MappedDirectional(*light, dirlights);
+            dirlights++;
+            break;
+        }
+        case SPOTLIGHT: {
+            l = new MappedSpotlight(*light, spotlights);
+            spotlights++;
+            break;
+        }
+        case POINTLIGHT: {
+            l = new MappedPointlight(*light, pointlights);
+            pointlights++;
+            break;
+        }
+    }
+
     for (unsigned int i = 0; i < shaders.size(); i++) {
         Lighting* shader = shaders[i];
-        shader->addLight(light);
-        shader->addShadowMap(map);
+        shader->addLight(l);
     }
 }
 

@@ -28,6 +28,10 @@ class Scene
     glm::mat4 view;
     glm::mat4 projection;
     glm::vec3 position;
+
+    unsigned int spotlights;
+    unsigned int pointlights;
+    unsigned int dirlights;
 };
 
 #endif

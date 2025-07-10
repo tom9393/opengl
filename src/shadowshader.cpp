@@ -30,31 +30,10 @@ void Shadowshader::setup()
 }
 void Shadowshader::draw()
 {
-    for (unsigned int i = 0; i < shadowMaps.size(); i++)
-    {
-        ILight *light = lights[i];
-        IShadowMap *map = shadowMaps[i];
 
-        map->BindForWriting();
-
-        switch(light->getType())
-        {
-            case DIRECTIONAL: { // For now there will only ever be one directional light
-                DirLight *dirlight = (DirLight*) light;
-                setMat4("lightSpaceMatrix", dirlight->getMatrix());
-                break;
-            }
-            case SPOTLIGHT: {
-                SpotLight *spotlight = (SpotLight*) light;
-                setMat4("lightSpaceMatrix", spotlight->getMatrix());
-                break;
-            }
-            case POINTLIGHT: {
-                PointLight *pointLight = (PointLight*) light;
-                setMat4("lightSpaceMatrix", glm::mat4(0.0f));
-                break;
-            }
-        }
+    for (unsigned int i = 0; i < lights.size(); i++) {
+        IMappedLight* light = lights[i];
+        light->setMatrix(*this);
         for (unsigned int j = 0; j < objs.size(); j++)
         {
             Obj *obj = objs[j];
@@ -64,7 +43,6 @@ void Shadowshader::draw()
 }
 void Shadowshader::cleanup()
 {
-    // Reset
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, 1600, 1600);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
