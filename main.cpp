@@ -3,10 +3,12 @@
 #include <GLFW/glfw3.h>
 #include <math.h>
 
+#include "include/model.h"
 #include "include/obj.h"
 #include "include/Window.h"
 #include "include/Input.h"
 #include "include/lighting.h"
+#include "include/path.h"
 #include "include/scene.h"
 #include "include/shadowshader.h"
 
@@ -16,6 +18,12 @@
 
 const unsigned int SCREEN_WIDTH = 1600;
 const unsigned int SCREEN_HEIGHT = 1600;
+
+int testfun(int n) {
+	std::cout << "The loop has been completed" << std::endl;
+	std::cout << n << std::endl;
+	return 0;
+};
 
 int main()
 {
@@ -78,6 +86,15 @@ int main()
 	glm::vec3 rot = glm::vec3(0.0f, glm::radians(1.0f), 0.0f);
 	sukhoi.setAngularVelocity(rot);
 
+	Path mypath(sukhoi.location);
+	mypath.setPath({
+		glm::vec3(0, 2, 0),
+		glm::vec3(5, 2, 5),
+		glm::vec3(-5, 2, 5),
+		glm::vec3(-5, 5, 10),
+		glm::vec3(5, 2, 5),
+	});
+
 	while (!glfwWindowShouldClose(window))
 	{
 		lightPos = glm::vec3(5.0f * sin(glfwGetTime()), -0.25f, 5.0f * cos(glfwGetTime()));
@@ -87,9 +104,11 @@ int main()
 		sl.setDirection(sl.getDirectionToTarget(sl.getMatrix()));
 		sl2.setDirection(sl2.getDirectionToTarget(sl2.getMatrix()));
 
-		glm::vec3 velocity = glm::vec3(sin(glfwGetTime()) / 100, 0.0f, 0.0f);
-		sukhoi.setVelocity(velocity);
-		sukhoi.update(1);
+		// glm::vec3 velocity = glm::vec3(sin(glfwGetTime()) / 100, 0.0f, 0.0f);
+		// sukhoi.setVelocity(velocity);
+		// sukhoi.update(1);
+		float dt = 0.1f;
+		mypath.update(dt, testfun);
 
 		scene.draw();
 	}

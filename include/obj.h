@@ -2,7 +2,6 @@
 #define OBJ
 
 #include "drawable.h"
-#include "model.h"
 #include "shader.h"
 #include <glm/fwd.hpp>
 
