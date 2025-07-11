@@ -1,6 +1,7 @@
 #ifndef DRAWABLE
 #define DRAWABLE
-#include "shader.h"
+
+class Shader;
 
 class IDrawable {
 

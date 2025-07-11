@@ -167,6 +167,11 @@ void Shader::Enable()
     glUseProgram(id);
 }
 
+void Shader::addDrawable(IDrawable *drawable)
+{
+    drawables.push_back(drawable);
+}
+
 
 GLint Shader::GetUniformLocation(const char* pUniformName)
 {

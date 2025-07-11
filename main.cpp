@@ -72,9 +72,11 @@ int main()
 	scene.addLight(&pl);
 	scene.addLight(&pl2);
 
-	scene.addObject(&sukhoi);
-	scene.addObject(&tank);
-	scene.addObject(&floor);
+	scene.addDrawable(&sukhoi);
+	scene.addDrawable(&tank);
+	scene.addDrawable(&floor);
+	glm::vec3 rot = glm::vec3(0.0f, glm::radians(1.0f), 0.0f);
+	sukhoi.setAngularVelocity(rot);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -84,6 +86,10 @@ int main()
 		sl2.setPosition(lightPos2);
 		sl.setDirection(sl.getDirectionToTarget(sl.getMatrix()));
 		sl2.setDirection(sl2.getDirectionToTarget(sl2.getMatrix()));
+
+		glm::vec3 velocity = glm::vec3(sin(glfwGetTime()) / 100, 0.0f, 0.0f);
+		sukhoi.setVelocity(velocity);
+		sukhoi.update(1);
 
 		scene.draw();
 	}

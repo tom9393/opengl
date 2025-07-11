@@ -2,6 +2,7 @@
 #define SCENE
 
 #include "lighting.h"
+#include "lightmanager.h"
 #include "shader.h"
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -12,26 +13,23 @@
 class Scene
 {
     public:
-    Scene();
+    Scene() : lightmanager(new Lightmanager) {}
 
     void addShader(Lighting *shader);
     void addWindow(GLFWwindow *window);
-    void addObject(Obj *object);
+    void addDrawable(IDrawable *drawable);
     void addLight(ILight *light);
     void draw();
     void predraw();
 
     private:
     std::vector<Lighting*> shaders;
+    Lightmanager* lightmanager;
     GLFWwindow *window;
 
     glm::mat4 view;
     glm::mat4 projection;
     glm::vec3 position;
-
-    unsigned int spotlights;
-    unsigned int pointlights;
-    unsigned int dirlights;
 };
 
 #endif

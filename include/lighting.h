@@ -2,15 +2,11 @@
 #define LIGHTING
 
 #include "ishader.h"
-#include "mappedlight.h"
-#include "obj.h"
-#include "shader.h"
+#include "lightmanager.h"
 #include "light.h"
-#include "shadowmap.h"
 #include <glm/glm.hpp>
-#include <vector>
 
-class Lighting : public IShader
+class Lighting : public ILightShader
 {
 public:
 
@@ -22,13 +18,9 @@ public:
     void draw();
     void cleanup();
 
-
-    void addObj(Obj *object);
-    void addLight(IMappedLight *mappedLight);
+    Lightmanager* lightmanager;
 
 protected:
-    std::vector<IMappedLight*> lights;
-    std::vector<Obj*> objs;
     void setLight(unsigned int index, ILight &light);
 private:
     void setSpotlight(unsigned int index, SpotLight &light);

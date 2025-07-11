@@ -30,16 +30,7 @@ void Shadowshader::setup()
 }
 void Shadowshader::draw()
 {
-
-    for (unsigned int i = 0; i < lights.size(); i++) {
-        IMappedLight* light = lights[i];
-        light->setMatrix(*this);
-        for (unsigned int j = 0; j < objs.size(); j++)
-        {
-            Obj *obj = objs[j];
-            obj->draw(*this);
-        }
-    }
+    lightmanager->writeShadowMap(*this);
 }
 void Shadowshader::cleanup()
 {

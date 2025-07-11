@@ -8,9 +8,10 @@
 #include "VAO.h"
 #include "VBO.h"
 #include "EBO.h"
+#include "drawable.h"
 #include "shader.h"
 
-class Cube
+class Cube : public IDrawable
 {
 public:
 

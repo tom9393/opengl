@@ -1,6 +1,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#include "drawable.h"
 #include <glad/glad.h>
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
@@ -11,6 +12,9 @@
 #include <sstream>
 #include <iostream>
 #include <list>
+#include <vector>
+
+class IDrawable;
 
 class Shader
 {
@@ -41,6 +45,8 @@ public:
     void setMat2(const std::string &name, const glm::mat2 &transform) const;
     void setMat3(const std::string &name, const glm::mat3 &transform) const;
     void setMat4(const std::string &name, const glm::mat4 &transform) const;
+    void addDrawable(IDrawable *drawable);
+    std::vector<IDrawable*> drawables;
 
 protected:
 

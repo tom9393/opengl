@@ -1,18 +1,27 @@
 #include "../include/obj.h"
 
-glm::vec3 Obj::getLocation()
+void Obj::setLocation(glm::vec3 &loc)
 {
-    return location;
+    location.setPosition(loc);
+}
+
+void Obj::rotate(glm::vec3 &rotation)
+{
+    location.rotate(rotation);
 }
 
 glm::mat4 Obj::getMatrix()
 {
-    glm::mat4 m = glm::mat4(1.0f);
-    return glm::translate(m, location);
+    return location.getMatrix();
 }
 
 void Obj::draw(Shader &shader)
 {
     shader.setMat4("model", getMatrix());
     drawable->draw(shader);
+}
+
+void Obj::update(float deltaTime) {
+    location.move(velocity * deltaTime);
+    location.rotate(angularVelocity * deltaTime);
 }

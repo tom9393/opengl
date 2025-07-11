@@ -3,7 +3,7 @@
 
 #include "light.h"
 
-class IShader : public Shader
+class ILightShader : public Shader
 {
 public:
     virtual void setLight(unsigned int index, ILight &light) = 0;

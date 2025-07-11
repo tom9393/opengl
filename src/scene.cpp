@@ -1,9 +1,6 @@
 #include "../include/scene.h"
 #include "../include/Input.h"
 
-Scene::Scene()
-{}
-
 void Scene::draw()
 {
     predraw();
@@ -30,6 +27,7 @@ void Scene::draw()
 
 void Scene::addShader(Lighting* shader)
 {
+    shader->lightmanager = this->lightmanager;
     shaders.push_back(shader);
 }
 void Scene::addWindow(GLFWwindow* win)
@@ -37,39 +35,15 @@ void Scene::addWindow(GLFWwindow* win)
     window = win;
 }
 
-void Scene::addObject(Obj* object) {
+void Scene::addDrawable(IDrawable* drawable) {
     for (unsigned int i = 0; i < shaders.size(); i++) {
         Lighting* shader = shaders[i];
-        shader->addObj(object);
+        shader->addDrawable(drawable);
     }
 }
 
 void Scene::addLight(ILight* light) {
-
-    IMappedLight* l;
-
-    switch (light->getType()) {
-        case DIRECTIONAL: {
-            l = new MappedDirectional(*light, dirlights);
-            dirlights++;
-            break;
-        }
-        case SPOTLIGHT: {
-            l = new MappedSpotlight(*light, spotlights);
-            spotlights++;
-            break;
-        }
-        case POINTLIGHT: {
-            l = new MappedPointlight(*light, pointlights);
-            pointlights++;
-            break;
-        }
-    }
-
-    for (unsigned int i = 0; i < shaders.size(); i++) {
-        Lighting* shader = shaders[i];
-        shader->addLight(l);
-    }
+    lightmanager->addLight(light);
 }
 
 void Scene::predraw()
