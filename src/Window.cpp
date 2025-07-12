@@ -1,41 +1,70 @@
 #include "../include/Window.h"
 
-void Window::initialize(unsigned int height, unsigned int width, const char* title)
-    {
-        this->height = height;
-        this->width = width;
-        this->title = title;
-
-	// Initialize GLFW
-	glfwInit();
-
-	// Tell GLFW what version of OpenGL we are using 
-	// In this case we are using OpenGL 3.3
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	// Tell GLFW we are using the CORE profile
-	// So that means we only have the modern functions
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
-	this->window = glfwCreateWindow(this->width, this->height, this->title, NULL, NULL);
-	// Error check if the window fails to create
-	if (window == NULL)
-	{
-		glfwTerminate();
-                return;
-	}
-	// Introduce the window into the current context
-	glfwMakeContextCurrent(this->window);
-
-	//Load GLAD so it configures OpenGL
-	gladLoadGL();
-	// Specify the viewport of OpenGL in the Window
-	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-	glViewport(0, 0, this->width, this->height);
-
-    }
+float lastX = 400;
+float lastY = 300;
+bool firstMouse = true;
+bool on = false;
 
 GLFWwindow* Window::getWindow() {
-    return this->window;
+return window_;
+}
+
+Camera* Window::getCamera()
+{
+return camera_;
+}
+
+void Window::updateDelta()
+{
+    float currentFrame = glfwGetTime();
+    deltatime = currentFrame - lastframe;
+    lastframe = currentFrame;
+	    Window::key_callback_(window_);
+}
+
+void Window::key_callback_(GLFWwindow* window)
+{
+    Window *windowManager = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    Camera *camera = windowManager->camera_;
+
+    Camera_Movement direction;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		direction = FORWARD;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		direction = BACKWARD;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		direction = LEFT;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		direction = RIGHT;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) 
+		direction = UP;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) 
+		direction = DOWN;
+	
+    camera->ProcessKeyboard(direction, windowManager->deltatime);
+}
+
+void Window::mouse_callback_(GLFWwindow* window, double xpos, double ypos)
+{
+    Window *windowManager = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    Camera* camera = windowManager->camera_;
+
+    float x = static_cast<float>(xpos);
+    float y = static_cast<float>(ypos);
+
+    if (firstMouse)
+    {
+        lastX = x;
+        lastY = y;
+        firstMouse = false;
+    }
+
+    float xoffset = x - lastX;
+    float yoffset = lastY - y; // reversed since y-coordinates go from bottom to top
+
+    lastX = x;
+    lastY = y;
+
+    camera->ProcessMouseMovement(xoffset, yoffset, true);
 }

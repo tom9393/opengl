@@ -6,7 +6,6 @@
 #include "include/model.h"
 #include "include/obj.h"
 #include "include/Window.h"
-#include "include/Input.h"
 #include "include/mainshader.h"
 #include "include/path.h"
 #include "include/scene.h"
@@ -28,20 +27,11 @@ int testfun(int n) {
 
 int main()
 {
-	Window windowMaker = Window();
-	windowMaker.initialize(SCREEN_HEIGHT, SCREEN_WIDTH, "Opengl");
-	GLFWwindow* window = windowMaker.getWindow();
-	if (window == NULL) {
+	Window window(SCREEN_HEIGHT, SCREEN_WIDTH, "Opengl");
+	if (window.getWindow() == NULL) {
 	    std::cout << "Could not create window" << std::endl;
 	    return -1;
 	}
-
-	// stbi_set_flip_vertically_on_load(true);
-
-	glEnable(GL_DEPTH_TEST);
-
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
 	Mainshader mainshader;
 	Shadowshader shadowshader;
@@ -84,7 +74,7 @@ int main()
 	mainshader.lightmanager = &lightmanager;
 	shadowshader.lightmanager = &lightmanager;
 
-	scene.addWindow(window);
+	scene.addWindow(&window);
 	scene.setRoot(&mainNode);
 
 	std::vector<ShaderNode*> nodes;
@@ -100,18 +90,21 @@ int main()
 	glm::vec3 rot = glm::vec3(0.0f, glm::radians(1.0f), 0.0f);
 	sukhoi.setAngularVelocity(rot);
 
+	std::vector<glm::vec3> thingeys;
+
+	for (unsigned int i = 0; i < 20; i++)
+	{
+		float x = i;
+		float y = i;
+		thingeys.push_back(glm::vec3(sin(i) * x, 2.0f, cos(i) * y));
+	}
+
 	Path mypath(sukhoi.location);
-	mypath.setPath({
-		glm::vec3(0, 2, 0),
-		glm::vec3(5, 2, 5),
-		glm::vec3(-5, 2, 5),
-		glm::vec3(-5, 5, 10),
-		glm::vec3(5, 2, 5),
-	});
+	mypath.setPath(thingeys);
 
 	scene.createBatches();
 
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(window.getWindow()))
 	{
 		lightPos = glm::vec3(5.0f * sin(glfwGetTime()), -0.25f, 5.0f * cos(glfwGetTime()));
 		lightPos2 = glm::vec3(0.0f, 3.0f, -1.0f * 1.0f * cos(glfwGetTime()));
@@ -120,13 +113,13 @@ int main()
 		sl.setDirection(sl.getDirectionToTarget(sl.getMatrix()));
 		sl2.setDirection(sl2.getDirectionToTarget(sl2.getMatrix()));
 
-		float dt = 0.1f;
+		float dt = 0.2f;
 		mypath.update(dt, testfun);
 
 		scene.draw();
 	}
 
-	glfwDestroyWindow(window);
+	glfwDestroyWindow(window.getWindow());
 	glfwTerminate();
 	return 0;
 }

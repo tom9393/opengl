@@ -1,5 +1,4 @@
 #include "../include/scene.h"
-#include "../include/Input.h"
 
 void Scene::draw()
 {
@@ -15,25 +14,26 @@ void Scene::draw()
         batch->shader->setVec3("viewPos", position);
         batch->render();
     }
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(window->getWindow());
     glfwPollEvents();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Scene::addWindow(GLFWwindow* win)
+void Scene::addWindow(Window* win)
 {
     window = win;
 }
 
 void Scene::predraw()
 {
-    InputHandler::process(window);
-    Camera camera = InputHandler::getCamera();
+    window->updateDelta();
 
-    view = camera.getViewMatrix();
+    Camera* camera = window->getCamera();
+
+    view = camera->getViewMatrix();
     projection = glm::perspective(glm::radians(60.0f), (float)1600 / (float)1600, 0.1f, 100.0f);
-    position = camera.Position;
+    position = camera->Position;
 }
 
 void Scene::setRoot(ShaderNode* root) {

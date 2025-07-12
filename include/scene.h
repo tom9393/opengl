@@ -1,6 +1,7 @@
 #ifndef SCENE
 #define SCENE
 
+#include "Window.h"
 #include "shadernode.h"
 #include <GLFW/glfw3.h>
 
@@ -8,7 +9,7 @@ class Scene
 {
     public:
     Scene() : batches(new std::vector<Batch*>) {};
-    void addWindow(GLFWwindow *window);
+    void addWindow(Window* window);
     void draw();
     void predraw();
     void setRoot(ShaderNode* root);
@@ -16,7 +17,7 @@ class Scene
 
     private:
     ShaderNode* root;
-    GLFWwindow* window;
+    Window* window;
     std::vector<Batch*>* batches;
 
     glm::mat4 view;
