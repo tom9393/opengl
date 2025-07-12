@@ -2,7 +2,7 @@
 #define CUBESHADER_H
 
 #include "cube.h"
-#include "lighting.h"
+#include "mainshader.h"
 #include "shader.h"
 #include <glad/glad.h>
 #include <glm/fwd.hpp>
@@ -16,7 +16,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
   
-class Cubeshader : public Lighting
+class Cubeshader : public Mainshader
 {
 public:
     Cubeshader();

@@ -1,12 +1,12 @@
-#include "../include/lighting.h"
+#include "../include/mainshader.h"
 #include <glm/glm.hpp>
 #include <string>
 
-Lighting::Lighting()
+Mainshader::Mainshader()
 {
 }
 
-bool Lighting::Init()
+bool Mainshader::Init()
 {
     if (!Shader::Init()) {
         return false;
@@ -27,7 +27,7 @@ bool Lighting::Init()
     return true;
 }
 
-void Lighting::setLight(unsigned int index, ILight &light)
+void Mainshader::setLight(unsigned int index, ILight &light)
 {
     switch (light.getType()) {
         case DIRECTIONAL: {
@@ -45,25 +45,23 @@ void Lighting::setLight(unsigned int index, ILight &light)
     }
 }
 
-void Lighting::setup()
+void Mainshader::setup()
 {
     lightmanager->readShadowMap(*this);
 }
 
-void Lighting::draw()
+void Mainshader::draw(std::vector<IDrawable*> &drawables)
 {
-    for (unsigned int i = 0; i < drawables.size(); i++)
-    {
-        IDrawable *drawable = drawables[i];
-        drawable->draw(*this);
+    for (unsigned int i = 0; i < drawables.size(); i++) {
+        drawables[i]->draw(*this);
     }
 }
 
-void Lighting::cleanup()
+void Mainshader::cleanup()
 {
 }
 
-void Lighting::setSpotlight(unsigned int index, SpotLight &light)
+void Mainshader::setSpotlight(unsigned int index, SpotLight &light)
 {
     std::string prefix = "spotLight[" + std::to_string(index) + "]";
 
@@ -78,7 +76,7 @@ void Lighting::setSpotlight(unsigned int index, SpotLight &light)
     glUniform1f(glGetUniformLocation(id, (prefix + ".quadratic").c_str()), light.getQuadratic());
 }
 
-void Lighting::setPointlight(unsigned int index, PointLight &light)
+void Mainshader::setPointlight(unsigned int index, PointLight &light)
 {
     std::string prefix = "pointLights[" + std::to_string(index) + "].";
 
@@ -94,7 +92,7 @@ void Lighting::setPointlight(unsigned int index, PointLight &light)
     glUniform1f(glGetUniformLocation(id, "material.shininess"), 32.0f);
 }
 
-void Lighting::setDirlight(unsigned int index, DirLight &light)
+void Mainshader::setDirlight(unsigned int index, DirLight &light)
 {
     glUniform3fv(GetUniformLocation("dirLight.direction"), 1, &light.getDirection()[0]); 
     glUniform3fv(GetUniformLocation("dirLight.ambient"), 1, &light.getAmbient()[0]); 

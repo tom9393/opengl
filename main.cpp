@@ -7,9 +7,10 @@
 #include "include/obj.h"
 #include "include/Window.h"
 #include "include/Input.h"
-#include "include/lighting.h"
+#include "include/mainshader.h"
 #include "include/path.h"
 #include "include/scene.h"
+#include "include/shadernode.h"
 #include "include/shadowshader.h"
 
 #include <glm/glm.hpp>
@@ -42,10 +43,10 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
-	Lighting lighting;
+	Mainshader mainshader;
 	Shadowshader shadowshader;
 
-	if (!lighting.Init() || !shadowshader.Init())
+	if (!mainshader.Init() || !shadowshader.Init())
 	{
 	    return 1;
 	};
@@ -70,19 +71,32 @@ int main()
 	glm::vec3 lightPos, lightPos2;
 
 	Scene scene;
+	Lightmanager lightmanager;
+	lightmanager.addLight(&dl);
+	lightmanager.addLight(&sl);
+	lightmanager.addLight(&sl2);
+	lightmanager.addLight(&pl);
+	lightmanager.addLight(&pl2);
+	ShaderNode mainNode(mainshader);
+	ShaderNode shadowNode(shadowshader);
+	mainNode.addBefore(&shadowNode);
+
+	mainshader.lightmanager = &lightmanager;
+	shadowshader.lightmanager = &lightmanager;
+
 	scene.addWindow(window);
-	scene.addShader(&shadowshader);
-	scene.addShader(&lighting);
+	scene.setRoot(&mainNode);
 
-	scene.addLight(&dl);
-	scene.addLight(&sl);
-	scene.addLight(&sl2);
-	scene.addLight(&pl);
-	scene.addLight(&pl2);
+	std::vector<ShaderNode*> nodes;
+	nodes.push_back(&mainNode);
+	nodes.push_back(&shadowNode);
 
-	scene.addDrawable(&sukhoi);
-	scene.addDrawable(&tank);
-	scene.addDrawable(&floor);
+	for (unsigned int i = 0; i < nodes.size(); i++) {
+		nodes[i]->addDrawable(&sukhoi);
+		nodes[i]->addDrawable(&tank);
+		nodes[i]->addDrawable(&floor);
+	}
+
 	glm::vec3 rot = glm::vec3(0.0f, glm::radians(1.0f), 0.0f);
 	sukhoi.setAngularVelocity(rot);
 
@@ -95,6 +109,8 @@ int main()
 		glm::vec3(5, 2, 5),
 	});
 
+	scene.createBatches();
+
 	while (!glfwWindowShouldClose(window))
 	{
 		lightPos = glm::vec3(5.0f * sin(glfwGetTime()), -0.25f, 5.0f * cos(glfwGetTime()));
@@ -104,9 +120,6 @@ int main()
 		sl.setDirection(sl.getDirectionToTarget(sl.getMatrix()));
 		sl2.setDirection(sl2.getDirectionToTarget(sl2.getMatrix()));
 
-		// glm::vec3 velocity = glm::vec3(sin(glfwGetTime()) / 100, 0.0f, 0.0f);
-		// sukhoi.setVelocity(velocity);
-		// sukhoi.update(1);
 		float dt = 0.1f;
 		mypath.update(dt, testfun);
 

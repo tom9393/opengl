@@ -1,15 +1,12 @@
 #ifndef SHADOWSHADER
 #define SHADOWSHADER
 
-#include "light.h"
-#include "lighting.h"
-#include "obj.h"
-#include "shadowmap.h"
+#include "drawable.h"
+#include "mainshader.h"
 #include <glm/glm.hpp>
 #include <glad/glad.h>
-#include <vector>
 
-class Shadowshader : public Lighting
+class Shadowshader : public Mainshader
 {
 public:
 
@@ -17,7 +14,7 @@ public:
     virtual bool Init();
 
     void setup();
-    void draw();
+    void draw(std::vector<IDrawable*> &drawables);
     void cleanup();
 };
 

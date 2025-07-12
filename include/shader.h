@@ -32,7 +32,7 @@ public:
 
     // before run
     virtual void setup();
-    virtual void draw();
+    virtual void draw(std::vector<IDrawable*> &drawables);
     virtual void cleanup();
 
     // utility uniform functions
@@ -45,8 +45,6 @@ public:
     void setMat2(const std::string &name, const glm::mat2 &transform) const;
     void setMat3(const std::string &name, const glm::mat3 &transform) const;
     void setMat4(const std::string &name, const glm::mat4 &transform) const;
-    void addDrawable(IDrawable *drawable);
-    std::vector<IDrawable*> drawables;
 
 protected:
 

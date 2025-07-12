@@ -7,7 +7,7 @@ Shader::Shader()
 
 void Shader::setup()
 {}
-void Shader::draw()
+void Shader::draw(std::vector<IDrawable*> &drawables)
 {}
 void Shader::cleanup()
 {}
@@ -166,12 +166,6 @@ void Shader::Enable()
 {
     glUseProgram(id);
 }
-
-void Shader::addDrawable(IDrawable *drawable)
-{
-    drawables.push_back(drawable);
-}
-
 
 GLint Shader::GetUniformLocation(const char* pUniformName)
 {

@@ -28,9 +28,9 @@ bool Shadowshader::Init()
 void Shadowshader::setup()
 {
 }
-void Shadowshader::draw()
+void Shadowshader::draw(std::vector<IDrawable*> &drawables)
 {
-    lightmanager->writeShadowMap(*this);
+    lightmanager->writeShadowMap(*this, drawables);
 }
 void Shadowshader::cleanup()
 {

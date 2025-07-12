@@ -1,21 +1,22 @@
 #ifndef LIGHTING
 #define LIGHTING
 
+#include "drawable.h"
 #include "ishader.h"
 #include "lightmanager.h"
 #include "light.h"
 #include <glm/glm.hpp>
 
-class Lighting : public ILightShader
+class Mainshader : public ILightShader
 {
 public:
 
-    Lighting();
+    Mainshader();
 
     virtual bool Init();
 
     void setup();
-    void draw();
+    void draw(std::vector<IDrawable*> &drawables);
     void cleanup();
 
     Lightmanager* lightmanager;

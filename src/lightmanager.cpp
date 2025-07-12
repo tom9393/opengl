@@ -25,7 +25,8 @@ void Lightmanager::addLight(ILight *light) {
     lights.push_back(l);
 }
 
-void Lightmanager::readShadowMap(ILightShader &shader) {
+void Lightmanager::readShadowMap(ILightShader &shader)
+{
 
     for (unsigned int i = 0; i < lights.size() && map < 32; i++) {
         IMappedLight* light = lights[i];
@@ -34,15 +35,14 @@ void Lightmanager::readShadowMap(ILightShader &shader) {
     }
 }
 
-void Lightmanager::writeShadowMap(ILightShader &shader) {
-
+void Lightmanager::writeShadowMap(ILightShader &shader, std::vector<IDrawable*> &drawables)
+{
     for (unsigned int i = 0; i < lights.size(); i++) {
         IMappedLight* light = lights[i];
         light->writeShadowMap(shader);
-        for (unsigned int j = 0; j < shader.drawables.size(); j++)
+        for (unsigned int j = 0; j < drawables.size(); j++)
         {
-            IDrawable *drawable = shader.drawables[j];
-            drawable->draw(shader);
+            drawables[j]->draw(shader);
         }
     }
 }

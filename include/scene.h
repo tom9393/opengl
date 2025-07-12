@@ -1,31 +1,23 @@
 #ifndef SCENE
 #define SCENE
 
-#include "lighting.h"
-#include "lightmanager.h"
-#include "shader.h"
+#include "shadernode.h"
 #include <GLFW/glfw3.h>
-#include <vector>
-#include "../include/obj.h"
-#include "../include/light.h"
-#include "shadowmap.h"
 
 class Scene
 {
     public:
-    Scene() : lightmanager(new Lightmanager) {}
-
-    void addShader(Lighting *shader);
+    Scene() : batches(new std::vector<Batch*>) {};
     void addWindow(GLFWwindow *window);
-    void addDrawable(IDrawable *drawable);
-    void addLight(ILight *light);
     void draw();
     void predraw();
+    void setRoot(ShaderNode* root);
+    void createBatches();
 
     private:
-    std::vector<Lighting*> shaders;
-    Lightmanager* lightmanager;
-    GLFWwindow *window;
+    ShaderNode* root;
+    GLFWwindow* window;
+    std::vector<Batch*>* batches;
 
     glm::mat4 view;
     glm::mat4 projection;
