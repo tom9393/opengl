@@ -13,6 +13,7 @@ public:
     void addBefore(ShaderNode* node);
     void addAfter(ShaderNode* node);
     void addDrawable(IDrawable* drawable);
+    void addDrawable(std::vector<IDrawable*> *drawables);
     void run(std::vector<Batch*> &batches);
 
 private:

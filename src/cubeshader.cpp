@@ -26,20 +26,16 @@ bool Cubeshader::Init()
 }
 
 void Cubeshader::setup()
-{}
-void Cubeshader::draw()
 {
-    for (unsigned int i = 0; i < cubes.size(); i++)
-    {
-        Cube *cube = cubes[i];
-        cube->setRotationTarget(glm::vec3(0.0f));
-        cube->draw(*this);
+    setView();
+}
+void Cubeshader::draw(std::vector<IDrawable*> &drawables)
+{
+    for (unsigned int i = 0; i < drawables.size(); i++) {
+        drawables[i]->draw(*this);
     }
 }
 void Cubeshader::cleanup()
-{}
-
-void Cubeshader::addCube(Cube* cube)
 {
-    cubes.push_back(cube);
 }
+

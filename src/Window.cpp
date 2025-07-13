@@ -14,6 +14,21 @@ Camera* Window::getCamera()
 return camera_;
 }
 
+void Window::predraw()
+{
+    glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void Window::postdraw()
+{
+    glfwSwapBuffers(window_);
+    glfwPollEvents();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    updateDelta();
+}
+
 void Window::updateDelta()
 {
     float currentFrame = glfwGetTime();

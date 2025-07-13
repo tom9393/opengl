@@ -7,7 +7,7 @@
 #include "light.h"
 #include <glm/glm.hpp>
 
-class Mainshader : public ILightShader
+class Mainshader : public ISetLight
 {
 public:
 

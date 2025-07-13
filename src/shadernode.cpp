@@ -15,6 +15,13 @@ void ShaderNode::addDrawable(IDrawable* drawable)
     drawables.push_back(drawable);
 }
 
+void ShaderNode::addDrawable(std::vector<IDrawable*> *drawables)
+{
+    for (unsigned int i = 0; i < drawables->size(); i++) {
+        addDrawable(drawables->at(i));
+    }
+}
+
 void ShaderNode::run(std::vector<Batch*> &batches)
 {
     if (before) before->run(batches);

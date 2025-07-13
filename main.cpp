@@ -1,8 +1,11 @@
+#include <glm/ext/matrix_clip_space.hpp>
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
 
+#include "include/cube.h"
+#include "include/cubeshader.h"
 #include "include/model.h"
 #include "include/obj.h"
 #include "include/Window.h"
@@ -35,88 +38,90 @@ int main()
 
 	Mainshader mainshader;
 	Shadowshader shadowshader;
+	Cubeshader cubeshader;
 
-	if (!mainshader.Init() || !shadowshader.Init())
+	if (!mainshader.Init() || !shadowshader.Init() || !cubeshader.Init())
 	{
 	    return 1;
 	};
 
-	glm::vec3 asdf = glm::vec3(0.0f, -500.0f, 0.0f);
-
-	PointLight pl, pl2;
-	pl.setPosition(asdf);
-	pl2.setPosition(asdf);
+	stbi_set_flip_vertically_on_load(true);
 
 	DirLight dl;
+	PointLight pl, pl2;
 	SpotLight sl, sl2;
 
 	Model sukhoi_m("/home/tom/Coding/c++/opengl/assets/sukhoi.obj");
 	Model tank_m("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj");
 	Model floor_m("/home/tom/Coding/c++/opengl/assets/floor.obj");
-
 	Obj sukhoi(sukhoi_m, glm::vec3(0.0f, 2.0f, 0.0f));
 	Obj tank(tank_m, glm::vec3(0.0f));
 	Obj floor(floor_m, glm::vec3(0.0f, -1.55f, 0.0f));
+	Cube cube1, cube2;
+	cube1.setLight(&sl);
+	cube2.setLight(&sl2);
 
-	glm::vec3 lightPos, lightPos2;
+	std::vector<IDrawable*> objs;
+	objs.push_back(&sukhoi);
+	objs.push_back(&tank);
+	objs.push_back(&floor);
+
+	std::vector<ILight*> lights;
+	lights.push_back(&dl);
+	lights.push_back(&sl);
+	lights.push_back(&sl2);
+	lights.push_back(&pl);
+	lights.push_back(&pl2);
+
+	mainshader.setView((IView*)window.getCamera());
+	shadowshader.setView((IView*)window.getCamera());
+	cubeshader.setView((IView*)window.getCamera());
 
 	Scene scene;
 	Lightmanager lightmanager;
-	lightmanager.addLight(&dl);
-	lightmanager.addLight(&sl);
-	lightmanager.addLight(&sl2);
-	lightmanager.addLight(&pl);
-	lightmanager.addLight(&pl2);
+	lightmanager.addLight(&lights);
 	ShaderNode mainNode(mainshader);
 	ShaderNode shadowNode(shadowshader);
+	ShaderNode cubeNode(cubeshader);
+	mainNode.addAfter(&cubeNode);
 	mainNode.addBefore(&shadowNode);
 
 	mainshader.lightmanager = &lightmanager;
 	shadowshader.lightmanager = &lightmanager;
 
-	scene.addWindow(&window);
 	scene.setRoot(&mainNode);
 
-	std::vector<ShaderNode*> nodes;
-	nodes.push_back(&mainNode);
-	nodes.push_back(&shadowNode);
-
-	for (unsigned int i = 0; i < nodes.size(); i++) {
-		nodes[i]->addDrawable(&sukhoi);
-		nodes[i]->addDrawable(&tank);
-		nodes[i]->addDrawable(&floor);
-	}
-
-	glm::vec3 rot = glm::vec3(0.0f, glm::radians(1.0f), 0.0f);
-	sukhoi.setAngularVelocity(rot);
-
-	std::vector<glm::vec3> thingeys;
-
-	for (unsigned int i = 0; i < 20; i++)
-	{
-		float x = i;
-		float y = i;
-		thingeys.push_back(glm::vec3(sin(i) * x, 2.0f, cos(i) * y));
-	}
-
-	Path mypath(sukhoi.location);
-	mypath.setPath(thingeys);
+	shadowNode.addDrawable(&objs);
+	mainNode.addDrawable(&objs);
+	cubeNode.addDrawable(&cube1);
+	cubeNode.addDrawable(&cube2);
 
 	scene.createBatches();
 
+	std::vector<glm::vec3> thingeys;
+	for (unsigned int i = 0; i < 20; i++)
+	{
+		thingeys.push_back(glm::vec3(sin(i) * i, 2.0f, cos(i) * i));
+	}
+
+	Path mypath(sukhoi.getTransform());
+	mypath.setPath(thingeys);
+
+
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
-		lightPos = glm::vec3(5.0f * sin(glfwGetTime()), -0.25f, 5.0f * cos(glfwGetTime()));
-		lightPos2 = glm::vec3(0.0f, 3.0f, -1.0f * 1.0f * cos(glfwGetTime()));
-		sl.setPosition(lightPos);
-		sl2.setPosition(lightPos2);
-		sl.setDirection(sl.getDirectionToTarget(sl.getMatrix()));
-		sl2.setDirection(sl2.getDirectionToTarget(sl2.getMatrix()));
+		window.predraw();
+		float x = sin(glfwGetTime()) * 5.0f;
+		float y = cos(glfwGetTime()) * 5.0f;
+		glm::vec3 pos1 = glm::vec3(x * -1.0f, -0.25f, y);
+		glm::vec3 pos2 = glm::vec3(x, 3.0f, y);
+		cube1.setLocation(&pos1);
+		cube2.setLocation(&pos2);
 
-		float dt = 0.2f;
-		mypath.update(dt, testfun);
+		mypath.update(0.2f, testfun);
 
 		scene.draw();
+		window.postdraw();
 	}
 
 	glfwDestroyWindow(window.getWindow());

@@ -39,6 +39,14 @@ glm::mat4 Camera::getViewMatrix() {
     return glm::lookAt(Position, Position + Front, Up);
 }
 
+glm::mat4 Camera::getProjection() {
+    return projection;
+}
+
+glm::vec3 Camera::getPosition() {
+    return Position;
+}
+
 void Camera::ProcessMouseScroll(float yoffset) {};
 
 void Camera::updateCameraVectors() {

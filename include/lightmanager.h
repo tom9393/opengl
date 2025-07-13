@@ -2,6 +2,7 @@
 #define LIGHTMANAGER
 
 #include "drawable.h"
+#include "ishader.h"
 #include "light.h"
 #include "mappedlight.h"
 #include <vector>
@@ -12,8 +13,10 @@ class Lightmanager
     Lightmanager();
 
     void addLight(ILight *light);
-    void readShadowMap(ILightShader &shader);
-    void writeShadowMap(ILightShader &shader, std::vector<IDrawable*> &drawables);
+    void addLight(std::vector<ILight*> *light);
+    void readShadowMap(ISetLight &shader);
+    void writeShadowMap(ISetLight &shader, std::vector<IDrawable*> &drawables);
+    void update();
 
     private:
     std::vector<IMappedLight*> lights;

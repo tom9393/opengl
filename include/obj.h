@@ -68,6 +68,7 @@ public:
     void rotate(glm::vec3 &target);
     
     glm::mat4 getMatrix();
+    Transform* getTransform();
     void draw(Shader &shader);
     void update(float deltaTime);
     void setVelocity(const glm::vec3& v) { velocity = v; }

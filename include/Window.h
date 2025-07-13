@@ -48,9 +48,8 @@ public:
     };
     GLFWwindow* getWindow();
     Camera* getCamera();
-    void updateDelta();
-    static void key_callback_(GLFWwindow* window_);
-    static void mouse_callback_(GLFWwindow* window_, double xpos, double ypos);
+    void predraw();
+    void postdraw();
 
 private:
     unsigned int height;
@@ -60,6 +59,9 @@ private:
     Camera* camera_;
     float lastframe;
     float deltatime;
+    static void key_callback_(GLFWwindow* window_);
+    static void mouse_callback_(GLFWwindow* window_, double xpos, double ypos);
+    void updateDelta();
 };
 
 #endif

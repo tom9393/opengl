@@ -9,6 +9,7 @@
 #include "VBO.h"
 #include "EBO.h"
 #include "drawable.h"
+#include "light.h"
 #include "shader.h"
 
 class Cube : public IDrawable
@@ -23,6 +24,7 @@ public:
     glm::mat4 getModel();
     void setLocation(glm::vec3 *loc);
     void setRotationTarget(glm::vec3 target);
+    void setLight(SpotLight* light);
     void draw(Shader &shader);
 
     float vertices[288] = {
@@ -81,6 +83,7 @@ public:
     VAO vao;
     VBO vbo = VBO(vertices, sizeof(vertices));
     EBO ebo = EBO(indices, sizeof(indices));
+    SpotLight* associatedLight;
 
     glm::vec3 *location;
     glm::mat4 model;

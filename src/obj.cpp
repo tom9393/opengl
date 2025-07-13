@@ -15,6 +15,11 @@ glm::mat4 Obj::getMatrix()
     return location.getMatrix();
 }
 
+Transform* Obj::getTransform()
+{
+    return &location;
+}
+
 void Obj::draw(Shader &shader)
 {
     shader.setMat4("model", getMatrix());

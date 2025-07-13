@@ -12,7 +12,7 @@
 
 class Path {
 public:
-    Path(Transform& transform, float moveSpeed = 1.0f, float turnSpeed = 1.0f) : transform(transform), speed(moveSpeed), rotationSpeed(turnSpeed), currentTarget(0), arrivalThreshold(0.1f), loopCount(0) {}
+    Path(Transform *transform, float moveSpeed = 1.0f, float turnSpeed = 1.0f) : transform(transform), speed(moveSpeed), rotationSpeed(turnSpeed), currentTarget(0), arrivalThreshold(0.1f), loopCount(0) {}
 
     void setPath(const std::vector<glm::vec3>& points) {
         waypoints = points;
@@ -24,7 +24,7 @@ public:
         if (waypoints.empty()) return;
 
         glm::vec3 target = waypoints[currentTarget];
-        glm::vec3 direction = target - transform.position;
+        glm::vec3 direction = target - transform->position;
         float distance = glm::length(direction);
 
         // Check if we've arrived at the current waypoint
@@ -42,7 +42,7 @@ public:
         glm::vec3 dirNorm = glm::normalize(direction);
 
         // Move forward
-        transform.move(dirNorm * speed * deltaTime);
+        transform->move(dirNorm * speed * deltaTime);
 
         // Compute full Euler angles: yaw (Y), pitch (X)
         float yaw = atan2(dirNorm.x, dirNorm.z);
@@ -50,9 +50,9 @@ public:
         float roll = 0.0f; // flat ground; could be extended to lean into curves if needed
 
         // Smooth interpolation
-        transform.rotation.y = interpolateAngle(transform.rotation.y, yaw, rotationSpeed * deltaTime);
-        transform.rotation.x = interpolateAngle(transform.rotation.x, pitch, rotationSpeed * deltaTime);
-        transform.rotation.z = interpolateAngle(transform.rotation.z, roll, rotationSpeed * deltaTime);
+        transform->rotation.y = interpolateAngle(transform->rotation.y, yaw, rotationSpeed * deltaTime);
+        transform->rotation.x = interpolateAngle(transform->rotation.x, pitch, rotationSpeed * deltaTime);
+        transform->rotation.z = interpolateAngle(transform->rotation.z, roll, rotationSpeed * deltaTime);
     }
 
     void setSpeed(float moveSpeed, float turnSpeed) {
@@ -65,7 +65,7 @@ public:
     }
 
 private:
-    Transform& transform;
+    Transform* transform;
     std::vector<glm::vec3> waypoints;
     size_t currentTarget;
     float speed;

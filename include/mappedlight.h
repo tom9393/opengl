@@ -8,8 +8,8 @@
 class IMappedLight {
 public:
     IMappedLight(ILight &light, int lightNumber) : light(&light), lightNumber(lightNumber), map(new ShadowMap()) {}
-    virtual void writeShadowMap(ILightShader &shader) = 0;
-    virtual void readShadowMap(ILightShader &shader, unsigned int map) = 0;
+    virtual void writeShadowMap(ISetLight &shader) = 0;
+    virtual void readShadowMap(ISetLight &shader, unsigned int map) = 0;
 protected:
     ILight* light;
     IShadowMap* map;
@@ -19,13 +19,13 @@ protected:
 class MappedDirectional : public IMappedLight {
 public:
     MappedDirectional(ILight &light, int lightNumber) : IMappedLight(light, lightNumber) {};
-    void writeShadowMap(ILightShader &shader) override {
+    void writeShadowMap(ISetLight &shader) override {
         map->BindForWriting();
         DirLight *dirlight = (DirLight*) light;
         shader.setMat4("lightSpaceMatrix", dirlight->getMatrix());
     }
 
-    void readShadowMap(ILightShader &shader, unsigned int textureUnit) override {
+    void readShadowMap(ISetLight &shader, unsigned int textureUnit) override {
         DirLight *dl = (DirLight*) light;
         shader.setLight(0, *dl);
         map->BindForReading(GL_TEXTURE0 + textureUnit);
@@ -37,13 +37,13 @@ public:
 class MappedSpotlight : public IMappedLight {
     public:
     MappedSpotlight(ILight &light, int lightNumber) : IMappedLight(light, lightNumber) {};
-    void writeShadowMap(ILightShader &shader) override {
+    void writeShadowMap(ISetLight &shader) override {
         map->BindForWriting();
         SpotLight *spotlight = (SpotLight*) light;
         shader.setMat4("lightSpaceMatrix", spotlight->getMatrix());
     }
 
-    void readShadowMap(ILightShader &shader, unsigned int textureUnit) override {
+    void readShadowMap(ISetLight &shader, unsigned int textureUnit) override {
         SpotLight *sl = (SpotLight*) light;
         shader.setLight(lightNumber, *sl);
         std::string prefix = "shadowMapSpot[" + std::to_string(lightNumber) + "]";
@@ -57,13 +57,13 @@ class MappedSpotlight : public IMappedLight {
 class MappedPointlight : public IMappedLight {
     public:
     MappedPointlight(ILight &light, int lightNumber) : IMappedLight(light, lightNumber) {};
-    void writeShadowMap(ILightShader &shader) override {
+    void writeShadowMap(ISetLight &shader) override {
         map->BindForWriting();
         PointLight *pointlight = (PointLight*) light;
         shader.setMat4("lightSpaceMatrix", glm::mat4(10.0f));
     }
 
-    void readShadowMap(ILightShader &shader, unsigned int textureUnit) override {
+    void readShadowMap(ISetLight &shader, unsigned int textureUnit) override {
         PointLight *pl = (PointLight*) light;
         shader.setLight(lightNumber, *pl);
     }

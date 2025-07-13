@@ -47,6 +47,7 @@ void Mainshader::setLight(unsigned int index, ILight &light)
 
 void Mainshader::setup()
 {
+    setView();
     lightmanager->readShadowMap(*this);
 }
 

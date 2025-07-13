@@ -28,6 +28,15 @@ void Cube::deactivate()
 void Cube::setLocation(glm::vec3 *loc)
 {
     location = loc;
+    if (associatedLight != nullptr) {
+        associatedLight->setPosition(*loc);
+        associatedLight->setDirection(associatedLight->getDirectionToTarget(associatedLight->getMatrix()));
+    }
+}
+
+void Cube::setLight(SpotLight* light)
+{
+    associatedLight = light;
 }
 
 void Cube::setRotationTarget(glm::vec3 target)
@@ -50,6 +59,7 @@ glm::mat4 Cube::getModel()
 
 void Cube::draw(Shader &shader)
 {
+    setRotationTarget(glm::vec3(0.0f));
     shader.setMat4("model", getModel());
 
     activate();

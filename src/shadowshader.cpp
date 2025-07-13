@@ -27,6 +27,7 @@ bool Shadowshader::Init()
 
 void Shadowshader::setup()
 {
+    setView();
 }
 void Shadowshader::draw(std::vector<IDrawable*> &drawables)
 {
