@@ -34,9 +34,8 @@ void Lightmanager::addLight(std::vector<ILight*> *lights)
 
 void Lightmanager::readShadowMap(ISetLight &shader)
 {
-
     for (unsigned int i = 0; i < lights.size() && map < 32; i++) {
-        IMappedLight* light = lights[i];
+        IMappedLight* light = lights[i]; // Parent node & children IDrawables -> use these to create batches
         light->readShadowMap(shader, map);
         map++;
     }
