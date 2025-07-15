@@ -7,22 +7,23 @@ void Lightmanager::addLight(ILight *light) {
 
     switch (light->getType()) {
         case DIRECTIONAL: {
-            l = new MappedDirectional(*light, dirlights);
+            l = new MappedDirectional(*light, dirlights, map);
             dirlights++;
             break;
         }
         case SPOTLIGHT: {
-            l = new MappedSpotlight(*light, spotlights);
+            l = new MappedSpotlight(*light, spotlights, map);
             spotlights++;
             break;
         }
         case POINTLIGHT: {
-            l = new MappedPointlight(*light, pointlights);
+            l = new MappedPointlight(*light, pointlights, map);
             pointlights++;
             break;
         }
     }
     lights.push_back(l);
+    map++; // Be careful not to exceed 32
 }
 
 void Lightmanager::addLight(std::vector<ILight*> *lights)
@@ -32,27 +33,30 @@ void Lightmanager::addLight(std::vector<ILight*> *lights)
     }
 }
 
-void Lightmanager::readShadowMap(ISetLight &shader)
+void Lightmanager::addDrawable(IDrawable* drawable)
 {
-    for (unsigned int i = 0; i < lights.size() && map < 32; i++) {
-        IMappedLight* light = lights[i]; // Parent node & children IDrawables -> use these to create batches
-        light->readShadowMap(shader, map);
-        map++;
+    drawables.push_back(drawable);
+}
+
+void Lightmanager::addDrawable(std::vector<IDrawable*> *drawables)
+{
+    for (unsigned int i = 0; i < drawables->size(); i++) {
+        addDrawable(drawables->at(i));
     }
 }
 
-void Lightmanager::writeShadowMap(ISetLight &shader, std::vector<IDrawable*> &drawables)
+void Lightmanager::populate()
 {
-    for (unsigned int i = 0; i < lights.size(); i++) {
-        IMappedLight* light = lights[i];
-        light->writeShadowMap(shader);
-        for (unsigned int j = 0; j < drawables.size(); j++)
+    for (unsigned int i = 0; i < drawables.size(); i++)
+    {
+        for (unsigned int j = 0; j < lights.size(); j++)
         {
-            drawables[j]->draw(shader);
+            lights[j]->addChild(drawables[i]);
         }
     }
 }
 
-void Lightmanager::update()
+std::vector<IDrawable*> Lightmanager::getLights()
 {
+    return lights;
 }

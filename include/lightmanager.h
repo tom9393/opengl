@@ -14,12 +14,14 @@ class Lightmanager
 
     void addLight(ILight *light);
     void addLight(std::vector<ILight*> *light);
-    void readShadowMap(ISetLight &shader);
-    void writeShadowMap(ISetLight &shader, std::vector<IDrawable*> &drawables);
-    void update();
+    void addDrawable(IDrawable *drawable);
+    void addDrawable(std::vector<IDrawable*> *drawables);
+    void populate();
+    std::vector<IDrawable*> getLights();
 
-    private:
-    std::vector<IMappedLight*> lights;
+private:
+    std::vector<IDrawable*> lights;
+    std::vector<IDrawable*> drawables;
     unsigned int spotlights = 0;
     unsigned int pointlights = 0;
     unsigned int dirlights = 0;

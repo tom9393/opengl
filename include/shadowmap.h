@@ -7,19 +7,29 @@
 class IShadowMap {
 
 public:
-    virtual void BindForWriting() const = 0;
     virtual void BindForReading(GLenum textureUnit) const = 0;
-    virtual GLuint getDepthMap() = 0;
+
+    GLuint getDepthMap()
+    {
+        return depthMap;
+    }
+
+    void BindForWriting() const {
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+    }
+
+    GLuint FBO;
+    GLuint depthMap;
+    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 };
 
 class ShadowMap : public IShadowMap {
 public:
-    GLuint depthMapFBO;
-    GLuint depthMap;
-    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
     ShadowMap() {
-        glGenFramebuffers(1, &depthMapFBO);
+        glGenFramebuffers(1, &FBO);
 
         glGenTextures(1, &depthMap);
         glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -31,34 +41,21 @@ public:
         float borderColor[] = {1.0, 1.0, 1.0, 1.0};
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void BindForWriting() const {
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-    }
-
     void BindForReading(GLenum textureUnit) const {
         glActiveTexture(textureUnit);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-    }
-
-    GLuint getDepthMap() {
-        return depthMap;
     }
 };
 
 class SpotLightShadowMap : public IShadowMap {
 public:
-    GLuint FBO;
-    GLuint depthMap;
-    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
     SpotLightShadowMap() {
         glGenFramebuffers(1, &FBO);
@@ -80,28 +77,17 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void BindForWriting() const {
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-    }
     void BindForReading(GLenum textureUnit) const {}
-    GLuint getDepthMap() {
-        return depthMap;
-    }
 };
 
 class PointLightShadowMap : public IShadowMap {
 public:
-    GLuint FBO;
-    GLuint depthCubemap;
-    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
     PointLightShadowMap() {
         glGenFramebuffers(1, &FBO);
 
-        glGenTextures(1, &depthCubemap);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+        glGenTextures(1, &depthMap);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, depthMap);
         for (unsigned int i = 0; i < 6; ++i) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         }
@@ -112,21 +98,13 @@ public:
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthMap, 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void BindForWriting() const {
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
-    }
     void BindForReading(GLenum textureUnit) const {}
-    GLuint getDepthMap() {
-        return depthCubemap;
-    }
 };
 
 #endif

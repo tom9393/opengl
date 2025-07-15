@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "drawable.h"
+#include "mappedlight.h"
 #include "shader.h"
 #include "drawable.h"
 #include "batch.h"

@@ -6,6 +6,7 @@
 
 #include "include/cube.h"
 #include "include/cubeshader.h"
+#include "include/lightmanager.h"
 #include "include/model.h"
 #include "include/obj.h"
 #include "include/Window.h"
@@ -80,25 +81,27 @@ int main()
 	Scene scene;
 	Lightmanager lightmanager;
 	lightmanager.addLight(&lights);
+	lightmanager.addDrawable(&objs);
+	lightmanager.populate();
 	ShaderNode mainNode(mainshader);
 	ShaderNode shadowNode(shadowshader);
 	ShaderNode cubeNode(cubeshader);
 	mainNode.addAfter(&cubeNode);
 	mainNode.addBefore(&shadowNode);
 
-	mainshader.lightmanager = &lightmanager;
-	shadowshader.lightmanager = &lightmanager;
-
 	scene.setRoot(&mainNode);
 
-	shadowNode.addDrawable(&objs);
-	mainNode.addDrawable(&objs);
+	std::vector<IDrawable*> aaaa = lightmanager.getLights();
+
+	shadowNode.addDrawable(&aaaa);
+	mainNode.addDrawable(&aaaa);
 	cubeNode.addDrawable(&cube1);
 	cubeNode.addDrawable(&cube2);
 
 	scene.createBatches();
 
 	std::vector<glm::vec3> thingeys;
+
 	for (unsigned int i = 0; i < 20; i++)
 	{
 		thingeys.push_back(glm::vec3(sin(i) * i, 2.0f, cos(i) * i));
@@ -106,7 +109,6 @@ int main()
 
 	Path mypath(sukhoi.getTransform());
 	mypath.setPath(thingeys);
-
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{

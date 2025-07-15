@@ -31,7 +31,6 @@ void Shadowshader::setup()
 }
 void Shadowshader::draw(std::vector<IDrawable*> &drawables)
 {
-    lightmanager->writeShadowMap(*this, drawables);
 }
 void Shadowshader::cleanup()
 {

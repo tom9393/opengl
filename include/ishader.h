@@ -20,10 +20,4 @@ private:
     IView* view;
 };
 
-class ISetLight : public ISetViewPosition
-{
-public:
-    virtual void setLight(unsigned int index, ILight &light) = 0;
-};
-
 #endif

@@ -28,3 +28,4 @@ void ShaderNode::run(std::vector<Batch*> &batches)
     batches.push_back(new Batch(0, &drawables, shader));
     if (after) after->run(batches);
 }
+
