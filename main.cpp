@@ -13,7 +13,6 @@
 #include "include/mainshader.h"
 #include "include/path.h"
 #include "include/scene.h"
-#include "include/shadernode.h"
 #include "include/shadowshader.h"
 
 #include <glm/glm.hpp>
@@ -78,27 +77,26 @@ int main()
 	shadowshader.setView((IView*)window.getCamera());
 	cubeshader.setView((IView*)window.getCamera());
 
-	Scene scene;
+	//Scene scene;
 	Lightmanager lightmanager;
 	lightmanager.addLight(&lights);
 	lightmanager.addDrawable(&objs);
-	lightmanager.populate();
-	ShaderNode mainNode(mainshader);
-	ShaderNode shadowNode(shadowshader);
-	ShaderNode cubeNode(cubeshader);
+	std::vector<Batch*> b = lightmanager.populate(shadowshader, mainshader);
+	b.push_back(new Batch(0, {&cube1, &cube2}, &cubeshader));
+
+	/*
 	mainNode.addAfter(&cubeNode);
 	mainNode.addBefore(&shadowNode);
 
 	scene.setRoot(&mainNode);
 
-	std::vector<IDrawable*> aaaa = lightmanager.getLights();
-
-	shadowNode.addDrawable(&aaaa);
-	mainNode.addDrawable(&aaaa);
+	shadowNode.addDrawable(&objs);
+	mainNode.addDrawable(&objs);
 	cubeNode.addDrawable(&cube1);
 	cubeNode.addDrawable(&cube2);
-
 	scene.createBatches();
+	*/
+
 
 	std::vector<glm::vec3> thingeys;
 
@@ -122,7 +120,14 @@ int main()
 
 		mypath.update(0.2f, testfun);
 
-		scene.draw();
+		std::cout << "Before render" << std::endl;
+		for (unsigned int i = 0; i < b.size(); i++)
+		{
+			std::cout << "Writing batch number " << i << std::endl;
+			b[i]->render();
+		}
+		std::cout << "After render" << std::endl;
+
 		window.postdraw();
 	}
 

@@ -39,8 +39,14 @@ public:
     // draws the model, and thus all its meshes
     void draw(Shader &shader) override
     {
+        std::cout << "Drawing model" << std::endl;
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
+    }
+
+    bool shouldDraw(Shader &shader) override
+    {
+        return true;
     }
     
 private:

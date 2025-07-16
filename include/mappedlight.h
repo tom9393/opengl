@@ -10,6 +10,10 @@ class IMappedLight : public IDrawable
 {
 public:
     IMappedLight(ILight &light, unsigned int lightNumber, unsigned int textureUnit) : light(&light), lightNumber(lightNumber), textureUnit(textureUnit), map(new ShadowMap()), shadowProgram(0) {}
+    bool shouldDraw(Shader &shader)
+    {
+        return true;
+    }
 protected:
     ILight* light;
     IShadowMap* map;
@@ -26,10 +30,12 @@ public:
     {
         if (shadowProgram == 0) shadowProgram = shader.GetProgram();
         if (shadowProgram == shader.GetProgram()) {
+            std::cout << "Writing in dirlight shader " << shader.GetProgram() << " light number " << lightNumber << std::endl;
             map->BindForWriting();
             DirLight *dirlight = (DirLight*) light;
             shader.setMat4("lightSpaceMatrix", dirlight->getMatrix());
         } else {
+            std::cout << "Reading in dirlight shader  " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit << std::endl;
             DirLight *dl = (DirLight*) light;
             // Index unused for now
             unsigned int idx = 0;
@@ -53,18 +59,21 @@ public:
     {
         if (shadowProgram == 0) shadowProgram = shader.GetProgram();
         if (shadowProgram == shader.GetProgram()) {
+            std::cout << "Writing in spotlight shader " << shader.GetProgram() << " light number " << lightNumber << std::endl;
             map->BindForWriting();
             SpotLight *spotlight = (SpotLight*) light;
             shader.setMat4("lightSpaceMatrix", spotlight->getMatrix());
         } else {
             SpotLight *sl = (SpotLight*) light;
             std::string prefix = "spotLight[" + std::to_string(lightNumber) + "]";
-            std::cout << prefix << std::endl;
+            std::cout << "Reading in spotlight shader  " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit << std::endl;
 
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".position").c_str()), 1, &sl->getPosition()[0]);
+            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".direction").c_str()), 1, &sl->getDirection()[0]);
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".ambient").c_str()), 1, &sl->getAmbient()[0]);
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".diffuse").c_str()), 1, &sl->getDiffuse()[0]);
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".specular").c_str()), 1, &sl->getSpecular()[0]);
+
             glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + ".constant").c_str()), sl->getConstant());
             glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + ".linear").c_str()), sl->getLinear());
             glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + ".quadratic").c_str()), sl->getQuadratic());
@@ -85,10 +94,12 @@ public:
     {
         if (shadowProgram == 0) shadowProgram = shader.GetProgram();
         if (shadowProgram == shader.GetProgram()) {
+            std::cout << "Writing in pointlight shader " << shader.GetProgram() << " light number " << lightNumber << std::endl;
             map->BindForWriting();
             PointLight *pointlight = (PointLight*) light;
             shader.setMat4("lightSpaceMatrix", glm::mat4(10.0f));
         } else {
+            std::cout << "Reading in pointlight shader  " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit << std::endl;
             PointLight *pl = (PointLight*) light;
             std::string prefix = "pointLights[" + std::to_string(lightNumber) + "].";
 

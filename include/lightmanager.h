@@ -6,6 +6,7 @@
 #include "light.h"
 #include "mappedlight.h"
 #include <vector>
+#include "tree.h"
 
 class Lightmanager
 {
@@ -16,8 +17,7 @@ class Lightmanager
     void addLight(std::vector<ILight*> *light);
     void addDrawable(IDrawable *drawable);
     void addDrawable(std::vector<IDrawable*> *drawables);
-    void populate();
-    std::vector<IDrawable*> getLights();
+    std::vector<Batch*> populate(Shader &shadow, Shader &light);
 
 private:
     std::vector<IDrawable*> lights;

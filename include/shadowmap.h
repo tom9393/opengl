@@ -7,14 +7,14 @@
 class IShadowMap {
 
 public:
-    virtual void BindForReading(GLenum textureUnit) const = 0;
+    virtual void BindForReading(GLenum textureUnit) = 0;
 
     GLuint getDepthMap()
     {
         return depthMap;
     }
 
-    void BindForWriting() const {
+    void BindForWriting() {
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -48,7 +48,7 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void BindForReading(GLenum textureUnit) const {
+    void BindForReading(GLenum textureUnit) {
         glActiveTexture(textureUnit);
         glBindTexture(GL_TEXTURE_2D, depthMap);
     }
@@ -77,7 +77,8 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void BindForReading(GLenum textureUnit) const {}
+    void BindForReading(GLenum textureUnit) {
+    }
 };
 
 class PointLightShadowMap : public IShadowMap {
@@ -104,7 +105,8 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void BindForReading(GLenum textureUnit) const {}
+    void BindForReading(GLenum textureUnit) {
+    }
 };
 
 #endif

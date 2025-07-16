@@ -26,6 +26,7 @@ public:
     void setRotationTarget(glm::vec3 target);
     void setLight(SpotLight* light);
     void draw(Shader &shader);
+    bool shouldDraw(Shader &shader);
 
     float vertices[288] = {
         // Positions        // Normals         // Texture Coords

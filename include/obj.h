@@ -70,6 +70,7 @@ public:
     glm::mat4 getMatrix();
     Transform* getTransform();
     void draw(Shader &shader);
+    bool shouldDraw(Shader &shader);
     void update(float deltaTime);
     void setVelocity(const glm::vec3& v) { velocity = v; }
     void setAngularVelocity(const glm::vec3& av) { angularVelocity = av; }

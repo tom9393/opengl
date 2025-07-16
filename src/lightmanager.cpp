@@ -45,18 +45,39 @@ void Lightmanager::addDrawable(std::vector<IDrawable*> *drawables)
     }
 }
 
-void Lightmanager::populate()
+std::vector<Batch*> Lightmanager::populate(Shader &shadow, Shader &light)
 {
-    for (unsigned int i = 0; i < drawables.size(); i++)
+    Tree<IDrawable*> *t = new Tree<IDrawable*>();
+    Tree<IDrawable*> *tmptree = t;
+    for (unsigned int i = 0; i < lights.size(); i++)
     {
-        for (unsigned int j = 0; j < lights.size(); j++)
+        if (i == 0)
         {
-            lights[j]->addChild(drawables[i]);
+            tmptree->addTop(lights);
+            tmptree->addTop(drawables);
         }
+        tmptree->addBottom(lights[i]);
+        tmptree->addBottom(drawables);
     }
+    tmptree = t->after;
+    std::vector<Batch*> batches;
+    std::vector<IDrawable*> tmp;
+    while (tmptree != nullptr)
+    {
+        tmp.insert(tmp.end(), tmptree->entries.begin(), tmptree->entries.end());
+        tmptree = tmptree->after;
+    }
+    Batch* lightbatch = new Batch(0, tmp, &light);
+    tmptree = t->before;
+    tmp.clear();
+    while (tmptree != nullptr)
+    {
+        tmp.insert(tmp.end(), tmptree->entries.begin(), tmptree->entries.end());
+        tmptree = tmptree->before;
+    }
+    Batch* shadowbatch = new Batch(0, tmp, &shadow);
+    batches.push_back(shadowbatch);
+    batches.push_back(lightbatch);
+    return batches;
 }
 
-std::vector<IDrawable*> Lightmanager::getLights()
-{
-    return lights;
-}

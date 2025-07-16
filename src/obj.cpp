@@ -26,6 +26,11 @@ void Obj::draw(Shader &shader)
     drawable->draw(shader);
 }
 
+bool Obj::shouldDraw(Shader &shader)
+{
+    return drawable->shouldDraw(shader);
+}
+
 void Obj::update(float deltaTime) {
     location.move(velocity * deltaTime);
     location.rotate(angularVelocity * deltaTime);

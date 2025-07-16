@@ -1,20 +1,23 @@
 #ifndef SCENE
 #define SCENE
 
-#include "shadernode.h"
+#include "tree.h"
 #include <GLFW/glfw3.h>
 
+/*
+template <typename T>
 class Scene
 {
     public:
-    Scene() : batches(new std::vector<Batch*>) {};
+    Scene() {};
     void draw();
-    void setRoot(ShaderNode* root);
+    void setRoot(Tree<T>* root);
     void createBatches();
 
     private:
-    ShaderNode* root;
+    Tree<T>* root;
     std::vector<Batch*>* batches;
 };
+*/
 
 #endif

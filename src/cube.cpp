@@ -59,10 +59,16 @@ glm::mat4 Cube::getModel()
 
 void Cube::draw(Shader &shader)
 {
+    std::cout << "Rendering a cube" << std::endl;
     setRotationTarget(glm::vec3(0.0f));
     shader.setMat4("model", getModel());
 
     activate();
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     deactivate();
+}
+
+bool Cube::shouldDraw(Shader &shader)
+{
+    return true;
 }
