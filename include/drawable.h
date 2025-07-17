@@ -1,6 +1,7 @@
 #ifndef DRAWABLE
 #define DRAWABLE
 
+#include <glm/fwd.hpp>
 #include <iostream>
 #include <vector>
 class Shader;

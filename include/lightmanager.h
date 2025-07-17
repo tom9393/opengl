@@ -13,8 +13,8 @@ class Lightmanager
     public:
     Lightmanager();
 
-    void addLight(ILight *light);
-    void addLight(std::vector<ILight*> *light);
+    void addLight(Light *light);
+    void addLight(std::vector<Light*> *light);
     void addDrawable(IDrawable *drawable);
     void addDrawable(std::vector<IDrawable*> *drawables);
     std::vector<Batch*> populate(Shader &shadow, Shader &light);

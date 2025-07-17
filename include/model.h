@@ -11,6 +11,7 @@
 
 #include "../include/mesh.h"
 #include "../include/shader.h"
+#include "../include/preprocessor.h"
 #include "drawable.h"
 #include "stb_image.h"
 
@@ -39,13 +40,13 @@ public:
     // draws the model, and thus all its meshes
     void draw(Shader &shader) override
     {
-        std::cout << "Drawing model" << std::endl;
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
 
     bool shouldDraw(Shader &shader) override
     {
+        Info("Writing model");
         return true;
     }
     

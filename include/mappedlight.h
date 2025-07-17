@@ -1,6 +1,8 @@
 #ifndef MAPPEDLIGHT
 #define MAPPEDLIGHT
 
+#include "../include/preprocessor.h"
+
 #include "drawable.h"
 #include "ishader.h"
 #include "light.h"
@@ -9,13 +11,13 @@
 class IMappedLight : public IDrawable
 {
 public:
-    IMappedLight(ILight &light, unsigned int lightNumber, unsigned int textureUnit) : light(&light), lightNumber(lightNumber), textureUnit(textureUnit), map(new ShadowMap()), shadowProgram(0) {}
+    IMappedLight(Light &light, unsigned int lightNumber, unsigned int textureUnit) : light(&light), lightNumber(lightNumber), textureUnit(textureUnit), map(new ShadowMap()), shadowProgram(0) {}
     bool shouldDraw(Shader &shader)
     {
         return true;
     }
 protected:
-    ILight* light;
+    Light* light;
     IShadowMap* map;
     unsigned int lightNumber;
     unsigned int textureUnit;
@@ -24,21 +26,22 @@ protected:
 
 class MappedDirectional : public IMappedLight {
 public:
-    MappedDirectional(ILight &light, unsigned int lightNumber, unsigned int textureUnit) : IMappedLight(light, lightNumber, textureUnit) {};
+    MappedDirectional(Light &light, unsigned int lightNumber, unsigned int textureUnit) : IMappedLight(light, lightNumber, textureUnit) {};
 
     void draw(Shader &shader) override
     {
         if (shadowProgram == 0) shadowProgram = shader.GetProgram();
         if (shadowProgram == shader.GetProgram()) {
-            std::cout << "Writing in dirlight shader " << shader.GetProgram() << " light number " << lightNumber << std::endl;
+            Info("Writing in dirlight shader " << shader.GetProgram() << " light number " << lightNumber);
             map->BindForWriting();
-            DirLight *dirlight = (DirLight*) light;
+            DirectionalLight *dirlight = (DirectionalLight*) light;
             shader.setMat4("lightSpaceMatrix", dirlight->getMatrix());
         } else {
-            std::cout << "Reading in dirlight shader  " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit << std::endl;
-            DirLight *dl = (DirLight*) light;
+            Info("Reading in dirlight shader " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit);
+            DirectionalLight *dl = (DirectionalLight*) light;
             // Index unused for now
             unsigned int idx = 0;
+            dl->setLight(&shader, idx);
 
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.direction"), 1, &dl->getDirection()[0]); 
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.ambient"), 1, &dl->getAmbient()[0]); 
@@ -46,27 +49,26 @@ public:
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.specular"), 1, &dl->getSpecular()[0]); 
             map->BindForReading(GL_TEXTURE0 + textureUnit);
             shader.setInt("shadowMap", textureUnit);
-            dl->setLight(&shader, "lightSpaceMatrix");
         }
     }
 };
 
 class MappedSpotlight : public IMappedLight {
 public:
-    MappedSpotlight(ILight &light, unsigned int lightNumber, unsigned int textureUnit) : IMappedLight(light, lightNumber, textureUnit) {};
+    MappedSpotlight(Light &light, unsigned int lightNumber, unsigned int textureUnit) : IMappedLight(light, lightNumber, textureUnit) {};
 
     void draw(Shader &shader) override
     {
         if (shadowProgram == 0) shadowProgram = shader.GetProgram();
         if (shadowProgram == shader.GetProgram()) {
-            std::cout << "Writing in spotlight shader " << shader.GetProgram() << " light number " << lightNumber << std::endl;
+            Info("Writing in spotlight shader " << shader.GetProgram() << " light number " << lightNumber);
             map->BindForWriting();
             SpotLight *spotlight = (SpotLight*) light;
             shader.setMat4("lightSpaceMatrix", spotlight->getMatrix());
         } else {
             SpotLight *sl = (SpotLight*) light;
             std::string prefix = "spotLight[" + std::to_string(lightNumber) + "]";
-            std::cout << "Reading in spotlight shader  " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit << std::endl;
+            Info("Reading in spotlight shader " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit);
 
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".position").c_str()), 1, &sl->getPosition()[0]);
             glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".direction").c_str()), 1, &sl->getDirection()[0]);
@@ -88,18 +90,18 @@ public:
 
 class MappedPointlight : public IMappedLight {
 public:
-    MappedPointlight(ILight &light, unsigned int lightNumber, unsigned int textureUnit) : IMappedLight(light, lightNumber, textureUnit) {};
+    MappedPointlight(Light &light, unsigned int lightNumber, unsigned int textureUnit) : IMappedLight(light, lightNumber, textureUnit) {};
 
     void draw(Shader &shader) override
     {
         if (shadowProgram == 0) shadowProgram = shader.GetProgram();
         if (shadowProgram == shader.GetProgram()) {
-            std::cout << "Writing in pointlight shader " << shader.GetProgram() << " light number " << lightNumber << std::endl;
+            Info("Writing in pointlight shader " << shader.GetProgram() << " light number " << lightNumber);
             map->BindForWriting();
             PointLight *pointlight = (PointLight*) light;
             shader.setMat4("lightSpaceMatrix", glm::mat4(10.0f));
         } else {
-            std::cout << "Reading in pointlight shader  " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit << std::endl;
+            Info("Reading in pointlight shader " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit);
             PointLight *pl = (PointLight*) light;
             std::string prefix = "pointLights[" + std::to_string(lightNumber) + "].";
 

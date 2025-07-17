@@ -2,21 +2,21 @@
 
 Lightmanager::Lightmanager() {}
 
-void Lightmanager::addLight(ILight *light) {
+void Lightmanager::addLight(Light *light) {
     IMappedLight* l;
 
     switch (light->getType()) {
-        case DIRECTIONAL: {
+        case LightType::Directional: {
             l = new MappedDirectional(*light, dirlights, map);
             dirlights++;
             break;
         }
-        case SPOTLIGHT: {
+        case LightType::Spot: {
             l = new MappedSpotlight(*light, spotlights, map);
             spotlights++;
             break;
         }
-        case POINTLIGHT: {
+        case LightType::Point: {
             l = new MappedPointlight(*light, pointlights, map);
             pointlights++;
             break;
@@ -26,7 +26,7 @@ void Lightmanager::addLight(ILight *light) {
     map++; // Be careful not to exceed 32
 }
 
-void Lightmanager::addLight(std::vector<ILight*> *lights)
+void Lightmanager::addLight(std::vector<Light*> *lights)
 {
     for (unsigned int i = 0; i < lights->size(); i++) {
         addLight(lights->at(i));

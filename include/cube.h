@@ -21,9 +21,7 @@ public:
     void init();
     void activate();
     void deactivate();
-    glm::mat4 getModel();
-    void setLocation(glm::vec3 *loc);
-    void setRotationTarget(glm::vec3 target);
+    void setLightLocation(glm::vec3 *loc);
     void setLight(SpotLight* light);
     void draw(Shader &shader);
     bool shouldDraw(Shader &shader);

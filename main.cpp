@@ -12,8 +12,8 @@
 #include "include/Window.h"
 #include "include/mainshader.h"
 #include "include/path.h"
-#include "include/scene.h"
 #include "include/shadowshader.h"
+#include "include/preprocessor.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -40,6 +40,10 @@ int main()
 	Shadowshader shadowshader;
 	Cubeshader cubeshader;
 
+	mainshader.setView((IView*)window.getCamera());
+	shadowshader.setView((IView*)window.getCamera());
+	cubeshader.setView((IView*)window.getCamera());
+
 	if (!mainshader.Init() || !shadowshader.Init() || !cubeshader.Init())
 	{
 	    return 1;
@@ -47,7 +51,7 @@ int main()
 
 	stbi_set_flip_vertically_on_load(true);
 
-	DirLight dl;
+	DirectionalLight dl;
 	PointLight pl, pl2;
 	SpotLight sl, sl2;
 
@@ -57,46 +61,31 @@ int main()
 	Obj sukhoi(sukhoi_m, glm::vec3(0.0f, 2.0f, 0.0f));
 	Obj tank(tank_m, glm::vec3(0.0f));
 	Obj floor(floor_m, glm::vec3(0.0f, -1.55f, 0.0f));
-	Cube cube1, cube2;
-	cube1.setLight(&sl);
-	cube2.setLight(&sl2);
+	Cube cube1_m;
+	Cube cube2_m;
+	Obj cube1(cube1_m, glm::vec3(0.0f));
+	Obj cube2(cube2_m, glm::vec3(0.0f, -1.55f, 0.0f));
 
 	std::vector<IDrawable*> objs;
 	objs.push_back(&sukhoi);
 	objs.push_back(&tank);
 	objs.push_back(&floor);
 
-	std::vector<ILight*> lights;
+	std::vector<Light*> lights;
 	lights.push_back(&dl);
 	lights.push_back(&sl);
 	lights.push_back(&sl2);
 	lights.push_back(&pl);
 	lights.push_back(&pl2);
 
-	mainshader.setView((IView*)window.getCamera());
-	shadowshader.setView((IView*)window.getCamera());
-	cubeshader.setView((IView*)window.getCamera());
+	cube1_m.setLight(&sl);
+	cube2_m.setLight(&sl2);
 
-	//Scene scene;
 	Lightmanager lightmanager;
 	lightmanager.addLight(&lights);
 	lightmanager.addDrawable(&objs);
 	std::vector<Batch*> b = lightmanager.populate(shadowshader, mainshader);
 	b.push_back(new Batch(0, {&cube1, &cube2}, &cubeshader));
-
-	/*
-	mainNode.addAfter(&cubeNode);
-	mainNode.addBefore(&shadowNode);
-
-	scene.setRoot(&mainNode);
-
-	shadowNode.addDrawable(&objs);
-	mainNode.addDrawable(&objs);
-	cubeNode.addDrawable(&cube1);
-	cubeNode.addDrawable(&cube2);
-	scene.createBatches();
-	*/
-
 
 	std::vector<glm::vec3> thingeys;
 
@@ -115,19 +104,23 @@ int main()
 		float y = cos(glfwGetTime()) * 5.0f;
 		glm::vec3 pos1 = glm::vec3(x * -1.0f, -0.25f, y);
 		glm::vec3 pos2 = glm::vec3(x, 3.0f, y);
-		cube1.setLocation(&pos1);
-		cube2.setLocation(&pos2);
+		cube1.setPosition(pos1);
+		cube2.setPosition(pos2);
+		cube1.rotateTowards(glm::vec3(0.0f));
+		cube2.rotateTowards(glm::vec3(0.0f));
+		cube1_m.setLightLocation(&pos1);
+		cube2_m.setLightLocation(&pos2);
 
 		mypath.update(0.2f, testfun);
 
-		std::cout << "Before render" << std::endl;
+		Info("Before render");
 		for (unsigned int i = 0; i < b.size(); i++)
 		{
-			std::cout << "Writing batch number " << i << std::endl;
+			Info("Writing batch number " << i);
 			b[i]->render();
 		}
-		std::cout << "After render" << std::endl;
 
+		Info("After rendering");
 		window.postdraw();
 	}
 
