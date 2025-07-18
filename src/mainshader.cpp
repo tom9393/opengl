@@ -31,10 +31,6 @@ void Mainshader::setup()
     setView();
 }
 
-void Mainshader::draw(std::vector<IDrawable*> &drawables)
-{
-}
-
 void Mainshader::cleanup()
 {
 }

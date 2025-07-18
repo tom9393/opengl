@@ -13,7 +13,8 @@ public:
     glm::vec3 velocity;
     glm::vec3 angularVelocity;
 
-    Transform(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, glm::vec3 velocity, glm::vec3 angularVelocity) : position(position), rotation(rotation), scale(scale), velocity(velocity), angularVelocity(angularVelocity) {}
+    Transform(glm::vec3 position, glm::vec3 rotation = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1.0f), glm::vec3 velocity = glm::vec3(0.0f), glm::vec3 angularVelocity = glm::vec3(0.0f)) : position(position), rotation(rotation), scale(scale), velocity(velocity), angularVelocity(angularVelocity) {}
+    Transform(Transform &transform) : position(transform.position), rotation(transform.rotation), scale(transform.scale), velocity(transform.velocity), angularVelocity(transform.angularVelocity) {}
 
     // Constructs transformation matrix: Translation * Rotation(ZYX) * Scale
     glm::mat4 getMatrix() const {
@@ -42,7 +43,7 @@ public:
     void rotate(const glm::vec3& delta) { rotation += delta; }
 
     // Arbitrary axis rotation around a point
-    glm::mat4 getRotatedMatrixAround(const glm::vec3& point, const glm::vec3& axis, float angleRad) const {
+    glm::mat4 getRotatedMatrixAround(const glm::vec3& point, const glm::vec3& axis, float angleRad) {
         glm::mat4 model = getMatrix();
         glm::mat4 translateToOrigin = glm::translate(glm::mat4(1.0f), -point);
         glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), angleRad, axis);
@@ -66,6 +67,26 @@ public:
         rotation = glm::vec3(pitch, yaw, 0.0f);
     }
 
+    glm::vec3 getDir(const glm::vec3 &target)
+    {
+        return glm::normalize(target - position);
+    }
+
+    glm::vec3 reverseDir(const glm::vec3 &target)
+    {
+        glm::mat4 mat = glm::lookAt(position, target, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::vec3 positionInversed = glm::vec3(glm::inverse(mat)[3]);
+        return positionInversed;
+    }
+
+    glm::vec3 getForwardDirection() const {
+        glm::mat4 rot = glm::mat4(1.0f);
+        rot = glm::rotate(rot, rotation.z, glm::vec3(0, 0, 1));
+        rot = glm::rotate(rot, rotation.y, glm::vec3(0, 1, 0));
+        rot = glm::rotate(rot, rotation.x, glm::vec3(1, 0, 0));
+        return glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0)));
+    }
+
     // --- Scale ---
     void setScale(const glm::vec3& s) { scale = s; }
     void scaleBy(const glm::vec3& factor) { scale *= factor; }
@@ -84,10 +105,26 @@ public:
         move(velocity + deltaTime);
         rotate(angularVelocity + deltaTime);
     }
-    Transform* getTransform() {
-        return this;
+
+    void updateRotation(float deltaTime) {
+        rotate(angularVelocity + deltaTime);
+    }
+
+    void updateMovement(float deltaTime) {
+        move(velocity + deltaTime);
+    }
+
+    void rotateX(float angleRad) {
+    rotation.x += angleRad;
+    }
+
+    void rotateY(float angleRad) {
+        rotation.y += angleRad;
+    }
+
+    void rotateZ(float angleRad) {
+        rotation.z += angleRad;
     }
 };
 
 #endif
-

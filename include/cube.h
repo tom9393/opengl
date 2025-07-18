@@ -11,18 +11,19 @@
 #include "drawable.h"
 #include "light.h"
 #include "shader.h"
+#include "transform.h"
 
-class Cube : public IDrawable
+class Cube : public IDrawable, public Transform
 {
 public:
 
-    Cube();
+    Cube(Transform &transform) : Transform(transform) {
+        init();
+    };
 
     void init();
     void activate();
     void deactivate();
-    void setLightLocation(glm::vec3 *loc);
-    void setLight(SpotLight* light);
     void draw(Shader &shader);
     bool shouldDraw(Shader &shader);
 
@@ -82,10 +83,6 @@ public:
     VAO vao;
     VBO vbo = VBO(vertices, sizeof(vertices));
     EBO ebo = EBO(indices, sizeof(indices));
-    SpotLight* associatedLight;
-
-    glm::vec3 *location;
-    glm::mat4 model;
 
 };
 

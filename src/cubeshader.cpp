@@ -29,12 +29,7 @@ void Cubeshader::setup()
 {
     setView();
 }
-void Cubeshader::draw(std::vector<IDrawable*> &drawables)
-{
-    for (unsigned int i = 0; i < drawables.size(); i++) {
-        drawables[i]->draw(*this);
-    }
-}
+
 void Cubeshader::cleanup()
 {
 }

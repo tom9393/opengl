@@ -29,9 +29,6 @@ void Shadowshader::setup()
 {
     setView();
 }
-void Shadowshader::draw(std::vector<IDrawable*> &drawables)
-{
-}
 void Shadowshader::cleanup()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

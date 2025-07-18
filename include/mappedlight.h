@@ -34,21 +34,11 @@ public:
         if (shadowProgram == shader.GetProgram()) {
             Info("Writing in dirlight shader " << shader.GetProgram() << " light number " << lightNumber);
             map->BindForWriting();
-            DirectionalLight *dirlight = (DirectionalLight*) light;
-            shader.setMat4("lightSpaceMatrix", dirlight->getMatrix());
+            light->prepareLight(shader);
         } else {
             Info("Reading in dirlight shader " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit);
-            DirectionalLight *dl = (DirectionalLight*) light;
-            // Index unused for now
-            unsigned int idx = 0;
-            dl->setLight(&shader, idx);
-
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.direction"), 1, &dl->getDirection()[0]); 
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.ambient"), 1, &dl->getAmbient()[0]); 
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.diffuse"), 1, &dl->getDiffuse()[0]); 
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.specular"), 1, &dl->getSpecular()[0]); 
             map->BindForReading(GL_TEXTURE0 + textureUnit);
-            shader.setInt("shadowMap", textureUnit);
+            light->setLight(shader, lightNumber, textureUnit);
         }
     }
 };
@@ -63,27 +53,11 @@ public:
         if (shadowProgram == shader.GetProgram()) {
             Info("Writing in spotlight shader " << shader.GetProgram() << " light number " << lightNumber);
             map->BindForWriting();
-            SpotLight *spotlight = (SpotLight*) light;
-            shader.setMat4("lightSpaceMatrix", spotlight->getMatrix());
+            light->prepareLight(shader);
         } else {
-            SpotLight *sl = (SpotLight*) light;
-            std::string prefix = "spotLight[" + std::to_string(lightNumber) + "]";
             Info("Reading in spotlight shader " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit);
-
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".position").c_str()), 1, &sl->getPosition()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".direction").c_str()), 1, &sl->getDirection()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".ambient").c_str()), 1, &sl->getAmbient()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".diffuse").c_str()), 1, &sl->getDiffuse()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".specular").c_str()), 1, &sl->getSpecular()[0]);
-
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + ".constant").c_str()), sl->getConstant());
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + ".linear").c_str()), sl->getLinear());
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + ".quadratic").c_str()), sl->getQuadratic());
-            std::string prefix2 = "shadowMapSpot[" + std::to_string(lightNumber) + "]";
-            std::string prefix3 = "spotLightSpaceMatrices[" + std::to_string(lightNumber) + "]";
             map->BindForReading(GL_TEXTURE0 + textureUnit);
-            shader.setInt(prefix2, textureUnit);
-            sl->setLight(&shader, prefix3);
+            light->setLight(shader, lightNumber, textureUnit);
         }
     }
 };
@@ -98,23 +72,12 @@ public:
         if (shadowProgram == shader.GetProgram()) {
             Info("Writing in pointlight shader " << shader.GetProgram() << " light number " << lightNumber);
             map->BindForWriting();
-            PointLight *pointlight = (PointLight*) light;
-            shader.setMat4("lightSpaceMatrix", glm::mat4(10.0f));
+            light->prepareLight(shader);
         } else {
             Info("Reading in pointlight shader " << shader.GetProgram() << " light number " << lightNumber << " texture number " << textureUnit);
-            PointLight *pl = (PointLight*) light;
-            std::string prefix = "pointLights[" + std::to_string(lightNumber) + "].";
-
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "position").c_str()), 1, &pl->getPosition()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "ambient").c_str()), 1, &pl->getAmbient()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "diffuse").c_str()), 1, &pl->getDiffuse()[0]);
-            glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "specular").c_str()), 1, &pl->getSpecular()[0]);
-
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + "constant").c_str()), pl->getConstant());
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + "linear").c_str()), pl->getLinear());
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), (prefix + "quadratic").c_str()), pl->getQuadratic());
-
-            glUniform1f(glGetUniformLocation(shader.GetProgram(), "material.shininess"), 32.0f);
+            // Point lights are not implemented yet, ignore them
+            map->BindForReading(GL_TEXTURE0 + textureUnit);
+            light->setLight(shader, lightNumber, textureUnit);
         }
     }
 };

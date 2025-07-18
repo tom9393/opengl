@@ -32,7 +32,6 @@ public:
 
     // before run
     virtual void setup();
-    virtual void draw(std::vector<IDrawable*> &drawables);
     virtual void cleanup();
 
     // utility uniform functions

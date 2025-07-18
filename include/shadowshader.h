@@ -14,7 +14,6 @@ public:
     virtual bool Init();
 
     void setup();
-    void draw(std::vector<IDrawable*> &drawables);
     void cleanup();
 };
 

@@ -14,6 +14,7 @@
 #include "../include/preprocessor.h"
 #include "drawable.h"
 #include "stb_image.h"
+#include "transform.h"
 
 #include <string>
 #include <fstream>
@@ -22,7 +23,7 @@
 #include <map>
 #include <vector>
 
-class Model : public IDrawable
+class Model : public IDrawable, public Transform
 {
 public:
     // model data 
@@ -32,7 +33,7 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma)
+    Model(std::string const &path, Transform &transform, bool gamma = false) : Transform(transform), gammaCorrection(gamma)
     {
         loadModel(path);
     }
@@ -40,6 +41,8 @@ public:
     // draws the model, and thus all its meshes
     void draw(Shader &shader) override
     {
+        Info("Drawing model");
+        shader.setMat4("model", getMatrix());
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }

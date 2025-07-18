@@ -7,8 +7,6 @@ Shader::Shader()
 
 void Shader::setup()
 {}
-void Shader::draw(std::vector<IDrawable*> &drawables)
-{}
 void Shader::cleanup()
 {}
 
