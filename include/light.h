@@ -5,6 +5,7 @@
 
 #include "shader.h"
 #include "transform.h"
+#include "transformable.h"
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -23,9 +24,10 @@ struct Attenuation {
     float quadratic = 0.032f;
 };
 
-class Light : public Transform {
+class Light : public Transformable {
 public:
-    Light(Transform &transform) : Transform(transform) {};
+    Light(Transformable &transformable) : Transformable(transformable) {};
+    Light(glm::vec3 location) : Transformable(location) {};
     virtual void setLight(Shader &shader, const unsigned int idx, const unsigned int textureUnit) = 0;
     virtual void prepareLight(Shader &shader) = 0;
     virtual LightType getType() const = 0;
@@ -37,13 +39,18 @@ protected:
 
 class DirectionalLight : public Light {
 public:
-    DirectionalLight(Transform &transform) : Light(transform), projection(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 25.0f)) {
-        rotateTowards(glm::vec3(0.0f));
+    DirectionalLight(Transformable &transformable) : Light(transformable), projection(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 25.0f)) {
+        Transform::rotate(*this, glm::vec3(0.0f));
+    };
+
+    DirectionalLight(glm::vec3 location) : Light(location), projection(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 25.0f)) {
+        Transform::rotate(*this, glm::vec3(0.0f));
     };
 
     void setLight(Shader &shader, const unsigned int idx, const unsigned int textureUnit) override {
         // Only one directional light for now so ignore idx
-        glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.direction"), 1, &reverseDir(glm::vec3(0.0f))[0]); 
+        glm::vec3 dir = Transform::reverseDir(*this, glm::vec3(0.0f));
+        glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.direction"), 1, &dir[0]); 
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.ambient"), 1, &lightData.ambient[0]); 
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.diffuse"), 1, &lightData.diffuse[0]); 
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), "dirLight.specular"), 1, &lightData.specular[0]); 
@@ -53,7 +60,7 @@ public:
 
     void prepareLight(Shader &shader) override
     {
-        glm::mat4 view = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(getPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         shader.setMat4("lightSpaceMatrix", projection * view);
     }
 
@@ -65,13 +72,16 @@ private:
 
 class SpotLight : public Light {
 public:
-    SpotLight(Transform &transform) : Light(transform), cutoff(glm::cos(glm::radians(12.5f))), outerCutoff(glm::cos(glm::radians(17.5f))), projection(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f)){};
+    SpotLight(Transformable &transformable) : Light(transformable), cutoff(glm::cos(glm::radians(12.5f))), outerCutoff(glm::cos(glm::radians(17.5f))), projection(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f)){};
+    SpotLight(glm::vec3 location) : Light(location), cutoff(glm::cos(glm::radians(12.5f))), outerCutoff(glm::cos(glm::radians(17.5f))), projection(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f)){};
 
     void setLight(Shader &shader, const unsigned int idx, const unsigned int textureUnit) override {
         std::string prefix = "spotLight[" + std::to_string(idx) + "]";
 
-        glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".position").c_str()), 1, &position[0]);
-        glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".direction").c_str()), 1, &getDir(glm::vec3(0.0f))[0]);
+        glm::vec3 dir = Transform::getDir(*this, glm::vec3(0.0f));
+
+        glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".position").c_str()), 1, &getPosition()[0]);
+        glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".direction").c_str()), 1, &dir[0]);
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".ambient").c_str()), 1, &lightData.ambient[0]);
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".diffuse").c_str()), 1, &lightData.diffuse[0]);
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + ".specular").c_str()), 1, &lightData.specular[0]);
@@ -90,7 +100,7 @@ public:
 
     void prepareLight(Shader &shader) override
     {
-        glm::mat4 view = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(getPosition(), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         shader.setMat4("lightSpaceMatrix", projection * view);
     }
 
@@ -109,12 +119,13 @@ private:
 
 class PointLight : public Light {
 public:
-    PointLight(Transform &transform) : Light(transform) {};
+    PointLight(Transformable &transformable) : Light(transformable) {};
+    PointLight(glm::vec3 location) : Light(location) {};
 
     void setLight(Shader &shader, const unsigned int idx, const unsigned int textureUnit) override {
         std::string prefix = "pointLights[" + std::to_string(idx) + "].";
 
-        glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "position").c_str()), 1, &position[0]);
+        glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "position").c_str()), 1, &getPosition()[0]);
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "ambient").c_str()), 1, &lightData.ambient[0]);
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "diffuse").c_str()), 1, &lightData.diffuse[0]);
         glUniform3fv(glGetUniformLocation(shader.GetProgram(), (prefix + "specular").c_str()), 1, &lightData.specular[0]);

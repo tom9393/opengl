@@ -49,46 +49,21 @@ int main()
 
 	stbi_set_flip_vertically_on_load(true);
 
-	Transform* dlt = new Transform(glm::vec3(2.0f, 10.0f, -1.0f));
-	Transform* plt = new Transform(glm::vec3(50.0f));
-	Transform* plt2 = new Transform(glm::vec3(50.0f));
-	Transform* slt = new Transform(glm::vec3(1.0f));
-	Transform* slt2 = new Transform(glm::vec3(5.0f));
+	DirectionalLight dl(glm::vec3(2.0f, 10.0f, -1.0f));
+	PointLight pl(glm::vec3(50.0f));
+	PointLight pl2(glm::vec3(50.0f));
+	SpotLight sl(glm::vec3(1.0f));
+	SpotLight sl2(glm::vec3(5.0f));
 
-	DirectionalLight dl(*dlt);
-	PointLight pl(*plt);
-	PointLight pl2(*plt2);
-	SpotLight sl(*slt);
-	SpotLight sl2(*slt2);
+	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.obj", glm::vec3(0.0f, 2.0f, 0.0f));
+	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj", glm::vec3(0.0f));
+	Model floor("/home/tom/Coding/c++/opengl/assets/floor.obj", glm::vec3(0.0f, -1.55f, 0.0f));
+	Cube cube1(glm::vec3(0.0f, -1.55f, 0.0f));
+	Cube cube2(glm::vec3(0.0f, -1.55f, 0.0f));
 
-	Transform* trans1 = new Transform(glm::vec3(0.0f, 2.0f, 0.0f));
-	Transform* trans2 = new Transform(glm::vec3(0.0f));
-	Transform* trans3 = new Transform(glm::vec3(0.0f, -1.55f, 0.0f));
-
-	Transform* transcube1 = new Transform(glm::vec3(0.0f, -1.55f, 0.0f));
-	Transform* transcube2 = new Transform(glm::vec3(0.0f, -1.55f, 0.0f));
-
-	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.obj", *trans1);
-	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj", *trans2);
-	Model floor("/home/tom/Coding/c++/opengl/assets/floor.obj", *trans3);
-	Cube cube1(*transcube1);
-	Cube cube2(*transcube2);
-
-	std::vector<IDrawable*> objs;
-	objs.push_back(&sukhoi);
-	objs.push_back(&tank);
-	objs.push_back(&floor);
-
-	std::vector<Light*> lights;
-	lights.push_back(&dl);
-	lights.push_back(&sl);
-	lights.push_back(&sl2);
-	lights.push_back(&pl);
-	lights.push_back(&pl2);
-
-	std::vector<IDrawable*> cubes;
-	cubes.push_back(&cube1);
-	cubes.push_back(&cube2);
+	std::vector<IDrawable*> objs = { &sukhoi, &tank, &floor };
+	std::vector<Light*> lights = { &dl, &sl, &sl2, &pl, &pl2 };
+	std::vector<IDrawable*> cubes = { &cube1, &cube2 };
 
 	Lightmanager lightmanager;
 	lightmanager.addLight(&lights);
@@ -96,12 +71,12 @@ int main()
 	std::vector<Batch*> b = lightmanager.populate(shadowshader, mainshader);
 	b.push_back(new Batch(0, cubes, &cubeshader));
 
-	std::vector<glm::vec3> thingeys;
+	std::vector<glm::vec3> pathing;
 
-	for (unsigned int i = 0; i < 20; i++) thingeys.push_back(glm::vec3(sin(i) * i, 2.0f, cos(i) * i));
+	for (unsigned int i = 0; i < 20; i++) pathing.push_back(glm::vec3(sin(i) * i, 2.0f, cos(i) * i));
 
 	Path mypath(&sukhoi);
-	mypath.setPath(thingeys);
+	mypath.setPath(pathing);
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
@@ -109,18 +84,18 @@ int main()
 		float x = sin(glfwGetTime()) * 5.0f;
 		float y = cos(glfwGetTime()) * 5.0f;
 		glm::vec3 pos1 = glm::vec3(x * -1.0f, -0.25f, y);
-		glm::vec3 pos2 = glm::vec3(x, 3.0f, y);
-		cube1.rotateTowards(glm::vec3(0.0f));
-		cube2.rotateTowards(glm::vec3(0.0f));
-		cube1.setPosition(pos1);
-		cube2.setPosition(pos2);
-		sl.setPosition(pos1);
-		sl2.setPosition(pos2);
-		sl.rotateTowards(glm::vec3(0.0f));
-		sl2.rotateTowards(glm::vec3(0.0f));
+		glm::vec3 pos2 = glm::vec3(x, 2.0f, y);
+		Transform::rotateTowards(cube1, glm::vec3(0.0f));
+		Transform::rotateTowards(cube2, glm::vec3(0.0f));
+		Transform::rotateTowards(sl, glm::vec3(0.0f));
+		Transform::rotateTowards(sl2, glm::vec3(0.0f));
+		Transform::setPosition(cube1, pos1);
+		Transform::setPosition(cube2, pos2);
+		Transform::setPosition(sl, pos1);
+		Transform::setPosition(sl2, pos2);
 
 		mypath.update(0.2f, testfun);
-		tank.rotateY(0.01f);
+		Transform::rotateY(tank, 0.01f);
 
 		Info("Before render");
 		for (unsigned int i = 0; i < b.size(); i++)
@@ -128,7 +103,6 @@ int main()
 			Info("Writing batch number " << i);
 			b[i]->render();
 		}
-
 		Info("After rendering");
 		window.postdraw();
 	}

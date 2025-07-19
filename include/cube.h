@@ -13,11 +13,15 @@
 #include "shader.h"
 #include "transform.h"
 
-class Cube : public IDrawable, public Transform
+class Cube : public IDrawable, public Transformable
 {
 public:
 
-    Cube(Transform &transform) : Transform(transform) {
+    Cube(Transformable &transformable) : Transformable(transformable) {
+        init();
+    };
+
+    Cube(glm::vec3 location) : Transformable(location) {
         init();
     };
 

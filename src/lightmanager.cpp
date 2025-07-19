@@ -3,26 +3,26 @@
 Lightmanager::Lightmanager() {}
 
 void Lightmanager::addLight(Light *light) {
-    IMappedLight* l;
-
+    unsigned int n;
     switch (light->getType()) {
         case LightType::Directional: {
-            l = new MappedDirectional(*light, dirlights, map);
+            n = dirlights;
             dirlights++;
             break;
         }
         case LightType::Spot: {
-            l = new MappedSpotlight(*light, spotlights, map);
+            n = spotlights;
             spotlights++;
             break;
         }
         case LightType::Point: {
-            l = new MappedPointlight(*light, pointlights, map);
+            n = pointlights;
             pointlights++;
             break;
         }
     }
-    lights.push_back(l);
+    MappedLight l(*light, n, map);
+    lights.push_back(&l);
     map++; // Be careful not to exceed 32
 }
 

@@ -14,7 +14,7 @@
 #include "../include/preprocessor.h"
 #include "drawable.h"
 #include "stb_image.h"
-#include "transform.h"
+#include "transformable.h"
 
 #include <string>
 #include <fstream>
@@ -23,7 +23,7 @@
 #include <map>
 #include <vector>
 
-class Model : public IDrawable, public Transform
+class Model : public IDrawable, public Transformable
 {
 public:
     // model data 
@@ -33,7 +33,12 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, Transform &transform, bool gamma = false) : Transform(transform), gammaCorrection(gamma)
+    Model(std::string const &path, Transformable &transformable, bool gamma = false) : Transformable(transformable), gammaCorrection(gamma)
+    {
+        loadModel(path);
+    }
+
+    Model(std::string const &path, glm::vec3 location, bool gamma = false) : Transformable(location), gammaCorrection(gamma)
     {
         loadModel(path);
     }
