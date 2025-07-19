@@ -23,7 +23,7 @@
 #include <map>
 #include <vector>
 
-class Model : public IDrawable, public Transformable
+class Model : public IDrawable
 {
 public:
     // model data 
@@ -33,12 +33,7 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, Transformable &transformable, bool gamma = false) : Transformable(transformable), gammaCorrection(gamma)
-    {
-        loadModel(path);
-    }
-
-    Model(std::string const &path, glm::vec3 location, bool gamma = false) : Transformable(location), gammaCorrection(gamma)
+    Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma)
     {
         loadModel(path);
     }
@@ -47,7 +42,6 @@ public:
     void draw(Shader &shader) override
     {
         Info("Drawing model");
-        shader.setMat4("model", getMatrix());
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
@@ -255,4 +249,5 @@ private:
         return textureID;
     }
 };
+
 #endif

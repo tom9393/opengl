@@ -51,8 +51,8 @@ public:
 
         // Smooth interpolation
         glm::vec3 newRot = glm::vec3(
-            interpolateAngle(transformable->getRotation().y, yaw, rotationSpeed * deltaTime),
             interpolateAngle(transformable->getRotation().x, pitch, rotationSpeed * deltaTime),
+            interpolateAngle(transformable->getRotation().y, yaw, rotationSpeed * deltaTime),
             interpolateAngle(transformable->getRotation().z, roll, rotationSpeed * deltaTime)
         );
 

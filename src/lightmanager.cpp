@@ -21,8 +21,7 @@ void Lightmanager::addLight(Light *light) {
             break;
         }
     }
-    MappedLight l(*light, n, map);
-    lights.push_back(&l);
+    lights.push_back(new MappedLight(*light, n, map));
     map++; // Be careful not to exceed 32
 }
 

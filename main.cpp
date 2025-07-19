@@ -6,6 +6,7 @@
 
 #include "include/cube.h"
 #include "include/cubeshader.h"
+#include "include/instance.h"
 #include "include/lightmanager.h"
 #include "include/model.h"
 #include "include/Window.h"
@@ -55,13 +56,18 @@ int main()
 	SpotLight sl(glm::vec3(1.0f));
 	SpotLight sl2(glm::vec3(5.0f));
 
-	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.obj", glm::vec3(0.0f, 2.0f, 0.0f));
-	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj", glm::vec3(0.0f));
-	Model floor("/home/tom/Coding/c++/opengl/assets/floor.obj", glm::vec3(0.0f, -1.55f, 0.0f));
+	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.obj");
+	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj");
+	Model floor("/home/tom/Coding/c++/opengl/assets/floor.obj");
 	Cube cube1(glm::vec3(0.0f, -1.55f, 0.0f));
 	Cube cube2(glm::vec3(0.0f, -1.55f, 0.0f));
 
-	std::vector<IDrawable*> objs = { &sukhoi, &tank, &floor };
+	Instance isukhoi(sukhoi, glm::vec3(0.0f, 2.0f, 0.0f));
+	Instance isukhoi2(sukhoi, glm::vec3(0.0f, 5.0f, 0.0f));
+	Instance itank(tank, glm::vec3(0.0f));
+	Instance ifloor(floor, glm::vec3(0.0f, -1.55f, 0.0f));
+
+	std::vector<IDrawable*> objs = { &isukhoi, &isukhoi2, &itank, &ifloor };
 	std::vector<Light*> lights = { &dl, &sl, &sl2, &pl, &pl2 };
 	std::vector<IDrawable*> cubes = { &cube1, &cube2 };
 
@@ -75,7 +81,7 @@ int main()
 
 	for (unsigned int i = 0; i < 20; i++) pathing.push_back(glm::vec3(sin(i) * i, 2.0f, cos(i) * i));
 
-	Path mypath(&sukhoi);
+	Path mypath(&isukhoi);
 	mypath.setPath(pathing);
 
 	while (!glfwWindowShouldClose(window.getWindow()))
@@ -95,7 +101,7 @@ int main()
 		Transform::setPosition(sl2, pos2);
 
 		mypath.update(0.2f, testfun);
-		Transform::rotateY(tank, 0.01f);
+		Transform::rotateY(itank, 0.01f);
 
 		Info("Before render");
 		for (unsigned int i = 0; i < b.size(); i++)
