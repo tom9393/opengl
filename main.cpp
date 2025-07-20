@@ -8,6 +8,8 @@
 #include "include/cubeshader.h"
 #include "include/instance.h"
 #include "include/lightmanager.h"
+#include "include/pathfollower.h"
+#include "include/rng.h"
 #include "include/model.h"
 #include "include/Window.h"
 #include "include/mainshader.h"
@@ -63,13 +65,34 @@ int main()
 	Cube cube2(glm::vec3(0.0f, -1.55f, 0.0f));
 
 	Instance isukhoi(sukhoi, glm::vec3(0.0f, 2.0f, 0.0f));
-	Instance isukhoi2(sukhoi, glm::vec3(0.0f, 5.0f, 0.0f));
 	Instance itank(tank, glm::vec3(0.0f));
 	Instance ifloor(floor, glm::vec3(0.0f, -1.55f, 0.0f));
 
-	std::vector<IDrawable*> objs = { &isukhoi, &isukhoi2, &itank, &ifloor };
+	std::vector<IDrawable*> objs = { &isukhoi, &itank, &ifloor };
 	std::vector<Light*> lights = { &dl, &sl, &sl2, &pl, &pl2 };
 	std::vector<IDrawable*> cubes = { &cube1, &cube2 };
+
+	RandomGenerator* rng = &RandomGenerator::getInstance();
+
+	std::vector<PathFollower*> followers;
+
+	for (int i = 0; i < 3; ++i) {
+		IDrawable* inst = new Instance(sukhoi, glm::vec3(1.0f));
+		objs.push_back(inst);
+
+		std::vector<glm::vec3> points;
+		for (int i = 0; i < 10; ++i) {
+			float x = RandomGenerator::getInstance().getFloat(-10.0f, 10.0f);
+			float y = RandomGenerator::getInstance().getFloat(0.5f, 10.0f);
+			float z = RandomGenerator::getInstance().getFloat(-10.0f, 10.0f);
+			points.push_back(glm::vec3(x, y, z));
+		}
+
+		Path* path = new Path(points); // looping
+		Transformable* tf = dynamic_cast<Transformable*>(inst);
+		PathFollower* follower = new PathFollower(tf, path, 5.0f, glm::radians(360.0f));
+		followers.push_back(follower);
+	}
 
 	Lightmanager lightmanager;
 	lightmanager.addLight(&lights);
@@ -77,12 +100,7 @@ int main()
 	std::vector<Batch*> b = lightmanager.populate(shadowshader, mainshader);
 	b.push_back(new Batch(0, cubes, &cubeshader));
 
-	std::vector<glm::vec3> pathing;
-
-	for (unsigned int i = 0; i < 20; i++) pathing.push_back(glm::vec3(sin(i) * i, 2.0f, cos(i) * i));
-
-	Path mypath(&isukhoi);
-	mypath.setPath(pathing);
+	float deltaTime = 0.016f;
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
@@ -91,17 +109,19 @@ int main()
 		float y = cos(glfwGetTime()) * 5.0f;
 		glm::vec3 pos1 = glm::vec3(x * -1.0f, -0.25f, y);
 		glm::vec3 pos2 = glm::vec3(x, 2.0f, y);
-		Transform::rotateTowards(cube1, glm::vec3(0.0f));
-		Transform::rotateTowards(cube2, glm::vec3(0.0f));
-		Transform::rotateTowards(sl, glm::vec3(0.0f));
-		Transform::rotateTowards(sl2, glm::vec3(0.0f));
+		Transform::rotateTowards(cube1, itank);
+		Transform::rotateTowards(cube2, itank);
+		Transform::rotateTowards(sl, itank);
+		Transform::rotateTowards(sl2, itank);
 		Transform::setPosition(cube1, pos1);
 		Transform::setPosition(cube2, pos2);
 		Transform::setPosition(sl, pos1);
 		Transform::setPosition(sl2, pos2);
 
-		mypath.update(0.2f, testfun);
-		Transform::rotateY(itank, 0.01f);
+		Transform::rotateY(itank, deltaTime);
+
+		for (auto& f : followers)
+		    f->update(deltaTime);
 
 		Info("Before render");
 		for (unsigned int i = 0; i < b.size(); i++)

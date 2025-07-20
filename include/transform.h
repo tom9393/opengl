@@ -52,6 +52,11 @@ public:
         transformable.setRotation(glm::vec3(pitch, yaw, 0.0f));
     }
 
+    static void rotateTowards(Transformable &target, Transformable &other)
+    {
+        rotateTowards(target, other.getPosition());
+    }
+
     static glm::vec3 getDir(Transformable &transformable, const glm::vec3 &target)
     {
         return glm::normalize(target - transformable.getPosition());
@@ -64,12 +69,17 @@ public:
         return positionInversed;
     }
 
-    static glm::vec3 getForwardDirection(Transformable &transformable) {
-        glm::mat4 rot = glm::mat4(1.0f);
-        rot = glm::rotate(rot, transformable.getRotation().z, glm::vec3(0, 0, 1));
-        rot = glm::rotate(rot, transformable.getRotation().y, glm::vec3(0, 1, 0));
-        rot = glm::rotate(rot, transformable.getRotation().x, glm::vec3(1, 0, 0));
-        return glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0)));
+    static glm::vec3 getForwardDirection(Transformable &t) {
+        glm::vec3 rot = t.getRotation();
+        float yaw = rot.y;
+        float pitch = rot.x;
+
+        glm::vec3 forward;
+        forward.x = sin(yaw) * cos(pitch);
+        forward.y = -sin(pitch);
+        forward.z = cos(yaw) * cos(pitch);
+
+        return glm::normalize(forward);
     }
 
     // --- Scale ---
