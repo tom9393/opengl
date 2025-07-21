@@ -37,6 +37,7 @@ class Camera : public Transformable
     Camera(glm::vec3 position = glm::vec3(-12.0f, 7.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), glm::mat4 projection = PROJECTION) : Transformable(position), Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM), WorldUp(up), projection(projection)
     {
         updateCameraVectors();
+        Transform::rotateTowards(*this, glm::vec3(0.0f));
     }
 
     void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch);
