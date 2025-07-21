@@ -5,7 +5,8 @@ float lastY = 300;
 bool firstMouse = true;
 bool on = false;
 
-GLFWwindow* Window::getWindow() {
+GLFWwindow* Window::getWindow()
+{
 return window_;
 }
 

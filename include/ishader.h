@@ -7,17 +7,17 @@
 class ISetViewPosition : public Shader
 {
 public:
-    void setView(IView *view)
+    void setView(Camera *camera)
     {
-        this->view = view;
+        this->camera = camera;
     };
     void setView() {
-        setMat4("view", view->getViewMatrix());
-        setMat4("projection", view->getProjection());
-        setVec3("viewPos", view->getPosition());
+        setMat4("view", camera->getViewMatrix());
+        setMat4("projection", camera->getProjection());
+        setVec3("viewPos", camera->getPosition());
     };
 private:
-    IView* view;
+    Camera* camera;
 };
 
 #endif

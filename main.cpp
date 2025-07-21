@@ -41,9 +41,9 @@ int main()
 	Shadowshader shadowshader;
 	Cubeshader cubeshader;
 
-	mainshader.setView((IView*)window.getCamera());
-	shadowshader.setView((IView*)window.getCamera());
-	cubeshader.setView((IView*)window.getCamera());
+	mainshader.setView(window.getCamera());
+	shadowshader.setView(window.getCamera());
+	cubeshader.setView(window.getCamera());
 
 	if (!mainshader.Init() || !shadowshader.Init() || !cubeshader.Init())
 	{

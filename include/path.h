@@ -74,6 +74,4 @@ private:
     bool looping = false;
 };
 
-
-
 #endif

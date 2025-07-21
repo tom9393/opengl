@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../include/shader.h"
+#include "../include/preprocessor.h"
 
 #include <string>
 #include <vector>
@@ -45,7 +46,7 @@ public:
     unsigned int VAO;
 
     // constructor
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures) : vertices(vertices), indices(indices), textures(textures)
+    Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::vector<Texture> &textures) : vertices(vertices), indices(indices), textures(textures)
     {
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
