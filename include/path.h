@@ -1,13 +1,10 @@
 #ifndef PATH
 #define PATH
+
+#include "../pch.h"
 #include "transform.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtx/vector_angle.hpp>
-#include <vector>
-
 class Path {
 public:
     // Constructor from a list of control points
@@ -32,7 +29,7 @@ public:
     void advanceIfClose(const glm::vec3& pos, float threshold) {
         if (controlPoints.empty()) return;
 
-        float dist2 = glm::distance2(pos, getCurrentTarget());
+        float dist2 = glm::distance(pos, getCurrentTarget());
         if (dist2 < threshold * threshold) {
             if (currentTargetIndex + 1 < controlPoints.size()) {
                 currentTargetIndex++;

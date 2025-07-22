@@ -1,14 +1,12 @@
 #ifndef LIGHT
 #define LIGHT
 
-#include "preprocessor.h"
+#include "../pch.h"
 
+#include "preprocessor.h"
 #include "shader.h"
 #include "transform.h"
 #include "transformable.h"
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 enum class LightType { Directional, Point, Spot };
 

@@ -1,9 +1,3 @@
-#include <glm/ext/matrix_clip_space.hpp>
-#include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <math.h>
-
 #include "include/cube.h"
 #include "include/cubeshader.h"
 #include "include/instance.h"
@@ -16,13 +10,6 @@
 #include "include/path.h"
 #include "include/shadowshader.h"
 #include "include/preprocessor.h"
-#include "lib/imgui.h"
-#include "lib/imgui_impl_glfw.h"
-#include "lib/imgui_impl_opengl3.h"
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 const unsigned int SCREEN_WIDTH = 1600;
 const unsigned int SCREEN_HEIGHT = 1600;

@@ -1,8 +1,7 @@
 #ifndef RNG
 #define RNG
 
-#include <random>
-#include <mutex>
+#include "../pch.h"
 
 class RandomGenerator {
 public:

@@ -1,10 +1,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include "../pch.h"
+
 #include "Camera.h"
-#include <stdio.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 class Window
 {

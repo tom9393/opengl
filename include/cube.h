@@ -1,9 +1,7 @@
 #ifndef CUBE
 #define CUBE
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "../pch.h"
 
 #include "VAO.h"
 #include "VBO.h"

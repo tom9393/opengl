@@ -1,5 +1,6 @@
 #ifndef PATHFOLLOWER
 #define PATHFOLLOWER
+
 #include "path.h"
 #include "transform.h"
 

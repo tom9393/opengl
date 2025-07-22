@@ -1,7 +1,8 @@
 #ifndef SHADERNODE
 #define SHADERNODE
 
-#include <vector>
+#include "../pch.h"
+
 #include "drawable.h"
 #include "mappedlight.h"
 #include "shader.h"

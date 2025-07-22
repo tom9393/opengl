@@ -1,9 +1,10 @@
 #ifndef BATCH
 #define BATCH
 
+#include "../pch.h"
+
 #include "shader.h"
 #include "drawable.h"
-#include <vector>
 
 class Batch {
 public:

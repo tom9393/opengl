@@ -3,8 +3,6 @@
 
 #include "drawable.h"
 #include "mainshader.h"
-#include <glm/glm.hpp>
-#include <glad/glad.h>
 
 class Shadowshader : public Mainshader
 {

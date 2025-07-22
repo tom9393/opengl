@@ -1,10 +1,7 @@
 #ifndef LIGHTING
 #define LIGHTING
 
-#include "drawable.h"
 #include "ishader.h"
-#include "light.h"
-#include <glm/glm.hpp>
 
 class Mainshader : public ISetViewPosition
 {

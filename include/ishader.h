@@ -1,8 +1,8 @@
 #ifndef ISHADER
 #define ISHADER
 
+#include "shader.h"
 #include "Camera.h"
-#include "light.h"
 
 class ISetViewPosition : public Shader
 {

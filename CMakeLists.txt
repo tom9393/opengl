@@ -8,3 +8,5 @@ file(GLOB SRC_SOURCES "src/*.cpp")
 add_executable(${PROJECT_NAME} main.cpp ${LIB_SOURCES} ${SRC_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} GL dl glfw assimp)
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/pch.h>)

@@ -1,9 +1,9 @@
 #ifndef TRANSFORM
 #define TRANSFORM
 
+#include "../pch.h"
+
 #include "transformable.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 class Transform
 {

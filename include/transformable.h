@@ -1,8 +1,7 @@
 #ifndef TRANSFORMABLE
 #define TRANSFORMABLE
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "../pch.h"
 
 class Transformable
 {

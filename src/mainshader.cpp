@@ -1,5 +1,4 @@
 #include "../include/mainshader.h"
-#include <glm/glm.hpp>
 
 Mainshader::Mainshader()
 {

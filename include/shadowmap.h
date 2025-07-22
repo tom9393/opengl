@@ -1,8 +1,7 @@
 #ifndef SHADOWMAP
 #define SHADOWMAP
 
-#include <glm/glm.hpp>
-#include <glad/glad.h>
+#include "../pch.h"
 
 class IShadowMap {
 

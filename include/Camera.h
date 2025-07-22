@@ -1,11 +1,10 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "transform.h"
+#include "../pch.h"
+
 #include "transformable.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
+#include "transform.h"
 
 const float SPEED = 10.0f;
 const float SENSITIVITY = 0.1f;
