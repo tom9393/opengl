@@ -120,11 +120,26 @@ int main()
 			if (ImGui::Button("Spawn another"))
 			{
 				std::cout << "Pressed the button" << std::endl;
-				Cube cubet(glm::vec3(x, -1.55f, y));
-				std::vector<IDrawable*> gaa;
-				gaa.push_back(&cubet);
-				b.push_back(new Batch(0, gaa, &cubeshader));
+				IDrawable* cubet = new Cube(glm::vec3(x, 2.55f, y));
+				b[2]->drawables.push_back(cubet);
+			}
+			if (ImGui::Button("Spawn more planes"))
+			{
+				IDrawable* inst = new Instance(sukhoi, glm::vec3(1.0f));
+				b[1]->drawables.push_back(inst);
 
+				std::vector<glm::vec3> points;
+				for (int i = 0; i < 10; ++i) {
+					float x = RandomGenerator::getInstance().getFloat(-10.0f, 10.0f);
+					float y = RandomGenerator::getInstance().getFloat(0.5f, 10.0f);
+					float z = RandomGenerator::getInstance().getFloat(-10.0f, 10.0f);
+					points.push_back(glm::vec3(x, y, z));
+				}
+
+				Path* path = new Path(points); // looping
+				Transformable* tf = dynamic_cast<Transformable*>(inst);
+				PathFollower* follower = new PathFollower(tf, path, 5.0f, glm::radians(360.0f));
+				followers.push_back(follower);
 			}
 			ImGui::End();
 		}
