@@ -59,9 +59,9 @@ int main()
 	SpotLight sl(glm::vec3(1.0f));
 	SpotLight sl2(glm::vec3(5.0f));
 
-	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.obj");
-	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.obj");
-	Model floor("/home/tom/Coding/c++/opengl/assets/floor.obj");
+	Model sukhoi("/home/tom/Coding/c++/opengl/assets/sukhoi.assbin");
+	Model tank("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+	Model floor("/home/tom/Coding/c++/opengl/assets/floor.assbin");
 	Cube cube1(glm::vec3(0.0f, -1.55f, 0.0f));
 	Cube cube2(glm::vec3(0.0f, -1.55f, 0.0f));
 
