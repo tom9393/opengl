@@ -9,7 +9,8 @@
 class Window
 {
 public:
-    Window(unsigned int width, unsigned int height, const char* title) : width(width), height(height), title(title), camera_(new Camera()), lastframe(0.0f), deltatime(0.0f) {
+    Window(unsigned int width, unsigned int height, const char* title) : width(width), height(height), title(title), camera_(new Camera()), lastframe(0.0f), deltatime(0.0f), imgui_enabled(true)
+    {
         // Initialize GLFW
         glfwInit();
 
@@ -43,18 +44,20 @@ public:
 
 	glEnable(GL_DEPTH_TEST);
 
-	glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_CAPTURED);
 
     };
     GLFWwindow* getWindow();
     Camera* getCamera();
     void predraw();
     void postdraw();
+    bool imgui();
 
 private:
     unsigned int height;
     unsigned int width;
     const char* title;
+    bool imgui_enabled;
     GLFWwindow* window_;
     Camera* camera_;
     float lastframe;

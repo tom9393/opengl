@@ -16,6 +16,9 @@
 #include "include/path.h"
 #include "include/shadowshader.h"
 #include "include/preprocessor.h"
+#include "lib/imgui.h"
+#include "lib/imgui_impl_glfw.h"
+#include "lib/imgui_impl_opengl3.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -36,6 +39,17 @@ int main()
 	    std::cout << "Could not create window" << std::endl;
 	    return -1;
 	}
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window.getWindow(), true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplOpenGL3_Init();
 
 	Mainshader mainshader;
 	Shadowshader shadowshader;
@@ -104,11 +118,30 @@ int main()
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
-		window.predraw();
 		float x = sin(glfwGetTime()) * 5.0f;
 		float y = cos(glfwGetTime()) * 5.0f;
 		glm::vec3 pos1 = glm::vec3(x * -1.0f, -0.25f, y);
 		glm::vec3 pos2 = glm::vec3(x, 2.0f, y);
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		if (window.imgui())
+		{
+			ImGui::ShowDemoWindow(); // Show demo window! :)
+			ImGui::Begin("Create a new instance");
+			ImGui::SliderFloat("float", &deltaTime, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+			if (ImGui::Button("Spawn another"))
+			{
+				std::cout << "Pressed the button" << std::endl;
+				Cube cubet(glm::vec3(x, -1.55f, y));
+				std::vector<IDrawable*> gaa;
+				gaa.push_back(&cubet);
+				b.push_back(new Batch(0, gaa, &cubeshader));
+
+			}
+			ImGui::End();
+		}
+		window.predraw();
 		Transform::rotateTowards(cube1, itank);
 		Transform::rotateTowards(cube2, itank);
 		Transform::rotateTowards(sl, itank);
@@ -130,8 +163,14 @@ int main()
 			b[i]->render();
 		}
 		Info("After rendering");
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		window.postdraw();
 	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	glfwDestroyWindow(window.getWindow());
 	glfwTerminate();
