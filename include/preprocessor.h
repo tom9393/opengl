@@ -1,5 +1,5 @@
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define Info(msg) std::cout << msg << std::endl;

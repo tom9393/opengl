@@ -11,6 +11,9 @@
 #include <list>
 #include <random>
 #include <mutex>
+#include <functional>
+#include <algorithm>
+#include <memory>
 
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>

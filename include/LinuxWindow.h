@@ -1,0 +1,38 @@
+#pragma once
+
+#include "../pch.h"
+#include "Window.h"
+
+class LinuxWindow : public Window
+{
+public:
+
+    LinuxWindow(const WindowProps &props);
+    virtual ~LinuxWindow();
+    virtual void onUpdate() override;
+
+    unsigned int getWidth() const override { return m_Data.width; }
+    unsigned int getHeight() const override { return m_Data.height; }
+
+    void setEventCallback(const EventCallbackFn &cb) override { m_Data.cb = cb; }
+    virtual void setVsync(bool enabled) override;
+    virtual bool isVsync() override;
+
+private:
+
+    virtual void Init(const WindowProps &props);
+    virtual void Shutdown();
+
+    GLFWwindow* m_Window;
+
+    struct WindowData {
+        std::string title;
+        unsigned int height, width;
+        bool VSync;
+        EventCallbackFn cb;
+    };
+
+    WindowData m_Data;
+
+};
+
