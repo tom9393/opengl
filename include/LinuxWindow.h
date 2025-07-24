@@ -2,6 +2,7 @@
 
 #include "../pch.h"
 #include "Window.h"
+#include <GLFW/glfw3.h>
 
 class LinuxWindow : public Window
 {
@@ -13,6 +14,7 @@ public:
 
     unsigned int getWidth() const override { return m_Data.width; }
     unsigned int getHeight() const override { return m_Data.height; }
+    void* GetNativeWindow() override;
 
     void setEventCallback(const EventCallbackFn &cb) override { m_Data.cb = cb; }
     virtual void setVsync(bool enabled) override;

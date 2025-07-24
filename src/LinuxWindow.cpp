@@ -149,3 +149,8 @@ bool LinuxWindow::isVsync()
 {
         return m_Data.VSync;
 };
+
+void* LinuxWindow::GetNativeWindow()
+{
+        return m_Window;
+};

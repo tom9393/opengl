@@ -43,8 +43,7 @@ class Event
         return getCategoryFlags() & category;
     };
 
-    protected:
-    bool m_Handled = false;
+    bool handled = false;
 };
 
 class EventDispatcher
@@ -59,7 +58,7 @@ class EventDispatcher
     {
         if (m_Event.getEventType() == T::getStaticType())
         {
-            m_Event.m_Handled = fn(*(T*)&m_Event);
+            m_Event.handled = fn(*(T*)&m_Event);
             return true;
         }
         return false;

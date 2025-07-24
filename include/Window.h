@@ -26,6 +26,8 @@ public:
     virtual void setVsync(bool enabled) = 0;
     virtual bool isVsync() = 0;
 
+    virtual void* GetNativeWindow() = 0;
+
     static Window* Create(const WindowProps &props = WindowProps());
 };
 

@@ -1,7 +1,10 @@
 #include "../include/Application.h"
 
+Application* Application::s_Instance = nullptr;
+
 Application::Application()
 {
+    s_Instance = this;
     m_Window = std::unique_ptr<Window>(Window::Create());
     m_Window->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
 };
@@ -17,6 +20,12 @@ void Application::run()
     {
         glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        for (Layer* layer: m_LayerStack)
+        {
+            layer->OnUpdate();
+        }
+
         m_Window->onUpdate();
     }
 };
@@ -25,10 +34,31 @@ void Application::onEvent(Event &e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.dispatch<WindowCloseEvent>(std::bind(&Application::onWindowClose, this, std::placeholders::_1));
+
+    for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
+    {
+        (*--it)->OnEvent(e);
+        if (e.handled)
+        {
+            break;
+        }
+    }
+
 };
 
 bool Application::onWindowClose(WindowCloseEvent &e)
 {
     m_Running = false;
     return true;
+};
+
+void Application::pushLayer(Layer* layer)
+{
+    m_LayerStack.PushLayer(layer);
+    layer->OnAttach();
+};
+void Application::pushOverlayer(Layer* layer)
+{
+    m_LayerStack.PushOverlay(layer);
+    layer->OnAttach();
 };
