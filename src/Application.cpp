@@ -1,4 +1,5 @@
 #include "../include/Application.h"
+#include "../include/Input.h"
 
 Application* Application::s_Instance = nullptr;
 
@@ -25,6 +26,10 @@ void Application::run()
         {
             layer->OnUpdate();
         }
+
+        auto [x, y] = Input::GetMousePosition();
+        std::cout << x << std::endl;
+        std::cout << y << std::endl;
 
         m_Window->onUpdate();
     }
