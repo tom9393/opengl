@@ -1,6 +1,5 @@
 #include "../include/LinuxInput.h"
 #include "../include/Application.h"
-#include <GLFW/glfw3.h>
 
 Input* Input::s_Instance = new LinuxInput();
 

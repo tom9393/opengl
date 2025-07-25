@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../pch.h"
+#include "Context.h"
 #include "Window.h"
-#include <GLFW/glfw3.h>
 
 class LinuxWindow : public Window
 {
@@ -26,6 +26,7 @@ private:
     virtual void Shutdown();
 
     GLFWwindow* m_Window;
+    Context* m_Context;
 
     struct WindowData {
         std::string title;

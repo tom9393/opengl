@@ -2,7 +2,7 @@
 #include "../include/events/ApplicationEvent.h"
 #include "../include/events/MouseEvent.h"
 #include "../include/events/KeyboardEvent.h"
-#include <GLFW/glfw3.h>
+#include "../include/OpenGLContext.h"
 
 static bool s_GLFWInitialized = false;
 
@@ -39,6 +39,9 @@ void LinuxWindow::Init(const WindowProps &props)
     }
 
     m_Window = glfwCreateWindow((int)props.width, (int)props.height, props.title.c_str(), nullptr, nullptr);
+    m_Context = new OpenGLContext(m_Window);
+    m_Context->Init();
+
     glfwMakeContextCurrent(m_Window);
     glfwSetWindowUserPointer(m_Window, &m_Data);
     gladLoadGL();
@@ -132,7 +135,7 @@ void LinuxWindow::Shutdown()
 void LinuxWindow::onUpdate()
 {
     glfwPollEvents();
-    glfwSwapBuffers(m_Window);
+    m_Context->SwapBuffers();
 };
 
 void LinuxWindow::setVsync(bool enable)
