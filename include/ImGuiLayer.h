@@ -7,11 +7,12 @@ class ImGuiLayer : public Layer
     public:
     ~ImGuiLayer();
 
-    void OnAttach();
-    void OnDetach();
-    void OnUpdate();
-    void OnImGuiRender();
-    void OnEvent(Event& event);
+    void OnAttach() override;
+    void OnDetach() override;
+    void OnImGuiRender() override;
+
+    void Begin();
+    void End();
 
     private:
     float m_Time = 0.0f;

@@ -2,6 +2,7 @@
 
 #include "../pch.h"
 
+#include "ImGuiLayer.h"
 #include "LayerStack.h"
 #include "Window.h"
 #include "events/ApplicationEvent.h"
@@ -23,6 +24,7 @@ class Application
     private:
     static Application* s_Instance;
     std::unique_ptr<Window> m_Window;
+    ImGuiLayer* m_ImGuiLayer;
     LayerStack m_LayerStack;
     bool m_Running = true;
 

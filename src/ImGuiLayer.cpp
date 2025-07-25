@@ -7,8 +7,9 @@ ImGuiLayer::~ImGuiLayer()
 {
 };
 
-void ImGuiLayer::OnAttach() {
-
+void ImGuiLayer::OnAttach()
+{
+    std::cout << "Before all the junk" << std::endl;
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGuiIO& io = ImGui::GetIO();
@@ -16,41 +17,48 @@ void ImGuiLayer::OnAttach() {
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 
+    std::cout << "Before window" << std::endl;
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+
+    std::cout << "Initializing imgui stuff" << std::endl;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
-
 };
 
-void ImGuiLayer::OnDetach() {
-    std::cout << "Detatch" << std::endl;
+void ImGuiLayer::OnDetach()
+{
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 };
 
-void ImGuiLayer::OnUpdate() {
-    std::cout << "Update" << std::endl;
+void ImGuiLayer::OnImGuiRender() {
+    static bool show = true;
+    ImGui::ShowDemoWindow(&show);
+};
+
+void ImGuiLayer::Begin()
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+};
+
+void ImGuiLayer::End()
+{
     ImGuiIO& io = ImGui::GetIO();
     Application& app = Application::Get();
     io.DisplaySize = ImVec2(app.GetWindow().getWidth(), app.GetWindow().getHeight());
 
-    float time = (float)glfwGetTime();
-    io.DeltaTime = m_Time > 0.0f ? (time - m_Time) : (1.0f / 60.0f);
-    m_Time = time;
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
-
-    static bool show = true;
-    ImGui::ShowDemoWindow();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-};
 
-void ImGuiLayer::OnImGuiRender() {
-    std::cout << "On render" << std::endl;
-};
-
-void ImGuiLayer::OnEvent(Event& event) {
-    std::cout << event.getName() << std::endl;
-    std::cout << "In the Imgui layer" << std::endl;
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        GLFWwindow* backup = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup);
+    }
 };
