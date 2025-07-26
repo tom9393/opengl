@@ -3,7 +3,9 @@
 #include "../pch.h"
 
 #include "ImGuiLayer.h"
+#include "IndexBuffer.h"
 #include "LayerStack.h"
+#include "VertexBuffer.h"
 #include "Window.h"
 #include "events/ApplicationEvent.h"
 
@@ -23,10 +25,13 @@ class Application
 
     private:
     static Application* s_Instance;
-    std::unique_ptr<Window> m_Window;
     ImGuiLayer* m_ImGuiLayer;
+    std::unique_ptr<Window> m_Window;
     LayerStack m_LayerStack;
     bool m_Running = true;
+
+    std::unique_ptr<VertexBuffer> m_VertexBuffer;
+    std::unique_ptr<IndexBuffer> m_IndexBuffer;
 
     bool onWindowClose(WindowCloseEvent &e);
 

@@ -1,5 +1,6 @@
 #include "../include/Application.h"
 #include "../include/Input.h"
+#include <GL/gl.h>
 
 Application* Application::s_Instance = nullptr;
 
@@ -10,6 +11,18 @@ Application::Application()
     m_Window->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
     m_ImGuiLayer = new ImGuiLayer();
     pushOverlayer(m_ImGuiLayer);
+
+    float vertices[3*3] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f, 0.5f, 0.0f
+    };
+
+    m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    unsigned int indices[3] = { 0, 1, 2 };
+    m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
 };
 
 Application::~Application()
@@ -21,8 +34,11 @@ void Application::run()
 
     while (m_Running)
     {
-        glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        m_VertexBuffer->Bind();
+        glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
 
         for (Layer* layer: m_LayerStack)
         {
