@@ -37,8 +37,6 @@ void Application::run()
         m_ImGuiLayer->End();
 
         auto [x, y] = Input::GetMousePosition();
-        std::cout << x << std::endl;
-        std::cout << y << std::endl;
 
         m_Window->onUpdate();
     }
