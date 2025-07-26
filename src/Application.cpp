@@ -1,6 +1,6 @@
 #include "../include/Application.h"
 #include "../include/Input.h"
-#include <GL/gl.h>
+#include "../include/BufferLayout.h"
 
 Application* Application::s_Instance = nullptr;
 
@@ -18,11 +18,21 @@ Application::Application()
         0.0f, 0.5f, 0.0f
     };
 
-    m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
     unsigned int indices[3] = { 0, 1, 2 };
+    m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
     m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+
+    BufferLayout layout = {
+        { ShaderDataType::Float3, "a_Position" }
+    };
+
+    uint32_t index = 0;
+    for (const auto &element : layout)
+    {
+        glEnableVertexAttribArray(index);
+        glVertexAttribPointer(index, element.GetComponentCount(), GL_FLOAT, GL_FALSE, layout.GetStride(), (const void*) element.Offset);
+        index++;
+    }
 };
 
 Application::~Application()
