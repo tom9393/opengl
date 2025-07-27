@@ -29,7 +29,7 @@ class Application
     LayerStack m_LayerStack;
     bool m_Running = true;
 
-    std::unique_ptr<VertexArray> m_VertexArray;
+    std::shared_ptr<VertexArray> m_VertexArray;
 
     bool onWindowClose(WindowCloseEvent &e);
 

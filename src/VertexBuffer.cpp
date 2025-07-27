@@ -5,8 +5,8 @@
 VertexBuffer* VertexBuffer::Create(float *vertices, uint32_t size)
 {
         switch (Renderer::Get()) {
-        case RendererAPI::None: return nullptr;
-        case RendererAPI::OpenGL: return new OpenGLVertexBuffer(vertices, size);
+                case RendererAPI::API::None: return nullptr;
+                case RendererAPI::API::OpenGL: return new OpenGLVertexBuffer(vertices, size);
         }
     return nullptr;
 };
