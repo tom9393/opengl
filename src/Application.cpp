@@ -19,20 +19,21 @@ Application::Application()
     };
 
     unsigned int indices[3] = { 0, 1, 2 };
-    m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
-    m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+
+    m_VertexArray.reset(VertexArray::Create());
+
+
+    std::shared_ptr<VertexBuffer> vertexBuffer = std::shared_ptr<VertexBuffer>(VertexBuffer::Create(vertices, sizeof(vertices)));
+    std::shared_ptr<IndexBuffer> indexBuffer = std::shared_ptr<IndexBuffer>(IndexBuffer::Create(indices, sizeof(uint32_t)));
 
     BufferLayout layout = {
         { ShaderDataType::Float3, "a_Position" }
     };
 
-    uint32_t index = 0;
-    for (const auto &element : layout)
-    {
-        glEnableVertexAttribArray(index);
-        glVertexAttribPointer(index, element.GetComponentCount(), GL_FLOAT, GL_FALSE, layout.GetStride(), (const void*) element.Offset);
-        index++;
-    }
+    vertexBuffer->SetLayout(layout);
+
+    m_VertexArray->AddVertexBuffer(vertexBuffer);
+    m_VertexArray->SetIndexBuffer(indexBuffer);
 };
 
 Application::~Application()
@@ -47,8 +48,8 @@ void Application::run()
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        m_VertexBuffer->Bind();
-        glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
+        m_VertexArray->Bind();
+        glDrawElements(GL_TRIANGLES, m_VertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 
         for (Layer* layer: m_LayerStack)
         {

@@ -3,9 +3,8 @@
 #include "../pch.h"
 
 #include "ImGuiLayer.h"
-#include "IndexBuffer.h"
 #include "LayerStack.h"
-#include "VertexBuffer.h"
+#include "VertexArray.h"
 #include "Window.h"
 #include "events/ApplicationEvent.h"
 
@@ -30,8 +29,7 @@ class Application
     LayerStack m_LayerStack;
     bool m_Running = true;
 
-    std::unique_ptr<VertexBuffer> m_VertexBuffer;
-    std::unique_ptr<IndexBuffer> m_IndexBuffer;
+    std::unique_ptr<VertexArray> m_VertexArray;
 
     bool onWindowClose(WindowCloseEvent &e);
 
