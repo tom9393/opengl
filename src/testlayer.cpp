@@ -1,18 +1,67 @@
 #import "../include/testlayer.h"
+#import "../include/Renderer.h"
+#include "../include/TmpShader.h"
+#include "../include/KeyCodes.h"
+#include "../include/Input.h"
+
+Testlayer::Testlayer() : m_Camera(-3.0f, 3.0f, -3.0f, 3.0f), shader(new TmpShader)
+{
+    float vertices[3*3] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f, 0.5f, 0.0f
+    };
+
+    unsigned int indices[3] = { 0, 1, 2 };
+
+    m_VertexArray.reset(VertexArray::Create());
+
+    std::shared_ptr<VertexBuffer> vertexBuffer = std::shared_ptr<VertexBuffer>(VertexBuffer::Create(vertices, sizeof(vertices)));
+    std::shared_ptr<IndexBuffer> indexBuffer = std::shared_ptr<IndexBuffer>(IndexBuffer::Create(indices, sizeof(uint32_t)));
+
+    BufferLayout layout = {
+        { ShaderDataType::Float3, "a_Position" }
+    };
+
+    vertexBuffer->SetLayout(layout);
+
+    m_VertexArray->AddVertexBuffer(vertexBuffer);
+    m_VertexArray->SetIndexBuffer(indexBuffer);
+
+    shader->Init();
+};
 
 Testlayer::~Testlayer()
 {
 };
 
 void Testlayer::OnAttach() {
-    std::cout << "Attach" << std::endl;
+    std::cout << "Testlayer attached" << std::endl;
 };
 
 void Testlayer::OnDetach() {
-    std::cout << "Detatch" << std::endl;
+    std::cout << "Testlayer detached" << std::endl;
 };
 
 void Testlayer::OnUpdate() {
+    if (Input::IsKeyPressed(KEY_LEFT))
+        m_CameraPosition.x -= m_CameraSpeed;
+    if (Input::IsKeyPressed(KEY_RIGHT))
+        m_CameraPosition.x += m_CameraSpeed;
+    if (Input::IsKeyPressed(KEY_DOWN))
+        m_CameraPosition.y -= m_CameraSpeed;
+    if (Input::IsKeyPressed(KEY_UP))
+        m_CameraPosition.y += m_CameraSpeed;
+
+    RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
+    RenderCommand::Clear();
+
+    m_Camera.SetPosition(m_CameraPosition);
+    m_Camera.SetRotation(0.0f);
+    Renderer::BeginScene(m_Camera);
+    Renderer::Submit(m_VertexArray, *shader);
+
+    Renderer::EndScene();
 };
 
 void Testlayer::OnImGuiRender() {

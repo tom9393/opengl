@@ -4,7 +4,6 @@
 
 #include "ImGuiLayer.h"
 #include "LayerStack.h"
-#include "VertexArray.h"
 #include "Window.h"
 #include "events/ApplicationEvent.h"
 
@@ -28,8 +27,6 @@ class Application
     std::unique_ptr<Window> m_Window;
     LayerStack m_LayerStack;
     bool m_Running = true;
-
-    std::shared_ptr<VertexArray> m_VertexArray;
 
     bool onWindowClose(WindowCloseEvent &e);
 
