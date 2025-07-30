@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BufferLayout.h"
-#include "VertexBuffer.h"
+#include "../../include/BufferLayout.h"
+#include "../../include/VertexBuffer.h"
 
 class OpenGLVertexBuffer : public VertexBuffer
 {

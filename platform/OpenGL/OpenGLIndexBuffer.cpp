@@ -1,4 +1,4 @@
-#include "../include/OpenGLIndexBuffer.h"
+#include "OpenGLIndexBuffer.h"
 
 OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count) : m_Count(count)
 {

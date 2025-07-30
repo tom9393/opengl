@@ -1,8 +1,8 @@
-#include "../include/LinuxWindow.h"
-#include "../include/events/ApplicationEvent.h"
-#include "../include/events/MouseEvent.h"
-#include "../include/events/KeyboardEvent.h"
-#include "../include/OpenGLContext.h"
+#include "../../include/events/ApplicationEvent.h"
+#include "../../include/events/MouseEvent.h"
+#include "../../include/events/KeyboardEvent.h"
+#include "LinuxWindow.h"
+#include "../OpenGL/OpenGLContext.h"
 
 static bool s_GLFWInitialized = false;
 

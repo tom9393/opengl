@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../pch.h"
-#include "Context.h"
-#include "Window.h"
+#include "../../pch.h"
+#include "../../include/Context.h"
+#include "../../include/Window.h"
 
 class LinuxWindow : public Window
 {

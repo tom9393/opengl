@@ -1,6 +1,6 @@
 #include "../include/IndexBuffer.h"
 #include "../include/Renderer.h"
-#include "../include/OpenGLIndexBuffer.h"
+#include "../platform/OpenGL/OpenGLIndexBuffer.h"
 
 IndexBuffer* IndexBuffer::Create(uint32_t *indices, uint32_t size)
 {

@@ -1,4 +1,4 @@
-#include "../include/OpenGLVertexBuffer.h"
+#include "OpenGLVertexBuffer.h"
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size)
 {

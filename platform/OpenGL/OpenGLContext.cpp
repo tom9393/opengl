@@ -1,6 +1,5 @@
-#include "../pch.h"
-#include <GL/gl.h>
-#include "../include/OpenGLContext.h"
+#include "../../pch.h"
+#include "OpenGLContext.h"
 
 OpenGLContext::OpenGLContext(GLFWwindow* window) : m_WindowHandle(window)
 {

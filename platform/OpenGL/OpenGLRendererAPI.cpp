@@ -1,5 +1,5 @@
-#include "../include/OpenGLRendererAPI.h"
-#include "../pch.h"
+#include "../../pch.h"
+#include "OpenGLRendererAPI.h"
 
 void OpenGLRendererAPI::SetClearColor(const glm::vec4 &color)
 {

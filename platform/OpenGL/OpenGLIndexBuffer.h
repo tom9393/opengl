@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IndexBuffer.h"
+#include "../../include/IndexBuffer.h"
 
 class OpenGLIndexBuffer : public IndexBuffer
 {

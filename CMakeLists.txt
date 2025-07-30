@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.17)
 
 project(opengl.exe)
 
-file(GLOB LIB_SOURCES "lib/*.c" "lib/*.cpp" "lib/*.h")
-file(GLOB SRC_SOURCES "src/*.cpp")
+file(GLOB LIB_SOURCES "lib/*.c" "lib/*.cpp" "lib/*.h" "platform/Linux/*.h" "platform/OpenGL/*.h")
+file(GLOB SRC_SOURCES "src/*.cpp" "platform/Linux/*.cpp" "platform/OpenGL/*.cpp")
 
 add_executable(${PROJECT_NAME} main.cpp ${LIB_SOURCES} ${SRC_SOURCES})
 

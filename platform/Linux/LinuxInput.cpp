@@ -1,5 +1,5 @@
-#include "../include/LinuxInput.h"
-#include "../include/Application.h"
+#include "LinuxInput.h"
+#include "../../include/Application.h"
 
 Input* Input::s_Instance = new LinuxInput();
 

@@ -1,6 +1,6 @@
 #include "../include/VertexBuffer.h"
 #include "../include/Renderer.h"
-#include "../include/OpenGLVertexBuffer.h"
+#include "../platform/OpenGL/OpenGLVertexBuffer.h"
 
 VertexBuffer* VertexBuffer::Create(float *vertices, uint32_t size)
 {

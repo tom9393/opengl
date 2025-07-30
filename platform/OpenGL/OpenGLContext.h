@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Context.h"
+#include "../../include/Context.h"
 
 class OpenGLContext : public Context
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Input.h"
+#include "../../include/Input.h"
 
 class LinuxInput : public Input
 {
