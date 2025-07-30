@@ -12,7 +12,7 @@ class Renderer
     static void BeginScene(OrthographicCamera &camera);
     static void EndScene();
 
-    static void Submit(const std::shared_ptr<VertexArray> &vertexArray, Shader &shader);
+    static void Submit(const std::shared_ptr<VertexArray> &vertexArray, Shader &shader, const glm::mat4 &transform);
 
     static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

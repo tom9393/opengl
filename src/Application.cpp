@@ -1,4 +1,5 @@
 #include "../include/Application.h"
+#include "../include/TimeStep.h"
 
 Application* Application::s_Instance = nullptr;
 
@@ -20,9 +21,13 @@ void Application::run()
 
     while (m_Running)
     {
+        float time = (float)glfwGetTime();
+        TimeStep ts = time - m_LastTime;
+        m_LastTime = time;
+
         for (Layer* layer: m_LayerStack)
         {
-            layer->OnUpdate();
+            layer->OnUpdate(ts);
         }
 
         m_ImGuiLayer->Begin();

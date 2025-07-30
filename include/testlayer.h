@@ -2,6 +2,7 @@
 
 #include "Layer.h"
 #include "OrthographicCamera.h"
+#include "TimeStep.h"
 #include "VertexArray.h"
 #include "shader.h"
 
@@ -13,7 +14,7 @@ class Testlayer : public Layer
 
     void OnAttach();
     void OnDetach();
-    void OnUpdate();
+    void OnUpdate(TimeStep ts);
     void OnImGuiRender();
     void OnEvent(Event& event);
 

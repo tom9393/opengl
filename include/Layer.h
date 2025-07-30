@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pch.h"
+#include "TimeStep.h"
 #include "events/Event.h"
 
 class Layer
@@ -11,7 +12,7 @@ public:
 
         virtual void OnAttach() {}
         virtual void OnDetach() {}
-        virtual void OnUpdate() {}
+        virtual void OnUpdate(TimeStep ts) {}
         virtual void OnImGuiRender() {}
         virtual void OnEvent(Event& event) {}
 

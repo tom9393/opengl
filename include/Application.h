@@ -27,6 +27,7 @@ class Application
     std::unique_ptr<Window> m_Window;
     LayerStack m_LayerStack;
     bool m_Running = true;
+    float m_LastTime = 0.0f;
 
     bool onWindowClose(WindowCloseEvent &e);
 
