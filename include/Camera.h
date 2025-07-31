@@ -3,8 +3,8 @@
 
 #include "../pch.h"
 
-#include "transformable.h"
-#include "transform.h"
+#include "Transformable.h"
+#include "Transform.h"
 
 const float SPEED = 10.0f;
 const float SENSITIVITY = 0.1f;

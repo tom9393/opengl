@@ -1,4 +1,6 @@
 #include "../include/Renderer.h"
+#include "../platform/OpenGL/OpenGLShader.h"
+#include <memory>
 
 Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData;
 
@@ -11,11 +13,12 @@ void Renderer::EndScene()
 {
 };
 
-void Renderer::Submit(const std::shared_ptr<VertexArray> &vertexArray, Shader &shader, const glm::mat4 &transform)
+void Renderer::Submit(const std::shared_ptr<VertexArray> &vertexArray, const std::shared_ptr<Shader> &shader, const glm::mat4 &transform)
 {
-    shader.Enable();
-    shader.setMat4("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
-    shader.setMat4("u_Transform", transform);
+    shader->Bind();
+    std::dynamic_pointer_cast<OpenGLShader>(shader)->setMat4("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
+    std::dynamic_pointer_cast<OpenGLShader>(shader)->setMat4("u_Transform", transform);
+
     vertexArray->Bind();
     RenderCommand::DrawIndexed(vertexArray);
 };

@@ -1,10 +1,9 @@
 #include "../include/testlayer.h"
 #include "../include/Renderer.h"
-#include "../include/TmpShader.h"
 #include "../include/KeyCodes.h"
 #include "../include/Input.h"
 
-Testlayer::Testlayer() : m_Camera(-3.0f, 3.0f, -3.0f, 3.0f), shader(new TmpShader)
+Testlayer::Testlayer() : m_Camera(-3.0f, 3.0f, -3.0f, 3.0f), m_CameraPosition(glm::vec3(0.0f)), m_Shader(Shader::Create("/home/tom/Coding/c++/opengl/shaders/tmp.vert", "/home/tom/Coding/c++/opengl/shaders/tmp.frag"))
 {
     float vertices[3*3] = {
         -0.5f, -0.5f, 0.0f,
@@ -27,8 +26,6 @@ Testlayer::Testlayer() : m_Camera(-3.0f, 3.0f, -3.0f, 3.0f), shader(new TmpShade
 
     m_VertexArray->AddVertexBuffer(vertexBuffer);
     m_VertexArray->SetIndexBuffer(indexBuffer);
-
-    shader->Init();
 };
 
 Testlayer::~Testlayer()
@@ -44,6 +41,7 @@ void Testlayer::OnDetach() {
 };
 
 void Testlayer::OnUpdate(TimeStep ts) {
+
     if (Input::IsKeyPressed(KEY_LEFT))
         m_CameraPosition.x -= m_CameraSpeed * ts;
     if (Input::IsKeyPressed(KEY_RIGHT))
@@ -58,9 +56,11 @@ void Testlayer::OnUpdate(TimeStep ts) {
 
     m_Camera.SetPosition(m_CameraPosition);
     m_Camera.SetRotation(0.0f);
+
     Renderer::BeginScene(m_Camera);
+
     glm::mat4 pos = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
-    Renderer::Submit(m_VertexArray, *shader, pos);
+    Renderer::Submit(m_VertexArray, m_Shader, pos);
 
     Renderer::EndScene();
 };

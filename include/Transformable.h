@@ -1,5 +1,4 @@
-#ifndef TRANSFORMABLE
-#define TRANSFORMABLE
+#pragma once
 
 #include "../pch.h"
 
@@ -83,5 +82,3 @@ private:
     glm::vec3 velocity;
     glm::vec3 angularVelocity;
 };
-
-#endif

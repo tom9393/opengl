@@ -1,27 +1,20 @@
-#ifndef SHADER_H
-#define SHADER_H
+#pragma once
 
-#include "../pch.h"
+#include "../../pch.h"
+#include "../../include/Shader.h"
 
-class IDrawable;
-
-class Shader
+class OpenGLShader : public Shader
 {
 public:
 
-    Shader();
+    OpenGLShader(const char* vertexSrc, const char* fragmentSrc);
 
-    virtual ~Shader();
+    ~OpenGLShader();
 
-    virtual bool Init();
-
-    void Enable();
+    void Bind() const override;
+    void Unbind() const override;
 
     GLuint GetProgram() const { return id; }
-
-    // before run
-    virtual void setup();
-    virtual void cleanup();
 
     // utility uniform functions
     void setBool(const std::string &name, bool value) const;  
@@ -51,5 +44,3 @@ private:
     std::list<GLuint> shaderObjList;
 };
 
-
-#endif

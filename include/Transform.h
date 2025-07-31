@@ -1,9 +1,8 @@
-#ifndef TRANSFORM
-#define TRANSFORM
+#pragma once
 
 #include "../pch.h"
 
-#include "transformable.h"
+#include "Transformable.h"
 
 class Transform
 {
@@ -136,5 +135,3 @@ public:
         transformable.setRotation(prevRot);
     }
 };
-
-#endif

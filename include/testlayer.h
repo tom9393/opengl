@@ -4,7 +4,7 @@
 #include "OrthographicCamera.h"
 #include "TimeStep.h"
 #include "VertexArray.h"
-#include "shader.h"
+#include "Shader.h"
 
 class Testlayer : public Layer
 {
@@ -19,7 +19,7 @@ class Testlayer : public Layer
     void OnEvent(Event& event);
 
     private:
-    Shader* shader;
+    std::shared_ptr<Shader> m_Shader;
     std::shared_ptr<VertexArray> m_VertexArray;
     OrthographicCamera m_Camera;
     glm::vec3 m_CameraPosition;
