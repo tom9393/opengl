@@ -1,7 +1,7 @@
 #pragma once
 
+#include "CameraController.h"
 #include "Layer.h"
-#include "OrthographicCamera.h"
 #include "Texture.h"
 #include "TimeStep.h"
 #include "VertexArray.h"
@@ -22,7 +22,7 @@ class Testlayer : public Layer
     private:
     ShaderLibrary m_ShaderLibrary;
     std::shared_ptr<VertexArray> m_VertexArray;
-    OrthographicCamera m_Camera;
+    CameraController m_CameraController;
     glm::vec3 m_CameraPosition;
     float m_CameraSpeed = 0.1f;
 

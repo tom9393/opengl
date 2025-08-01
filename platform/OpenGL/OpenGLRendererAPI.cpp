@@ -1,4 +1,5 @@
 #include "../../pch.h"
+#include <GL/gl.h>
 #include "OpenGLRendererAPI.h"
 
 void OpenGLRendererAPI::Init()
@@ -20,4 +21,9 @@ void OpenGLRendererAPI::Clear()
 void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
 {
     glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+};
+
+void OpenGLRendererAPI::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+{
+    glViewport(x, y, width, height);
 };

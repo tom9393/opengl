@@ -1,12 +1,12 @@
 #include "../pch.h"
 #include "../include/testlayer.h"
 #include "../include/Renderer.h"
-#include "../include/KeyCodes.h"
-#include "../include/Input.h"
 #include "../platform/OpenGL/OpenGLShader.h"
 
-Testlayer::Testlayer() : m_Camera(-3.0f, 3.0f, -3.0f, 3.0f), m_CameraPosition(glm::vec3(0.0f))
+//Testlayer::Testlayer() : m_CameraController(std::make_shared<OrthographicCamera>(), 2.0f)
+Testlayer::Testlayer() : m_CameraController(std::make_shared<PerspectiveCamera>(), 2.0f)
 {
+
     float vertices[5*4] = {
         -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
@@ -55,24 +55,15 @@ void Testlayer::OnDetach() {
     std::cout << "Testlayer detached" << std::endl;
 };
 
-void Testlayer::OnUpdate(TimeStep ts) {
+void Testlayer::OnUpdate(TimeStep ts)
+{
 
-    if (Input::IsKeyPressed(KEY_LEFT))
-        m_CameraPosition.x -= m_CameraSpeed * ts;
-    if (Input::IsKeyPressed(KEY_RIGHT))
-        m_CameraPosition.x += m_CameraSpeed * ts;
-    if (Input::IsKeyPressed(KEY_DOWN))
-        m_CameraPosition.y -= m_CameraSpeed * ts;
-    if (Input::IsKeyPressed(KEY_UP))
-        m_CameraPosition.y += m_CameraSpeed * ts;
+    m_CameraController.OnUpdate(ts);
 
     RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
     RenderCommand::Clear();
 
-    m_Camera.SetPosition(m_CameraPosition);
-    m_Camera.SetRotation(0.0f);
-
-    Renderer::BeginScene(m_Camera);
+    Renderer::BeginScene(m_CameraController.GetCamera());
 
     glm::mat4 pos = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
     m_Texture->Bind(0);
@@ -81,8 +72,11 @@ void Testlayer::OnUpdate(TimeStep ts) {
     Renderer::EndScene();
 };
 
-void Testlayer::OnImGuiRender() {
+void Testlayer::OnImGuiRender()
+{
 };
 
-void Testlayer::OnEvent(Event& event) {
+void Testlayer::OnEvent(Event& e)
+{
+    m_CameraController.OnEvent(e);
 };

@@ -29,9 +29,12 @@ void Application::run()
         TimeStep ts = time - m_LastTime;
         m_LastTime = time;
 
-        for (Layer* layer: m_LayerStack)
+        if (!m_Minimized)
         {
-            layer->OnUpdate(ts);
+            for (Layer* layer: m_LayerStack)
+            {
+                layer->OnUpdate(ts);
+            }
         }
 
         m_ImGuiLayer->Begin();
@@ -48,7 +51,8 @@ void Application::run()
 void Application::onEvent(Event &e)
 {
     EventDispatcher dispatcher(e);
-    dispatcher.dispatch<WindowCloseEvent>(std::bind(&Application::onWindowClose, this, std::placeholders::_1));
+    dispatcher.dispatch<WindowCloseEvent>(std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
+    dispatcher.dispatch<WindowResizeEvent>(std::bind(&Application::OnWindowResize, this, std::placeholders::_1));
 
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
     {
@@ -61,12 +65,6 @@ void Application::onEvent(Event &e)
 
 };
 
-bool Application::onWindowClose(WindowCloseEvent &e)
-{
-    m_Running = false;
-    return true;
-};
-
 void Application::pushLayer(Layer* layer)
 {
     m_LayerStack.PushLayer(layer);
@@ -76,4 +74,23 @@ void Application::pushOverlayer(Layer* layer)
 {
     m_LayerStack.PushOverlay(layer);
     layer->OnAttach();
+};
+
+bool Application::OnWindowClose(WindowCloseEvent &e)
+{
+    m_Running = false;
+    return true;
+};
+
+bool Application::OnWindowResize(WindowResizeEvent &e)
+{
+    if (e.GetWidth() == 0 || e.GetHeight() == 0)
+    {
+        m_Minimized = true;
+        return false;
+    }
+    m_Minimized = false;
+    Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+
+    return false;
 };

@@ -1,56 +1,44 @@
 #include "../include/Camera.h"
+#include <glm/ext/matrix_clip_space.hpp>
 
-void Camera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch) {
+OrthographicCamera::OrthographicCamera()
+{
+    m_ProjectionMatrix = glm::ortho(-1.5f, 1.5f, -0.75f, 0.75f);
+    m_Position = {0.0f, 0.0f, 0.0f};
+};
 
-    xoffset *= MouseSensitivity;
-    yoffset *= MouseSensitivity;
-    Transform::rotateY(*this, -xoffset / 50);
-    Transform::rotateX(*this, -yoffset / 50);
+void OrthographicCamera::SetProjection(float aspectRatio, float zoomLevel)
+{
+    m_ProjectionMatrix = glm::ortho(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
+    RecalculateMatrix();
+};
 
-    float pitch = getRotation().x;
+void OrthographicCamera::RecalculateMatrix()
+{
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_Position) * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+    m_ViewMatrix = glm::inverse(transform);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+};
 
-    if (constrainPitch) {
-        if (pitch > 1.5f)
-            Transform::rotateX(*this, yoffset / 50);
-        if (pitch < -1.5f)
-            Transform::rotateX(*this, yoffset / 50);
-    }
 
-    updateCameraVectors();
-}
 
-void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime) {
 
-    glm::vec3 pos = getPosition();
-    float velocity = MovementSpeed * deltaTime;
-    if (direction == FORWARD)
-        pos += Front * velocity;
-    if (direction == BACKWARD)
-        pos -= Front * velocity;
-    if (direction == LEFT)
-        pos -= Right * velocity;
-    if (direction == RIGHT)
-        pos += Right * velocity;
-    if (direction == UP)
-        pos += Up * velocity;
-    if (direction == DOWN)
-        pos -= Up * velocity;
-    setPosition(pos);
-}
 
-glm::mat4 Camera::getViewMatrix() {
-    return glm::lookAt(getPosition(), getPosition() + Front, Up);
-}
 
-glm::mat4 Camera::getProjection() {
-    return projection;
-}
+PerspectiveCamera::PerspectiveCamera()
+{
+    m_ProjectionMatrix = glm::perspective(glm::radians(90.0f), 2.0f, 0.1f, 100.0f);
+    m_Position = {0.0f, 0.0f, -3.0f};
+};
 
-void Camera::ProcessMouseScroll(float yoffset) {};
+void PerspectiveCamera::SetProjection(float aspectRatio, float fov, float near, float far)
+{
+    m_ProjectionMatrix = glm::perspective(fov, aspectRatio, near, far);
+    RecalculateMatrix();
+};
 
-void Camera::updateCameraVectors() {
-
-    Front = glm::normalize(Transform::getForwardDirection(*this));
-    Right = glm::normalize(glm::cross(Front, WorldUp));
-    Up = glm::normalize(glm::cross(Right, Front));
-}
+void PerspectiveCamera::RecalculateMatrix()
+{
+    m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_Front, m_Up);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+};

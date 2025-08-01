@@ -27,9 +27,11 @@ class Application
     std::unique_ptr<Window> m_Window;
     LayerStack m_LayerStack;
     bool m_Running = true;
+    bool m_Minimized = false;
     float m_LastTime = 0.0f;
 
-    bool onWindowClose(WindowCloseEvent &e);
+    bool OnWindowClose(WindowCloseEvent &e);
+    bool OnWindowResize(WindowResizeEvent &e);
 
     Application* createApplication();
 };

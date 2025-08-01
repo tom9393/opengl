@@ -1,17 +1,18 @@
 #pragma once
 
-#include "OrthographicCamera.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
 #include "Shader.h"
+#include "Camera.h"
 
 class Renderer
 {
     public:
 
     static void Init();
+    static void OnWindowResize(uint32_t width, uint32_t height);
 
-    static void BeginScene(OrthographicCamera &camera);
+    static void BeginScene(std::shared_ptr<Camera> camera);
     static void EndScene();
 
     static void Submit(const std::shared_ptr<VertexArray> &vertexArray, const std::shared_ptr<Shader> &shader, const glm::mat4 &transform);

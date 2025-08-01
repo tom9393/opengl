@@ -1,52 +1,57 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include "../pch.h"
 
-#include "Transformable.h"
-#include "Transform.h"
-
-const float SPEED = 10.0f;
-const float SENSITIVITY = 0.1f;
-const float ZOOM = 45.0f;
-const glm::mat4 PROJECTION = glm::perspective(glm::radians(60.0f), (float)1600 / (float)1600, 0.1f, 100.0f);
-
-enum Camera_Movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN
+enum class CameraType
+{
+    Orthographic,
+    Perspective
 };
 
-class Camera : public Transformable
+class Camera
 {
     public:
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    glm::mat4 projection;
 
-    float MovementSpeed;
-    float MouseSensitivity;
-    float Zoom;
+    glm::vec3 &GetPosition() { return m_Position; }
+    void SetPosition(glm::vec3 &pos) { m_Position = pos; RecalculateMatrix(); }
 
-    Camera(glm::vec3 position = glm::vec3(-12.0f, 7.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), glm::mat4 projection = PROJECTION) : Transformable(position), Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM), WorldUp(up), projection(projection)
-    {
-        updateCameraVectors();
-        Transform::rotateTowards(*this, glm::vec3(0.0f));
-    }
+    glm::mat4 &GetProjectionMatrix() { return m_ProjectionMatrix; }
+    glm::mat4 &GetViewMatrix() { return m_ViewMatrix; }
+    glm::mat4 &GetViewProjectionMatrix() { return m_ViewProjectionMatrix; }
 
-    void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch);
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime);
-    void ProcessMouseScroll(float yoffset);
-    glm::mat4 getViewMatrix();
-    glm::mat4 getProjection();
+    protected:
+    virtual void RecalculateMatrix() = 0;
 
-    private:
-    void updateCameraVectors();
+    protected:
+    glm::vec3 m_Position = {0.0f, 0.0f, 0.0f};
+    float m_Rotation = 0.0f;
+    glm::mat4 m_ProjectionMatrix = {1.0f};
+    glm::mat4 m_ViewMatrix = {1.0f};
+    glm::mat4 m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 };
 
-#endif
+class OrthographicCamera : public Camera
+{
+    public:
+    OrthographicCamera();
+
+    void SetProjection(float aspectRatio, float zoomLevel);
+
+    private:
+    void RecalculateMatrix() override;
+};
+
+class PerspectiveCamera : public Camera
+{
+    public:
+    PerspectiveCamera();
+
+    void SetProjection(float aspectRatio, float fov, float near, float far);
+
+    private:
+    void RecalculateMatrix() override;
+
+    private:
+    glm::vec3 m_Up = {0.0f, 1.0f, 0.0f};
+    glm::vec3 m_Front = {0.0f, 0.0f, -1.0f};
+};
