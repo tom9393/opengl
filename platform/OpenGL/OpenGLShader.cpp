@@ -1,8 +1,8 @@
 #include "OpenGLShader.h"
-#include <GL/glext.h>
+#include "../../pch.h"
 #include <cstdio>
 
-OpenGLShader::OpenGLShader(const char* vertexSrc, const char* fragmentSrc)
+OpenGLShader::OpenGLShader(const std::string &name)
 {
     id = glCreateProgram();
 
@@ -10,10 +10,7 @@ OpenGLShader::OpenGLShader(const char* vertexSrc, const char* fragmentSrc)
         fprintf(stderr, "Error creating shader program\n");
     }
 
-    AddShader(GL_VERTEX_SHADER, vertexSrc);
-    AddShader(GL_FRAGMENT_SHADER, fragmentSrc);
-
-    Finalize();
+    m_Name = name;
 }
 
 OpenGLShader::~OpenGLShader()
@@ -33,8 +30,17 @@ OpenGLShader::~OpenGLShader()
     }
 }
 
+GLenum OpenGLShader::GetShaderFromExtension(const std::string &file)
+{
+    if(file.substr(file.find_last_of(".") + 1) == "vert") {
+        return GL_VERTEX_SHADER;
+    } else {
+        return GL_FRAGMENT_SHADER;
+    }
+};
+
 // Use this method to add shaders to the program. When finished - call finalize()
-bool OpenGLShader::AddShader(GLenum ShaderType, const char* filename)
+bool OpenGLShader::AddShader(const std::string &file)
 {
     std::string s;
     std::ifstream f;
@@ -44,7 +50,7 @@ bool OpenGLShader::AddShader(GLenum ShaderType, const char* filename)
     try 
     {
         // open files
-        f.open(filename);
+        f.open(file.c_str());
         std::stringstream stream;
         // read file's buffer contents into streams
         stream << f.rdbuf();
@@ -58,6 +64,8 @@ bool OpenGLShader::AddShader(GLenum ShaderType, const char* filename)
         std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
 	return false;
     }
+
+    unsigned int ShaderType = GetShaderFromExtension(file);
 
     GLuint ShaderObj = glCreateShader(ShaderType);
 
@@ -83,7 +91,7 @@ bool OpenGLShader::AddShader(GLenum ShaderType, const char* filename)
     if (!success) {
         GLchar InfoLog[1024];
         glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
-        fprintf(stderr, "Error compiling '%s': '%s'\n", filename, InfoLog);
+        fprintf(stderr, "Error compiling '%s': '%s'\n", file.c_str(), InfoLog);
         return false;
     }
 

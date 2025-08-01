@@ -1,5 +1,6 @@
 #include "../include/Application.h"
 #include "../include/TimeStep.h"
+#include "../include/Renderer.h"
 
 Application* Application::s_Instance = nullptr;
 
@@ -8,6 +9,9 @@ Application::Application()
     s_Instance = this;
     m_Window = std::unique_ptr<Window>(Window::Create());
     m_Window->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
+
+    Renderer::Init();
+
     m_ImGuiLayer = new ImGuiLayer();
     pushOverlayer(m_ImGuiLayer);
 };

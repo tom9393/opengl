@@ -7,12 +7,17 @@ class OpenGLShader : public Shader
 {
 public:
 
-    OpenGLShader(const char* vertexSrc, const char* fragmentSrc);
+    OpenGLShader(const std::string &name);
 
     ~OpenGLShader();
 
     void Bind() const override;
     void Unbind() const override;
+
+    const std::string& GetName() const override { return m_Name; }
+
+    bool AddShader(const std::string &file);
+    bool Finalize();
 
     GLuint GetProgram() const { return id; }
 
@@ -29,18 +34,14 @@ public:
 
 protected:
 
-    bool AddShader(GLenum ShaderType, const char* pFilename);
-
-    bool Finalize();
-
     GLint GetUniformLocation(const char* pUniformName);
-
+    GLenum GetShaderFromExtension(const std::string &path);
     GLuint id = 0;
 
 private:
 
     void PrintUniformList();
-
     std::list<GLuint> shaderObjList;
+    std::string m_Name;
 };
 
