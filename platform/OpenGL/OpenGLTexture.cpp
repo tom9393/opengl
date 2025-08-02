@@ -2,7 +2,7 @@
 #include "../../include/stb_image.h"
 #include "../../pch.h"
 
-OpenGLTexture2D::OpenGLTexture2D(const std::string &path) : m_Path(path)
+OpenGLTexture2D::OpenGLTexture2D(const std::string &path, TextureType type) : m_Path(path), m_Type(type)
 {
     int width, height, channels;
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
@@ -37,4 +37,9 @@ OpenGLTexture2D::~OpenGLTexture2D()
 void OpenGLTexture2D::Bind(uint32_t slot) const
 {
     glActiveTexture(GL_TEXTURE0 + slot);
+};
+
+uint32_t OpenGLTexture2D::GetID() const
+{
+    return m_RendererID;
 };

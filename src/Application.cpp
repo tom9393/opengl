@@ -1,6 +1,9 @@
 #include "../include/Application.h"
 #include "../include/TimeStep.h"
 #include "../include/Renderer.h"
+#include "../include/Input.h"
+#include "../include/KeyCodes.h"
+#include "../include/MouseButtonCodes.h"
 
 Application* Application::s_Instance = nullptr;
 
@@ -53,6 +56,8 @@ void Application::onEvent(Event &e)
     EventDispatcher dispatcher(e);
     dispatcher.dispatch<WindowCloseEvent>(std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
     dispatcher.dispatch<WindowResizeEvent>(std::bind(&Application::OnWindowResize, this, std::placeholders::_1));
+    dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&Application::OnMouseClick, this, std::placeholders::_1));
+    dispatcher.dispatch<KeyboardPressEvent>(std::bind(&Application::OnKeyPress, this, std::placeholders::_1));
 
     for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
     {
@@ -63,6 +68,10 @@ void Application::onEvent(Event &e)
         }
     }
 
+    if (Input::IsKeyPressed(KEY_Q))
+    {
+        m_Running = false;
+    }
 };
 
 void Application::pushLayer(Layer* layer)
@@ -91,6 +100,32 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     }
     m_Minimized = false;
     Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+
+    return false;
+};
+
+bool Application::OnMouseClick(MouseButtonPressedEvent &e)
+{
+    if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
+    {
+        m_Window->setCursor(true);
+    }
+
+    if (e.GetMouseButton() == MOUSE_BUTTON_RIGHT)
+    {
+        m_Window->setCursor(false);
+    }
+
+    return false;
+};
+
+bool Application::OnKeyPress(KeyboardPressEvent &e)
+{
+    if (e.getKeyCode() == KEY_Q)
+    {
+        WindowCloseEvent e;
+        onEvent(e);
+    }
 
     return false;
 };

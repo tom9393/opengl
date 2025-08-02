@@ -20,6 +20,9 @@ public:
     virtual void setVsync(bool enabled) override;
     virtual bool isVsync() override;
 
+    virtual void setCursor(bool enabled) override;
+    virtual bool isCursor() override;
+
 private:
 
     virtual void Init(const WindowProps &props);
@@ -32,6 +35,7 @@ private:
         std::string title;
         unsigned int height, width;
         bool VSync;
+        bool cursor;
         EventCallbackFn cb;
     };
 

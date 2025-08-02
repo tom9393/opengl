@@ -4,8 +4,8 @@
 #include "Layer.h"
 #include "Texture.h"
 #include "TimeStep.h"
-#include "VertexArray.h"
 #include "Shader.h"
+#include "model.h"
 
 class Testlayer : public Layer
 {
@@ -21,7 +21,7 @@ class Testlayer : public Layer
 
     private:
     ShaderLibrary m_ShaderLibrary;
-    std::shared_ptr<VertexArray> m_VertexArray;
+    std::shared_ptr<Model> m_Model;
     CameraController m_CameraController;
     glm::vec3 m_CameraPosition;
     float m_CameraSpeed = 0.1f;

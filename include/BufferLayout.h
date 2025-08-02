@@ -11,9 +11,8 @@ enum class ShaderDataType
 
 static uint32_t ShaderDataTypeSize(ShaderDataType type)
 {
-
     switch (type)
-        {
+    {
         case ShaderDataType::Float: return 4;
         case ShaderDataType::Float2: return 4 * 2;
         case ShaderDataType::Float3: return 4 * 3;
@@ -25,7 +24,7 @@ static uint32_t ShaderDataTypeSize(ShaderDataType type)
         case ShaderDataType::Bool: return 1;
         case ShaderDataType::Mat3: return 4 * 3 * 3;
         case ShaderDataType::Mat4: return 4 * 4 * 4;
-        }
+    }
     return 0;
 };
 
@@ -65,6 +64,9 @@ class BufferLayout
     public:
     BufferLayout() {}
     BufferLayout(const std::initializer_list<BufferElement> &elements) : m_Elements(elements) {
+        CalculateOffsetAndStride();
+    }
+    BufferLayout(const std::vector<BufferElement> &elements) : m_Elements(elements) {
         CalculateOffsetAndStride();
     }
     uint32_t GetStride() const { return m_Stride; }

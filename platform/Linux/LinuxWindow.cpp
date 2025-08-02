@@ -30,6 +30,7 @@ void LinuxWindow::Init(const WindowProps &props)
     m_Data.height = props.height;
     m_Data.width = props.width;
     m_Data.title = props.title;
+    m_Data.cursor = false;
 
     if (!s_GLFWInitialized)
     {
@@ -46,6 +47,7 @@ void LinuxWindow::Init(const WindowProps &props)
     glfwSetWindowUserPointer(m_Window, &m_Data);
     gladLoadGL();
     setVsync(true);
+    setCursor(false);
 
     // GLFW callbacks
     glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
@@ -150,10 +152,27 @@ void LinuxWindow::setVsync(bool enable)
 
 bool LinuxWindow::isVsync()
 {
-        return m_Data.VSync;
+    return m_Data.VSync;
 };
 
 void* LinuxWindow::GetNativeWindow()
 {
-        return m_Window;
+    return m_Window;
+};
+
+void LinuxWindow::setCursor(bool enabled)
+{
+    if (enabled)
+    {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    } else
+    {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+    m_Data.cursor = enabled;
+
+};
+bool LinuxWindow::isCursor()
+{
+    return m_Data.cursor;
 };

@@ -6,6 +6,9 @@
 #include "LayerStack.h"
 #include "Window.h"
 #include "events/ApplicationEvent.h"
+#include "events/Event.h"
+#include "events/KeyboardEvent.h"
+#include "events/MouseEvent.h"
 
 class Application
 {
@@ -32,6 +35,8 @@ class Application
 
     bool OnWindowClose(WindowCloseEvent &e);
     bool OnWindowResize(WindowResizeEvent &e);
+    bool OnMouseClick(MouseButtonPressedEvent &e);
+    bool OnKeyPress(KeyboardPressEvent &e);
 
     Application* createApplication();
 };

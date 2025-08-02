@@ -2,11 +2,11 @@
 #include "../include/Renderer.h"
 #include "../platform/OpenGL/OpenGLIndexBuffer.h"
 
-IndexBuffer* IndexBuffer::Create(uint32_t *indices, uint32_t size)
+std::shared_ptr<IndexBuffer> IndexBuffer::Create(uint32_t *indices, uint32_t size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;
-                case RendererAPI::API::OpenGL: return new OpenGLIndexBuffer(indices, size);
+                case RendererAPI::API::OpenGL: return std::make_shared<OpenGLIndexBuffer>(indices, size);
         }
     return nullptr;
 };

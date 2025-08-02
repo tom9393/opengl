@@ -12,39 +12,35 @@ void CameraController::OnEvent(Event &e)
 bool CameraController::OnWindowResize(WindowResizeEvent &e)
 {
     m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
-
-    if (auto ortho = std::dynamic_pointer_cast<OrthographicCamera>(m_Camera))
-    {
-        ortho->SetProjection(m_AspectRatio, m_ZoomLevel);
-    }
-    else if (auto perspective = std::dynamic_pointer_cast<PerspectiveCamera>(m_Camera))
-    {
-        perspective->SetProjection(m_AspectRatio, glm::radians(90.0f), 0.1f, 100.0f);
-    }
+    m_Camera->SetProjection(m_AspectRatio, glm::radians(90.0f), 0.1f, 100.0f);
 
     return false;
 }
 
 void CameraController::OnUpdate(TimeStep ts)
 {
-    if (auto ortho = std::dynamic_pointer_cast<OrthographicCamera>(m_Camera))
-    {
-        if (Input::IsKeyPressed(KEY_W)) m_CameraPosition.y += m_CameraTranslationSpeed * ts;
-        if (Input::IsKeyPressed(KEY_S)) m_CameraPosition.y -= m_CameraTranslationSpeed * ts;
-        if (Input::IsKeyPressed(KEY_A)) m_CameraPosition.x -= m_CameraTranslationSpeed * ts;
-        if (Input::IsKeyPressed(KEY_D)) m_CameraPosition.x += m_CameraTranslationSpeed * ts;
+    if (Input::IsKeyPressed(KEY_W)) ProcessMovement(FORWARD, ts);
+    if (Input::IsKeyPressed(KEY_S)) ProcessMovement(BACKWARD, ts);
+    if (Input::IsKeyPressed(KEY_A)) ProcessMovement(LEFT, ts);
+    if (Input::IsKeyPressed(KEY_D)) ProcessMovement(RIGHT, ts);
+    if (Input::IsKeyPressed(KEY_SPACE)) ProcessMovement(UP, ts);
+    if (Input::IsKeyPressed(KEY_LEFT_CONTROL)) ProcessMovement(DOWN, ts);
 
-        ortho->SetProjection(m_AspectRatio, m_ZoomLevel);
-    }
-    else if (auto perspective = std::dynamic_pointer_cast<PerspectiveCamera>(m_Camera))
-    {
-        if (Input::IsKeyPressed(KEY_A)) m_CameraPosition.x -= m_CameraTranslationSpeed * ts;
-        if (Input::IsKeyPressed(KEY_D)) m_CameraPosition.x += m_CameraTranslationSpeed * ts;
-        if (Input::IsKeyPressed(KEY_S)) m_CameraPosition.z += m_CameraTranslationSpeed * ts;
-        if (Input::IsKeyPressed(KEY_W)) m_CameraPosition.z -= m_CameraTranslationSpeed * ts;
+    auto [x, y] = Input::GetMousePosition();
+    m_Camera->OnMouseMoved(x, y);
 
-        perspective->SetProjection(m_AspectRatio, glm::radians(90.0f), 0.1f, 100.0f);
-    }
-
+    m_Camera->SetProjection(m_AspectRatio, glm::radians(90.0f), 0.1f, 100.0f);
     m_Camera->SetPosition(m_CameraPosition);
 };
+
+void CameraController::ProcessMovement(Direction direction, TimeStep ts) {
+
+    float velocity = m_CameraTranslationSpeed * ts;
+
+    if (direction == FORWARD) m_CameraPosition += m_Camera->GetForward() * velocity;
+    if (direction == BACKWARD) m_CameraPosition -= m_Camera->GetForward() * velocity;
+    if (direction == LEFT) m_CameraPosition -= m_Camera->GetRight() * velocity;
+    if (direction == RIGHT) m_CameraPosition += m_Camera->GetRight() * velocity;
+    if (direction == UP) m_CameraPosition += m_Camera->GetUp() * velocity;
+    if (direction == DOWN) m_CameraPosition -= m_Camera->GetUp() * velocity;
+}

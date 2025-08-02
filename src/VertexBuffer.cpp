@@ -2,11 +2,11 @@
 #include "../include/Renderer.h"
 #include "../platform/OpenGL/OpenGLVertexBuffer.h"
 
-VertexBuffer* VertexBuffer::Create(float *vertices, uint32_t size)
+std::shared_ptr<VertexBuffer> VertexBuffer::Create(float *vertices, uint32_t size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;
-                case RendererAPI::API::OpenGL: return new OpenGLVertexBuffer(vertices, size);
+                case RendererAPI::API::OpenGL: return std::make_shared<OpenGLVertexBuffer>(vertices, size);
         }
     return nullptr;
 };

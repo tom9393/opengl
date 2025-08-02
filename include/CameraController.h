@@ -9,7 +9,7 @@ const float SPEED = 10.0f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
-enum Camera_Movement {
+enum Direction {
     FORWARD,
     BACKWARD,
     LEFT,
@@ -27,11 +27,13 @@ class CameraController
     void OnEvent(Event &e);
     void OnUpdate(TimeStep ts);
 
+
     std::shared_ptr<Camera> &GetCamera() { return m_Camera; }
     const std::shared_ptr<Camera> &GetCamera() const { return m_Camera; }
 
     private:
     bool OnWindowResize(WindowResizeEvent &e);
+    void ProcessMovement(Direction direction, TimeStep ts);
 
     private:
     glm::vec3 m_CameraPosition = {0.0f, 0.0f, 0.0f};
