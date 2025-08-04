@@ -46,6 +46,9 @@ void LinuxWindow::Init(const WindowProps &props)
     glfwMakeContextCurrent(m_Window);
     glfwSetWindowUserPointer(m_Window, &m_Data);
     gladLoadGL();
+
+    glEnable(GL_DEPTH_TEST);
+
     setVsync(true);
     setCursor(false);
 

@@ -40,7 +40,23 @@ void Testlayer::OnUpdate(TimeStep ts)
 
     Renderer::BeginScene(m_CameraController.GetCamera());
 
-    m_Model->Draw(m_ShaderLibrary.Get("Texture"));
+    std::vector<Mesh> meshes = m_Model->GetMeshes();
+
+    std::shared_ptr<Shader> shader = m_ShaderLibrary.Get("Texture");
+
+
+    glm::mat4 pos = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
+    for (auto &mesh : meshes)
+    {
+         std::vector<std::shared_ptr<Texture2D>> textures = mesh.GetTextures();
+        unsigned int idx = 0;
+        for (auto &texture : textures)
+        {
+            Renderer::SetTexture(shader, texture, idx);
+            idx++;
+        }
+        Renderer::Submit(shader, mesh.GetVao(), pos);
+    }
 
     Renderer::EndScene();
 };

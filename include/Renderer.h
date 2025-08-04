@@ -4,6 +4,7 @@
 #include "RendererAPI.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "Texture.h"
 
 class Renderer
 {
@@ -15,7 +16,8 @@ class Renderer
     static void BeginScene(std::shared_ptr<Camera> camera);
     static void EndScene();
 
-    static void Submit(const std::shared_ptr<VertexArray> &vertexArray, const std::shared_ptr<Shader> &shader, const glm::mat4 &transform);
+    static void SetTexture(const std::shared_ptr<Shader> &shader, const std::shared_ptr<Texture> &texture, const unsigned int index);
+    static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const glm::mat4 &transform);
 
     static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

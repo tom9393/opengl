@@ -10,6 +10,7 @@ class OpenGLTexture2D : public Texture2D
     uint32_t GetHeight() const override { return m_Height; }
 
     uint32_t GetID() const override;
+    TextureType GetType() const { return m_Type; }
 
     void Bind(uint32_t slot) const override;
 

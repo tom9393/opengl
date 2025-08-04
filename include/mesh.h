@@ -2,17 +2,12 @@
 
 #include "../pch.h"
 
-#include "../include/Shader.h"
 #include "../include/preprocessor.h"
 #include "BufferLayout.h"
 #include "IndexBuffer.h"
 #include "Texture.h"
-#include "Vertex.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
-#include <variant>
-
-#define MAX_BONE_INFLUENCE 4
 
 class Mesh {
 public:
@@ -29,17 +24,8 @@ public:
         setupMesh();
     }
 
-    // render the mesh
-    std::shared_ptr<VertexArray> GetVao() 
-    {
-        return VAO;
-    }
-
-    // render the mesh
-    std::vector<std::shared_ptr<Texture2D>> &GetTextures() 
-    {
-        return m_Textures;
-    }
+    std::shared_ptr<VertexArray> GetVao() { return VAO; }
+    std::vector<std::shared_ptr<Texture2D>> GetTextures() { return m_Textures; }
 
 private:
     // render data 

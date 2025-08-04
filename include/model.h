@@ -7,68 +7,28 @@
 
 #include "../pch.h"
 #include "../include/mesh.h"
-#include "../include/Shader.h"
 #include "../include/preprocessor.h"
 #include "BufferLayout.h"
 #include "Texture.h"
-#include "VertexArray.h"
 #include "stb_image.h"
 #include "Transformable.h"
-#include "Vertex.h"
-#include "Renderer.h"
 
 class Model
 {
 public:
     // model data 
-    std::vector<std::string> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    std::vector<Mesh>    meshes;
-    std::string directory;
-    bool gammaCorrection;
+    std::vector<Mesh> m_Meshes;
+    std::string m_Directory;
+    bool m_GammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma)
+    Model(std::string const &path, bool gamma = false) : m_GammaCorrection(gamma)
     {
         stbi_set_flip_vertically_on_load(true);  
         loadModel(path);
     }
 
-    // draws the model, and thus all its meshes
-    void Draw(std::shared_ptr<Shader> shader)
-    {
-        glm::mat4 pos = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
-        for(unsigned int i = 0; i < meshes.size(); i++)
-        {
-            uint32_t slot = 0;
-            std::shared_ptr<VertexArray> VAO = meshes[i].GetVao();
-            std::vector<std::shared_ptr<Texture2D>> textures = meshes[i].GetTextures();
-            for (auto &texture : textures) // Work in progress
-            {
-                texture->Bind(slot++);
-                // retrieve texture number (the N in diffuse_textureN)
-                string number;
-                string name = textures[i].type;
-                if(name == "texture_diffuse") {
-                    number = std::to_string(diffuseNr++);
-                    glUniform1i(glGetUniformLocation(shader.GetProgram(), "material.diffuse"), i);
-                }
-                else if(name == "texture_specular") {
-                    number = std::to_string(specularNr++); // transfer unsigned int to string
-                    glUniform1i(glGetUniformLocation(shader.GetProgram(), "material.specular"), i);
-                }
-                else if(name == "texture_normal")
-                    number = std::to_string(normalNr++); // transfer unsigned int to string
-                else if(name == "texture_height")
-                    number = std::to_string(heightNr++); // transfer unsigned int to string
-
-                // now set the sampler to the correct texture unit
-                // glUniform1i(glGetUniformLocation(shader.GetProgram(), (name + number).c_str()), i);
-                // and finally bind the texture
-                glBindTexture(GL_TEXTURE_2D, textures[i].id);
-            }
-            Renderer::Submit(VAO, shader, pos);
-        }
-    }
+    std::vector<Mesh> &GetMeshes() { return m_Meshes; };
     
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -84,7 +44,7 @@ private:
             return;
         }
         // retrieve the directory path of the filepath
-        directory = path.substr(0, path.find_last_of('/'));
+        m_Directory = path.substr(0, path.find_last_of('/'));
 
         // process ASSIMP's root node recursively
         processNode(scene->mRootNode, scene);
@@ -99,7 +59,7 @@ private:
             // the node object only contains indices to index the actual objects in the scene. 
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            meshes.emplace_back(processMesh(mesh, scene));
+            m_Meshes.emplace_back(processMesh(mesh, scene));
         }
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
         for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -123,15 +83,16 @@ private:
         bufferElements.emplace_back(ShaderDataType::Float3, "a_Position");
 
         if (mesh->HasNormals()) bufferElements.emplace_back(ShaderDataType::Float3, "a_Normal");
+
         if(mesh->mTextureCoords[0])
         {
-            bufferElements.emplace_back(ShaderDataType::Float2, "a_Texture");
+            bufferElements.emplace_back(ShaderDataType::Float2, "a_TexCoord");
             bufferElements.emplace_back(ShaderDataType::Float3, "a_Tangent");
             bufferElements.emplace_back(ShaderDataType::Float3, "a_Bitangent");
         }
         else
         {
-            bufferElements.emplace_back(ShaderDataType::Float2, "a_Texture");
+            bufferElements.emplace_back(ShaderDataType::Float2, "a_TexCoord");
         }
 
         // walk through each of the mesh's vertices
@@ -187,18 +148,22 @@ private:
         // diffuse: texture_diffuseN
         // specular: texture_specularN
         // normal: texture_normalN
+        //
+        std::array<aiTextureType, 4> textureTypes = { aiTextureType_DIFFUSE, aiTextureType_SPECULAR, aiTextureType_HEIGHT, aiTextureType_AMBIENT };
+
+        for (unsigned int i = 0; i < textureTypes.size(); i++) loadMaterialTextures(material, textureTypes[i]);
 
         // 1. diffuse maps
-        std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+        std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
         // 2. specular maps
-        std::vector<std::shared_ptr<Texture2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+        std::vector<std::shared_ptr<Texture2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR);
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         // 3. normal maps
-        std::vector<std::shared_ptr<Texture2D>> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+        std::vector<std::shared_ptr<Texture2D>> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
         // 4. height maps
-        std::vector<std::shared_ptr<Texture2D>> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+        std::vector<std::shared_ptr<Texture2D>> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT);
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
         BufferLayout layout(bufferElements);
@@ -208,23 +173,24 @@ private:
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
     // the required info is returned as a Texture struct.
-    std::vector<std::shared_ptr<Texture2D>> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName)
+    std::vector<std::shared_ptr<Texture2D>> loadMaterialTextures(aiMaterial *mat, aiTextureType type)
     {
-
         std::vector<std::shared_ptr<Texture2D>> textures;
         for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
         {
             aiString str;
             mat->GetTexture(type, i, &str);
+
+            std::string filename = std::string(str.C_Str());
+            filename = m_Directory + "/" + filename;
+
             TextureType txtType;
             if (type == aiTextureType_DIFFUSE) txtType = TextureType::Diffuse;
             if (type == aiTextureType_SPECULAR) txtType = TextureType::Specular;
             if (type == aiTextureType_HEIGHT) txtType = TextureType::Normal;
             if (type == aiTextureType_AMBIENT) txtType = TextureType::Height;
 
-            std::shared_ptr<Texture2D> txt = Texture2D::Create(directory, txtType);
-            textures.push_back(txt);
-            textures_loaded.emplace_back(str.C_Str());  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
+            textures.emplace_back(Texture2D::Create(filename, txtType));
         }
         return textures;
     }

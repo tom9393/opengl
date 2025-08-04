@@ -37,6 +37,7 @@ OpenGLTexture2D::~OpenGLTexture2D()
 void OpenGLTexture2D::Bind(uint32_t slot) const
 {
     glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, m_RendererID);
 };
 
 uint32_t OpenGLTexture2D::GetID() const
