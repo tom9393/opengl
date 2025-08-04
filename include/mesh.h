@@ -26,6 +26,8 @@ public:
 
     std::shared_ptr<VertexArray> GetVao() const { return m_VAO; }
     std::vector<std::shared_ptr<Texture2D>> GetTextures() const { return m_Textures; }
+    std::vector<float> GetVertices() const { return m_Vertices; }
+    BufferLayout GetLayout() const { return m_Layout; }
 
 private:
     // render data 
@@ -40,10 +42,7 @@ private:
         m_VAO = VertexArray::Create();
         m_VAO->Bind();
         m_VBO = VertexBuffer::Create(&m_Vertices[0], m_Vertices.size() * sizeof(float));
-        m_EBO = IndexBuffer::Create(&m_Indices[0], m_Indices.size() * sizeof(unsigned int));
-        // std::cout << "Vertex count: " << m_Vertices.size() << "\n";
-        // std::cout << "Float per vertex: " << m_Layout.GetStride() / sizeof(float) << "\n";
-        // std::cout << "Expected vertex count: " << m_Vertices.size() / (m_Layout.GetStride() / sizeof(float)) << "\n";
+        m_EBO = IndexBuffer::Create(&m_Indices[0], m_Indices.size());
         m_VBO->SetLayout(m_Layout);
         m_VAO->AddVertexBuffer(m_VBO);
         m_VAO->SetIndexBuffer(m_EBO);

@@ -18,6 +18,7 @@ class Camera
     glm::mat4 &GetViewProjectionMatrix() { return m_ViewProjectionMatrix; }
 
     void OnMouseMoved(float xpos, float ypos);
+    void SetFirstMouse(bool mouseStatus);
     void SetProjection(float fov, float aspectRatio, float near, float far);
 
     glm::vec3 &GetForward() { return m_Forward; };

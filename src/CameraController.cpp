@@ -29,7 +29,6 @@ void CameraController::OnUpdate(TimeStep ts)
     auto [x, y] = Input::GetMousePosition();
     m_Camera->OnMouseMoved(x, y);
 
-    m_Camera->SetProjection(m_AspectRatio, glm::radians(90.0f), 0.1f, 100.0f);
     m_Camera->SetPosition(m_CameraPosition);
 };
 

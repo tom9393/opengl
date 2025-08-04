@@ -67,3 +67,8 @@ void Camera::RecalculateMatrix()
     m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_Forward, m_WorldUp);
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 };
+
+void Camera::SetFirstMouse(bool mouseStatus)
+{
+    m_FirstMouse = mouseStatus;
+};

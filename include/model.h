@@ -24,7 +24,6 @@ public:
     // constructor, expects a filepath to a 3D model.
     Model(std::string const &path, bool gamma = false) : m_GammaCorrection(gamma)
     {
-        stbi_set_flip_vertically_on_load(true);  
         loadModel(path);
     }
 
@@ -74,8 +73,8 @@ private:
         // data to fill
         std::vector<float> vertices;
         std::vector<unsigned int> indices;
-        // vertices.reserve(mesh->mNumVertices * 3);
-        // indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
+        vertices.reserve(mesh->mNumVertices * 3);
+        indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
 
         // walk through each of the mesh's vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
