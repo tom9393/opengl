@@ -31,6 +31,11 @@ class RenderCommand
         s_RendererAPI->SetViewport(x, y, width, height);
     }
 
+    inline static void ToggleWireframe()
+    {
+        s_RendererAPI->ToggleWireframe();
+    }
+
     private:
     static RendererAPI* s_RendererAPI;
 };

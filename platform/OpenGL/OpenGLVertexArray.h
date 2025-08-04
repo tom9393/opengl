@@ -20,5 +20,5 @@ class OpenGLVertexArray : public VertexArray
     private:
     std::vector<std::shared_ptr<VertexBuffer>> m_VertexBuffers;
     std::shared_ptr<IndexBuffer> m_IndexBuffer;
-    uint32_t m_RendererID;
+    unsigned int m_RendererID;
 };

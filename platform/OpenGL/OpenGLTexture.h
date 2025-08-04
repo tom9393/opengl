@@ -6,17 +6,17 @@ class OpenGLTexture2D : public Texture2D
     OpenGLTexture2D(const std::string &path, TextureType type);
     virtual ~OpenGLTexture2D();
 
-    uint32_t GetWidth() const override { return m_Width; }
-    uint32_t GetHeight() const override { return m_Height; }
+    unsigned int GetWidth() const override { return m_Width; }
+    unsigned int GetHeight() const override { return m_Height; }
 
-    uint32_t GetID() const override;
+    unsigned int GetID() const override;
     TextureType GetType() const { return m_Type; }
 
-    void Bind(uint32_t slot) const override;
+    void Bind(unsigned int slot) const override;
 
     private:
     std::string m_Path;
     TextureType m_Type;
-    uint32_t m_Width, m_Height;
-    uint32_t m_RendererID;
+    unsigned int m_Width, m_Height;
+    unsigned int m_RendererID;
 };

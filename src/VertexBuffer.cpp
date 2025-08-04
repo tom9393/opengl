@@ -2,7 +2,7 @@
 #include "../include/Renderer.h"
 #include "../platform/OpenGL/OpenGLVertexBuffer.h"
 
-std::shared_ptr<VertexBuffer> VertexBuffer::Create(float *vertices, uint32_t size)
+std::shared_ptr<VertexBuffer> VertexBuffer::Create(float *vertices, unsigned int size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;

@@ -127,5 +127,10 @@ bool Application::OnKeyPress(KeyboardPressEvent &e)
         onEvent(e);
     }
 
+    if (e.getKeyCode() == KEY_E)
+    {
+        Renderer::ToggleWireframe();
+    }
+
     return false;
 };

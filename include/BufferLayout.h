@@ -9,7 +9,7 @@ enum class ShaderDataType
     Bool
 };
 
-static uint32_t ShaderDataTypeSize(ShaderDataType type)
+static unsigned int ShaderDataTypeSize(ShaderDataType type)
 {
     switch (type)
     {
@@ -32,14 +32,14 @@ struct BufferElement
 {
     std::string Name;
     ShaderDataType Type;
-    uint32_t Offset;
-    uint32_t Size;
+    unsigned int Offset;
+    unsigned int Size;
     bool Normalized;
 
     BufferElement() {}
     BufferElement(ShaderDataType type, const std::string &name, bool normalized = false) : Name(name), Type(type), Normalized(normalized), Size(ShaderDataTypeSize(type)), Offset(0) {}
 
-    uint32_t GetComponentCount() const
+    unsigned int GetComponentCount() const
     {
         switch (Type)
         {
@@ -69,16 +69,16 @@ class BufferLayout
     BufferLayout(const std::vector<BufferElement> &elements) : m_Elements(elements) {
         CalculateOffsetAndStride();
     }
-    uint32_t GetStride() const { return m_Stride; }
+    unsigned int GetStride() const { return m_Stride; }
     const std::vector<BufferElement>& GetElements() const { return m_Elements; }
     std::vector<BufferElement>::const_iterator begin() const { return m_Elements.begin(); }
-    std::vector<BufferElement>::const_iterator end()	const { return m_Elements.end(); }
+    std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
     private:
     void CalculateOffsetAndStride()
     {
-        uint32_t offset = 0;
+        unsigned int offset = 0;
         m_Stride = 0;
-        for (auto &element : m_Elements)
+        for (auto& element : m_Elements)
         {
             element.Offset = offset;
             offset += element.Size;
@@ -86,5 +86,5 @@ class BufferLayout
         }
     }
     std::vector<BufferElement> m_Elements;
-    uint32_t m_Stride = 0;
+    unsigned int m_Stride = 0;
 };

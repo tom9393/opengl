@@ -17,7 +17,7 @@ class Model
 {
 public:
     // model data 
-    std::vector<Mesh> m_Meshes;
+    std::vector<std::shared_ptr<Mesh>> m_Meshes;
     std::string m_Directory;
     bool m_GammaCorrection;
 
@@ -28,7 +28,7 @@ public:
         loadModel(path);
     }
 
-    std::vector<Mesh> &GetMeshes() { return m_Meshes; };
+    std::vector<std::shared_ptr<Mesh>> GetMeshes() { return m_Meshes; };
     
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -69,66 +69,48 @@ private:
 
     }
 
-    Mesh processMesh(aiMesh *mesh, const aiScene *scene)
+    std::shared_ptr<Mesh> processMesh(aiMesh *mesh, const aiScene *scene)
     {
         // data to fill
         std::vector<float> vertices;
-        vertices.reserve(mesh->mNumVertices);
-
         std::vector<unsigned int> indices;
-        indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
-        std::vector<std::shared_ptr<Texture2D>> textures;
-        std::vector<BufferElement> bufferElements;
-
-        bufferElements.emplace_back(ShaderDataType::Float3, "a_Position");
-
-        if (mesh->HasNormals()) bufferElements.emplace_back(ShaderDataType::Float3, "a_Normal");
-
-        if(mesh->mTextureCoords[0])
-        {
-            bufferElements.emplace_back(ShaderDataType::Float2, "a_TexCoord");
-            bufferElements.emplace_back(ShaderDataType::Float3, "a_Tangent");
-            bufferElements.emplace_back(ShaderDataType::Float3, "a_Bitangent");
-        }
-        else
-        {
-            bufferElements.emplace_back(ShaderDataType::Float2, "a_TexCoord");
-        }
+        // vertices.reserve(mesh->mNumVertices * 3);
+        // indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
 
         // walk through each of the mesh's vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
             // positions
-            vertices.emplace_back(mesh->mVertices[i].x);
-            vertices.emplace_back(mesh->mVertices[i].y);
-            vertices.emplace_back(mesh->mVertices[i].z);
+            vertices.push_back(mesh->mVertices[i].x);
+            vertices.push_back(mesh->mVertices[i].y);
+            vertices.push_back(mesh->mVertices[i].z);
             // normals
             if (mesh->HasNormals())
             {
-                vertices.emplace_back(mesh->mNormals[i].x);
-                vertices.emplace_back(mesh->mNormals[i].y);
-                vertices.emplace_back(mesh->mNormals[i].z);
+                vertices.push_back(mesh->mNormals[i].x);
+                vertices.push_back(mesh->mNormals[i].y);
+                vertices.push_back(mesh->mNormals[i].z);
             }
             // texture coordinates
             if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
             {
                 // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
                 // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-                vertices.emplace_back(mesh->mTextureCoords[0][i].x);
-                vertices.emplace_back(mesh->mTextureCoords[0][i].y);
+                vertices.push_back(mesh->mTextureCoords[0][i].x);
+                vertices.push_back(mesh->mTextureCoords[0][i].y);
 
-                vertices.emplace_back(mesh->mTangents[i].x);
-                vertices.emplace_back(mesh->mTangents[i].y);
-                vertices.emplace_back(mesh->mTangents[i].z);
+                vertices.push_back(mesh->mTangents[i].x);
+                vertices.push_back(mesh->mTangents[i].y);
+                vertices.push_back(mesh->mTangents[i].z);
 
-                vertices.emplace_back(mesh->mBitangents[i].x);
-                vertices.emplace_back(mesh->mBitangents[i].y);
-                vertices.emplace_back(mesh->mBitangents[i].z);
+                vertices.push_back(mesh->mBitangents[i].x);
+                vertices.push_back(mesh->mBitangents[i].y);
+                vertices.push_back(mesh->mBitangents[i].z);
             }
             else
             {
-                vertices.emplace_back(0.0f);
-                vertices.emplace_back(0.0f);
+                vertices.push_back(0.0f);
+                vertices.push_back(0.0f);
             }
 
         }
@@ -149,10 +131,8 @@ private:
         // specular: texture_specularN
         // normal: texture_normalN
         //
-        std::array<aiTextureType, 4> textureTypes = { aiTextureType_DIFFUSE, aiTextureType_SPECULAR, aiTextureType_HEIGHT, aiTextureType_AMBIENT };
 
-        for (unsigned int i = 0; i < textureTypes.size(); i++) loadMaterialTextures(material, textureTypes[i]);
-
+        std::vector<std::shared_ptr<Texture2D>> textures;
         // 1. diffuse maps
         std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -166,9 +146,15 @@ private:
         std::vector<std::shared_ptr<Texture2D>> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT);
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-        BufferLayout layout(bufferElements);
+        BufferLayout layout = {
+            {ShaderDataType::Float3, "a_Position"},
+            {ShaderDataType::Float3, "a_Normal"},
+            {ShaderDataType::Float2, "a_TexCoord"},
+            {ShaderDataType::Float3, "a_Tangent"},
+            {ShaderDataType::Float3, "a_Bitangent"}
+        };
 
-        return Mesh(vertices, indices, textures, layout);
+        return std::make_shared<Mesh>(vertices, indices, textures, layout);
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.

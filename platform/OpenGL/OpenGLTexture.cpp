@@ -34,13 +34,13 @@ OpenGLTexture2D::~OpenGLTexture2D()
     glDeleteTextures(1, &m_RendererID);
 };
 
-void OpenGLTexture2D::Bind(uint32_t slot) const
+void OpenGLTexture2D::Bind(unsigned int slot) const
 {
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, m_RendererID);
 };
 
-uint32_t OpenGLTexture2D::GetID() const
+unsigned int OpenGLTexture2D::GetID() const
 {
     return m_RendererID;
 };

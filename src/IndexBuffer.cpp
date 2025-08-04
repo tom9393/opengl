@@ -2,7 +2,7 @@
 #include "../include/Renderer.h"
 #include "../platform/OpenGL/OpenGLIndexBuffer.h"
 
-std::shared_ptr<IndexBuffer> IndexBuffer::Create(uint32_t *indices, uint32_t size)
+std::shared_ptr<IndexBuffer> IndexBuffer::Create(unsigned int* indices, unsigned int size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;

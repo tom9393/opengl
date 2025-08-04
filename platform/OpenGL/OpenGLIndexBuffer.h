@@ -5,15 +5,15 @@
 class OpenGLIndexBuffer : public IndexBuffer
 {
     public:
-    OpenGLIndexBuffer(uint32_t* indices, uint32_t size);
+    OpenGLIndexBuffer(unsigned int* indices, unsigned int size);
     ~OpenGLIndexBuffer();
 
     void Bind() const;
     void Unbind() const;
 
-    uint32_t GetCount() const { return m_Count; }
+    unsigned int GetCount() const { return m_Count; }
 
     private:
-    uint32_t m_RendererID;
-    uint32_t m_Count;
+    unsigned int m_RendererID;
+    unsigned int m_Count;
 };

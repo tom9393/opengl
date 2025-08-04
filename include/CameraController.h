@@ -38,8 +38,8 @@ class CameraController
     private:
     glm::vec3 m_CameraPosition = {0.0f, 0.0f, 0.0f};
     float m_CameraRotation = 0.0f;
-    float m_CameraTranslationSpeed = 1.0f;
-    float m_CameraRotationSpeed = 1.0f;
+    float m_CameraTranslationSpeed = 2.0f;
+    float m_CameraRotationSpeed = 2.0f;
     float m_AspectRatio;
     float m_ZoomLevel = 1.0f;
     std::shared_ptr<Camera> m_Camera;

@@ -3,8 +3,18 @@
 
 Camera::Camera()
 {
-    m_ProjectionMatrix = glm::perspective(glm::radians(90.0f), 2.0f, 0.1f, 100.0f);
     m_Position = {0.0f, 0.0f, -3.0f};
+    m_WorldUp = {0.0f, 1.0f, 0.0f};
+    
+    // 🔧 Add these:
+    m_Yaw = -90.0f;   // Facing down -Z (OpenGL standard view)
+    m_Pitch = 0.0f;
+    m_MouseSensitivity = 0.1f;
+
+    UpdateCameraVectors(); // ← important!
+    RecalculateMatrix();
+
+    m_ProjectionMatrix = glm::perspective(glm::radians(90.0f), 2.0f, 0.1f, 100.0f);
 };
 
 void Camera::SetProjection(float aspectRatio, float fov, float near, float far)

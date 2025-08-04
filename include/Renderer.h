@@ -11,7 +11,9 @@ class Renderer
     public:
 
     static void Init();
-    static void OnWindowResize(uint32_t width, uint32_t height);
+    static void OnWindowResize(unsigned int width, unsigned int height);
+
+    static void ToggleWireframe();
 
     static void BeginScene(std::shared_ptr<Camera> camera);
     static void EndScene();

@@ -6,7 +6,7 @@
 class OpenGLVertexBuffer : public VertexBuffer
 {
     public:
-    OpenGLVertexBuffer(float* vertices, uint32_t size);
+    OpenGLVertexBuffer(float* vertices, unsigned int size);
     ~OpenGLVertexBuffer();
     void Bind() const override;
     void Unbind() const override;
@@ -14,6 +14,6 @@ class OpenGLVertexBuffer : public VertexBuffer
     void SetLayout(const BufferLayout &layout) override { m_Layout = layout; }
 
     private:
-    uint32_t m_RendererID;
+    unsigned int m_RendererID;
     BufferLayout m_Layout;
 };
