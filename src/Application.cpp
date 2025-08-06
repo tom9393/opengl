@@ -108,12 +108,11 @@ bool Application::OnMouseClick(MouseButtonPressedEvent &e)
 {
     if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
     {
-        m_Window->setCursor(true);
     }
 
     if (e.GetMouseButton() == MOUSE_BUTTON_RIGHT)
     {
-        m_Window->setCursor(false);
+        m_Window->ToggleCursor();
     }
 
     return false;

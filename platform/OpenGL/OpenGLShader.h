@@ -16,21 +16,20 @@ public:
 
     const std::string& GetName() const override { return m_Name; }
 
-    bool AddShader(const std::string &file);
-    bool Finalize();
+    void AddShaders(std::vector<std::string> &shaders) override;
 
     GLuint GetProgram() const { return id; }
 
     // utility uniform functions
-    void setBool(const std::string &name, bool value) const;  
-    void setInt(const std::string &name, int value) const;   
-    void setFloat(const std::string &name, float value) const;
-    void setVec2(const std::string &name, const glm::vec2 &transform) const;
-    void setVec3(const std::string &name, const glm::vec3 &transform) const;
-    void setVec4(const std::string &name, const glm::vec4 &transform) const;
-    void setMat2(const std::string &name, const glm::mat2 &transform) const;
-    void setMat3(const std::string &name, const glm::mat3 &transform) const;
-    void setMat4(const std::string &name, const glm::mat4 &transform) const;
+    void setBool(const std::string &name, bool value) const override;
+    void setInt(const std::string &name, int value) const override;
+    void setFloat(const std::string &name, float value) const override;
+    void setVec2(const std::string &name, const glm::vec2 &transform) const override;
+    void setVec3(const std::string &name, const glm::vec3 &transform) const override;
+    void setVec4(const std::string &name, const glm::vec4 &transform) const override;
+    void setMat2(const std::string &name, const glm::mat2 &transform) const override;
+    void setMat3(const std::string &name, const glm::mat3 &transform) const override;
+    void setMat4(const std::string &name, const glm::mat4 &transform) const override;
 
 protected:
 
@@ -41,6 +40,8 @@ protected:
 private:
 
     void PrintUniformList();
+    bool AddShader(const std::string &file);
+    bool Finalize();
     std::list<GLuint> shaderObjList;
     std::string m_Name;
 };

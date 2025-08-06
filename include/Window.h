@@ -26,7 +26,7 @@ public:
     virtual void setVsync(bool enabled) = 0;
     virtual bool isVsync() = 0;
 
-    virtual void setCursor(bool enabled) = 0;
+    virtual void ToggleCursor() = 0;
     virtual bool isCursor() = 0;
 
     virtual void* GetNativeWindow() = 0;

@@ -3,6 +3,7 @@
 #include "../../include/events/KeyboardEvent.h"
 #include "LinuxWindow.h"
 #include "../OpenGL/OpenGLContext.h"
+#include <regex>
 
 static bool s_GLFWInitialized = false;
 
@@ -50,7 +51,8 @@ void LinuxWindow::Init(const WindowProps &props)
     glEnable(GL_DEPTH_TEST);
 
     setVsync(true);
-    setCursor(false);
+    m_Data.cursor = false;
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // GLFW callbacks
     glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
@@ -163,16 +165,16 @@ void* LinuxWindow::GetNativeWindow()
     return m_Window;
 };
 
-void LinuxWindow::setCursor(bool enabled)
+void LinuxWindow::ToggleCursor()
 {
-    if (enabled)
-    {
-        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    } else
+    if (m_Data.cursor)
     {
         glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    } else
+    {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
-    m_Data.cursor = enabled;
+    m_Data.cursor = !m_Data.cursor;
 
 };
 bool LinuxWindow::isCursor()

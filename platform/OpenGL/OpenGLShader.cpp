@@ -39,6 +39,16 @@ GLenum OpenGLShader::GetShaderFromExtension(const std::string &file)
     }
 };
 
+
+void OpenGLShader::AddShaders(std::vector<std::string> &shaders)
+{
+    for (auto &shader : shaders)
+    {
+        AddShader(shader);
+    }
+    Finalize();
+};
+
 // Use this method to add shaders to the program. When finished - call finalize()
 bool OpenGLShader::AddShader(const std::string &file)
 {

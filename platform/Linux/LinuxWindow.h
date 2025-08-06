@@ -20,7 +20,7 @@ public:
     virtual void setVsync(bool enabled) override;
     virtual bool isVsync() override;
 
-    virtual void setCursor(bool enabled) override;
+    virtual void ToggleCursor() override;
     virtual bool isCursor() override;
 
 private:

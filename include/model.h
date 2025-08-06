@@ -75,6 +75,9 @@ private:
         std::vector<unsigned int> indices;
         vertices.reserve(mesh->mNumVertices * 3);
         indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
+        
+        glm::vec3 min;
+        glm::vec3 max;
 
         // walk through each of the mesh's vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -83,6 +86,10 @@ private:
             vertices.push_back(mesh->mVertices[i].x);
             vertices.push_back(mesh->mVertices[i].y);
             vertices.push_back(mesh->mVertices[i].z);
+            glm::vec3 tmp = {mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
+            min = glm::min(min, tmp);
+            max = glm::max(max, tmp);
+
             // normals
             if (mesh->HasNormals())
             {
@@ -153,7 +160,7 @@ private:
             {ShaderDataType::Float3, "a_Bitangent"}
         };
 
-        return std::make_shared<Mesh>(vertices, indices, textures, layout);
+        return std::make_shared<Mesh>(vertices, indices, textures, layout, min, max);
     }
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
