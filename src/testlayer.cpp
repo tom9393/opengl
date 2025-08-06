@@ -26,6 +26,8 @@ void Testlayer::OnDetach() {
 void Testlayer::OnUpdate(TimeStep ts)
 {
 
+    PROFILE_FUNCTION();
+
     RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
     RenderCommand::Clear();
 

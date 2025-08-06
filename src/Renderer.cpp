@@ -15,6 +15,8 @@ void Renderer::EndScene()
 
 void Renderer::Init()
 {
+    PROFILE_FUNCTION();
+
     RenderCommand::Init();
 
     m_Data->shaderLibrary = new ShaderLibrary();
@@ -33,6 +35,8 @@ void Renderer::OnWindowResize(unsigned int width, unsigned int height)
 
 void Renderer::SetTexture(const std::shared_ptr<Texture> &texture, const unsigned int index)
 {
+    PROFILE_FUNCTION();
+
     std::shared_ptr<Shader> shader = m_Data->shaderLibrary->Get("Texture");
     texture->Bind(index);
     std::string textType = "";
@@ -46,6 +50,8 @@ void Renderer::SetTexture(const std::shared_ptr<Texture> &texture, const unsigne
 
 void Renderer::Submit(const std::shared_ptr<VertexArray> &vertexArray, const glm::mat4 &transform)
 {
+    PROFILE_FUNCTION();
+
     std::shared_ptr<Shader> shader = m_Data->shaderLibrary->Get("Texture");
     shader->Bind();
     shader->setMat4("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
