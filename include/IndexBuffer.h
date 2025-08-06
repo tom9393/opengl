@@ -8,5 +8,5 @@ class IndexBuffer{
 
     virtual unsigned int GetCount() const = 0;
     
-    static std::shared_ptr<IndexBuffer> Create(unsigned int* indices, unsigned int size);
+    static std::shared_ptr<IndexBuffer> Create(unsigned int* indices, unsigned int count);
 };

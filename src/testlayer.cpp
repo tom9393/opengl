@@ -9,6 +9,15 @@ Testlayer::Testlayer() : m_CameraController(std::make_shared<Camera>(), 2.0f)
 {
     stbi_set_flip_vertically_on_load(true);  
     m_Model = std::make_shared<Model>("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+    unsigned int c = 10;
+    for (unsigned int i = 0; i < c; i++)
+    {
+        for (unsigned int j = 0; j < c; j++)
+        {
+            m_Indices.emplace_back(i * 4.0f, 0.0f, j * 10.0f);
+        }
+    }
+    m_Previous = glfwGetTime();
 };
 
 Testlayer::~Testlayer()
@@ -48,22 +57,31 @@ void Testlayer::OnUpdate(TimeStep ts)
 
     std::vector<std::shared_ptr<Mesh>> meshes = m_Model->GetMeshes();
 
-    for (unsigned int i = 0; i < meshes.size(); i++)
+    for (auto &indice : m_Indices)
     {
-        glm::mat4 pos = glm::translate(glm::mat4(1.0f), meshes[i]->position);
-        std::vector<std::shared_ptr<Texture2D>> textures = meshes[i]->GetTextures();
-        for (auto& texture : textures)
+        for (unsigned int i = 0; i < meshes.size(); i++)
         {
-            Renderer::SetTexture(texture, i);
+            glm::mat4 beforeTranslate = glm::translate(glm::mat4(1.0f), indice);
+            glm::mat4 pos = beforeTranslate * glm::translate(glm::mat4(1.0f), meshes[i]->position);
+            std::vector<std::shared_ptr<Texture2D>> textures = meshes[i]->GetTextures();
+            for (auto& texture : textures)
+            {
+                Renderer::SetTexture(texture, i);
+            }
+            Renderer::Submit(meshes[i]->GetVao(), pos);
         }
-        Renderer::Submit(meshes[i]->GetVao(), pos);
     }
+
 
     Renderer::EndScene();
 };
 
 void Testlayer::OnImGuiRender()
 {
+    float current = (float) glfwGetTime();
+    float delta = current - m_Previous;
+    m_Previous = current;
+    ImGui::Text("FPS count: %f", 1.f / delta);
 };
 
 void Testlayer::OnEvent(Event& e)
