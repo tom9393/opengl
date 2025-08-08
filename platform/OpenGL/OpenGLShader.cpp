@@ -40,7 +40,16 @@ GLenum OpenGLShader::GetShaderFromExtension(const std::string &file)
 };
 
 
-void OpenGLShader::AddShaders(std::vector<std::string> &shaders)
+void OpenGLShader::AddShaders(const std::vector<std::string> &shaders)
+{
+    for (auto &shader : shaders)
+    {
+        AddShader(shader);
+    }
+    Finalize();
+};
+
+void OpenGLShader::AddShaders(const std::initializer_list<std::string> &shaders)
 {
     for (auto &shader : shaders)
     {

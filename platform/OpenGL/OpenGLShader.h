@@ -16,7 +16,8 @@ public:
 
     const std::string& GetName() const override { return m_Name; }
 
-    void AddShaders(std::vector<std::string> &shaders) override;
+    void AddShaders(const std::vector<std::string> &shaders) override;
+    void AddShaders(const std::initializer_list<std::string> &shaders) override;
 
     GLuint GetProgram() const { return id; }
 

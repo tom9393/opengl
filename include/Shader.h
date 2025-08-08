@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pch.h"
+#include <initializer_list>
 
 class Shader
 {
@@ -11,7 +12,8 @@ public:
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;
 
-    virtual void AddShaders(std::vector<std::string> &shaders) = 0;
+    virtual void AddShaders(const std::vector<std::string> &shaders) = 0;
+    virtual void AddShaders(const std::initializer_list<std::string> &shaders) = 0;
 
     virtual const std::string& GetName() const = 0;
 
@@ -31,7 +33,10 @@ public:
 class ShaderLibrary
 {
     public:
+    ShaderLibrary(const std::initializer_list<std::string> &shaders);
+
     void Add(const std::shared_ptr<Shader> &shader);
+    void AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths);
 
     std::shared_ptr<Shader> Get(const std::string &name);
 

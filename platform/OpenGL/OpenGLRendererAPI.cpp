@@ -22,6 +22,11 @@ void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray> &vertexAr
     glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 };
 
+void OpenGLRendererAPI::DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count)
+{
+    glDrawElementsInstanced(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr, count);
+};
+
 void OpenGLRendererAPI::SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
 {
     glViewport(x, y, width, height);

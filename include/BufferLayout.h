@@ -73,6 +73,7 @@ class BufferLayout
     const std::vector<BufferElement>& GetElements() const { return m_Elements; }
     std::vector<BufferElement>::const_iterator begin() const { return m_Elements.begin(); }
     std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
+    bool operator==(const BufferLayout &layout) { return this->m_Stride == layout.m_Stride; }
     private:
     void CalculateOffsetAndStride()
     {

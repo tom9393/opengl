@@ -21,3 +21,16 @@ std::shared_ptr<Shader> ShaderLibrary::Get(const std::string &name)
 {
     return m_Shaders[name];
 };
+
+ShaderLibrary::ShaderLibrary(const std::initializer_list<std::string> &shaders)
+{
+    for (auto &shader : shaders)
+    {
+        m_Shaders[shader] = Shader::Create(shader);
+    }
+};
+
+void ShaderLibrary::AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths)
+{
+    m_Shaders[shader]->AddShaders(paths);
+};

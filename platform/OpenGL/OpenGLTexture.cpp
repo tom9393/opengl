@@ -44,3 +44,22 @@ unsigned int OpenGLTexture2D::GetID() const
 {
     return m_RendererID;
 };
+
+OpenGLBindlessTexture::OpenGLBindlessTexture()
+{
+};
+
+void OpenGLBindlessTexture::Bind() const
+{
+    glMakeTextureHandleResidentARB(m_RendererID);
+};
+
+void OpenGLBindlessTexture::Unbind() const
+{
+    glMakeTextureHandleNonResidentARB(m_RendererID);
+};
+
+void OpenGLBindlessTexture::MakeHandle(const std::shared_ptr<OpenGLTexture2D> &texture)
+{
+    m_RendererID = glGetTextureHandleARB(texture->GetID());
+};

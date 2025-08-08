@@ -14,7 +14,7 @@ Camera::Camera()
     UpdateCameraVectors(); // ← important!
     RecalculateMatrix();
 
-    m_ProjectionMatrix = glm::perspective(glm::radians(90.0f), 2.0f, 0.1f, 100.0f);
+    m_ProjectionMatrix = glm::perspective(glm::radians(90.0f), 2.0f, 0.1f, 1000.0f);
 };
 
 void Camera::SetProjection(float aspectRatio, float fov, float near, float far)

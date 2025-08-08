@@ -11,13 +11,21 @@
 #include "BufferLayout.h"
 #include "Texture.h"
 #include "stb_image.h"
-#include "Transformable.h"
+
+struct MaterialTextures {
+    GLuint64 diffuse;
+    GLuint64 specular;
+    GLuint64 normal;
+    GLuint64 height;
+};
 
 class Model
 {
 public:
     // model data 
     std::vector<std::shared_ptr<Mesh>> m_Meshes;
+    std::unordered_map<std::string, std::shared_ptr<Texture2D>> m_Textures;
+    std::vector<MaterialTextures> matTex;
     std::string m_Directory;
     bool m_GammaCorrection;
 
@@ -28,6 +36,7 @@ public:
     }
 
     std::vector<std::shared_ptr<Mesh>> GetMeshes() { return m_Meshes; };
+    std::unordered_map<std::string, std::shared_ptr<Texture2D>> &GetTextures() { return m_Textures; };
     
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -79,6 +88,22 @@ private:
         glm::vec3 min;
         glm::vec3 max;
 
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
+
+        std::vector<std::shared_ptr<Texture2D>> textures;
+        // 1. diffuse maps
+        std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
+        textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+        // 2. specular maps
+        std::vector<std::shared_ptr<Texture2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR);
+        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+        // 3. normal maps
+        std::vector<std::shared_ptr<Texture2D>> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT);
+        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+        // 4. height maps
+        std::vector<std::shared_ptr<Texture2D>> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT);
+        textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+
         // walk through each of the mesh's vertices
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
@@ -118,6 +143,20 @@ private:
                 vertices.push_back(0.0f);
                 vertices.push_back(0.0f);
             }
+            std::shared_ptr<Texture2D> option = textures[0];
+            if (option->GetPath() == "leo1.png")
+            {
+                vertices.push_back(3.0f); // Placeholder for texture
+            } else if (option->GetPath() == "leo2.png")
+            {
+                vertices.push_back(2.0f);
+            } else if (option->GetPath() == "leo3.png")
+            {
+                vertices.push_back(1.0f);
+            } else 
+            {
+                vertices.push_back(0.0f);
+            }
 
         }
         // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -129,35 +168,20 @@ private:
                 indices.push_back(face.mIndices[j]);        
         }
         // process materials
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
         // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
         // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
         // Same applies to other texture as the following list summarizes:
         // diffuse: texture_diffuseN
         // specular: texture_specularN
         // normal: texture_normalN
-        //
-
-        std::vector<std::shared_ptr<Texture2D>> textures;
-        // 1. diffuse maps
-        std::vector<std::shared_ptr<Texture2D>> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
-        textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        // 2. specular maps
-        std::vector<std::shared_ptr<Texture2D>> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR);
-        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-        // 3. normal maps
-        std::vector<std::shared_ptr<Texture2D>> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT);
-        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-        // 4. height maps
-        std::vector<std::shared_ptr<Texture2D>> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT);
-        textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-
+        
         BufferLayout layout = {
             {ShaderDataType::Float3, "a_Position"},
             {ShaderDataType::Float3, "a_Normal"},
             {ShaderDataType::Float2, "a_TexCoord"},
             {ShaderDataType::Float3, "a_Tangent"},
-            {ShaderDataType::Float3, "a_Bitangent"}
+            {ShaderDataType::Float3, "a_Bitangent"},
+            {ShaderDataType::Int, "a_Texture"}
         };
 
         return std::make_shared<Mesh>(vertices, indices, textures, layout, min, max);
@@ -181,6 +205,12 @@ private:
             if (type == aiTextureType_SPECULAR) txtType = TextureType::Specular;
             if (type == aiTextureType_HEIGHT) txtType = TextureType::Normal;
             if (type == aiTextureType_AMBIENT) txtType = TextureType::Height;
+
+            if(!m_Textures[str.C_Str()])
+            {
+                m_Textures[str.C_Str()] = Texture2D::Create(filename, txtType);
+                std::cout << "Creating texture " << str.C_Str() << std::endl;
+            }
 
             textures.emplace_back(Texture2D::Create(filename, txtType));
         }

@@ -19,7 +19,6 @@ class Testlayer : public Layer
     void OnAttach();
     void OnDetach();
     void OnUpdate(TimeStep ts);
-    void OnImGuiRender();
     void OnEvent(Event& event);
     bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
@@ -31,7 +30,6 @@ class Testlayer : public Layer
     std::shared_ptr<Model> m_Model;
     CameraController m_CameraController;
     bool m_CameraActive = true;
-    std::vector<glm::vec3> m_Indices;
     float m_Previous = 0;
 
     std::shared_ptr<Texture2D> m_Texture;

@@ -1,3 +1,4 @@
+#include "../../pch.h"
 #include "../../include/Texture.h"
 
 class OpenGLTexture2D : public Texture2D
@@ -10,6 +11,7 @@ class OpenGLTexture2D : public Texture2D
     unsigned int GetHeight() const override { return m_Height; }
 
     unsigned int GetID() const override;
+    std::string &GetPath() override { return m_Path; }
     TextureType GetType() const { return m_Type; }
 
     void Bind(unsigned int slot) const override;
@@ -19,4 +21,19 @@ class OpenGLTexture2D : public Texture2D
     TextureType m_Type;
     unsigned int m_Width, m_Height;
     unsigned int m_RendererID;
+};
+
+class OpenGLBindlessTexture : public BindlessTexture
+{
+    public:
+    OpenGLBindlessTexture();
+
+    void MakeHandle(const std::shared_ptr<OpenGLTexture2D> &texture);
+    GLuint64 GetHandle() const { return m_RendererID; }
+    void Bind() const override;
+    void Unbind() const override;
+
+    private:
+    GLuint64 m_RendererID;
+    std::shared_ptr<OpenGLTexture2D> m_Texture;
 };

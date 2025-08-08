@@ -11,6 +11,7 @@ public:
     void Clear() override;
 
     void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) override;
+    void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) override;
     void ToggleWireframe() override;
 
     private:
