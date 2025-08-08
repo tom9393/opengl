@@ -1,6 +1,7 @@
 #version 460 core
 
 #extension GL_ARB_bindless_texture : require
+#extension GL_NV_gpu_shader5 : enable
 
 out vec4 FragColor;
 
@@ -152,9 +153,9 @@ void main()
        result += CalcSpotLight(spotLight[i], norm, v_FragPos, viewDir, i, FragPosLightSpaceSpot[i]);
     
     // FragColor = vec4(result, 1.0);
-    // FragColor = texture(material.diffuse, v_TexCoord); // Testing purposes
-    sampler2D tex = textures[v_Texture];
-    FragColor = texture(tex, v_TexCoord); // Testing purposes
+    FragColor = texture(material.diffuse, v_TexCoord); // Testing purposes
+    // sampler2D tex = textures[v_Texture];
+    // FragColor = texture(tex, v_TexCoord); // Testing purposes
 }
 
 // calculates the color when using a directional light.

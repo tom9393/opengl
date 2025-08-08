@@ -9,22 +9,20 @@
 
 class Mesh {
 public:
-    // mesh Data
     std::vector<float> m_Vertices;
     std::vector<unsigned int> m_Indices;
-    std::vector<std::shared_ptr<Texture2D>> m_Textures;
-    BufferLayout m_Layout;
+    BufferLayout m_BufferLayout;
+    TextureLayout m_TextureLayout;
     glm::vec3 min;
     glm::vec3 max;
     glm::vec3 position = {0.0f, 0.0f, 0.0f};
 
-    // constructor
-    Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const std::vector<std::shared_ptr<Texture2D>> &textures, const BufferLayout &layout, glm::vec3 min, glm::vec3 max) : m_Vertices(vertices), m_Indices(indices), m_Textures(textures), m_Layout(layout), min(min), max(max) {}
+    Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const BufferLayout &bufferLayout, const TextureLayout &textureLayout, glm::vec3 &min, glm::vec3 &max) : m_Vertices(vertices), m_Indices(indices), m_BufferLayout(bufferLayout), m_TextureLayout(textureLayout), min(min), max(max) {}
 
-    std::vector<std::shared_ptr<Texture2D>> &GetTextures() { return m_Textures; }
     std::vector<float> &GetVertices() { return m_Vertices; }
     std::vector<unsigned int> &GetIndices() { return m_Indices; }
-    BufferLayout &GetLayout() { return m_Layout; }
+    BufferLayout &GetBufferLayout() { return m_BufferLayout; }
+    TextureLayout &GetTextureLayout() { return m_TextureLayout; }
 
     AABB GetTransformedAABB()
     {

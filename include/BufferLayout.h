@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Texture.h"
+#include <initializer_list>
 enum class ShaderDataType
 {
     None = 0,
@@ -88,4 +90,39 @@ class BufferLayout
     }
     std::vector<BufferElement> m_Elements;
     unsigned int m_Stride = 0;
+};
+
+class TextureLayout
+{
+    public:
+    TextureLayout(const std::vector<std::shared_ptr<Texture2D>> &textures)
+    {
+        for (auto &texture : textures)
+        {
+            m_Textures[texture->GetType()].emplace_back(texture);
+        }
+        m_Texture_Keys[TextureType::Diffuse] = "material.diffuse";
+        m_Texture_Keys[TextureType::Specular] = "material.specular";
+        m_Texture_Keys[TextureType::Height] = "material.height";
+        m_Texture_Keys[TextureType::Normal] = "material.normal";
+    }
+
+    std::vector<std::shared_ptr<Texture2D>> &GetByType(TextureType type)
+    {
+        return m_Textures[type];
+    }
+
+    unsigned int GetCountByType(TextureType type)
+    {
+        return m_Textures[type].size();
+    }
+
+    std::string &GetStringByType(TextureType type) { return m_Texture_Keys[type]; }
+
+    std::unordered_map<TextureType, std::vector<std::shared_ptr<Texture2D>>>::const_iterator begin() const { return m_Textures.begin(); }
+    std::unordered_map<TextureType, std::vector<std::shared_ptr<Texture2D>>>::const_iterator end() const { return m_Textures.end(); }
+
+    private:
+    std::unordered_map<TextureType, std::vector<std::shared_ptr<Texture2D>>> m_Textures;
+    std::unordered_map<TextureType, std::string> m_Texture_Keys;
 };

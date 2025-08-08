@@ -20,6 +20,7 @@ class Texture
 
     virtual unsigned int GetID() const = 0;
     virtual std::string &GetPath() = 0;
+    virtual TextureType GetType() const = 0;
 
     virtual void Bind(unsigned int slot) const = 0;
 };

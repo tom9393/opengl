@@ -5,11 +5,12 @@
 #include "../include/Input.h"
 #include "../include/KeyCodes.h"
 #include "../include/Raytracing.h"
+#include "../include/AssimpLoader.h"
 
 Testlayer::Testlayer() : m_CameraController(std::make_shared<Camera>(), 2.0f)
 {
-    stbi_set_flip_vertically_on_load(true);  
-    m_Model = std::make_shared<Model>("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+    AssimpLoader loader;
+    m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
 };
 
 Testlayer::~Testlayer()
@@ -49,21 +50,10 @@ void Testlayer::OnUpdate(TimeStep ts)
 
     std::vector<std::shared_ptr<Mesh>> meshes = m_Model->GetMeshes();
 
-    unsigned int idx = 0;
     for (auto &mesh : meshes)
     {
-        std::vector<std::shared_ptr<Texture2D>> textures = mesh->GetTextures();
-        // for (auto& texture : textures)
-        // {
-        //     Renderer::SetTexture(texture, mesh);
-        //     idx++;
-        // }
-        if (idx == 0)
-        {
-            Renderer::SetTexture(textures[0], m_Model->GetTextures());
-            idx++;
-        }
-        Renderer::Submit(mesh, glm::mat4(1.0f));
+        Renderer::SetTexture(mesh);
+        Renderer::Submit(mesh);
     }
 
     Renderer::EndScene();

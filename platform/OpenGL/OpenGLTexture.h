@@ -12,7 +12,7 @@ class OpenGLTexture2D : public Texture2D
 
     unsigned int GetID() const override;
     std::string &GetPath() override { return m_Path; }
-    TextureType GetType() const { return m_Type; }
+    TextureType GetType() const override { return m_Type; }
 
     void Bind(unsigned int slot) const override;
 
