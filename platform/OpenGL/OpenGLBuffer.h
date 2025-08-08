@@ -69,3 +69,23 @@ class OpenGLSSBOBuffer : public SSBOBuffer
     private:
     unsigned int m_RendererID;
 };
+
+class OpenGLFramebuffer : public Framebuffer
+{
+    public:
+
+    OpenGLFramebuffer(FramebufferSpecification &specification);
+    ~OpenGLFramebuffer();
+
+    void Bind() const override;
+    void Unbind() const override;
+
+    const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
+    const unsigned int GetColorAttachmentRendererID() const override { return m_ColorAttachment; }
+    void Resize();
+
+    private:
+    unsigned int m_RendererID;
+    unsigned int m_ColorAttachment, m_DepthAttachment;
+    FramebufferSpecification m_Specification;
+};

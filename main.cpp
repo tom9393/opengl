@@ -7,7 +7,7 @@ int main()
 
 	Application* app = new Application();
 
-	//app->pushLayer(new Testlayer());
+	app->pushLayer(new Testlayer());
 	app->run();
 
 	delete app;

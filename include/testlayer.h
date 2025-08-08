@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Buffer.h"
 #include "CameraController.h"
 #include "Layer.h"
 #include "Ray.h"
@@ -20,6 +21,7 @@ class Testlayer : public Layer
     void OnDetach();
     void OnUpdate(TimeStep ts);
     void OnEvent(Event& event);
+    void OnImGuiRender();
     bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
     Ray CastRayFromMouse(float x, float y, float width, float height, std::shared_ptr<Camera> camera);
@@ -34,4 +36,5 @@ class Testlayer : public Layer
 
     std::shared_ptr<Texture2D> m_Texture;
     std::shared_ptr<Mesh> m_SelectedMesh;
+    std::shared_ptr<Framebuffer> m_Framebuffer;
 };

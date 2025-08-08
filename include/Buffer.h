@@ -49,3 +49,20 @@ class SSBOBuffer
 
     static std::shared_ptr<SSBOBuffer> Create(void* data, unsigned int size);
 };
+
+struct FramebufferSpecification
+{
+    unsigned int width, height;
+};
+
+class Framebuffer
+{
+    public:
+
+    virtual void Bind() const = 0;
+    virtual void Unbind() const = 0;
+
+    virtual const FramebufferSpecification &GetSpecification() const = 0;
+    virtual const unsigned int GetColorAttachmentRendererID() const = 0;
+    static std::shared_ptr<Framebuffer> Create(FramebufferSpecification &specification);
+};
