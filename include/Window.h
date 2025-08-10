@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../pch.h"
-#include "../include/events/Event.h"
+#include "../include/Events/Event.h"
 
 struct WindowProps
 {

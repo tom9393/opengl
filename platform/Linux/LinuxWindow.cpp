@@ -1,6 +1,6 @@
-#include "../../include/events/ApplicationEvent.h"
-#include "../../include/events/MouseEvent.h"
-#include "../../include/events/KeyboardEvent.h"
+#include "../../include/Events/ApplicationEvent.h"
+#include "../../include/Events/MouseEvent.h"
+#include "../../include/Events/KeyboardEvent.h"
 #include "LinuxWindow.h"
 #include "../OpenGL/OpenGLContext.h"
 #include <regex>

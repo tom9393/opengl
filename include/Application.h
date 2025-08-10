@@ -5,10 +5,10 @@
 #include "ImGuiLayer.h"
 #include "LayerStack.h"
 #include "Window.h"
-#include "events/ApplicationEvent.h"
-#include "events/Event.h"
-#include "events/KeyboardEvent.h"
-#include "events/MouseEvent.h"
+#include "Events/ApplicationEvent.h"
+#include "Events/Event.h"
+#include "Events/KeyboardEvent.h"
+#include "Events/MouseEvent.h"
 
 class Application
 {

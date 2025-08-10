@@ -1,8 +1,8 @@
 #pragma once
 
 #include "TimeStep.h"
-#include "events/Event.h"
-#include "events/ApplicationEvent.h"
+#include "Events/Event.h"
+#include "Events/ApplicationEvent.h"
 #include "Camera.h"
 
 const float SPEED = 10.0f;

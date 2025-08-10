@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "TimeStep.h"
 #include "Shader.h"
-#include "events/MouseEvent.h"
+#include "Events/MouseEvent.h"
 #include "model.h"
 
 class EditorLayer : public Layer
