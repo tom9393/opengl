@@ -2,6 +2,8 @@
 
 #include "../../include/Buffer.h"
 
+static const unsigned int s_MaxFramebufferSize = 8192;
+
 class OpenGLVertexBuffer : public VertexBuffer
 {
     public:

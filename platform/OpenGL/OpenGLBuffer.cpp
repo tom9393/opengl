@@ -1,6 +1,4 @@
 #include "OpenGLBuffer.h"
-#include <GL/gl.h>
-#include <glad/glad.h>
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(unsigned int size)
 {
@@ -172,6 +170,10 @@ void OpenGLFramebuffer::Invalidate()
 
 void OpenGLFramebuffer::Resize(unsigned int width, unsigned int height)
 {
+    if (width == 0 || height == 0 || width > s_MaxFramebufferSize || height > s_MaxFramebufferSize)
+    {
+        std::cout << "Invalid size" << std::endl;
+    }
     m_Specification.width = width;
     m_Specification.height = height;
     Invalidate();

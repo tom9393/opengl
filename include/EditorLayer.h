@@ -28,9 +28,13 @@ class EditorLayer : public Layer
     void TrySelectMesh(float mouseX, float mouseY, float screenWidth, float screenHeight, std::shared_ptr<Camera> camera, std::shared_ptr<Model> model);
 
     private:
+    void DrawStats();
+
+    private:
     std::shared_ptr<Model> m_Model;
     CameraController m_CameraController;
-    bool m_CameraActive = true;
+    bool m_ViewportFocused = false;
+    bool m_ViewportHovered = false;
     float m_Previous = 0;
 
     glm::vec2 m_ViewportSize;

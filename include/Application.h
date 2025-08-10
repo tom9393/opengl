@@ -23,6 +23,7 @@ class Application
 
     static Application& Get() { return *s_Instance; }
     Window& GetWindow() { return *m_Window; }
+    ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
     private:
     static Application* s_Instance;

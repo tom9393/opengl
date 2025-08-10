@@ -6,6 +6,7 @@
 #include "../include/KeyCodes.h"
 #include "../include/Raytracing.h"
 #include "../include/AssimpLoader.h"
+#include "../include/Application.h"
 
 EditorLayer::EditorLayer() : m_CameraController(std::make_shared<Camera>(), 2.0f)
 {
@@ -51,7 +52,7 @@ void EditorLayer::OnUpdate(TimeStep ts)
         m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
     }
 
-    if (m_CameraActive)
+    if (m_ViewportFocused)
     {
         m_CameraController.OnUpdate(ts);
         Renderer::BeginScene(m_CameraController.GetCamera());
@@ -71,16 +72,36 @@ void EditorLayer::OnUpdate(TimeStep ts)
 
 void EditorLayer::OnImGuiRender()
 {
-    // static bool show = true;
-    // ImGui::ShowDemoWindow(&show);
+    // Enable docking
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+    DrawStats();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGui::Begin("Viewport");
+    m_ViewportFocused = ImGui::IsWindowFocused();
+    m_ViewportHovered = ImGui::IsWindowHovered();
+    Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+    if (viewportSize.x != m_ViewportSize.x || viewportSize.y != m_ViewportSize.y)
+    {
+        m_ViewportSize = {viewportSize.x, viewportSize.y};
+        m_Framebuffer->Resize(m_ViewportSize.x, m_ViewportSize.y);
+
+        m_CameraController.Resize(m_ViewportSize.x, m_ViewportSize.y);
+    }
+    unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID();
+    ImGui::Image((void*)viewportTexture, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    Renderer::ResetStatistics();
+}
+
+void EditorLayer::DrawStats()
+{
     float current = (float) glfwGetTime();
     float delta = current - m_Previous;
     m_Previous = current;
-
-    // Enable docking
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-
     ImGui::Begin("Stats");
     unsigned int DrawCalls = Renderer::GetStatistics().DrawCalls;
     unsigned int VerticeCount = Renderer::GetStatistics().VerticeCount;
@@ -90,24 +111,7 @@ void EditorLayer::OnImGuiRender()
     ImGui::Text("Vertices count: %d", VerticeCount);
     ImGui::Text("Indices count: %d", IndicesCount);
     ImGui::End();
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Viewport");
-    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-    if (viewportSize.x != m_ViewportSize.x || viewportSize.y != m_ViewportSize.y)
-    {
-        m_ViewportSize = {viewportSize.x, viewportSize.y};
-        m_Framebuffer->Resize(m_ViewportSize.x, m_ViewportSize.y);
-
-        m_CameraController.Resize(m_ViewportSize.x, m_ViewportSize.y);
-    }
-    unsigned int txt = m_Framebuffer->GetColorAttachmentRendererID();
-    ImGui::Image((void*)txt, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
-    ImGui::End();
-    ImGui::PopStyleVar();
-
-    Renderer::ResetStatistics();
-}
+};
 
 void EditorLayer::OnEvent(Event& e)
 {
@@ -126,12 +130,6 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
         std::cout << y << std::endl;
 
         Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
-    }
-
-    if (e.GetMouseButton() == MOUSE_BUTTON_RIGHT)
-    {
-        m_CameraActive = !m_CameraActive;
-        m_CameraController.GetCamera()->SetFirstMouse(m_CameraActive);
     }
 
     return false;

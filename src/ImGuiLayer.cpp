@@ -15,6 +15,8 @@ void ImGuiLayer::OnAttach()
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 
+    m_BlockEvents = true;
+
     GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -31,8 +33,16 @@ void ImGuiLayer::OnDetach()
 };
 
 void ImGuiLayer::OnImGuiRender() {
-    // static bool show = true;
-    // ImGui::ShowDemoWindow(&show);
+};
+
+void ImGuiLayer::OnEvent(Event &e)
+{
+    if (m_BlockEvents)
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        e.handled |= e.isInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+        e.handled |= e.isInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+    }
 };
 
 void ImGuiLayer::Begin()
