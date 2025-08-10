@@ -1,20 +1,6 @@
 #version 460 core
 
-#extension GL_ARB_bindless_texture : require
-#extension GL_NV_gpu_shader5 : enable
-
 out vec4 FragColor;
-
-struct MaterialTextures {
-    uint64_t diffuse;
-    uint64_t specular;
-    uint64_t normal;
-    uint64_t height;
-};
-
-layout (binding = 1, std430) readonly buffer Textures {
-    MaterialTextures materials[];
-};
 
 struct Material {
     sampler2D diffuse;
@@ -63,7 +49,6 @@ struct SpotLight {
 in vec3 v_FragPos;
 in vec3 v_Normal;
 in vec2 v_TexCoord;
-in flat int v_Texture;
 in vec4 FragPosLightSpace;
 in vec4 FragPosLightSpaceSpot[NR_SPOT_LIGHTS];
 
@@ -154,8 +139,6 @@ void main()
     
     // FragColor = vec4(result, 1.0);
     FragColor = texture(material.diffuse, v_TexCoord); // Testing purposes
-    // sampler2D tex = textures[v_Texture];
-    // FragColor = texture(tex, v_TexCoord); // Testing purposes
 }
 
 // calculates the color when using a directional light.
