@@ -12,9 +12,15 @@ void CameraController::OnEvent(Event &e)
 bool CameraController::OnWindowResize(WindowResizeEvent &e)
 {
     m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
-    m_Camera->SetProjection(m_AspectRatio, glm::radians(90.0f), 0.1f, 100.0f);
+    m_Camera->SetProjection(glm::radians(90.0f), m_AspectRatio, 0.1f, 1000.0f);
 
     return false;
+}
+
+void CameraController::Resize(float width, float height)
+{
+    m_AspectRatio = width / height;
+    m_Camera->SetProjection(glm::radians(90.0f), m_AspectRatio, 0.1f, 1000.0f);
 }
 
 void CameraController::OnUpdate(TimeStep ts)

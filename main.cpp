@@ -1,13 +1,21 @@
 #include "include/Application.h"
-#include "include/testlayer.h"
+
+const bool editor = true;
 
 int main()
 {
 	PROFILE_BEGIN_SESSION("Application", "/tmp/application_data.json");
 
-	Application* app = new Application();
+	Application* app;
 
-	app->pushLayer(new Testlayer());
+	if (editor)
+	{
+		app = new Editor();
+	} else
+	{
+		app = new Runtime();
+	}
+
 	app->run();
 
 	delete app;

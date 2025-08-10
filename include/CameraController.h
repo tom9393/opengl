@@ -26,7 +26,7 @@ class CameraController
 
     void OnEvent(Event &e);
     void OnUpdate(TimeStep ts);
-
+    void Resize(float width, float height);
 
     std::shared_ptr<Camera> &GetCamera() { return m_Camera; }
     const std::shared_ptr<Camera> &GetCamera() const { return m_Camera; }

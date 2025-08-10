@@ -37,7 +37,17 @@ class Application
     bool OnWindowResize(WindowResizeEvent &e);
     bool OnMouseClick(MouseButtonPressedEvent &e);
     bool OnKeyPress(KeyboardPressEvent &e);
+};
 
-    Application* createApplication();
+class Editor : public Application
+{
+    public:
+    Editor();
+};
+
+class Runtime : public Application
+{
+    public:
+    Runtime();
 };
 

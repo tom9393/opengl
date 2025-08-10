@@ -11,10 +11,6 @@ Testlayer::Testlayer() : m_CameraController(std::make_shared<Camera>(), 2.0f)
 {
     AssimpLoader loader;
     m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
-    FramebufferSpecification spec;
-    spec.width = 500;
-    spec.height = 500;
-    m_Framebuffer = Framebuffer::Create(spec);
 };
 
 Testlayer::~Testlayer()
@@ -33,8 +29,6 @@ void Testlayer::OnUpdate(TimeStep ts)
 {
 
     PROFILE_FUNCTION();
-
-    m_Framebuffer->Bind();
 
     RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
     RenderCommand::Clear();
@@ -63,15 +57,29 @@ void Testlayer::OnUpdate(TimeStep ts)
     }
 
     Renderer::EndScene();
-    m_Framebuffer->Unbind();
 };
 
 void Testlayer::OnImGuiRender()
 {
-    ImGui::Begin("Some window");
-    unsigned int txt = m_Framebuffer->GetColorAttachmentRendererID();
-    ImGui::Image((void*)txt, ImVec2{500, 500});
+    // static bool show = true;
+    // ImGui::ShowDemoWindow(&show);
+    float current = (float) glfwGetTime();
+    float delta = current - m_Previous;
+    m_Previous = current;
+
+    // Enable docking
+    
+    ImGui::Begin("Some shit");
+    unsigned int DrawCalls = Renderer::GetStatistics().DrawCalls;
+    unsigned int VerticeCount = Renderer::GetStatistics().VerticeCount;
+    unsigned int IndicesCount = Renderer::GetStatistics().IndicesCount;
+    ImGui::Text("FPS count: %f", 1.f / delta);
+    ImGui::Text("Drawcalls: %d", DrawCalls);
+    ImGui::Text("Vertices count: %d", VerticeCount);
+    ImGui::Text("Indices count: %d", IndicesCount);
+
     ImGui::End();
+    Renderer::ResetStatistics();
 }
 
 void Testlayer::OnEvent(Event& e)

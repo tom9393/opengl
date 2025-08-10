@@ -58,9 +58,12 @@ struct FramebufferSpecification
 class Framebuffer
 {
     public:
+    virtual ~Framebuffer() = default;
 
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;
+
+    virtual void Resize(unsigned int width, unsigned int height) = 0;
 
     virtual const FramebufferSpecification &GetSpecification() const = 0;
     virtual const unsigned int GetColorAttachmentRendererID() const = 0;

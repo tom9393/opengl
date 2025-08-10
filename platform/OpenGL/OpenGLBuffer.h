@@ -80,12 +80,14 @@ class OpenGLFramebuffer : public Framebuffer
     void Bind() const override;
     void Unbind() const override;
 
+    void Resize(unsigned int width, unsigned int height) override;
+
     const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
     const unsigned int GetColorAttachmentRendererID() const override { return m_ColorAttachment; }
-    void Resize();
+    void Invalidate();
 
     private:
-    unsigned int m_RendererID;
-    unsigned int m_ColorAttachment, m_DepthAttachment;
+    unsigned int m_RendererID = 0;
+    unsigned int m_ColorAttachment = 0, m_DepthAttachment = 0;
     FramebufferSpecification m_Specification;
 };

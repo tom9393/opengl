@@ -1,4 +1,6 @@
 #include "../include/Application.h"
+#include "../include/testlayer.h"
+#include "../include/EditorLayer.h"
 #include "../include/TimeStep.h"
 #include "../include/Renderer.h"
 #include "../include/Input.h"
@@ -132,4 +134,14 @@ bool Application::OnKeyPress(KeyboardPressEvent &e)
     }
 
     return false;
+};
+
+Runtime::Runtime() : Application()
+{
+    pushLayer(new Testlayer());
+};
+
+Editor::Editor() : Application()
+{
+    pushLayer(new EditorLayer());
 };

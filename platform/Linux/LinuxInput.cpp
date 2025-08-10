@@ -1,35 +1,33 @@
-#include "LinuxInput.h"
 #include "../../include/Application.h"
+#include "../../include/Input.h"
 
-Input* Input::s_Instance = new LinuxInput();
-
-bool LinuxInput::IsKeyPressedImpl(int keycode)
+bool Input::IsKeyPressed(unsigned int keycode)
 {
     auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
     auto state = glfwGetKey(window, keycode);
     return state == GLFW_PRESS || state == GLFW_REPEAT;
 };
 
-bool LinuxInput::IsMouseButtonPressedImpl(int button)
+bool Input::IsMouseButtonPressed(unsigned int button)
 {
     auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
     auto state = glfwGetKey(window, button);
     return state;
 };
 
-float LinuxInput::GetMouseXImpl()
+float Input::GetMouseX()
 {
-    auto [x, y] = GetMousePositionImpl();
+    auto [x, y] = GetMousePosition();
     return x;
 };
 
-float LinuxInput::GetMouseYImpl()
+float Input::GetMouseY()
 {
-    auto [x, y] = GetMousePositionImpl();
+    auto [x, y] = GetMousePosition();
     return y;
 };
 
-std::pair<float, float> LinuxInput::GetMousePositionImpl()
+std::pair<float, float> Input::GetMousePosition()
 {
     auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
     double xpos, ypos;
