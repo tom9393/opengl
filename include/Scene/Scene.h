@@ -4,6 +4,8 @@
 #include "../TimeStep.h"
 #include "Components.h"
 
+class Entity;
+
 class Scene
 {
     public:
@@ -12,9 +14,9 @@ class Scene
 
     void OnUpdate(TimeStep ts);
 
-    entt::entity CreateEntity();
-    entt::registry &GetRegistry() { return m_Registry; }
+    Entity CreateEntity();
 
     private:
     entt::registry m_Registry;
+    friend class Entity;
 };

@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "../Renderer.h"
 #include "Components.h"
+#include "Entity.h"
 
 Scene::Scene()
 {
@@ -25,7 +26,8 @@ void Scene::OnUpdate(TimeStep ts)
 	}
 };
 
-entt::entity Scene::CreateEntity()
+Entity Scene::CreateEntity()
 {
-	return m_Registry.create();
+	Entity e = { m_Registry.create(), this };
+	return e;
 };

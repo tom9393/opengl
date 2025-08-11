@@ -31,6 +31,14 @@ struct ModelComponent
     ModelComponent(const Shared<Model> &model) : model(model) {}
 };
 
+struct TagComponent
+{
+    std::string tag = "";
+    TagComponent() = default;
+    TagComponent(const TagComponent&) = default;
+    TagComponent(const std::string &tag) : tag(tag) {}
+};
+
 struct TextureComponent
 {
     Shared<Texture2D> texture = nullptr;

@@ -7,6 +7,7 @@
 #include "../include/Raytracing.h"
 #include "../include/AssimpLoader.h"
 #include "../include/Application.h"
+#include "../include/Scene/Entity.h"
 
 EditorLayer::EditorLayer() : m_CameraController(std::make_shared<Camera>(), 2.0f)
 {
@@ -28,9 +29,9 @@ EditorLayer::~EditorLayer()
 void EditorLayer::OnAttach() {
     std::cout << "EditorLayer attached" << std::endl;
     m_Scene = MakeShared<Scene>();
-    auto entity = m_Scene->CreateEntity();
-    m_Scene->GetRegistry().emplace<TransformComponent>(entity);
-    m_Scene->GetRegistry().emplace<ModelComponent>(entity, m_Model);
+    Entity entity = m_Scene->CreateEntity();
+    entity.AddComponent<TransformComponent>(glm::mat4(1.0f));
+    entity.AddComponent<ModelComponent>(m_Model);
 };
 
 void EditorLayer::OnDetach() {
