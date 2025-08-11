@@ -53,7 +53,8 @@ void Testlayer::OnUpdate(TimeStep ts)
     for (auto &mesh : meshes)
     {
         Renderer::SetTexture(mesh);
-        Renderer::Submit(mesh);
+         glm::mat4 a = {1.0f};
+        Renderer::Submit(mesh, a);
     }
 
     Renderer::EndScene();

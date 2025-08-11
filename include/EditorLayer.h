@@ -4,6 +4,7 @@
 #include "Layer.h"
 #include "Ray.h"
 #include "AABB.h"
+#include "Scene/Scene.h"
 #include "Texture.h"
 #include "TimeStep.h"
 #include "Shader.h"
@@ -36,6 +37,8 @@ class EditorLayer : public Layer
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
     float m_Previous = 0;
+
+    Shared<Scene> m_Scene;
 
     glm::vec2 m_ViewportSize;
 

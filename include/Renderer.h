@@ -37,7 +37,7 @@ class Renderer
     static void EndScene();
 
     static void SetTexture(const std::shared_ptr<Mesh> &mesh);
-    static void Submit(const std::shared_ptr<Mesh> &mesh);
+    static void Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform);
 
     static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

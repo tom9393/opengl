@@ -68,7 +68,7 @@ void Renderer::SetTexture(const std::shared_ptr<Mesh> &mesh)
     }
 };
 
-void Renderer::Submit(const std::shared_ptr<Mesh> &mesh)
+void Renderer::Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform)
 {
     PROFILE_FUNCTION();
 

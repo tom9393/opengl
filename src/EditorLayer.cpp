@@ -27,6 +27,10 @@ EditorLayer::~EditorLayer()
 
 void EditorLayer::OnAttach() {
     std::cout << "EditorLayer attached" << std::endl;
+    m_Scene = MakeShared<Scene>();
+    auto entity = m_Scene->CreateEntity();
+    m_Scene->GetRegistry().emplace<TransformComponent>(entity);
+    m_Scene->GetRegistry().emplace<ModelComponent>(entity, m_Model);
 };
 
 void EditorLayer::OnDetach() {
@@ -43,30 +47,14 @@ void EditorLayer::OnUpdate(TimeStep ts)
     RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
     RenderCommand::Clear();
 
-    if (m_SelectedMesh && Input::IsKeyPressed(KEY_G))
-    {
-        m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, 1.0f); // Example movement
-    }
-    if (m_SelectedMesh && Input::IsKeyPressed(KEY_H))
-    {
-        m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
-    }
+    if (m_SelectedMesh && Input::IsKeyPressed(KEY_G)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, 1.0f); // Example movement
+    if (m_SelectedMesh && Input::IsKeyPressed(KEY_H)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
+    if (m_ViewportFocused) m_CameraController.OnUpdate(ts);
 
-    if (m_ViewportFocused)
-    {
-        m_CameraController.OnUpdate(ts);
-        Renderer::BeginScene(m_CameraController.GetCamera());
-    }
-
-    std::vector<std::shared_ptr<Mesh>> meshes = m_Model->GetMeshes();
-
-    for (auto &mesh : meshes)
-    {
-        Renderer::SetTexture(mesh);
-        Renderer::Submit(mesh);
-    }
-
+    Renderer::BeginScene(m_CameraController.GetCamera());
+    m_Scene->OnUpdate(ts);
     Renderer::EndScene();
+
     m_Framebuffer->Unbind();
 };
 
