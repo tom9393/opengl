@@ -25,21 +25,6 @@ void Renderer::Init()
     const std::string frag = "/home/tom/Coding/c++/opengl/shaders/default.frag";
     m_Data.shaderLibrary = new ShaderLibrary({"Texture"});
     m_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
-
-    std::vector<glm::mat4> instancedModelMatrices;
-    unsigned int c = 10;
-    for (unsigned int i = 0; i < c; i++)
-    {
-        for (unsigned int j = 0; j < c; j++)
-        {
-            glm::vec3 v = {i * 4.0f, 0.0f, j * 10.0f};
-            glm::mat4 mat = glm::translate(glm::mat4(1.0f), v);
-            instancedModelMatrices.emplace_back(mat);
-        }
-    }
-
-    m_Data.matrixBuffer = SSBOBuffer::Create((void*)instancedModelMatrices.data(), sizeof(glm::mat4) * instancedModelMatrices.size());
-    m_Data.matrixBuffer->Bind(0);
 };
 
 void Renderer::OnWindowResize(unsigned int width, unsigned int height)

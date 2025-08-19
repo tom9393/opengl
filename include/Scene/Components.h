@@ -5,6 +5,7 @@
 #include "../Texture.h"
 #include "../mesh.h"
 #include "../model.h"
+#include "../Buffer.h"
 
 struct TransformComponent
 {
@@ -45,4 +46,12 @@ struct TextureComponent
     TextureComponent() = default;
     TextureComponent(const TextureComponent&) = default;
     TextureComponent(const Shared<Texture2D> &texture) : texture(texture) {}
+};
+
+struct InstanceComponent
+{
+    std::shared_ptr<SSBOBuffer> matrixBuffer;
+    InstanceComponent() = default;
+    InstanceComponent(const InstanceComponent&) = default;
+    InstanceComponent(const std::shared_ptr<SSBOBuffer> &buffer) : matrixBuffer(buffer) {}
 };
