@@ -33,14 +33,14 @@ class EditorLayer : public Layer
 
     private:
     std::shared_ptr<Model> m_Model;
-    CameraController m_CameraController;
+    //CameraController m_CameraController;
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
+    glm::vec2 m_ViewportSize = {0.0f, 0.0f};
+    glm::vec2 m_ViewportBounds[2];
     float m_Previous = 0;
 
     Shared<Scene> m_Scene;
-
-    glm::vec2 m_ViewportSize;
 
     std::shared_ptr<Texture2D> m_Texture;
     std::shared_ptr<Mesh> m_SelectedMesh;

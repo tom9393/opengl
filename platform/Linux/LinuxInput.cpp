@@ -1,5 +1,6 @@
 #include "../../include/Application.h"
 #include "../../include/Input.h"
+#include <GLFW/glfw3.h>
 
 bool Input::IsKeyPressed(unsigned int keycode)
 {
@@ -11,8 +12,8 @@ bool Input::IsKeyPressed(unsigned int keycode)
 bool Input::IsMouseButtonPressed(unsigned int button)
 {
     auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetKey(window, button);
-    return state;
+    auto state = glfwGetMouseButton(window, button);
+    return state == GLFW_PRESS;
 };
 
 float Input::GetMouseX()

@@ -3,12 +3,12 @@
 Renderer::SceneData Renderer::m_SceneData;
 RenderStorage Renderer::m_Data;
 
-void Renderer::BeginScene(std::shared_ptr<Camera> camera)
+void Renderer::BeginScene(const glm::mat4& viewProjection)
 {
-    m_SceneData.ViewProjectionMatrix = camera->GetViewProjectionMatrix();
+
     std::shared_ptr<Shader> shader = m_Data.shaderLibrary->Get("Texture");
     shader->Bind();
-    shader->setMat4("u_ViewProjection", m_SceneData.ViewProjectionMatrix);
+    shader->setMat4("u_ViewProjection", viewProjection);
 };
 
 void Renderer::EndScene()

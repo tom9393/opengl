@@ -38,9 +38,9 @@ class Entity
         return m_Scene->m_Registry.all_of<T>(m_Handle);
     }
 
-    operator bool() const { return (unsigned int) m_Handle != 0; }
+    operator bool() const { return m_Handle != entt::null; }
 
     private:
-    entt::entity m_Handle {0};
+    entt::entity m_Handle { entt::null };
     Scene* m_Scene = nullptr;
 };

@@ -30,7 +30,7 @@ class Testlayer : public Layer
 
     private:
     std::shared_ptr<Model> m_Model;
-    CameraController m_CameraController;
+    //CameraController m_CameraController;
     bool m_CameraActive = true;
     float m_Previous = 0;
 

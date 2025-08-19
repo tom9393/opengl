@@ -5,6 +5,8 @@
 #include "../Texture.h"
 #include "../mesh.h"
 #include "../model.h"
+#include "SceneCamera.h"
+#include "../EditorCamera.h"
 #include "../Buffer.h"
 
 struct TransformComponent
@@ -19,6 +21,7 @@ struct TransformComponent
 struct MeshComponent
 {
     Shared<Mesh> mesh = nullptr;
+
     MeshComponent() = default;
     MeshComponent(const MeshComponent&) = default;
     MeshComponent(const Shared<Mesh> &mesh) : mesh(mesh) {}
@@ -27,6 +30,7 @@ struct MeshComponent
 struct ModelComponent
 {
     Shared<Model> model = nullptr;
+
     ModelComponent() = default;
     ModelComponent(const ModelComponent&) = default;
     ModelComponent(const Shared<Model> &model) : model(model) {}
@@ -35,6 +39,7 @@ struct ModelComponent
 struct TagComponent
 {
     std::string tag = "";
+
     TagComponent() = default;
     TagComponent(const TagComponent&) = default;
     TagComponent(const std::string &tag) : tag(tag) {}
@@ -43,7 +48,19 @@ struct TagComponent
 struct TextureComponent
 {
     Shared<Texture2D> texture = nullptr;
+
     TextureComponent() = default;
     TextureComponent(const TextureComponent&) = default;
     TextureComponent(const Shared<Texture2D> &texture) : texture(texture) {}
+};
+
+struct CameraComponent
+{
+    Shared<EditorCamera> sceneCamera;
+    bool primary = true;
+    bool fixedAspectRatio = false;
+
+    CameraComponent() = default;
+    CameraComponent(const CameraComponent&) = default;
+    CameraComponent(const Shared<EditorCamera> camera) : sceneCamera(camera) {}
 };

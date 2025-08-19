@@ -33,7 +33,7 @@ class Renderer
 
     static void ToggleWireframe();
 
-    static void BeginScene(std::shared_ptr<Camera> camera);
+    static void BeginScene(const glm::mat4& viewProjection);
     static void EndScene();
 
     static void SetTexture(const std::shared_ptr<Mesh> &mesh);

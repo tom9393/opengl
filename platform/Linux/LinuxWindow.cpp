@@ -3,6 +3,7 @@
 #include "../../include/Events/KeyboardEvent.h"
 #include "LinuxWindow.h"
 #include "../OpenGL/OpenGLContext.h"
+#include <GLFW/glfw3.h>
 #include <regex>
 
 static bool s_GLFWInitialized = false;
@@ -31,7 +32,7 @@ void LinuxWindow::Init(const WindowProps &props)
     m_Data.height = props.height;
     m_Data.width = props.width;
     m_Data.title = props.title;
-    m_Data.cursor = false;
+    m_Data.cursor = true;
 
     if (!s_GLFWInitialized)
     {
@@ -51,8 +52,7 @@ void LinuxWindow::Init(const WindowProps &props)
     glEnable(GL_DEPTH_TEST);
 
     setVsync(true);
-    m_Data.cursor = false;
-    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // GLFW callbacks
     glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)

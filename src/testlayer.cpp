@@ -7,7 +7,7 @@
 #include "../include/Raytracing.h"
 #include "../include/AssimpLoader.h"
 
-Testlayer::Testlayer() : m_CameraController(std::make_shared<Camera>(), 2.0f)
+Testlayer::Testlayer()
 {
     AssimpLoader loader;
     m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
@@ -44,8 +44,8 @@ void Testlayer::OnUpdate(TimeStep ts)
 
     if (m_CameraActive)
     {
-        m_CameraController.OnUpdate(ts);
-        Renderer::BeginScene(m_CameraController.GetCamera());
+        //m_CameraController.OnUpdate(ts);
+        // Renderer::BeginScene(m_CameraController.GetCamera());
     }
 
     std::vector<std::shared_ptr<Mesh>> meshes = m_Model->GetMeshes();
@@ -87,7 +87,7 @@ void Testlayer::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&Testlayer::OnMouseButtonPressed, this, std::placeholders::_1));
-    m_CameraController.OnEvent(e);
+    //m_CameraController.OnEvent(e);
 };
 
 bool Testlayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
@@ -99,13 +99,13 @@ bool Testlayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
         std::cout << x << std::endl;
         std::cout << y << std::endl;
 
-        Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
+        // Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
     }
 
     if (e.GetMouseButton() == MOUSE_BUTTON_RIGHT)
     {
         m_CameraActive = !m_CameraActive;
-        m_CameraController.GetCamera()->SetFirstMouse(m_CameraActive);
+        // m_CameraController.GetCamera()->SetFirstMouse(m_CameraActive);
     }
 
     return false;
