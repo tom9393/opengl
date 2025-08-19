@@ -58,6 +58,8 @@ void Renderer::Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform)
     PROFILE_FUNCTION();
 
     m_Data.batch = new Batch(mesh->GetBufferLayout());
+    std::shared_ptr<Shader> shader = m_Data.shaderLibrary->Get("Texture");
+    shader->setMat4("u_Transform", transform);
 
     if (m_Data.batch->GetLayout() == mesh->GetBufferLayout())
     {
@@ -66,7 +68,8 @@ void Renderer::Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform)
         m_Data.batch->Prepare();
         std::shared_ptr<VertexArray> VAO = m_Data.batch->GetVAO();
         VAO->Bind();
-        RenderCommand::DrawIndexedInstances(VAO, 100);
+        // RenderCommand::DrawIndexedInstances(VAO, 100);
+        RenderCommand::DrawIndexed(VAO);
         delete m_Data.batch;
         m_Data.batch = nullptr;
         m_Data.statistics.DrawCalls++;

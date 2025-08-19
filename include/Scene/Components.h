@@ -47,11 +47,3 @@ struct TextureComponent
     TextureComponent(const TextureComponent&) = default;
     TextureComponent(const Shared<Texture2D> &texture) : texture(texture) {}
 };
-
-struct InstanceComponent
-{
-    std::shared_ptr<SSBOBuffer> matrixBuffer;
-    InstanceComponent() = default;
-    InstanceComponent(const InstanceComponent&) = default;
-    InstanceComponent(const std::shared_ptr<SSBOBuffer> &buffer) : matrixBuffer(buffer) {}
-};

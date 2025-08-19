@@ -18,14 +18,14 @@ out vec2 v_TexCoord;
 out vec4 FragPosLightSpace;
 out vec4 FragPosLightSpaceSpot[NR_SPOT_LIGHTS]; // Add this
 
-// uniform mat4 u_Transform;
+uniform mat4 u_Transform;
 uniform mat4 u_ViewProjection;
 uniform mat4 lightSpaceMatrix;
 uniform mat4 spotLightSpaceMatrices[NR_SPOT_LIGHTS]; // Add this
 
 void main()
 {
-    mat4 u_Transform = modelMatrices[gl_InstanceID];
+    // mat4 u_Transform = modelMatrices[gl_InstanceID];
     vec4 WorldPos = u_Transform * vec4(a_Position, 1.0);
     v_FragPos = vec3(WorldPos);
     v_Normal = mat3(transpose(inverse(u_Transform))) * a_Normal;

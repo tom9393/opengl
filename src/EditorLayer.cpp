@@ -29,24 +29,18 @@ EditorLayer::~EditorLayer()
 void EditorLayer::OnAttach() {
     std::cout << "EditorLayer attached" << std::endl;
     m_Scene = MakeShared<Scene>();
-    Entity entity = m_Scene->CreateEntity();
-    entity.AddComponent<TransformComponent>(glm::mat4(1.0f));
-    entity.AddComponent<ModelComponent>(m_Model);
-    std::vector<glm::mat4> instances;
-    unsigned int c = 10;
+    unsigned int c = 1;
     for (unsigned int i = 0; i < c; i++)
     {
         for (unsigned int j = 0; j < c; j++)
         {
             glm::vec3 v = {i * 4.0f, 0.0f, j * 10.0f};
             glm::mat4 mat = glm::translate(glm::mat4(1.0f), v);
-            instances.emplace_back(mat);
+            Entity entity = m_Scene->CreateEntity();
+            entity.AddComponent<TransformComponent>(mat);
+            entity.AddComponent<ModelComponent>(m_Model);
         }
     }
-
-    std::shared_ptr<SSBOBuffer> buffer = SSBOBuffer::Create((void*)instances.data(), sizeof(glm::mat4) * instances.size());
-    buffer->Bind(0);
-    entity.AddComponent<InstanceComponent>(buffer);
 };
 
 void EditorLayer::OnDetach() {
