@@ -54,13 +54,24 @@ struct TextureComponent
     TextureComponent(const Shared<Texture2D> &texture) : texture(texture) {}
 };
 
-struct CameraComponent
+struct SceneCameraComponent
 {
-    Shared<EditorCamera> sceneCamera;
+    Shared<SceneCamera> sceneCamera;
+    bool primary = false;
+    bool fixedAspectRatio = false;
+
+    SceneCameraComponent() = default;
+    SceneCameraComponent(const SceneCameraComponent&) = default;
+    SceneCameraComponent(const Shared<SceneCamera> camera) : sceneCamera(camera) {}
+};
+
+struct EditorCameraComponent
+{
+    Shared<EditorCamera> editorCamera;
     bool primary = true;
     bool fixedAspectRatio = false;
 
-    CameraComponent() = default;
-    CameraComponent(const CameraComponent&) = default;
-    CameraComponent(const Shared<EditorCamera> camera) : sceneCamera(camera) {}
+    EditorCameraComponent() = default;
+    EditorCameraComponent(const EditorCameraComponent&) = default;
+    EditorCameraComponent(const Shared<EditorCamera> camera) : editorCamera(camera) {}
 };

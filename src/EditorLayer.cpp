@@ -45,8 +45,16 @@ void EditorLayer::OnAttach() {
 
     Entity cameraEntity = m_Scene->CreateEntity();
     Shared<EditorCamera> cam = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
-    cameraEntity.AddComponent<CameraComponent>(cam);
-    cameraEntity.AddComponent<TagComponent>("Camera component");
+    cameraEntity.AddComponent<EditorCameraComponent>(cam);
+    cameraEntity.AddComponent<TagComponent>("Editing camera");
+
+    Entity sceneCamera = m_Scene->CreateEntity();
+    Shared<SceneCamera> sceneCam = MakeShared<SceneCamera>();
+    sceneCam->SetProjectionType(SceneCamera::ProjectionType::Orthographic);
+    sceneCamera.AddComponent<SceneCameraComponent>(sceneCam);
+    glm::mat4 trans = glm::mat4(1.0f);
+    sceneCamera.AddComponent<TransformComponent>(trans);
+    sceneCamera.AddComponent<TagComponent>("Scene camera");
 
     m_SceneHierarchyPanel.SetContext(m_Scene);
 };

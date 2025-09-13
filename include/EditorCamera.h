@@ -10,7 +10,11 @@
 
 class EditorCamera : public Camera
 {
-public:
+
+        public:
+        enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+
+        public:
         EditorCamera() = default;
         EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
 
@@ -24,6 +28,9 @@ public:
 
         const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
         glm::mat4 GetViewProjection() const { return m_Projection * m_ViewMatrix; }
+
+        ProjectionType GetProjectionType() const { return m_ProjectionType; }
+        void SetProjectionType(ProjectionType type) { m_ProjectionType = type; UpdateProjection(); }
 
         glm::vec3 GetUpDirection() const;
         glm::vec3 GetRightDirection() const;
@@ -49,6 +56,7 @@ private:
         float RotationSpeed() const;
         float ZoomSpeed() const;
 private:
+        ProjectionType m_ProjectionType = ProjectionType::Perspective;
         float m_FOV = 90.0f, m_AspectRatio = 1.778f, m_NearClip = 0.1f, m_FarClip = 1000.0f;
 
         glm::mat4 m_ViewMatrix;

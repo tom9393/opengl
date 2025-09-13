@@ -2,6 +2,7 @@
 #include "../Renderer.h"
 #include "Components.h"
 #include "Entity.h"
+#include "SceneCamera.h"
 
 Scene::Scene()
 {
@@ -13,23 +14,42 @@ Scene::~Scene()
 
 void Scene::OnUpdate(TimeStep ts)
 {
-	Shared<EditorCamera> mainCamera = nullptr;
+	Shared<EditorCamera> editorCamera = nullptr;
+	Shared<SceneCamera> sceneCamera = nullptr;
 
-	auto view = m_Registry.view<CameraComponent>();
-	for (auto entity : view)
+	auto sceneView = m_Registry.view<SceneCameraComponent>();
+	for (auto entity : sceneView)
 	{
-		auto camera = view.get<CameraComponent>(entity);
-		camera.sceneCamera->OnUpdate(ts);
+		auto camera = sceneView.get<SceneCameraComponent>(entity);
 		if (camera.primary)
 		{
-			mainCamera = camera.sceneCamera;
+			sceneCamera = camera.sceneCamera;
 			break;
 		}
 	}
 
-	if (mainCamera)
+	auto editorView = m_Registry.view<EditorCameraComponent>();
+	for (auto entity : editorView)
 	{
-		Renderer::BeginScene(mainCamera->GetViewProjection());
+		auto camera = editorView.get<EditorCameraComponent>(entity);
+		camera.editorCamera->OnUpdate(ts);
+		if (camera.primary)
+		{
+			editorCamera = camera.editorCamera;
+			break;
+		}
+	}
+
+	if (sceneCamera || editorCamera)
+	{
+		if (sceneCamera)
+		{
+			Renderer::BeginScene(sceneCamera->GetProjection());
+		}
+		else
+		{
+			Renderer::BeginScene(editorCamera->GetViewProjection());
+		}
 
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)
@@ -51,11 +71,11 @@ void Scene::OnViewportResize(unsigned int width, unsigned int height)
 {
 	m_ViewportWidth = width;
 	m_ViewportHeight = height;
-	auto view = m_Registry.view<CameraComponent>();
+	auto view = m_Registry.view<EditorCameraComponent>();
 	for (auto entity : view)
 	{
-		auto& cameraComponent = view.get<CameraComponent>(entity);
-		if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
+		auto& cameraComponent = view.get<EditorCameraComponent>(entity);
+		if (!cameraComponent.fixedAspectRatio) cameraComponent.editorCamera->SetViewportSize(width, height);
 
 	}
 };
