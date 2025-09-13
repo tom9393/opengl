@@ -1,5 +1,8 @@
 #pragma once
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
+
 #include <iostream>
 #include <stdio.h>
 #include <string>
@@ -25,8 +28,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
-
-#define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "lib/imgui.h"
 #include "lib/imgui_impl_glfw.h"
