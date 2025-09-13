@@ -13,16 +13,13 @@ Scene::~Scene()
 
 void Scene::OnUpdate(TimeStep ts)
 {
-
 	Shared<EditorCamera> mainCamera = nullptr;
 
 	auto view = m_Registry.view<CameraComponent>();
 	for (auto entity : view)
 	{
 		auto camera = view.get<CameraComponent>(entity);
-
 		camera.sceneCamera->OnUpdate(ts);
-
 		if (camera.primary)
 		{
 			mainCamera = camera.sceneCamera;
@@ -32,7 +29,6 @@ void Scene::OnUpdate(TimeStep ts)
 
 	if (mainCamera)
 	{
-
 		Renderer::BeginScene(mainCamera->GetViewProjection());
 
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
@@ -42,7 +38,7 @@ void Scene::OnUpdate(TimeStep ts)
 			auto meshes = model.model->GetMeshes();
 			for (auto& mesh : meshes)
 			{
-				Renderer::SetTexture(mesh);
+				Renderer::SetTexture(mesh->GetTextureLayout());
 				Renderer::Submit(mesh, transform.transform);
 			}
 		}

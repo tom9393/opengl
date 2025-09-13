@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Batch.h"
 #include "Buffer.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
@@ -20,7 +19,6 @@ struct RenderStorage
 {
     ShaderLibrary* shaderLibrary;
     std::shared_ptr<SSBOBuffer> matrixBuffer;
-    Batch* batch = nullptr;
     Statistics statistics;
 };
 
@@ -36,7 +34,7 @@ class Renderer
     static void BeginScene(const glm::mat4& viewProjection);
     static void EndScene();
 
-    static void SetTexture(const std::shared_ptr<Mesh> &mesh);
+    static void SetTexture(TextureLayout &textureLayout);
     static void Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform);
 
     static RendererAPI::API Get() { return RendererAPI::GetAPI(); }

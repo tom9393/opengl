@@ -39,8 +39,11 @@ class ShaderLibrary
     void AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths);
 
     std::shared_ptr<Shader> Get(const std::string &name);
+    std::shared_ptr<Shader> GetLatest() { return Get(m_Latest); };
+    void SetLatest(const std::string &name) { m_Latest = name; };
 
     private:
     std::unordered_map<std::string, std::shared_ptr<Shader>> m_Shaders;
+    std::string m_Latest;
 };
 
