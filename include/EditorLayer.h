@@ -10,6 +10,7 @@
 #include "Shader.h"
 #include "Events/MouseEvent.h"
 #include "model.h"
+#include "Panels/SceneHierarchyPanel.h"
 
 class EditorLayer : public Layer
 {
@@ -45,4 +46,8 @@ class EditorLayer : public Layer
     std::shared_ptr<Texture2D> m_Texture;
     std::shared_ptr<Mesh> m_SelectedMesh;
     std::shared_ptr<Framebuffer> m_Framebuffer;
+
+    // Panels
+
+    SceneHierarchyPanel m_SceneHierarchyPanel;
 };

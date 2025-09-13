@@ -23,4 +23,5 @@ class Scene
     unsigned int m_ViewportHeight = 0;
 
     friend class Entity;
+    friend class SceneHierarchyPanel;
 };

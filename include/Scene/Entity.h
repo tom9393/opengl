@@ -11,6 +11,8 @@ class Entity
     Entity(entt::entity entity, Scene* scene);
     Entity(const Entity &other) = default;
 
+    entt::entity GetHandle() const { return m_Handle; };
+
     template <typename T, typename... Args>
     T& AddComponent(Args&&... args)
     {
@@ -38,6 +40,7 @@ class Entity
         return m_Scene->m_Registry.all_of<T>(m_Handle);
     }
 
+    bool operator==(const Entity &other) const { return m_Handle == other.GetHandle() && m_Scene == other.m_Scene; };
     operator bool() const { return m_Handle != entt::null; }
 
     private:

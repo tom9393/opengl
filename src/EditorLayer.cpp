@@ -39,12 +39,16 @@ void EditorLayer::OnAttach() {
             Entity entity = m_Scene->CreateEntity();
             entity.AddComponent<TransformComponent>(mat);
             entity.AddComponent<ModelComponent>(m_Model);
+            entity.AddComponent<TagComponent>("Tank model");
         }
     }
 
     Entity cameraEntity = m_Scene->CreateEntity();
     Shared<EditorCamera> cam = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
     cameraEntity.AddComponent<CameraComponent>(cam);
+    cameraEntity.AddComponent<TagComponent>("Camera component");
+
+    m_SceneHierarchyPanel.SetContext(m_Scene);
 };
 
 void EditorLayer::OnDetach() {
@@ -76,8 +80,14 @@ void EditorLayer::OnImGuiRender()
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
     DrawStats();
 
+    m_SceneHierarchyPanel.OnImGuiRender();
+
+    ImGuiWindowFlags window_flags = 0;
+    if (Input::IsKeyPressed(KEY_LEFT_CONTROL))
+        window_flags |= ImGuiWindowFlags_NoMove;
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Viewport");
+    ImGui::Begin("Viewport", nullptr, window_flags);
     auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
     auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
     auto viewportOffset = ImGui::GetWindowPos();
