@@ -11,11 +11,24 @@
 
 struct TransformComponent
 {
-    glm::mat4 transform = {1.0f};
+    glm::vec3 translation;
+    glm::vec3 rotation;
+    glm::vec3 scale;
 
     TransformComponent() = default;
     TransformComponent(const TransformComponent&) = default;
-    TransformComponent(const glm::mat4 &transform) : transform(transform) {}
+    TransformComponent(const glm::vec3 &translation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &rotation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &scale = glm::vec3(1.0f, 1.0f, 1.0f)) : translation(translation), rotation(rotation), scale(scale) {}
+
+    glm::mat4 GetTransform() const
+    {
+        glm::mat4 rotx = glm::rotate(glm::mat4(1.0f), rotation.x, {1, 0, 0});
+        glm::mat4 roty = glm::rotate(glm::mat4(1.0f), rotation.y, {0, 1, 0});
+        glm::mat4 rotz = glm::rotate(glm::mat4(1.0f), rotation.z, {0, 0, 1});
+
+        glm::mat4 rot = rotx * roty * rotz;
+
+        return glm::translate(glm::mat4(1.0f), translation) * rot * glm::scale(glm::mat4(1.0f), scale);
+    }
 };
 
 struct MeshComponent

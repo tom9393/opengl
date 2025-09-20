@@ -34,10 +34,11 @@ void EditorLayer::OnAttach() {
     {
         for (unsigned int j = 0; j < c; j++)
         {
-            glm::vec3 v = {i * 4.0f, 0.0f, j * 10.0f};
-            glm::mat4 mat = glm::translate(glm::mat4(1.0f), v);
+            glm::vec3 translation = {i * 4.0f, 0.0f, j * 10.0f};
+            glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
+            glm::vec3 size = {1.0f, 1.0f, 1.0f};
             Entity entity = m_Scene->CreateEntity();
-            entity.AddComponent<TransformComponent>(mat);
+            entity.AddComponent<TransformComponent>(translation, rotation, size);
             entity.AddComponent<ModelComponent>(m_Model);
             entity.AddComponent<TagComponent>("Tank model");
         }
@@ -52,8 +53,8 @@ void EditorLayer::OnAttach() {
     Shared<SceneCamera> sceneCam = MakeShared<SceneCamera>();
     sceneCam->SetProjectionType(SceneCamera::ProjectionType::Orthographic);
     sceneCamera.AddComponent<SceneCameraComponent>(sceneCam);
-    glm::mat4 trans = glm::mat4(1.0f);
-    sceneCamera.AddComponent<TransformComponent>(trans);
+    glm::vec3 translation = glm::vec3(1.0f, 1.0f, 1.0f);
+    sceneCamera.AddComponent<TransformComponent>(translation);
     sceneCamera.AddComponent<TagComponent>("Scene camera");
 
     m_SceneHierarchyPanel.SetContext(m_Scene);

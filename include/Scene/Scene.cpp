@@ -59,7 +59,8 @@ void Scene::OnUpdate(TimeStep ts)
 			for (auto& mesh : meshes)
 			{
 				Renderer::SetTexture(mesh->GetTextureLayout());
-				Renderer::Submit(mesh, transform.transform);
+				glm::mat4 t = transform.GetTransform();
+				Renderer::Submit(mesh, t);
 			}
 		}
 
