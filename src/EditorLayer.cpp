@@ -20,6 +20,9 @@ EditorLayer::EditorLayer()
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    io.Fonts->AddFontFromFileTTF("/home/tom/Coding/c++/opengl/assets/fonts/opensans/OpenSans-Bold.ttf", 18.0f);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("/home/tom/Coding/c++/opengl/assets/fonts/opensans/OpenSans-Regular.ttf", 18.0f);
 };
 
 EditorLayer::~EditorLayer()
@@ -148,15 +151,15 @@ void EditorLayer::OnEvent(Event& e)
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
 {
-    if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
-    {
-        auto [x, y] = Input::GetMousePosition();
-        std::cout << "Mouse button pressed" << std::endl;
-        std::cout << x << std::endl;
-        std::cout << y << std::endl;
-
-        // Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
-    }
+    // if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
+    // {
+    //     auto [x, y] = Input::GetMousePosition();
+    //     std::cout << "Mouse button pressed" << std::endl;
+    //     std::cout << x << std::endl;
+    //     std::cout << y << std::endl;
+    //
+    //     // Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
+    // }
 
     return false;
 };

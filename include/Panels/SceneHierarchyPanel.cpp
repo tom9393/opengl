@@ -6,84 +6,129 @@
 template <typename T, typename Fn>
 static void DrawComponent(const std::string &name, Entity entity, Fn fn)
 {
+	const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+
+	if (entity.HasComponent<T>())
+	{
+		auto &component = entity.GetComponent<T>();
+		ImVec2 available = ImGui::GetContentRegionAvail();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+
+		float lineHeight = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
+		bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), nodeFlags, name.c_str());
+		ImGui::Separator();
+		ImGui::PopStyleVar();
+
+		ImGui::SameLine(available.x - lineHeight * 0.5f);
+		if (ImGui::Button("+", ImVec2{lineHeight, lineHeight}))
+		{
+			ImGui::OpenPopup("ComponentSettings");
+		}
+
+		bool removeComponent = false;
+		if (ImGui::BeginPopup("ComponentSettings"))
+		{
+			if (ImGui::MenuItem("Remove component"))
+			{
+				removeComponent = true;
+			}
+			ImGui::EndPopup();
+		}
+
+		if (open)
+		{
+			fn(component);
+			ImGui::TreePop();
+		}
+
+		if (removeComponent)
+		{
+			entity.RemoveComponent<T>();
+		}
+	}
 };
 
-static void DrawVec3(const std::string &label, glm::vec3 &values,
-                            float resetValue = 1.0f, float columnWidth = 100.0f)
+static void DrawVec3(const std::string &label, glm::vec3 &values, float resetValue = 1.0f, float columnWidth = 100.0f)
 {
-    // Persist selection per-control (keyed by label)
-    static std::unordered_map<std::string, int> s_selectedAxis;
+	ImGuiIO &io = ImGui::GetIO();
+	auto boldFont = io.Fonts->Fonts[0];
 
-    // ensure a default of -1 (no axis selected)
-    if (s_selectedAxis.find(label) == s_selectedAxis.end())
-        s_selectedAxis[label] = -1;
+	// Persist selection per-control (keyed by label)
+	static std::unordered_map<std::string, int> s_selectedAxis;
 
-    int &selected = s_selectedAxis[label];
+	// ensure a default of -1 (no axis selected)
+	if (s_selectedAxis.find(label) == s_selectedAxis.end())
+	s_selectedAxis[label] = -1;
 
-    ImGui::PushID(label.c_str());
+	int &selected = s_selectedAxis[label];
 
-    ImGui::Columns(2);
-    ImGui::SetColumnWidth(0, columnWidth);
-    ImGui::TextUnformatted(label.c_str());
-    ImGui::NextColumn();
+	ImGui::PushID(label.c_str());
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 4});
+	ImGui::Columns(2);
+	ImGui::SetColumnWidth(0, columnWidth);
+	ImGui::TextUnformatted(label.c_str());
+	ImGui::NextColumn();
 
-    // button sizing
-    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-    ImVec2 buttonSize = { lineHeight + 4.0f, lineHeight };
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 4});
 
-    const char* axisNames[3] = { "X", "Y", "Z" };
-    float* axisVals[3] = { &values.x, &values.y, &values.z };
-    ImVec4 axisColors[3] = {
-        ImVec4(0.75f, 0.12f, 0.12f, 1.0f), // red-ish X
-        ImVec4(0.12f, 0.75f, 0.12f, 1.0f), // green-ish Y
-        ImVec4(0.12f, 0.25f, 0.75f, 1.0f)  // blue-ish Z
-    };
+	// button sizing
+	float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+	ImVec2 buttonSize = { lineHeight + 4.0f, lineHeight };
 
-    // Render three inline axis controls: [Button(X)] [DragFloat]
-    for (int i = 0; i < 3; ++i)
-    {
-        ImGui::PushID(i);
+	const char* axisNames[3] = { "X", "Y", "Z" };
+	float* axisVals[3] = { &values.x, &values.y, &values.z };
+	ImVec4 axisColors[3] = {
+	ImVec4(0.75f, 0.12f, 0.12f, 1.0f), // red-ish X
+	ImVec4(0.12f, 0.75f, 0.12f, 1.0f), // green-ish Y
+	ImVec4(0.12f, 0.25f, 0.75f, 1.0f)  // blue-ish Z
+	};
 
-        bool isSelected = (selected == i);
+	// Render three inline axis controls: [Button(X)] [DragFloat]
+	for (int i = 0; i < 3; ++i)
+	{
+	ImGui::PushID(i);
 
-        // color the button if selected (and slightly darker when not)
-        ImVec4 baseBtnColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-        ImVec4 btnColor = isSelected ? axisColors[i] : ImVec4(baseBtnColor.x * 0.7f, baseBtnColor.y * 0.7f, baseBtnColor.z * 0.7f, baseBtnColor.w);
+	bool isSelected = (selected == i);
 
-        ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(btnColor.x + 0.08f, btnColor.y + 0.08f, btnColor.z + 0.08f, btnColor.w));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(btnColor.x - 0.08f, btnColor.y - 0.08f, btnColor.z - 0.08f, btnColor.w));
+	// color the button if selected (and slightly darker when not)
+	ImVec4 baseBtnColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+	ImVec4 btnColor = isSelected ? axisColors[i] : ImVec4(baseBtnColor.x * 0.7f, baseBtnColor.y * 0.7f, baseBtnColor.z * 0.7f, baseBtnColor.w);
 
-        if (ImGui::Button(axisNames[i], buttonSize))
-        {
-            // toggle selection (click same axis again to deselect)
-            selected = (isSelected ? -1 : i);
-            // optional: reset when selecting
-            if (!isSelected) *axisVals[i] = resetValue;
-        }
+	ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(btnColor.x + 0.08f, btnColor.y + 0.08f, btnColor.z + 0.08f, btnColor.w));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(btnColor.x - 0.08f, btnColor.y - 0.08f, btnColor.z - 0.08f, btnColor.w));
+	ImGui::PushFont(boldFont);
 
-        ImGui::PopStyleColor(3);
+	if (ImGui::Button(axisNames[i], buttonSize))
+	{
+	    // toggle selection (click same axis again to deselect)
+	    selected = (isSelected ? -1 : i);
+	    // optional: reset when selecting
+	    if (!isSelected) *axisVals[i] = resetValue;
+	}
 
-        ImGui::SameLine();
+	ImGui::PopFont();
+	ImGui::PopStyleColor(3);
 
-        // unique ID for the DragFloat. Use hidden label with the main label to avoid collisions.
-        char dragLabel[64];
-        std::snprintf(dragLabel, sizeof(dragLabel), "##%s_%c", label.c_str(), 'X' + i);
+	ImGui::SameLine();
 
-        // set width and render DragFloat
-        ImGui::SetNextItemWidth(120.0f);
-        ImGui::DragFloat(dragLabel, axisVals[i], 0.1f);
+	// unique ID for the DragFloat. Use hidden label with the main label to avoid collisions.
+	char dragLabel[64];
+	std::snprintf(dragLabel, sizeof(dragLabel), "##%s_%c", label.c_str(), 'X' + i);
 
-        ImGui::PopID();
+	// set width and render DragFloat
+	ImGui::SetNextItemWidth(120.0f);
+	ImGui::DragFloat(dragLabel, axisVals[i], 0.1f);
 
-        if (i < 2) ImGui::SameLine();
-    }
+	ImGui::PopID();
 
-    ImGui::PopStyleVar(); // ItemSpacing
-    ImGui::Columns(1);
-    ImGui::PopID();
+	if (i < 2) ImGui::SameLine();
+	}
+
+	ImGui::PopStyleVar(); // ItemSpacing
+	ImGui::Columns(1);
+	ImGui::PopID();
 }
 
 SceneHierarchyPanel::SceneHierarchyPanel(const Shared<Scene> &context)
@@ -127,37 +172,6 @@ void SceneHierarchyPanel::OnImGuiRender()
 	if (m_SelectionContext)
 	{
 		DrawComponents(m_SelectionContext);
-		if (ImGui::Button("Add Component"))
-		{
-			ImGui::OpenPopup("AddComponent");
-		}
-
-		if (ImGui::BeginPopup("AddComponent"))
-		{
-
-			if (ImGui::MenuItem("Camera"))
-			{
-				m_SelectionContext.AddComponent<SceneCameraComponent>();
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Model"))
-			{
-				AssimpLoader loader;
-				Shared<Model> m = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
-				m_SelectionContext.AddComponent<ModelComponent>(m);
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Transform"))
-			{
-				glm::vec3 trans = glm::vec3(0.0f, 0.0f, 0.0f);
-				m_SelectionContext.AddComponent<TransformComponent>(trans);
-				ImGui::CloseCurrentPopup();
-			}
-
-			ImGui::EndPopup();
-		}
 	}
 
 	ImGui::End();
@@ -167,7 +181,7 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 {
 	auto& tag = m_Context->m_Registry.get<TagComponent>(entity.GetHandle());
 	unsigned int selected = m_SelectionContext == entity ? ImGuiTreeNodeFlags_Selected : 0;
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | selected;
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | selected;
 
 	bool opened = ImGui::TreeNodeEx((void*) entity.GetHandle(), flags, tag.tag.c_str());
 	if (ImGui::IsItemClicked())
@@ -209,87 +223,69 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 		char buffer[256];
 		memset(buffer, 0, sizeof(buffer));
 		strcpy(buffer, tag.c_str());
-		if (ImGui::InputText("Tag", buffer, sizeof(buffer)))
-		{
-			tag = std::string(buffer);
-		}
+		if (ImGui::InputText("##Tag", buffer, sizeof(buffer))) tag = std::string(buffer);
 
 	}
 
-	const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap;
+	ImGui::SameLine();
+	ImGui::PushItemWidth(-1);
 
-	if (entity.HasComponent<TransformComponent>())
+	if (ImGui::Button("Add Component"))
 	{
-
-		bool open = ImGui::TreeNodeEx((void*)typeid(TransformComponent).hash_code(), nodeFlags, "Transform");
-
-		if (open)
-		{
-			auto &tc = entity.GetComponent<TransformComponent>();
-			glm::vec3 translation = tc.translation;
-			glm::vec3 rotation = glm::degrees(tc.rotation);
-			glm::vec3 scale = tc.scale;
-
-			DrawVec3("Translation", translation, 0.0f);
-			DrawVec3("Rotation", rotation, 0.0f);
-			DrawVec3("Scale", scale, 1.0f);
-
-			tc.translation = translation;
-			tc.rotation = glm::radians(rotation);
-			tc.scale = scale;
-
-			ImGui::TreePop();
-		}
+		ImGui::OpenPopup("AddComponent");
 	}
 
-	if (entity.HasComponent<ModelComponent>())
+	if (ImGui::BeginPopup("AddComponent"))
 	{
 
-		bool open = ImGui::TreeNodeEx((void*)typeid(ModelComponent).hash_code(), nodeFlags, "Model");
-
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-		ImGui::SameLine(ImGui::GetWindowWidth() - 25.0f);
-		if (ImGui::Button("+", ImVec2{25, 25}))
+		if (ImGui::MenuItem("Camera"))
 		{
-			ImGui::OpenPopup("ComponentSettings");
+			m_SelectionContext.AddComponent<SceneCameraComponent>();
+			ImGui::CloseCurrentPopup();
 		}
 
-		ImGui::PopStyleVar();
-
-		bool removeComponent = false;
-		if (ImGui::BeginPopup("ComponentSettings"))
+		if (ImGui::MenuItem("Model"))
 		{
-			if (ImGui::MenuItem("Remove component"))
-			{
-				removeComponent = true;
-			}
-			ImGui::EndPopup();
+			AssimpLoader loader;
+			Shared<Model> m = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+			m_SelectionContext.AddComponent<ModelComponent>(m);
+			ImGui::CloseCurrentPopup();
 		}
 
-		if (open)
+		if (ImGui::MenuItem("Transform"))
 		{
-			// Empty for now
-			auto &tc = entity.GetComponent<ModelComponent>();
-
-			ImGui::TreePop();
+			glm::vec3 trans = glm::vec3(0.0f, 0.0f, 0.0f);
+			m_SelectionContext.AddComponent<TransformComponent>(trans);
+			ImGui::CloseCurrentPopup();
 		}
 
-		if (removeComponent)
-		{
-			entity.RemoveComponent<ModelComponent>();
-		}
+		ImGui::EndPopup();
 	}
 
-	if (entity.HasComponent<SceneCameraComponent>())
-	{
+	ImGui::PopItemWidth();
 
-		if (ImGui::TreeNodeEx((void*)typeid(SceneCameraComponent).hash_code(), nodeFlags, "Camera"))
-		{
-			auto &cameraComponent = entity.GetComponent<SceneCameraComponent>();
-			auto &camera = cameraComponent.sceneCamera;
+	DrawComponent<ModelComponent>("Model", entity, [](auto &component){});
+	DrawComponent<TransformComponent>("Transform", entity, [](auto &component)
+	{
+		glm::vec3 translation = component.translation;
+		glm::vec3 rotation = glm::degrees(component.rotation);
+		glm::vec3 scale = component.scale;
+
+		DrawVec3("Translation", translation, 0.0f);
+		DrawVec3("Rotation", rotation, 0.0f);
+		DrawVec3("Scale", scale, 1.0f);
+
+		component.translation = translation;
+		component.rotation = glm::radians(rotation);
+		component.scale = scale;
+
+	});
+	DrawComponent<SceneCameraComponent>("Camera", entity, [](auto &component)
+	      {
+			auto &camera = component.sceneCamera;
 
 			const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
-			const char* currentProjectionTypeString = projectionTypeStrings[(int)cameraComponent.sceneCamera->GetProjectionType()];
+			const char* currentProjectionTypeString = projectionTypeStrings[(int)camera->GetProjectionType()];
 
 			if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
 			{
@@ -300,7 +296,7 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 					if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
 					{
 						currentProjectionTypeString = projectionTypeStrings[i];
-						cameraComponent.sceneCamera->SetProjectionType((SceneCamera::ProjectionType)i);
+						camera->SetProjectionType((SceneCamera::ProjectionType)i);
 					}
 
 					if (isSelected)
@@ -312,10 +308,10 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 				ImGui::EndCombo();
 			}
 
-			bool enabled = cameraComponent.primary;
+			bool enabled = component.primary;
 			if (ImGui::Checkbox("Use", &enabled))
 			{
-				cameraComponent.primary = !cameraComponent.primary;
+				component.primary = !component.primary;
 			}
 
 			if (camera->GetProjectionType() == SceneCamera::ProjectionType::Perspective)
@@ -348,7 +344,5 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 					camera->SetOrthographicFarClip(far);
 			}
 
-			ImGui::TreePop();
-		}
-	}
+	      });
 };

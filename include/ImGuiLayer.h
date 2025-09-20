@@ -13,6 +13,8 @@ class ImGuiLayer : public Layer
     void OnEvent(Event &e) override;
     void BlockEvents(bool block) { m_BlockEvents = block; }
 
+    void SetDarkTheme();
+
     void Begin();
     void End();
 
