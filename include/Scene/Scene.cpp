@@ -81,8 +81,57 @@ void Scene::OnViewportResize(unsigned int width, unsigned int height)
 	}
 };
 
-Entity Scene::CreateEntity()
+Entity Scene::CreateEntity(const std::string &name)
 {
 	Entity e = { m_Registry.create(), this };
+	e.AddComponent<TagComponent>(name);
 	return e;
 };
+
+void Scene::DestroyEntity(Entity entity)
+{
+	m_Registry.destroy(entity);
+};
+
+template <typename T>
+void Scene::OnComponentAdded(Entity entity, T &component)
+{
+	static_assert(false);
+}
+
+template <>
+void Scene::OnComponentAdded<SceneCameraComponent>(Entity entity, SceneCameraComponent &component)
+{
+	component.sceneCamera->SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+}
+
+template <>
+void Scene::OnComponentAdded<EditorCameraComponent>(Entity entity, EditorCameraComponent &component)
+{
+	component.editorCamera->SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+}
+
+template <>
+void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent &component)
+{
+}
+
+template <>
+void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent &component)
+{
+}
+
+template <>
+void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
+{
+}
+
+template <>
+void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent &component)
+{
+}
+
+template <>
+void Scene::OnComponentAdded<TextureComponent>(Entity entity, TextureComponent &component)
+{
+}

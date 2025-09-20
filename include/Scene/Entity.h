@@ -17,7 +17,9 @@ class Entity
     T& AddComponent(Args&&... args)
     {
         if (HasComponent<T>()) std::cout << "Already has component" << std::endl;
-        return m_Scene->m_Registry.emplace<T>(m_Handle, std::forward<Args>(args)...);
+        T& component = m_Scene->m_Registry.emplace<T>(m_Handle, std::forward<Args>(args)...);
+        m_Scene->OnComponentAdded<T>(*this, component);
+        return component;
     }
 
     template <typename T>
@@ -42,6 +44,7 @@ class Entity
 
     bool operator==(const Entity &other) const { return m_Handle == other.GetHandle() && m_Scene == other.m_Scene; };
     operator bool() const { return m_Handle != entt::null; }
+    operator entt::entity() const { return m_Handle; }
 
     private:
     entt::entity m_Handle { entt::null };

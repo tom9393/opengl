@@ -15,7 +15,12 @@ class Scene
     void OnUpdate(TimeStep ts);
     void OnViewportResize(unsigned int width, unsigned int height);
 
-    Entity CreateEntity();
+    Entity CreateEntity(const std::string &name = "Entity");
+    void DestroyEntity(Entity entity);
+
+    private:
+    template <typename T>
+    void OnComponentAdded(Entity entity, T &component);
 
     private:
     entt::registry m_Registry;

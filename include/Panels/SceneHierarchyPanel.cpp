@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.h"
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
+#include "../AssimpLoader.h"
 
 template <typename T, typename Fn>
 static void DrawComponent(const std::string &name, Entity entity, Fn fn)
@@ -110,6 +111,15 @@ void SceneHierarchyPanel::OnImGuiRender()
 		m_SelectionContext = {};
 	}
 
+	if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_NoOpenOverItems))
+	{
+		if (ImGui::MenuItem("Create entity"))
+		{
+			m_Context->CreateEntity("Empty entity");
+		}
+		ImGui::EndPopup();
+	}
+
 	ImGui::End();
 
 	ImGui::Begin("Properties");
@@ -117,6 +127,37 @@ void SceneHierarchyPanel::OnImGuiRender()
 	if (m_SelectionContext)
 	{
 		DrawComponents(m_SelectionContext);
+		if (ImGui::Button("Add Component"))
+		{
+			ImGui::OpenPopup("AddComponent");
+		}
+
+		if (ImGui::BeginPopup("AddComponent"))
+		{
+
+			if (ImGui::MenuItem("Camera"))
+			{
+				m_SelectionContext.AddComponent<SceneCameraComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (ImGui::MenuItem("Model"))
+			{
+				AssimpLoader loader;
+				Shared<Model> m = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+				m_SelectionContext.AddComponent<ModelComponent>(m);
+				ImGui::CloseCurrentPopup();
+			}
+
+			if (ImGui::MenuItem("Transform"))
+			{
+				glm::vec3 trans = glm::vec3(0.0f, 0.0f, 0.0f);
+				m_SelectionContext.AddComponent<TransformComponent>(trans);
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
 	}
 
 	ImGui::End();
@@ -134,9 +175,28 @@ void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 		m_SelectionContext = entity;
 	}
 
+	bool entityDeleted = false;
+	if (ImGui::BeginPopupContextItem())
+	{
+		if (ImGui::MenuItem("Delete entity"))
+		{
+			entityDeleted = true;
+		}
+		ImGui::EndPopup();
+	}
+
 	if (opened)
 	{
 		ImGui::TreePop();
+	}
+
+	if (entityDeleted)
+	{
+		m_Context->DestroyEntity(entity);
+		if (m_SelectionContext == entity)
+		{
+			m_SelectionContext = {};
+		}
 	}
 };
 
@@ -156,32 +216,74 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 
 	}
 
+	const ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap;
+
 	if (entity.HasComponent<TransformComponent>())
 	{
 
-		if (ImGui::TreeNodeEx((void*)typeid(TransformComponent).hash_code(), ImGuiTreeNodeFlags_DefaultOpen, "Transform"))
+		bool open = ImGui::TreeNodeEx((void*)typeid(TransformComponent).hash_code(), nodeFlags, "Transform");
+
+		if (open)
 		{
 			auto &tc = entity.GetComponent<TransformComponent>();
 			glm::vec3 translation = tc.translation;
 			glm::vec3 rotation = glm::degrees(tc.rotation);
 			glm::vec3 scale = tc.scale;
 
-			// ImGui::DragFloat3("Position", glm::value_ptr(translation), 0.1f);
-			
 			DrawVec3("Translation", translation, 0.0f);
 			DrawVec3("Rotation", rotation, 0.0f);
-			DrawVec3("Scale", scale, 0.0f);
+			DrawVec3("Scale", scale, 1.0f);
 
+			tc.translation = translation;
 			tc.rotation = glm::radians(rotation);
+			tc.scale = scale;
 
 			ImGui::TreePop();
+		}
+	}
+
+	if (entity.HasComponent<ModelComponent>())
+	{
+
+		bool open = ImGui::TreeNodeEx((void*)typeid(ModelComponent).hash_code(), nodeFlags, "Model");
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+		ImGui::SameLine(ImGui::GetWindowWidth() - 25.0f);
+		if (ImGui::Button("+", ImVec2{25, 25}))
+		{
+			ImGui::OpenPopup("ComponentSettings");
+		}
+
+		ImGui::PopStyleVar();
+
+		bool removeComponent = false;
+		if (ImGui::BeginPopup("ComponentSettings"))
+		{
+			if (ImGui::MenuItem("Remove component"))
+			{
+				removeComponent = true;
+			}
+			ImGui::EndPopup();
+		}
+
+		if (open)
+		{
+			// Empty for now
+			auto &tc = entity.GetComponent<ModelComponent>();
+
+			ImGui::TreePop();
+		}
+
+		if (removeComponent)
+		{
+			entity.RemoveComponent<ModelComponent>();
 		}
 	}
 
 	if (entity.HasComponent<SceneCameraComponent>())
 	{
 
-		if (ImGui::TreeNodeEx((void*)typeid(SceneCameraComponent).hash_code(), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
+		if (ImGui::TreeNodeEx((void*)typeid(SceneCameraComponent).hash_code(), nodeFlags, "Camera"))
 		{
 			auto &cameraComponent = entity.GetComponent<SceneCameraComponent>();
 			auto &camera = cameraComponent.sceneCamera;

@@ -12,7 +12,7 @@
 EditorLayer::EditorLayer()
 {
     AssimpLoader loader;
-    m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+    m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/sukhoi.assbin");
     FramebufferSpecification spec;
     spec.width = 500;
     spec.height = 500;
@@ -29,6 +29,8 @@ EditorLayer::~EditorLayer()
 void EditorLayer::OnAttach() {
     std::cout << "EditorLayer attached" << std::endl;
     m_Scene = MakeShared<Scene>();
+    m_Scene->OnViewportResize(500, 500);
+
     unsigned int c = 1;
     for (unsigned int i = 0; i < c; i++)
     {
@@ -37,25 +39,22 @@ void EditorLayer::OnAttach() {
             glm::vec3 translation = {i * 4.0f, 0.0f, j * 10.0f};
             glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
             glm::vec3 size = {1.0f, 1.0f, 1.0f};
-            Entity entity = m_Scene->CreateEntity();
+            Entity entity = m_Scene->CreateEntity("Tank model");
             entity.AddComponent<TransformComponent>(translation, rotation, size);
             entity.AddComponent<ModelComponent>(m_Model);
-            entity.AddComponent<TagComponent>("Tank model");
         }
     }
 
-    Entity cameraEntity = m_Scene->CreateEntity();
+    Entity cameraEntity = m_Scene->CreateEntity("Editing camera");
     Shared<EditorCamera> cam = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
     cameraEntity.AddComponent<EditorCameraComponent>(cam);
-    cameraEntity.AddComponent<TagComponent>("Editing camera");
 
-    Entity sceneCamera = m_Scene->CreateEntity();
+    Entity sceneCamera = m_Scene->CreateEntity("Scene camera");
     Shared<SceneCamera> sceneCam = MakeShared<SceneCamera>();
     sceneCam->SetProjectionType(SceneCamera::ProjectionType::Orthographic);
     sceneCamera.AddComponent<SceneCameraComponent>(sceneCam);
     glm::vec3 translation = glm::vec3(1.0f, 1.0f, 1.0f);
     sceneCamera.AddComponent<TransformComponent>(translation);
-    sceneCamera.AddComponent<TagComponent>("Scene camera");
 
     m_SceneHierarchyPanel.SetContext(m_Scene);
 };
