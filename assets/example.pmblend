@@ -1,0 +1,11 @@
+Scene: Unnamed scene
+Entities:
+  - Entity: 12345
+    Tag component:
+      Tag: Scene camera
+  - Entity: 12345
+    Tag component:
+      Tag: Editing camera
+  - Entity: 12345
+    Tag component:
+      Tag: Tank model

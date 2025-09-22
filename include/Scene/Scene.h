@@ -3,6 +3,7 @@
 #include "../../lib/entt.hpp"
 #include "../TimeStep.h"
 #include "Components.h"
+#include "SceneSerializer.h"
 
 class Entity;
 
@@ -28,5 +29,6 @@ class Scene
     unsigned int m_ViewportHeight = 0;
 
     friend class Entity;
+    friend class SceneSerializer;
     friend class SceneHierarchyPanel;
 };

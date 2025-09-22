@@ -8,6 +8,7 @@
 #include "../include/AssimpLoader.h"
 #include "../include/Application.h"
 #include "../include/Scene/Entity.h"
+#include "../include/Scene/SceneSerializer.h"
 
 EditorLayer::EditorLayer()
 {
@@ -41,7 +42,7 @@ void EditorLayer::OnAttach() {
         {
             glm::vec3 translation = {i * 4.0f, 0.0f, j * 10.0f};
             glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
-            glm::vec3 size = {1.0f, 1.0f, 1.0f};
+            glm::vec3 size = {5.0f, 5.0f, 5.0f};
             Entity entity = m_Scene->CreateEntity("Tank model");
             entity.AddComponent<TransformComponent>(translation, rotation, size);
             entity.AddComponent<ModelComponent>(m_Model);
@@ -60,6 +61,9 @@ void EditorLayer::OnAttach() {
     sceneCamera.AddComponent<TransformComponent>(translation);
 
     m_SceneHierarchyPanel.SetContext(m_Scene);
+
+    SceneSerializer serializer(m_Scene);
+    serializer.Serialize("/home/tom/Coding/c++/opengl/assets/example.pmblend");
 };
 
 void EditorLayer::OnDetach() {
