@@ -49,6 +49,8 @@ void EditorLayer::OnAttach() {
         }
     }
 
+    std::cout << m_Model->GetPath() << std::endl;
+
     Entity cameraEntity = m_Scene->CreateEntity("Editing camera");
     Shared<EditorCamera> cam = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
     cameraEntity.AddComponent<EditorCameraComponent>(cam);

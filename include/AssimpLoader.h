@@ -25,7 +25,7 @@ public:
         m_Path = std::string(path);
         stbi_set_flip_vertically_on_load(true);  
         loadModel();
-        return std::make_shared<Model>(m_Meshes);
+        return std::make_shared<Model>(m_Meshes, m_Path);
     }
     
 private:

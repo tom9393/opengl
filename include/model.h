@@ -5,12 +5,14 @@
 
 class Model
 {
-public:
+    public:
+
+    Model(std::vector<std::shared_ptr<Mesh>> &meshes, std::string &path) : m_Meshes(meshes), m_Directory(path) {}
+    std::vector<Shared<Mesh>> GetMeshes() { return m_Meshes; };
+    std::string GetPath() { return m_Directory; };
+
+    private:
     std::vector<std::shared_ptr<Mesh>> m_Meshes;
     std::string m_Directory;
-
-    Model(std::vector<std::shared_ptr<Mesh>> &meshes) : m_Meshes(meshes) {}
-    std::vector<std::shared_ptr<Mesh>> GetMeshes() { return m_Meshes; };
-    
 };
 

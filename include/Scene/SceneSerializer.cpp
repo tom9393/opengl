@@ -1,6 +1,7 @@
 #include "SceneSerializer.h"
 #include "Entity.h"
 #include "Components.h"
+#include "../AssimpLoader.h"
 #include <fstream>
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
@@ -87,6 +88,18 @@ static void SerializeEntity(YAML::Emitter &out, Entity e)
 		out << YAML::Key << "FixedAspectRatio";
 		out << YAML::Value << cameraComponent.fixedAspectRatio;
 	}
+
+	if (e.HasComponent<ModelComponent>())
+	{
+		out << YAML::Key << "ModelComponent";
+		out << YAML::BeginMap;
+
+		auto& model = e.GetComponent<ModelComponent>();
+		out << YAML::Key << "Model";
+		out << YAML::Value << model.model->GetPath();
+
+		out << YAML::EndMap;
+	}
 	
 	out << YAML::EndMap;
 };
@@ -120,5 +133,68 @@ void SceneSerializer::Serialize(const std::string &path)
 
 bool SceneSerializer::Deserialize(const std::string &path)
 {
-	return false;
+	std::ifstream stream(path);
+	std::stringstream strStream;
+	strStream << stream.rdbuf();
+
+	YAML::Node data = YAML::Load(strStream.str());
+
+	if (!data["scene"]) return false;
+
+	std::string sceneName = data["scene"].as<std::string>();
+
+	auto entities = data["Entities"];
+
+	if (entities)
+	{
+		for (auto entity : entities)
+		{
+			uint64_t uuid = entity["Entity"].as<uint64_t>(); // Todo
+			
+			std::string name;
+			auto tagComponent = entity["TagComponent"];
+			if (tagComponent) name = tagComponent["Tag"].as<std::string>();
+
+			Entity deserializedEntity = m_Scene->CreateEntity(name);
+
+			auto transformComponent = entity["TransformComponent"];
+			if (transformComponent)
+			{
+				auto& tc = deserializedEntity.AddComponent<TransformComponent>();
+				tc.translation = transformComponent["Translation"].as<glm::vec3>();
+				tc.rotation = transformComponent["Rotation"].as<glm::vec3>();
+				tc.scale = transformComponent["Scale"].as<glm::vec3>();
+			}
+
+			auto cameraComponent = entity["CameraComponent"];
+			if (cameraComponent)
+			{
+				auto& cc = deserializedEntity.AddComponent<SceneCameraComponent>();
+
+				auto cameraData = cameraComponent["Camera"];
+				cc.sceneCamera->SetProjectionType((SceneCamera::ProjectionType)cameraData["ProjectionType"].as<int>());
+
+				cc.sceneCamera->SetPerspectiveVerticalFOV(cameraData["PerspectiveFOV"].as<float>());
+				cc.sceneCamera->SetPerspectiveNearClip(cameraData["PerspectiveNear"].as<float>());
+				cc.sceneCamera->SetPerspectiveFarClip(cameraData["PerspectiveFar"].as<float>());
+
+				cc.sceneCamera->SetOrthographicSize(cameraData["OrthographicSize"].as<float>());
+				cc.sceneCamera->SetOrthographicNearClip(cameraData["OrthographicNear"].as<float>());
+				cc.sceneCamera->SetOrthographicFarClip(cameraData["OrthographicFar"].as<float>());
+
+				cc.primary = cameraComponent["Primary"].as<bool>();
+				cc.fixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
+			}
+
+			auto modelComponent = entity["ModelComponent"];
+			if (modelComponent)
+			{
+				auto& mc = deserializedEntity.AddComponent<ModelComponent>();
+				char path = modelComponent["Model"].as<char>();
+				AssimpLoader loader;
+				mc.model = loader.Load(&path);
+			}
+		}
+	}
+	return true;
 };
