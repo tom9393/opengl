@@ -53,7 +53,7 @@ static void SerializeEntity(YAML::Emitter &out, Entity e)
 		out << YAML::EndMap;
 	}
 
-	if (e.HasComponent<SceneCamera()>())
+	if (e.HasComponent<SceneCameraComponent>())
 	{
 		out << YAML::Key << "CameraComponent";
 		out << YAML::BeginMap;

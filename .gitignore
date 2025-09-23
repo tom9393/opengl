@@ -51,6 +51,9 @@ _deps
 ### Imgui ###
 imgui.ini
 
+### Serialized files ###
+**.pmblend
+
 ### CMake Patch ###
 CMakeUserPresets.json
 
