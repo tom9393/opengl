@@ -84,7 +84,6 @@ void EditorLayer::OnUpdate(TimeStep ts)
 
     if (m_SelectedMesh && Input::IsKeyPressed(KEY_G)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, 1.0f); // Example movement
     if (m_SelectedMesh && Input::IsKeyPressed(KEY_H)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
-    //if (m_ViewportFocused) m_CameraController.OnUpdate(ts);
 
     m_Scene->OnUpdate(ts);
 
@@ -93,6 +92,22 @@ void EditorLayer::OnUpdate(TimeStep ts)
 
 void EditorLayer::OnImGuiRender()
 {
+
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Serialize"))
+            {
+            }
+            if (ImGui::MenuItem("Deserialize"))
+            {
+            }
+
+            if (ImGui::MenuItem("Exit")) Application::Get().close();
+        }
+    }
+
     // Enable docking
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
     DrawStats();
@@ -121,8 +136,6 @@ void EditorLayer::OnImGuiRender()
     {
         m_ViewportSize = {viewportSize.x, viewportSize.y};
         m_Framebuffer->Resize(m_ViewportSize.x, m_ViewportSize.y);
-
-        //m_CameraController.Resize(m_ViewportSize.x, m_ViewportSize.y);
     }
     unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID();
     ImGui::Image(viewportTexture, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
@@ -152,7 +165,6 @@ void EditorLayer::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&EditorLayer::OnMouseButtonPressed, this, std::placeholders::_1));
-    // m_CameraController.OnEvent(e);
 };
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)

@@ -34,7 +34,6 @@ class EditorLayer : public Layer
 
     private:
     std::shared_ptr<Model> m_Model;
-    //CameraController m_CameraController;
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
     glm::vec2 m_ViewportSize = {0.0f, 0.0f};

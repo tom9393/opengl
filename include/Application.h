@@ -21,6 +21,8 @@ class Application
     void pushLayer(Layer* layer);
     void pushOverlayer(Layer* layer);
 
+    void close() { m_Running = false; };
+
     static Application& Get() { return *s_Instance; }
     Window& GetWindow() { return *m_Window; }
     ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
