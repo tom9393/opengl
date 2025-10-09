@@ -14,69 +14,42 @@ Scene::~Scene()
 
 void Scene::OnUpdate(TimeStep ts)
 {
-	Shared<EditorCamera> editorCamera = nullptr;
-	Shared<SceneCamera> sceneCamera = nullptr;
-
 	auto sceneView = m_Registry.view<SceneCameraComponent>();
 	for (auto entity : sceneView)
 	{
 		auto camera = sceneView.get<SceneCameraComponent>(entity);
 		if (camera.primary)
 		{
-			sceneCamera = camera.sceneCamera;
+			Renderer::BeginScene(camera.sceneCamera->GetProjection());
 			break;
 		}
 	}
 
-	auto editorView = m_Registry.view<EditorCameraComponent>();
-	for (auto entity : editorView)
+	auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
+	for (auto entity : group)
 	{
-		auto camera = editorView.get<EditorCameraComponent>(entity);
-		camera.editorCamera->OnUpdate(ts);
-		if (camera.primary)
+		auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
+		auto meshes = model.model->GetMeshes();
+		for (auto& mesh : meshes)
 		{
-			editorCamera = camera.editorCamera;
-			break;
+			Renderer::SetTexture(mesh->GetTextureLayout());
+			glm::mat4 t = transform.GetTransform();
+			Renderer::Submit(mesh, t);
 		}
 	}
 
-	if (sceneCamera || editorCamera)
-	{
-		if (sceneCamera)
-		{
-			Renderer::BeginScene(sceneCamera->GetProjection());
-		}
-		else
-		{
-			Renderer::BeginScene(editorCamera->GetViewProjection());
-		}
-
-		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
-		for (auto entity : group)
-		{
-			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
-			auto meshes = model.model->GetMeshes();
-			for (auto& mesh : meshes)
-			{
-				Renderer::SetTexture(mesh->GetTextureLayout());
-				glm::mat4 t = transform.GetTransform();
-				Renderer::Submit(mesh, t);
-			}
-		}
-
-		Renderer::EndScene();
-	}
+	Renderer::EndScene();
 };
 
 void Scene::OnViewportResize(unsigned int width, unsigned int height)
 {
 	m_ViewportWidth = width;
 	m_ViewportHeight = height;
-	auto view = m_Registry.view<EditorCameraComponent>();
+	auto view = m_Registry.view<SceneCameraComponent>();
 	for (auto entity : view)
 	{
-		auto& cameraComponent = view.get<EditorCameraComponent>(entity);
-		if (!cameraComponent.fixedAspectRatio) cameraComponent.editorCamera->SetViewportSize(width, height);
+		auto& cameraComponent = view.get<SceneCameraComponent>(entity);
+		if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
 
 	}
 };

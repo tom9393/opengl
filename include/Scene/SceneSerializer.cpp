@@ -6,6 +6,84 @@
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
 
+namespace YAML
+{
+	template<>
+	struct convert<glm::vec2>
+	{
+		static Node encode(const glm::vec2& rhs)
+		{
+			Node node;
+			node.push_back(rhs.x);
+			node.push_back(rhs.y);
+			node.SetStyle(EmitterStyle::Flow);
+			return node;
+		}
+
+		static bool decode(const Node& node, glm::vec2& rhs)
+		{
+			if (!node.IsSequence() || node.size() != 2)
+				return false;
+
+			rhs.x = node[0].as<float>();
+			rhs.y = node[1].as<float>();
+			return true;
+		}
+	};
+
+	template<>
+	struct convert<glm::vec3>
+	{
+		static Node encode(const glm::vec3& rhs)
+		{
+			Node node;
+			node.push_back(rhs.x);
+			node.push_back(rhs.y);
+			node.push_back(rhs.z);
+			node.SetStyle(EmitterStyle::Flow);
+			return node;
+		}
+
+		static bool decode(const Node& node, glm::vec3& rhs)
+		{
+			if (!node.IsSequence() || node.size() != 3)
+				return false;
+
+			rhs.x = node[0].as<float>();
+			rhs.y = node[1].as<float>();
+			rhs.z = node[2].as<float>();
+			return true;
+		}
+	};
+
+	template<>
+	struct convert<glm::vec4>
+	{
+		static Node encode(const glm::vec4& rhs)
+		{
+			Node node;
+			node.push_back(rhs.x);
+			node.push_back(rhs.y);
+			node.push_back(rhs.z);
+			node.push_back(rhs.w);
+			node.SetStyle(EmitterStyle::Flow);
+			return node;
+		}
+
+		static bool decode(const Node& node, glm::vec4& rhs)
+		{
+			if (!node.IsSequence() || node.size() != 4)
+				return false;
+
+			rhs.x = node[0].as<float>();
+			rhs.y = node[1].as<float>();
+			rhs.z = node[2].as<float>();
+			rhs.w = node[3].as<float>();
+			return true;
+		}
+	};
+}
+
 YAML::Emitter& operator<<(YAML::Emitter &out, const glm::vec3 &v)
 {
 	out << YAML::Flow;
@@ -139,9 +217,9 @@ bool SceneSerializer::Deserialize(const std::string &path)
 
 	YAML::Node data = YAML::Load(strStream.str());
 
-	if (!data["scene"]) return false;
+	if (!data["Scene"]) return false;
 
-	std::string sceneName = data["scene"].as<std::string>();
+	std::string sceneName = data["Scene"].as<std::string>();
 
 	auto entities = data["Entities"];
 
@@ -149,7 +227,7 @@ bool SceneSerializer::Deserialize(const std::string &path)
 	{
 		for (auto entity : entities)
 		{
-			uint64_t uuid = entity["Entity"].as<uint64_t>(); // Todo
+			//uint64_t uuid = entity["Entity"].as<uint64_t>(); // Todo
 			
 			std::string name;
 			auto tagComponent = entity["TagComponent"];
@@ -160,10 +238,10 @@ bool SceneSerializer::Deserialize(const std::string &path)
 			auto transformComponent = entity["TransformComponent"];
 			if (transformComponent)
 			{
-				auto& tc = deserializedEntity.AddComponent<TransformComponent>();
-				tc.translation = transformComponent["Translation"].as<glm::vec3>();
-				tc.rotation = transformComponent["Rotation"].as<glm::vec3>();
-				tc.scale = transformComponent["Scale"].as<glm::vec3>();
+				glm::vec3 translation = transformComponent["Translation"].as<glm::vec3>();
+				glm::vec3 rotation = transformComponent["Rotation"].as<glm::vec3>();
+				glm::vec3 size = transformComponent["Scale"].as<glm::vec3>();
+				auto& tc = deserializedEntity.AddComponent<TransformComponent>(translation, rotation, size);
 			}
 
 			auto cameraComponent = entity["CameraComponent"];
@@ -190,9 +268,9 @@ bool SceneSerializer::Deserialize(const std::string &path)
 			if (modelComponent)
 			{
 				auto& mc = deserializedEntity.AddComponent<ModelComponent>();
-				char path = modelComponent["Model"].as<char>();
+				std::string path = modelComponent["Model"].as<std::string>();
 				AssimpLoader loader;
-				mc.model = loader.Load(&path);
+				mc.model = loader.Load(path.c_str());
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 #pragma once
 #include "Buffer.h"
 #include "CameraController.h"
+#include "EditorCamera.h"
 #include "Layer.h"
 #include "Ray.h"
 #include "AABB.h"
@@ -41,6 +42,7 @@ class EditorLayer : public Layer
     float m_Previous = 0;
 
     Shared<Scene> m_Scene;
+    Shared<EditorCamera> m_EditorCamera;
 
     std::shared_ptr<Texture2D> m_Texture;
     std::shared_ptr<Mesh> m_SelectedMesh;

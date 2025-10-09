@@ -24,6 +24,8 @@ EditorLayer::EditorLayer()
 
     io.Fonts->AddFontFromFileTTF("/home/tom/Coding/c++/opengl/assets/fonts/opensans/OpenSans-Bold.ttf", 18.0f);
     io.FontDefault = io.Fonts->AddFontFromFileTTF("/home/tom/Coding/c++/opengl/assets/fonts/opensans/OpenSans-Regular.ttf", 18.0f);
+
+    m_EditorCamera = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
 };
 
 EditorLayer::~EditorLayer()
@@ -35,37 +37,7 @@ void EditorLayer::OnAttach() {
     m_Scene = MakeShared<Scene>();
     m_Scene->OnViewportResize(500, 500);
 
-    unsigned int c = 1;
-    for (unsigned int i = 0; i < c; i++)
-    {
-        for (unsigned int j = 0; j < c; j++)
-        {
-            glm::vec3 translation = {i * 4.0f, 0.0f, j * 10.0f};
-            glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
-            glm::vec3 size = {5.0f, 5.0f, 5.0f};
-            Entity entity = m_Scene->CreateEntity("Tank model");
-            entity.AddComponent<TransformComponent>(translation, rotation, size);
-            entity.AddComponent<ModelComponent>(m_Model);
-        }
-    }
-
-    std::cout << m_Model->GetPath() << std::endl;
-
-    Entity cameraEntity = m_Scene->CreateEntity("Editing camera");
-    Shared<EditorCamera> cam = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
-    cameraEntity.AddComponent<EditorCameraComponent>(cam);
-
-    Entity sceneCamera = m_Scene->CreateEntity("Scene camera");
-    Shared<SceneCamera> sceneCam = MakeShared<SceneCamera>();
-    sceneCam->SetProjectionType(SceneCamera::ProjectionType::Orthographic);
-    sceneCamera.AddComponent<SceneCameraComponent>(sceneCam);
-    glm::vec3 translation = glm::vec3(1.0f, 1.0f, 1.0f);
-    sceneCamera.AddComponent<TransformComponent>(translation);
-
     m_SceneHierarchyPanel.SetContext(m_Scene);
-
-    SceneSerializer serializer(m_Scene);
-    serializer.Serialize("/home/tom/Coding/c++/opengl/assets/example.pmblend");
 };
 
 void EditorLayer::OnDetach() {
@@ -85,6 +57,8 @@ void EditorLayer::OnUpdate(TimeStep ts)
     if (m_SelectedMesh && Input::IsKeyPressed(KEY_G)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, 1.0f); // Example movement
     if (m_SelectedMesh && Input::IsKeyPressed(KEY_H)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
 
+    m_EditorCamera->OnUpdate(ts);
+    Renderer::BeginScene(m_EditorCamera->GetViewProjection());
     m_Scene->OnUpdate(ts);
 
     m_Framebuffer->Unbind();
@@ -92,24 +66,31 @@ void EditorLayer::OnUpdate(TimeStep ts)
 
 void EditorLayer::OnImGuiRender()
 {
-
-    if (ImGui::BeginMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("Serialize"))
-            {
-            }
-            if (ImGui::MenuItem("Deserialize"))
-            {
-            }
-
-            if (ImGui::MenuItem("Exit")) Application::Get().close();
-        }
-    }
-
-    // Enable docking
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+
+    ImGui::BeginMainMenuBar();
+    if (ImGui::BeginMenu("File"))
+    {
+        if (ImGui::MenuItem("Serialize"))
+        {
+            SceneSerializer serializer(m_Scene);
+            std::cout << "Serialized" << std::endl;
+            serializer.Serialize("/home/tom/Coding/c++/opengl/assets/example.pmblend");
+        }
+        if (ImGui::MenuItem("Deserialize"))
+        {
+            SceneSerializer serializer(m_Scene);
+            serializer.Deserialize("/home/tom/Coding/c++/opengl/assets/example.pmblend");
+        }
+
+        if (ImGui::MenuItem("Exit"))
+        {
+            Application::Get().close();
+        }
+        ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+
     DrawStats();
 
     m_SceneHierarchyPanel.OnImGuiRender();
@@ -136,6 +117,7 @@ void EditorLayer::OnImGuiRender()
     {
         m_ViewportSize = {viewportSize.x, viewportSize.y};
         m_Framebuffer->Resize(m_ViewportSize.x, m_ViewportSize.y);
+        m_EditorCamera->SetViewportSize(viewportSize.x, viewportSize.y);
     }
     unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID();
     ImGui::Image(viewportTexture, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
