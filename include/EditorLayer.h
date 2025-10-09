@@ -32,6 +32,8 @@ class EditorLayer : public Layer
 
     private:
     void DrawStats();
+    void OpenScene();
+    void SaveScene();
 
     private:
     std::shared_ptr<Model> m_Model;

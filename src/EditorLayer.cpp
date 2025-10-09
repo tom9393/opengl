@@ -9,6 +9,7 @@
 #include "../include/Application.h"
 #include "../include/Scene/Entity.h"
 #include "../include/Scene/SceneSerializer.h"
+#include "../include/Utils/PlatformUtils.h"
 
 EditorLayer::EditorLayer()
 {
@@ -36,7 +37,6 @@ void EditorLayer::OnAttach() {
     std::cout << "EditorLayer attached" << std::endl;
     m_Scene = MakeShared<Scene>();
     m_Scene->OnViewportResize(500, 500);
-
     m_SceneHierarchyPanel.SetContext(m_Scene);
 };
 
@@ -71,16 +71,13 @@ void EditorLayer::OnImGuiRender()
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Serialize"))
+        if (ImGui::MenuItem("Save as.."))
         {
-            SceneSerializer serializer(m_Scene);
-            std::cout << "Serialized" << std::endl;
-            serializer.Serialize("/home/tom/Coding/c++/opengl/assets/example.pmblend");
+            SaveScene();
         }
-        if (ImGui::MenuItem("Deserialize"))
+        if (ImGui::MenuItem("Open.."))
         {
-            SceneSerializer serializer(m_Scene);
-            serializer.Deserialize("/home/tom/Coding/c++/opengl/assets/example.pmblend");
+            OpenScene();
         }
 
         if (ImGui::MenuItem("Exit"))
@@ -164,3 +161,25 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
     return false;
 };
 
+void EditorLayer::OpenScene()
+{
+    std::string filepath = FileDialogs::OpenFile("*.pmblend");
+    if (!filepath.empty())
+    {
+        m_Scene = MakeShared<Scene>();
+        m_Scene->OnViewportResize(m_ViewportSize.x, m_ViewportSize.y);
+        m_SceneHierarchyPanel.SetContext(m_Scene);
+        SceneSerializer serializer(m_Scene);
+        serializer.Deserialize(filepath);
+    }
+};
+
+void EditorLayer::SaveScene()
+{
+    std::string filepath = FileDialogs::SaveFile("*.pmblend");
+    if (!filepath.empty())
+    {
+        SceneSerializer serializer(m_Scene);
+        serializer.Serialize(filepath);
+    }
+};
