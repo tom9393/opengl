@@ -9,6 +9,9 @@
 #include "../EditorCamera.h"
 #include "../Buffer.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
+
 struct TransformComponent
 {
     glm::vec3 translation;
@@ -21,11 +24,7 @@ struct TransformComponent
 
     glm::mat4 GetTransform() const
     {
-        glm::mat4 rotx = glm::rotate(glm::mat4(1.0f), rotation.x, {1, 0, 0});
-        glm::mat4 roty = glm::rotate(glm::mat4(1.0f), rotation.y, {0, 1, 0});
-        glm::mat4 rotz = glm::rotate(glm::mat4(1.0f), rotation.z, {0, 0, 1});
-
-        glm::mat4 rot = rotx * roty * rotz;
+	glm::mat4 rot = glm::toMat4(glm::quat(rotation));
 
         return glm::translate(glm::mat4(1.0f), translation) * rot * glm::scale(glm::mat4(1.0f), scale);
     }

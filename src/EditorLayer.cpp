@@ -10,6 +10,9 @@
 #include "../include/Scene/Entity.h"
 #include "../include/Scene/SceneSerializer.h"
 #include "../include/Utils/PlatformUtils.h"
+#include "../lib/ImGuizmo.h"
+#include <glm/gtc/type_ptr.hpp>
+#include "../include/MathTools.h"
 
 EditorLayer::EditorLayer()
 {
@@ -118,6 +121,39 @@ void EditorLayer::OnImGuiRender()
     }
     unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID();
     ImGui::Image(viewportTexture, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
+
+    Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+    if (selectedEntity)
+    {
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist();
+
+        float windowWidth = ImGui::GetWindowWidth();
+        float windowHeight = ImGui::GetWindowHeight();
+        float posX = ImGui::GetWindowPos().x;
+        float posY = ImGui::GetWindowPos().y;
+
+        ImGuizmo::SetRect(posX, posY, windowWidth, windowHeight);
+
+        glm::mat4 cameraProjection = m_EditorCamera->GetProjection();
+        glm::mat4 cameraView = m_EditorCamera->GetViewMatrix();
+
+        auto& tc = selectedEntity.GetComponent<TransformComponent>();
+        glm::mat4 transform = tc.GetTransform();
+
+        ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION) m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
+
+        if (ImGuizmo::IsUsing())
+        {
+            glm::vec3 translation, rotation, scale;
+            MathTools::DecomposeMatrix(transform, translation, rotation, scale);
+
+            tc.translation = translation;
+            tc.rotation = rotation;
+            tc.scale = scale;
+        }
+    }
+    
     ImGui::End();
     ImGui::PopStyleVar();
 
@@ -144,6 +180,7 @@ void EditorLayer::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&EditorLayer::OnMouseButtonPressed, this, std::placeholders::_1));
+    dispatcher.dispatch<KeyboardPressEvent>(std::bind(&EditorLayer::OnKeyEvent, this, std::placeholders::_1));
 };
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
@@ -158,6 +195,25 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
     //     // Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
     // }
 
+    return false;
+};
+
+bool EditorLayer::OnKeyEvent(KeyboardPressEvent &e)
+{
+    switch (e.getKeyCode())
+    {
+        case KEY_W:
+            m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+            break;
+        case KEY_R:
+            m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+            break;
+        case KEY_D:
+            m_GizmoType = ImGuizmo::OPERATION::SCALE;
+            break;
+        default:
+            m_GizmoType = -1;
+    }
     return false;
 };
 

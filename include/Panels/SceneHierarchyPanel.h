@@ -10,6 +10,7 @@ class SceneHierarchyPanel
     SceneHierarchyPanel(const Shared<Scene> &context);
     void SetContext(const Shared<Scene> &context);
     void OnImGuiRender();
+    Entity GetSelectedEntity() const { return m_SelectionContext; };
 
     private:
     void DrawEntityNode(Entity entity);

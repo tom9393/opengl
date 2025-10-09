@@ -2,6 +2,7 @@
 #include "Buffer.h"
 #include "CameraController.h"
 #include "EditorCamera.h"
+#include "Events/KeyboardEvent.h"
 #include "Layer.h"
 #include "Ray.h"
 #include "AABB.h"
@@ -24,7 +25,6 @@ class EditorLayer : public Layer
     void OnUpdate(TimeStep ts);
     void OnEvent(Event& event);
     void OnImGuiRender();
-    bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
     Ray CastRayFromMouse(float x, float y, float width, float height, std::shared_ptr<Camera> camera);
     bool RayIntersectsAABB(const Ray& ray, const AABB& box, float& t);
@@ -34,6 +34,8 @@ class EditorLayer : public Layer
     void DrawStats();
     void OpenScene();
     void SaveScene();
+    bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
+    bool OnKeyEvent(KeyboardPressEvent &e);
 
     private:
     std::shared_ptr<Model> m_Model;
@@ -45,6 +47,8 @@ class EditorLayer : public Layer
 
     Shared<Scene> m_Scene;
     Shared<EditorCamera> m_EditorCamera;
+
+    int m_GizmoType = -1;
 
     std::shared_ptr<Texture2D> m_Texture;
     std::shared_ptr<Mesh> m_SelectedMesh;
