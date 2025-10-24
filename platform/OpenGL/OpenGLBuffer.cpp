@@ -84,10 +84,24 @@ void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer> &ver
 
     for (const auto& element : layout)
     {
-        GLenum type = element.Type == ShaderDataType::Int ? GL_INT : GL_FLOAT;
-
         glEnableVertexAttribArray(index);
-        glVertexAttribPointer(index, element.GetComponentCount(), type, GL_FALSE, layout.GetStride(), (const void*)(intptr_t)element.Offset);
+
+        switch (element.Type)
+        {
+            case ShaderDataType::Int:
+            case ShaderDataType::Int2:
+            case ShaderDataType::Int3:
+            case ShaderDataType::Int4:
+            case ShaderDataType::Bool:
+                glVertexAttribIPointer(index, element.GetComponentCount(), GL_INT, layout.GetStride(), (const void*)(intptr_t)element.Offset);
+                break;
+            case ShaderDataType::Float:
+            case ShaderDataType::Float2:
+            case ShaderDataType::Float3:
+            case ShaderDataType::Float4:
+                glVertexAttribPointer(index, element.GetComponentCount(), GL_FLOAT, GL_FALSE, layout.GetStride(), (const void*)(intptr_t)element.Offset);
+                break;
+        };
         index++;
     }
     m_VertexBuffers.push_back(vertexBuffer);

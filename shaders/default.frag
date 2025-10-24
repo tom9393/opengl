@@ -52,6 +52,7 @@ in vec3 v_Normal;
 in vec2 v_TexCoord;
 in vec4 FragPosLightSpace;
 in vec4 FragPosLightSpaceSpot[NR_SPOT_LIGHTS];
+in flat int v_EntityID;
 
 uniform sampler2D shadowMap;
 uniform sampler2D shadowMapSpot[NR_SPOT_LIGHTS];
@@ -140,7 +141,7 @@ void main()
     
     // FragColor = vec4(result, 1.0);
     FragColor = texture(material.diffuse, v_TexCoord); // Testing purposes
-    SelectedEntity = 50;
+    SelectedEntity = v_EntityID;
 }
 
 // calculates the color when using a directional light.

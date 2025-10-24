@@ -34,7 +34,7 @@ void Scene::OnUpdate(TimeStep ts)
 		{
 			Renderer::SetTexture(mesh->GetTextureLayout());
 			glm::mat4 t = transform.GetTransform();
-			Renderer::Submit(mesh, t);
+			Renderer::Submit(mesh, t, (int)entity);
 		}
 	}
 

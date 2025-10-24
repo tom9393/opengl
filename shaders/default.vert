@@ -17,8 +17,10 @@ out vec3 v_Normal;
 out vec2 v_TexCoord;
 out vec4 FragPosLightSpace;
 out vec4 FragPosLightSpaceSpot[NR_SPOT_LIGHTS]; // Add this
+out flat int v_EntityID;
 
 uniform mat4 u_Transform;
+uniform int u_EntityID;
 uniform mat4 u_ViewProjection;
 uniform mat4 lightSpaceMatrix;
 uniform mat4 spotLightSpaceMatrices[NR_SPOT_LIGHTS]; // Add this
@@ -38,4 +40,5 @@ void main()
     }
 
     gl_Position = u_ViewProjection * WorldPos;
+    v_EntityID = u_EntityID;
 }

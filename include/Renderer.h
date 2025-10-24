@@ -36,6 +36,7 @@ class Renderer
 
     static void SetTexture(TextureLayout &textureLayout);
     static void Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform);
+    static void Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform, int id);
 
     static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

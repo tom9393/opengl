@@ -56,7 +56,7 @@ private:
             // the node object only contains indices to index the actual objects in the scene. 
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            m_Meshes.emplace_back(processMesh(mesh, scene));
+            m_Meshes.emplace_back(processMesh(mesh, scene, i));
         }
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
         for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -66,7 +66,7 @@ private:
 
     }
 
-    std::shared_ptr<Mesh> processMesh(aiMesh *mesh, const aiScene *scene)
+    std::shared_ptr<Mesh> processMesh(aiMesh *mesh, const aiScene *scene, int meshId)
     {
         std::vector<float> vertices;
         std::vector<unsigned int> indices;
