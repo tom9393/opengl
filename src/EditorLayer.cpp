@@ -58,6 +58,8 @@ void EditorLayer::OnUpdate(TimeStep ts)
     RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
     RenderCommand::Clear();
 
+    m_Framebuffer->ClearAttachment(1, -1);
+
     if (m_SelectedMesh && Input::IsKeyPressed(KEY_G)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, 1.0f); // Example movement
     if (m_SelectedMesh && Input::IsKeyPressed(KEY_H)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
 

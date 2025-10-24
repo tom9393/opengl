@@ -98,6 +98,8 @@ class Framebuffer
     virtual void Resize(unsigned int width, unsigned int height) = 0;
     virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
 
+    virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
+
     virtual const FramebufferSpecification &GetSpecification() const = 0;
     virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
     static std::shared_ptr<Framebuffer> Create(FramebufferSpecification &specification);
