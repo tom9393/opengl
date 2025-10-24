@@ -85,11 +85,16 @@ class OpenGLFramebuffer : public Framebuffer
     void Resize(unsigned int width, unsigned int height) override;
 
     const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
-    const unsigned int GetColorAttachmentRendererID() const override { return m_ColorAttachment; }
+    const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }
     void Invalidate();
 
     private:
     unsigned int m_RendererID = 0;
-    unsigned int m_ColorAttachment = 0, m_DepthAttachment = 0;
     FramebufferSpecification m_Specification;
+
+    std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecs;
+    FramebufferTextureSpecification m_DepthSpec = FramebufferTextureFormat::None;
+
+    std::vector<unsigned int> m_ColorAttachments;
+    unsigned int m_DepthAttachment;
 };

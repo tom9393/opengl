@@ -21,6 +21,7 @@ EditorLayer::EditorLayer()
     FramebufferSpecification spec;
     spec.width = 500;
     spec.height = 500;
+    spec.attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::Depth };
     m_Framebuffer = Framebuffer::Create(spec);
 
     ImGuiIO& io = ImGui::GetIO();
@@ -119,7 +120,7 @@ void EditorLayer::OnImGuiRender()
         m_Framebuffer->Resize(m_ViewportSize.x, m_ViewportSize.y);
         m_EditorCamera->SetViewportSize(viewportSize.x, viewportSize.y);
     }
-    unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID();
+    unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID(0);
     ImGui::Image(viewportTexture, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
 
     Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();

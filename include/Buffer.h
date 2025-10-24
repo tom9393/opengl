@@ -51,9 +51,39 @@ class SSBOBuffer
     static std::shared_ptr<SSBOBuffer> Create(void* data, unsigned int size);
 };
 
+enum class FramebufferTextureFormat
+{
+    None = 0,
+
+    RGBA8,
+
+    DEPTH24STENCIL8,
+
+    Depth = DEPTH24STENCIL8
+};
+
+struct FramebufferTextureSpecification
+{
+    FramebufferTextureSpecification() = default;
+    FramebufferTextureSpecification(FramebufferTextureFormat format) : TextureFormat(format) {};
+
+    FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None;
+};
+
+struct FramebufferAttachmentSpecification
+{
+    FramebufferAttachmentSpecification() = default;
+    FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
+
+    std::vector<FramebufferTextureSpecification> Attachments;
+};
+
 struct FramebufferSpecification
 {
-    unsigned int width, height;
+    unsigned int width = 0, height = 0;
+    FramebufferAttachmentSpecification attachments;
+    unsigned int samples = 1;
+    bool swapChainTarget = false;
 };
 
 class Framebuffer
@@ -67,6 +97,6 @@ class Framebuffer
     virtual void Resize(unsigned int width, unsigned int height) = 0;
 
     virtual const FramebufferSpecification &GetSpecification() const = 0;
-    virtual const unsigned int GetColorAttachmentRendererID() const = 0;
+    virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
     static std::shared_ptr<Framebuffer> Create(FramebufferSpecification &specification);
 };
