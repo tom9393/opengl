@@ -83,6 +83,7 @@ class OpenGLFramebuffer : public Framebuffer
     void Unbind() const override;
 
     void Resize(unsigned int width, unsigned int height) override;
+    int ReadPixel(unsigned int attachmentIdx, int x, int y) override;
 
     const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
     const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }

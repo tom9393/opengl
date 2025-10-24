@@ -56,6 +56,7 @@ enum class FramebufferTextureFormat
     None = 0,
 
     RGBA8,
+    RED_INTEGER,
 
     DEPTH24STENCIL8,
 
@@ -95,6 +96,7 @@ class Framebuffer
     virtual void Unbind() const = 0;
 
     virtual void Resize(unsigned int width, unsigned int height) = 0;
+    virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
 
     virtual const FramebufferSpecification &GetSpecification() const = 0;
     virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;

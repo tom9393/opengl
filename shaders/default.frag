@@ -1,6 +1,7 @@
 #version 460 core
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out int SelectedEntity;
 
 struct Material {
     sampler2D diffuse;
@@ -139,6 +140,7 @@ void main()
     
     // FragColor = vec4(result, 1.0);
     FragColor = texture(material.diffuse, v_TexCoord); // Testing purposes
+    SelectedEntity = 50;
 }
 
 // calculates the color when using a directional light.

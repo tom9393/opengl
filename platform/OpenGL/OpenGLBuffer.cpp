@@ -1,4 +1,5 @@
 #include "OpenGLBuffer.h"
+#include <GL/gl.h>
 #include <glad/glad.h>
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(unsigned int size)
@@ -143,7 +144,7 @@ static void BindTexture(bool multisampled, unsigned int id)
     glBindTexture(TextureTarget(multisampled), id);
 };
 
-static void AttachColorTexture(unsigned int id, int samples, GLenum format, unsigned int width, unsigned int height, int index)
+static void AttachColorTexture(unsigned int id, int samples, GLenum internalFormat, GLenum format, unsigned int width, unsigned int height, int index)
 {
     bool multisampled = samples > 1;
     if (multisampled)
@@ -152,7 +153,7 @@ static void AttachColorTexture(unsigned int id, int samples, GLenum format, unsi
     }
     else
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -193,7 +194,6 @@ OpenGLFramebuffer::OpenGLFramebuffer(FramebufferSpecification &specification) : 
     {
         if (!IsDepthFormat(format.TextureFormat)) m_ColorAttachmentSpecs.emplace_back(format);
         else m_DepthSpec = format;
-
     };
 
     Invalidate();
@@ -236,7 +236,6 @@ void OpenGLFramebuffer::Invalidate()
 
     if (m_ColorAttachmentSpecs.size())
     {
-
         m_ColorAttachments.resize(m_ColorAttachmentSpecs.size());
         CreateTexture(multisample, m_ColorAttachments.data(), m_ColorAttachments.size());
 
@@ -246,7 +245,10 @@ void OpenGLFramebuffer::Invalidate()
             switch (m_ColorAttachmentSpecs[i].TextureFormat)
             {
                 case FramebufferTextureFormat::RGBA8:
-                    AttachColorTexture(m_ColorAttachments[i], m_Specification.samples, GL_RGBA8, m_Specification.width, m_Specification.height, i);
+                    AttachColorTexture(m_ColorAttachments[i], m_Specification.samples, GL_RGBA8, GL_RGBA, m_Specification.width, m_Specification.height, i);
+                    break;
+                case FramebufferTextureFormat::RED_INTEGER:
+                    AttachColorTexture(m_ColorAttachments[i], m_Specification.samples, GL_R32I, GL_RED_INTEGER, m_Specification.width, m_Specification.height, i);
                     break;
             }
         };
@@ -286,4 +288,12 @@ void OpenGLFramebuffer::Resize(unsigned int width, unsigned int height)
     m_Specification.width = width;
     m_Specification.height = height;
     Invalidate();
+};
+
+int OpenGLFramebuffer::ReadPixel(unsigned int attachmentIdx, int x, int y)
+{
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIdx);
+    int pixelData;
+    glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+    return pixelData;
 };
