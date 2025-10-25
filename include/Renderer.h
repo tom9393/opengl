@@ -19,6 +19,7 @@ struct RenderStorage
 {
     ShaderLibrary* shaderLibrary;
     std::shared_ptr<SSBOBuffer> matrixBuffer;
+    std::shared_ptr<UniformBuffer> uniformBuffer;
     Statistics statistics;
 };
 

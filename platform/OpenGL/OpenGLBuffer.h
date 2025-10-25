@@ -59,6 +59,21 @@ class OpenGLVertexArray : public VertexArray
     unsigned int m_RendererID;
 };
 
+class OpenGLUniformBuffer : public UniformBuffer
+{
+    public:
+    OpenGLUniformBuffer(void* data, unsigned int size);
+    ~OpenGLUniformBuffer();
+
+    void Bind(unsigned int index) const override;
+    void Unbind() const override;
+
+    void Update(unsigned int offset, unsigned int size, void* data) override;
+
+    private:
+    unsigned int m_RendererID;
+};
+
 class OpenGLSSBOBuffer : public SSBOBuffer
 {
     public:

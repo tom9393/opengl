@@ -1,4 +1,6 @@
 #include "../include/Renderer.h"
+#include "../platform/OpenGL/OpenGLShader.h"
+#include <memory>
 
 Renderer::SceneData Renderer::m_SceneData;
 RenderStorage Renderer::m_Data;
@@ -6,8 +8,14 @@ RenderStorage Renderer::m_Data;
 void Renderer::BeginScene(const glm::mat4& viewProjection)
 {
     std::shared_ptr<Shader> shader = m_Data.shaderLibrary->GetLatest();
-    shader->Bind();
-    shader->setMat4("u_ViewProjection", viewProjection);
+    auto openglshader = std::dynamic_pointer_cast<OpenGLShader>(shader);
+    openglshader->Bind();
+
+    m_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
+
+    int size = 0;
+    glGetNamedBufferParameteriv(openglshader->GetProgram(), GL_BUFFER_SIZE, &size);
+    std::cout << "UBO size after is: " << size << std::endl;
 };
 
 void Renderer::EndScene()
@@ -20,11 +28,21 @@ void Renderer::Init()
 
     RenderCommand::Init();
 
-    const std::string vert = "/home/tom/Coding/c++/opengl/shaders/default.vert";
-    const std::string frag = "/home/tom/Coding/c++/opengl/shaders/default.frag";
+    const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
+    const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
     m_Data.shaderLibrary = new ShaderLibrary({"Texture"});
     m_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
     m_Data.shaderLibrary->SetLatest("Texture");
+
+    m_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(glm::mat4));
+    m_Data.uniformBuffer->Bind(0);
+
+    std::shared_ptr<Shader> shader = m_Data.shaderLibrary->GetLatest();
+    auto openglshader = std::dynamic_pointer_cast<OpenGLShader>(shader);
+    openglshader->Bind();
+
+    unsigned int viewprojectionIndex = glGetUniformBlockIndex(openglshader->GetProgram(), "Camera");
+    glUniformBlockBinding(openglshader->GetProgram(), viewprojectionIndex, 0);
 };
 
 void Renderer::OnWindowResize(unsigned int width, unsigned int height)

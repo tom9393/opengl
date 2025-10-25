@@ -113,6 +113,31 @@ void OpenGLVertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer> &index
     m_IndexBuffer = indexBuffer;
 };
 
+OpenGLUniformBuffer::OpenGLUniformBuffer(void *data, unsigned int size)
+{
+    glCreateBuffers(1, &m_RendererID);
+    glNamedBufferStorage(m_RendererID, size, data, GL_DYNAMIC_STORAGE_BIT);
+};
+
+OpenGLUniformBuffer::~OpenGLUniformBuffer()
+{
+};
+
+void OpenGLUniformBuffer::Bind(unsigned int index) const
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, index, m_RendererID);
+};
+
+void OpenGLUniformBuffer::Unbind() const
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
+};
+
+void OpenGLUniformBuffer::Update(unsigned int offset, unsigned int size, void* data)
+{
+    glNamedBufferSubData(m_RendererID, offset, size, data);
+};
+
 OpenGLSSBOBuffer::OpenGLSSBOBuffer(void* data, unsigned int size)
 {
     glCreateBuffers(1, &m_RendererID);

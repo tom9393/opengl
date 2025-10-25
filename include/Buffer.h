@@ -42,6 +42,17 @@ class VertexArray
     static std::shared_ptr<VertexArray> Create();
 };
 
+class UniformBuffer
+{
+    public:
+    virtual void Bind(unsigned int index) const = 0;
+    virtual void Unbind() const = 0;
+
+    virtual void Update(unsigned int offset, unsigned int size, void* data) = 0;
+
+    static std::shared_ptr<UniformBuffer> Create(void* data, unsigned int size);
+};
+
 class SSBOBuffer
 {
     public:

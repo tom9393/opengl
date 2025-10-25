@@ -5,7 +5,6 @@
 #include "../include/Input.h"
 #include "../include/KeyCodes.h"
 #include "../include/Raytracing.h"
-#include "../include/AssimpLoader.h"
 #include "../include/Application.h"
 #include "../include/Scene/Entity.h"
 #include "../include/Scene/SceneSerializer.h"
@@ -16,8 +15,6 @@
 
 EditorLayer::EditorLayer()
 {
-    AssimpLoader loader;
-    m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/sukhoi.assbin");
     FramebufferSpecification spec;
     spec.width = 500;
     spec.height = 500;

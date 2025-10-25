@@ -38,6 +38,15 @@ std::shared_ptr<VertexArray> VertexArray::Create()
     return nullptr;
 };
 
+std::shared_ptr<UniformBuffer> UniformBuffer::Create(void* data, unsigned int size)
+{
+    switch (Renderer::Get()) {
+        case RendererAPI::API::None: return nullptr;
+        case RendererAPI::API::OpenGL: return std::make_shared<OpenGLUniformBuffer>(data, size);
+        }
+    return nullptr;
+};
+
 std::shared_ptr<SSBOBuffer> SSBOBuffer::Create(void* data, unsigned int size)
 {
     switch (Renderer::Get()) {

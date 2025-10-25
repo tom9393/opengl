@@ -38,7 +38,6 @@ class EditorLayer : public Layer
     bool OnKeyEvent(KeyboardPressEvent &e);
 
     private:
-    std::shared_ptr<Model> m_Model;
     bool m_ViewportFocused = false;
     bool m_ViewportHovered = false;
     glm::vec2 m_ViewportSize = {0.0f, 0.0f};
