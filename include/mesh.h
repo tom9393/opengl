@@ -12,9 +12,9 @@ class Mesh {
 public:
     std::vector<float> m_Vertices;
     std::vector<unsigned int> m_Indices;
-    std::shared_ptr<VertexArray> m_VAO;
-    std::shared_ptr<VertexBuffer> m_VBO;
-    std::shared_ptr<IndexBuffer> m_EBO;
+    Shared<VertexArray> m_VAO;
+    Shared<VertexBuffer> m_VBO;
+    Shared<IndexBuffer> m_EBO;
     BufferLayout m_BufferLayout;
     TextureLayout m_TextureLayout;
     glm::vec3 min;
@@ -28,7 +28,7 @@ public:
     std::vector<float> &GetVertices() { return m_Vertices; }
     std::vector<unsigned int> &GetIndices() { return m_Indices; }
     BufferLayout &GetLayout() { return m_BufferLayout; }
-    std::shared_ptr<VertexArray> &GetVAO() { return m_VAO; }
+    Shared<VertexArray> &GetVAO() { return m_VAO; }
     TextureLayout &GetTextureLayout() { return m_TextureLayout; }
 
     void Prepare()

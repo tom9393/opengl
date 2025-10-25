@@ -16,7 +16,7 @@
 class AssimpLoader : public ModelLoader
 {
 public:
-    std::vector<std::shared_ptr<Mesh>> m_Meshes;
+    std::vector<Shared<Mesh>> m_Meshes;
     std::string m_Directory;
     std::string m_Path;
 

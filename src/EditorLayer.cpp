@@ -78,11 +78,8 @@ void EditorLayer::OnUpdate(TimeStep ts)
     if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
     {
         int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-        // std::cout << "Pixels" << std::endl;
-        // std::cout << mouseX << std::endl;
-        // std::cout << mouseY << std::endl;
-        std::cout << "And the pixel data" << std::endl;
-        std::cout << pixelData << std::endl;
+
+        m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_Scene.get());
     };
 
     m_Framebuffer->Unbind();
@@ -146,26 +143,13 @@ void EditorLayer::OnImGuiRender()
     unsigned int viewportTexture = m_Framebuffer->GetColorAttachmentRendererID(0);
     ImGui::Image(viewportTexture, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
 
-    // auto windowSize = ImGui::GetWindowSize();
-    // ImVec2 minBound = ImGui::GetWindowPos();
-    // minBound.x += viewOffset.x;
-    // minBound.y += viewOffset.y;
-    // ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
-    // m_ViewportBounds[0] = { minBound.x, minBound.y };
-    // m_ViewportBounds[1] = { maxBound.x, maxBound.y };
-
     Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
-    if (selectedEntity)
+    if (selectedEntity && selectedEntity.HasComponent<TransformComponent>())
     {
         ImGuizmo::SetOrthographic(false);
         ImGuizmo::SetDrawlist();
 
-        float windowWidth = ImGui::GetWindowWidth();
-        float windowHeight = ImGui::GetWindowHeight();
-        float posX = ImGui::GetWindowPos().x;
-        float posY = ImGui::GetWindowPos().y;
-
-        ImGuizmo::SetRect(posX, posY, windowWidth, windowHeight);
+        ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
         glm::mat4 cameraProjection = m_EditorCamera->GetProjection();
         glm::mat4 cameraView = m_EditorCamera->GetViewMatrix();
@@ -217,15 +201,13 @@ void EditorLayer::OnEvent(Event& e)
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
 {
-    // if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
-    // {
-    //     auto [x, y] = Input::GetMousePosition();
-    //     std::cout << "Mouse button pressed" << std::endl;
-    //     std::cout << x << std::endl;
-    //     std::cout << y << std::endl;
-    //
-    //     // Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
-    // }
+    if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
+    {
+        if (m_ViewportHovered && !ImGuizmo::IsOver())
+        {
+            m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+        }
+    }
 
     return false;
 };

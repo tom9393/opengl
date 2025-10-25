@@ -16,7 +16,11 @@ class Entity
     template <typename T, typename... Args>
     T& AddComponent(Args&&... args)
     {
-        if (HasComponent<T>()) std::cout << "Already has component" << std::endl;
+        if (HasComponent<T>())
+        {
+            std::cout << "Already has component" << std::endl;
+            return GetComponent<T>();
+        }
         T& component = m_Scene->m_Registry.emplace<T>(m_Handle, std::forward<Args>(args)...);
         m_Scene->OnComponentAdded<T>(*this, component);
         return component;
@@ -25,14 +29,17 @@ class Entity
     template <typename T>
     void RemoveComponent()
     {
-        if (!HasComponent<T>()) std::cout << "Does not have component to remove" << std::endl;
+        if (!HasComponent<T>())
+        {
+            std::cout << "Does not have component to remove" << std::endl;
+            return;
+        }
         m_Scene->m_Registry.remove<T>(m_Handle);
     }
 
     template <typename T>
     T& GetComponent()
     {
-        if (!HasComponent<T>()) std::cout << "Does not have component" << std::endl;
         return m_Scene->m_Registry.get<T>(m_Handle);
     }
     

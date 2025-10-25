@@ -1,7 +1,6 @@
 #include "SceneHierarchyPanel.h"
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
-#include "../AssimpLoader.h"
 
 template <typename T, typename Fn>
 static void DrawComponent(const std::string &name, Entity entity, Fn fn)
@@ -142,6 +141,11 @@ void SceneHierarchyPanel::SetContext(const Shared<Scene> &context)
 	m_SelectionContext = {};
 };
 
+void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
+{
+	m_SelectionContext = entity;
+};
+
 void SceneHierarchyPanel::OnImGuiRender()
 {
 	ImGui::Begin("Scene hierarchy");
@@ -247,9 +251,7 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 
 		if (ImGui::MenuItem("Model"))
 		{
-			AssimpLoader loader;
-			Shared<Model> m = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
-			m_SelectionContext.AddComponent<ModelComponent>(m);
+			m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
 			ImGui::CloseCurrentPopup();
 		}
 

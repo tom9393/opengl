@@ -4,6 +4,7 @@
 #include "../TimeStep.h"
 #include "Components.h"
 #include "SceneSerializer.h"
+#include "../ModelLibrary.h"
 
 class Entity;
 
@@ -27,6 +28,7 @@ class Scene
     entt::registry m_Registry;
     unsigned int m_ViewportWidth = 0;
     unsigned int m_ViewportHeight = 0;
+    ModelLibrary m_ModelLibrary;
 
     friend class Entity;
     friend class SceneSerializer;

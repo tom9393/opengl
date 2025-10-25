@@ -3,8 +3,9 @@
 #include "Components.h"
 #include "Entity.h"
 #include "SceneCamera.h"
+#include "../AssimpLoader.h"
 
-Scene::Scene()
+Scene::Scene() : m_ModelLibrary(new AssimpLoader())
 {
 };
 
@@ -29,7 +30,7 @@ void Scene::OnUpdate(TimeStep ts)
 	for (auto entity : group)
 	{
 		auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
-		auto meshes = model.model->GetMeshes();
+		auto meshes = m_ModelLibrary.GetModelByPath(model.model)->GetMeshes();
 		for (auto& mesh : meshes)
 		{
 			Renderer::SetTexture(mesh->GetTextureLayout());
@@ -96,11 +97,6 @@ void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent &componen
 
 template <>
 void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
-{
-}
-
-template <>
-void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent &component)
 {
 }
 

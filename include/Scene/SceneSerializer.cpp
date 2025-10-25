@@ -1,7 +1,6 @@
 #include "SceneSerializer.h"
 #include "Entity.h"
 #include "Components.h"
-#include "../AssimpLoader.h"
 #include <fstream>
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
@@ -174,7 +173,7 @@ static void SerializeEntity(YAML::Emitter &out, Entity e)
 
 		auto& model = e.GetComponent<ModelComponent>();
 		out << YAML::Key << "Model";
-		out << YAML::Value << model.model->GetPath();
+		out << YAML::Value << model.model;
 
 		out << YAML::EndMap;
 	}
@@ -269,8 +268,7 @@ bool SceneSerializer::Deserialize(const std::string &path)
 			{
 				auto& mc = deserializedEntity.AddComponent<ModelComponent>();
 				std::string path = modelComponent["Model"].as<std::string>();
-				AssimpLoader loader;
-				mc.model = loader.Load(path.c_str());
+				mc.model = path;
 			}
 		}
 	}

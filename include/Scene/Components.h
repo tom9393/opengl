@@ -30,22 +30,13 @@ struct TransformComponent
     }
 };
 
-struct MeshComponent
-{
-    Shared<Mesh> mesh = nullptr;
-
-    MeshComponent() = default;
-    MeshComponent(const MeshComponent&) = default;
-    MeshComponent(const Shared<Mesh> &mesh) : mesh(mesh) {}
-};
-
 struct ModelComponent
 {
-    Shared<Model> model = nullptr;
+    std::string model = "";
 
     ModelComponent() = default;
     ModelComponent(const ModelComponent&) = default;
-    ModelComponent(const Shared<Model> &model) : model(model) {}
+    ModelComponent(const std::string &model) : model(model) {}
 };
 
 struct TagComponent

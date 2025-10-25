@@ -45,6 +45,8 @@ class EditorLayer : public Layer
     glm::vec2 m_ViewportBounds[2];
     float m_Previous = 0;
 
+    Entity m_HoveredEntity;
+
     Shared<Scene> m_Scene;
     Shared<EditorCamera> m_EditorCamera;
 
