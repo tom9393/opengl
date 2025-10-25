@@ -20,10 +20,9 @@ struct VertexOutput
 
 uniform mat4 u_Transform;
 uniform int u_EntityID;
-// uniform mat4 u_ViewProjection;
 
 layout (location = 0) out VertexOutput Output;
-layout (location = 4) out int v_EntityID;
+layout (location = 4) out flat int v_EntityID;
 
 void main()
 {

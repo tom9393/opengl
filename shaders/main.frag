@@ -17,12 +17,12 @@ struct VertexOutput
 };
 
 layout (location = 0) in VertexOutput Input;
-// layout (location = 4) in int v_EntityID;
+layout (location = 4) in flat int v_EntityID;
 
 in vec3 v_FragPos;
 in vec3 v_Normal;
 in vec2 v_TexCoord;
-in flat int v_EntityID;
+// in flat int v_EntityID;
 
 uniform Material material;
 

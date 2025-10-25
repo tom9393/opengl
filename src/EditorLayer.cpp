@@ -10,6 +10,7 @@
 #include "../include/Scene/SceneSerializer.h"
 #include "../include/Utils/PlatformUtils.h"
 #include "../lib/ImGuizmo.h"
+#include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "../include/MathTools.h"
 
@@ -56,9 +57,6 @@ void EditorLayer::OnUpdate(TimeStep ts)
     RenderCommand::Clear();
 
     m_Framebuffer->ClearAttachment(1, -1);
-
-    if (m_SelectedMesh && Input::IsKeyPressed(KEY_G)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, 1.0f); // Example movement
-    if (m_SelectedMesh && Input::IsKeyPressed(KEY_H)) m_SelectedMesh->position += glm::vec3(0.0f, 0.0f, -1.0f); // Example movement
 
     m_EditorCamera->OnUpdate(ts);
     Renderer::BeginScene(m_EditorCamera->GetViewProjection());

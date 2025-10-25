@@ -56,7 +56,7 @@ private:
             // the node object only contains indices to index the actual objects in the scene. 
             // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
             aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            m_Meshes.emplace_back(processMesh(mesh, scene, i));
+            m_Meshes.emplace_back(processMesh(mesh, scene));
         }
         // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
         for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -66,15 +66,12 @@ private:
 
     }
 
-    std::shared_ptr<Mesh> processMesh(aiMesh *mesh, const aiScene *scene, int meshId)
+    std::shared_ptr<Mesh> processMesh(aiMesh *mesh, const aiScene *scene)
     {
         std::vector<float> vertices;
         std::vector<unsigned int> indices;
         vertices.reserve(mesh->mNumVertices * 3);
         indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
-        
-        glm::vec3 min;
-        glm::vec3 max;
 
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
@@ -82,8 +79,6 @@ private:
             vertices.push_back(mesh->mVertices[i].y);
             vertices.push_back(mesh->mVertices[i].z);
             glm::vec3 tmp = {mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
-            min = glm::min(min, tmp);
-            max = glm::max(max, tmp);
 
             if (mesh->HasNormals())
             {
@@ -138,7 +133,7 @@ private:
             {ShaderDataType::Float3, "a_Bitangent"}
         };
 
-        return std::make_shared<Mesh>(vertices, indices, bufferLayout, textureLayout, min, max);
+        return std::make_shared<Mesh>(vertices, indices, bufferLayout, textureLayout);
     }
 
     std::vector<std::shared_ptr<Texture2D>> loadMaterialTextures(aiMaterial *mat, aiTextureType type)

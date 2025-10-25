@@ -8,14 +8,9 @@ RenderStorage Renderer::m_Data;
 void Renderer::BeginScene(const glm::mat4& viewProjection)
 {
     std::shared_ptr<Shader> shader = m_Data.shaderLibrary->GetLatest();
-    auto openglshader = std::dynamic_pointer_cast<OpenGLShader>(shader);
-    openglshader->Bind();
+    shader->Bind();
 
     m_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
-
-    int size = 0;
-    glGetNamedBufferParameteriv(openglshader->GetProgram(), GL_BUFFER_SIZE, &size);
-    std::cout << "UBO size after is: " << size << std::endl;
 };
 
 void Renderer::EndScene()

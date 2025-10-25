@@ -30,11 +30,11 @@ void Scene::OnUpdate(TimeStep ts)
 	for (auto entity : group)
 	{
 		auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
+		glm::mat4 t = transform.GetTransform();
 		auto meshes = m_ModelLibrary.GetModelByPath(model.model)->GetMeshes();
 		for (auto& mesh : meshes)
 		{
 			Renderer::SetTexture(mesh->GetTextureLayout());
-			glm::mat4 t = transform.GetTransform();
 			Renderer::Submit(mesh, t, (int)entity);
 		}
 	}
