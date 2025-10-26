@@ -5,6 +5,7 @@ layout (location = 1) in vec3 a_Normal;
 layout (location = 2) in vec2 a_TexCoord;
 layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec3 a_Bitangent;
+layout (location = 5) in float a_EntityID;
 
 layout (std140, binding = 0) uniform Camera
 {
@@ -19,7 +20,6 @@ struct VertexOutput
 };
 
 uniform mat4 u_Transform;
-uniform int u_EntityID;
 
 layout (location = 0) out VertexOutput Output;
 layout (location = 4) out flat int v_EntityID;
@@ -32,5 +32,5 @@ void main()
     Output.TexCoord = a_TexCoord;
 
     gl_Position = u_ViewProjection * WorldPos;
-    v_EntityID = u_EntityID;
+    v_EntityID = int(a_EntityID);
 }

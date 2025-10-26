@@ -9,10 +9,10 @@ class ModelLibrary
 
     ModelLibrary(ModelLoader* loader) : m_Loader(loader) {};
 
-    Shared<Model> GetModelByPath(std::string &str) {
+    Shared<Model> GetModelByPath(std::string &str, int id) {
         if (!m_Models[str])
         {
-            m_Models[str] = m_Loader->Load(str.c_str());
+            m_Models[str] = m_Loader->Load(str.c_str(), id);
         }
         return m_Models[str];
     };

@@ -78,21 +78,6 @@ void Renderer::Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform)
     m_Data.statistics.IndicesCount += mesh->m_Indices.size();
 };
 
-void Renderer::Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform, int id)
-{
-    PROFILE_FUNCTION();
-
-    m_Data.shaderLibrary->GetLatest()->setMat4("u_Transform", transform);
-    m_Data.shaderLibrary->GetLatest()->setInt("u_EntityID", id);
-
-    std::shared_ptr<VertexArray> VAO = mesh->GetVAO();
-    VAO->Bind();
-    RenderCommand::DrawIndexed(VAO);
-    m_Data.statistics.DrawCalls++;
-    m_Data.statistics.VerticeCount += mesh->m_Vertices.size();
-    m_Data.statistics.IndicesCount += mesh->m_Indices.size();
-};
-
 void Renderer::ToggleWireframe()
 {
     RenderCommand::ToggleWireframe();

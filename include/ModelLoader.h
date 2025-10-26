@@ -5,5 +5,5 @@
 class ModelLoader
 {
     public:
-    virtual std::shared_ptr<Model> Load(const char* path) = 0;
+    virtual std::shared_ptr<Model> Load(const char* path, int id) = 0;
 };

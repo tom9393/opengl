@@ -19,10 +19,13 @@ public:
     std::vector<Shared<Mesh>> m_Meshes;
     std::string m_Directory;
     std::string m_Path;
+    int m_EntityID;
 
-    std::shared_ptr<Model> Load(const char* path) override
+    std::shared_ptr<Model> Load(const char* path, int id) override
     {
+        m_Meshes.clear();
         m_Path = std::string(path);
+        m_EntityID = id;
         stbi_set_flip_vertically_on_load(true);  
         loadModel();
         return std::make_shared<Model>(m_Meshes, m_Path);
@@ -72,13 +75,12 @@ private:
         std::vector<unsigned int> indices;
         vertices.reserve(mesh->mNumVertices * 3);
         indices.reserve(mesh->mNumFaces * 3); // Each triangle has 3 faces
-
+        
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
             vertices.push_back(mesh->mVertices[i].x);
             vertices.push_back(mesh->mVertices[i].y);
             vertices.push_back(mesh->mVertices[i].z);
-            glm::vec3 tmp = {mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z};
 
             if (mesh->HasNormals())
             {
@@ -104,6 +106,7 @@ private:
                 vertices.push_back(0.0f);
                 vertices.push_back(0.0f);
             }
+            vertices.push_back(m_EntityID);
         }
 
         for(unsigned int i = 0; i < mesh->mNumFaces; i++)
@@ -130,7 +133,8 @@ private:
             {ShaderDataType::Float3, "a_Normal"},
             {ShaderDataType::Float2, "a_TexCoord"},
             {ShaderDataType::Float3, "a_Tangent"},
-            {ShaderDataType::Float3, "a_Bitangent"}
+            {ShaderDataType::Float3, "a_Bitangent"},
+            {ShaderDataType::Float, "a_EntityID"}
         };
 
         return std::make_shared<Mesh>(vertices, indices, bufferLayout, textureLayout);

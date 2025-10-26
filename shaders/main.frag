@@ -22,7 +22,6 @@ layout (location = 4) in flat int v_EntityID;
 in vec3 v_FragPos;
 in vec3 v_Normal;
 in vec2 v_TexCoord;
-// in flat int v_EntityID;
 
 uniform Material material;
 

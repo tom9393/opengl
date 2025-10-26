@@ -5,9 +5,7 @@
 #include "SceneCamera.h"
 #include "../AssimpLoader.h"
 
-Scene::Scene() : m_ModelLibrary(new AssimpLoader())
-{
-};
+Scene::Scene() : m_ModelLibrary(new AssimpLoader()) {};
 
 Scene::~Scene()
 {
@@ -31,11 +29,11 @@ void Scene::OnUpdate(TimeStep ts)
 	{
 		auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
 		glm::mat4 t = transform.GetTransform();
-		auto meshes = m_ModelLibrary.GetModelByPath(model.model)->GetMeshes();
+		auto meshes = m_ModelLibrary.GetModelByPath(model.model, (int)entity)->GetMeshes();
 		for (auto& mesh : meshes)
 		{
 			Renderer::SetTexture(mesh->GetTextureLayout());
-			Renderer::Submit(mesh, t, (int)entity);
+			Renderer::Submit(mesh, t);
 		}
 	}
 

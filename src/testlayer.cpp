@@ -10,7 +10,7 @@
 Testlayer::Testlayer()
 {
     AssimpLoader loader;
-    m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+    m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin", 0);
 };
 
 Testlayer::~Testlayer()

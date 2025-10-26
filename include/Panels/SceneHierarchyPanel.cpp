@@ -249,9 +249,21 @@ void SceneHierarchyPanel::DrawComponents(Entity entity)
 			ImGui::CloseCurrentPopup();
 		}
 
-		if (ImGui::MenuItem("Model"))
+		if (ImGui::MenuItem("Leopard"))
 		{
 			m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::MenuItem("Sukhoi"))
+		{
+			m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/sukhoi.assbin");
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::MenuItem("Floor"))
+		{
+			m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/floor.assbin");
 			ImGui::CloseCurrentPopup();
 		}
 
