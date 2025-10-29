@@ -1,5 +1,3 @@
-#include "../../pch.h"
-#include <filesystem>
 #include "ContentBrowserPanel.h"
 
 static const std::filesystem::path s_AssetPath = "assets";

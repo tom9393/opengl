@@ -4,8 +4,7 @@
 #include "RenderCommand.h"
 #include "RendererAPI.h"
 #include "Shader.h"
-#include "Camera.h"
-#include "mesh.h"
+#include "Mesh.h"
 #include "../platform/OpenGL/OpenGLTexture.h"
 
 struct Statistics
@@ -18,8 +17,8 @@ struct Statistics
 struct RenderStorage
 {
     ShaderLibrary* shaderLibrary;
-    std::shared_ptr<SSBOBuffer> matrixBuffer;
-    std::shared_ptr<UniformBuffer> uniformBuffer;
+    Shared<SSBOBuffer> matrixBuffer;
+    Shared<UniformBuffer> uniformBuffer;
     Statistics statistics;
 };
 
@@ -36,7 +35,7 @@ class Renderer
     static void EndScene();
 
     static void SetTexture(TextureLayout &textureLayout);
-    static void Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform);
+    static void Submit(const Shared<Mesh> &mesh, glm::mat4 &transform);
 
     static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

@@ -1,10 +1,8 @@
 #include "../pch.h"
 #include "../include/MouseButtonCodes.h"
-#include "../include/testlayer.h"
+#include "../include/TestLayer.h"
 #include "../include/Renderer.h"
 #include "../include/Input.h"
-#include "../include/KeyCodes.h"
-#include "../include/Raytracing.h"
 #include "../include/AssimpLoader.h"
 
 Testlayer::Testlayer()
@@ -61,7 +59,7 @@ void Testlayer::OnImGuiRender()
 
     // Enable docking
     
-    ImGui::Begin("Some shit");
+    ImGui::Begin("Stats");
     unsigned int DrawCalls = Renderer::GetStatistics().DrawCalls;
     unsigned int VerticeCount = Renderer::GetStatistics().VerticeCount;
     unsigned int IndicesCount = Renderer::GetStatistics().IndicesCount;
@@ -78,7 +76,6 @@ void Testlayer::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&Testlayer::OnMouseButtonPressed, this, std::placeholders::_1));
-    //m_CameraController.OnEvent(e);
 };
 
 bool Testlayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
@@ -89,14 +86,11 @@ bool Testlayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
         std::cout << "Mouse button pressed" << std::endl;
         std::cout << x << std::endl;
         std::cout << y << std::endl;
-
-        // Raytracing::TrySelectMesh(x , y, 1919, 2137, m_CameraController.GetCamera(), m_Model, m_SelectedMesh);
     }
 
     if (e.GetMouseButton() == MOUSE_BUTTON_RIGHT)
     {
         m_CameraActive = !m_CameraActive;
-        // m_CameraController.GetCamera()->SetFirstMouse(m_CameraActive);
     }
 
     return false;

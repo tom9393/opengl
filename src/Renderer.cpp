@@ -1,13 +1,12 @@
 #include "../include/Renderer.h"
 #include "../platform/OpenGL/OpenGLShader.h"
-#include <memory>
 
 Renderer::SceneData Renderer::m_SceneData;
 RenderStorage Renderer::m_Data;
 
 void Renderer::BeginScene(const glm::mat4& viewProjection)
 {
-    std::shared_ptr<Shader> shader = m_Data.shaderLibrary->GetLatest();
+    Shared<Shader> shader = m_Data.shaderLibrary->Get("Texture");
     shader->Bind();
 
     m_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
@@ -27,12 +26,11 @@ void Renderer::Init()
     const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
     m_Data.shaderLibrary = new ShaderLibrary({"Texture"});
     m_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
-    m_Data.shaderLibrary->SetLatest("Texture");
 
     m_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(glm::mat4));
     m_Data.uniformBuffer->Bind(0);
 
-    std::shared_ptr<Shader> shader = m_Data.shaderLibrary->GetLatest();
+    Shared<Shader> shader = m_Data.shaderLibrary->Get("Texture");
     auto openglshader = std::dynamic_pointer_cast<OpenGLShader>(shader);
     openglshader->Bind();
 
@@ -49,12 +47,12 @@ void Renderer::SetTexture(TextureLayout &layout)
 {
     PROFILE_FUNCTION();
 
-    std::shared_ptr<Shader> shader = m_Data.shaderLibrary->GetLatest();
+    Shared<Shader> shader = m_Data.shaderLibrary->Get("Texture");
     unsigned int idx = 0;
     for (auto &textureType : layout)
     {
         TextureType type = textureType.first;
-        std::vector<std::shared_ptr<Texture2D>> textures = textureType.second;
+        std::vector<Shared<Texture2D>> textures = textureType.second;
         for (auto &texture : textures)
         {
             texture->Bind(idx);
@@ -64,13 +62,13 @@ void Renderer::SetTexture(TextureLayout &layout)
     }
 };
 
-void Renderer::Submit(const std::shared_ptr<Mesh> &mesh, glm::mat4 &transform)
+void Renderer::Submit(const Shared<Mesh> &mesh, glm::mat4 &transform)
 {
     PROFILE_FUNCTION();
 
-    m_Data.shaderLibrary->GetLatest()->setMat4("u_Transform", transform);
+    m_Data.shaderLibrary->Get("Texture")->setMat4("u_Transform", transform);
 
-    std::shared_ptr<VertexArray> VAO = mesh->GetVAO();
+    Shared<VertexArray> VAO = mesh->GetVAO();
     VAO->Bind();
     RenderCommand::DrawIndexed(VAO);
     m_Data.statistics.DrawCalls++;

@@ -2,7 +2,6 @@
 
 #include "../../lib/entt.hpp"
 #include "../TimeStep.h"
-#include "Components.h"
 #include "SceneSerializer.h"
 #include "../ModelLibrary.h"
 

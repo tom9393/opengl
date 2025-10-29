@@ -12,8 +12,8 @@ class VertexBuffer
     virtual const BufferLayout& GetLayout() const = 0;
     virtual void SetLayout(const BufferLayout &layout) = 0;
     
-    static std::shared_ptr<VertexBuffer> Create(unsigned int size);
-    static std::shared_ptr<VertexBuffer> Create(float* vertices, unsigned int size);
+    static Shared<VertexBuffer> Create(unsigned int size);
+    static Shared<VertexBuffer> Create(float* vertices, unsigned int size);
 };
 
 class IndexBuffer
@@ -24,7 +24,7 @@ class IndexBuffer
 
     virtual unsigned int GetCount() const = 0;
     
-    static std::shared_ptr<IndexBuffer> Create(unsigned int* indices, unsigned int count);
+    static Shared<IndexBuffer> Create(unsigned int* indices, unsigned int count);
 };
 
 class VertexArray
@@ -33,13 +33,13 @@ class VertexArray
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;
 
-    virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer> &vertexBuffer) = 0;
-    virtual void SetIndexBuffer(const std::shared_ptr<IndexBuffer> &indexBuffer) = 0;
+    virtual void AddVertexBuffer(const Shared<VertexBuffer> &vertexBuffer) = 0;
+    virtual void SetIndexBuffer(const Shared<IndexBuffer> &indexBuffer) = 0;
 
-    virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() const = 0;
-    virtual const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const = 0;
+    virtual const std::vector<Shared<VertexBuffer>>& GetVertexBuffers() const = 0;
+    virtual const Shared<IndexBuffer>& GetIndexBuffer() const = 0;
     
-    static std::shared_ptr<VertexArray> Create();
+    static Shared<VertexArray> Create();
 };
 
 class UniformBuffer
@@ -50,7 +50,7 @@ class UniformBuffer
 
     virtual void Update(unsigned int offset, unsigned int size, void* data) = 0;
 
-    static std::shared_ptr<UniformBuffer> Create(void* data, unsigned int size);
+    static Shared<UniformBuffer> Create(void* data, unsigned int size);
 };
 
 class SSBOBuffer
@@ -59,7 +59,7 @@ class SSBOBuffer
     virtual void Bind(unsigned int index) const = 0;
     virtual void Unbind() const = 0;
 
-    static std::shared_ptr<SSBOBuffer> Create(void* data, unsigned int size);
+    static Shared<SSBOBuffer> Create(void* data, unsigned int size);
 };
 
 enum class FramebufferTextureFormat
@@ -113,5 +113,5 @@ class Framebuffer
 
     virtual const FramebufferSpecification &GetSpecification() const = 0;
     virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
-    static std::shared_ptr<Framebuffer> Create(FramebufferSpecification &specification);
+    static Shared<Framebuffer> Create(FramebufferSpecification &specification);
 };

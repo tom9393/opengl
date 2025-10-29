@@ -2,7 +2,6 @@
 #include "../Renderer.h"
 #include "Components.h"
 #include "Entity.h"
-#include "SceneCamera.h"
 #include "../AssimpLoader.h"
 
 Scene::Scene() : m_ModelLibrary(new AssimpLoader()) {};
@@ -49,7 +48,6 @@ void Scene::OnViewportResize(unsigned int width, unsigned int height)
 	{
 		auto& cameraComponent = view.get<SceneCameraComponent>(entity);
 		if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
-
 	}
 };
 

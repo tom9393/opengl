@@ -1,5 +1,5 @@
 #include "../include/Application.h"
-#include "../include/testlayer.h"
+#include "../include/TestLayer.h"
 #include "../include/EditorLayer.h"
 #include "../include/TimeStep.h"
 #include "../include/Renderer.h"

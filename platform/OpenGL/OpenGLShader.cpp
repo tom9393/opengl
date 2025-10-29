@@ -1,5 +1,4 @@
 #include "OpenGLShader.h"
-#include "../../pch.h"
 #include <cstdio>
 
 OpenGLShader::OpenGLShader(const std::string &name)

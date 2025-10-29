@@ -1,13 +1,11 @@
 #pragma once
 
 #include "../../pch.h"
-#include "../preprocessor.h"
+#include "../Preprocessor.h"
 #include "../Texture.h"
-#include "../mesh.h"
-#include "../model.h"
 #include "SceneCamera.h"
 #include "../EditorCamera.h"
-#include "../Buffer.h"
+#include "../MathTools.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -27,6 +25,11 @@ struct TransformComponent
 	glm::mat4 rot = glm::toMat4(glm::quat(rotation));
 
         return glm::translate(glm::mat4(1.0f), translation) * rot * glm::scale(glm::mat4(1.0f), scale);
+    }
+
+    void ApplyMatrix(const glm::mat4 &matrix)
+    {
+        MathTools::DecomposeMatrix(matrix, translation, rotation, scale);
     }
 };
 

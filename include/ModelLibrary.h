@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model.h"
+#include "Model.h"
 #include "ModelLoader.h"
 
 class ModelLibrary

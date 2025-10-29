@@ -1,19 +1,62 @@
 #pragma once
+
+#include "Application.h"
 #include "Buffer.h"
-#include "CameraController.h"
 #include "EditorCamera.h"
 #include "Events/KeyboardEvent.h"
 #include "Layer.h"
 #include "Panels/ContentBrowserPanel.h"
-#include "Ray.h"
-#include "AABB.h"
 #include "Scene/Scene.h"
 #include "Texture.h"
 #include "TimeStep.h"
-#include "Shader.h"
 #include "Events/MouseEvent.h"
-#include "model.h"
 #include "Panels/SceneHierarchyPanel.h"
+
+struct Viewport
+{
+    glm::vec2 Min;
+    glm::vec2 Max;
+    glm::vec2 Size;
+    bool Focused = false;
+    bool Hovered = false;
+    bool Updated = false;
+
+    void UpdateViewport()
+    {
+        Updated = false;
+
+        auto minRegion = ImGui::GetWindowContentRegionMin(); // Top left corner of window's content area
+        auto maxRegion = ImGui::GetWindowContentRegionMax(); // Bottom right corner of window's content area
+        auto offset = ImGui::GetWindowPos(); // Absolute position, (0, 0) top left corner
+
+        Min = { minRegion.x + offset.x, minRegion.y + offset.y }; // Top left corner
+        Max = { maxRegion.x + offset.x, maxRegion.y + offset.y }; // Bottom right corner
+        glm::vec2 s = Max - Min;
+        if (s.x != Size.x || s.y != Size.y)
+        {
+            Updated = true;
+            Size = s;
+        }
+
+        Focused = ImGui::IsWindowFocused();
+        Hovered = ImGui::IsWindowHovered();
+
+        Application::Get().GetImGuiLayer()->BlockEvents(!Focused || !Hovered);
+    }
+
+    glm::vec2 GetMousePosition()
+    {
+        glm::vec2 mouse = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
+        glm::vec2 local = mouse - Min;
+        local.y = Size.y - local.y;
+        return glm::vec2(local);
+    }
+
+    bool Contains(const glm::vec2& p) const
+    {
+        return p.x >= Min.x && p.x <= Max.x && p.y >= Min.y && p.y <= Max.y;
+    }
+};
 
 class EditorLayer : public Layer
 {
@@ -27,24 +70,30 @@ class EditorLayer : public Layer
     void OnEvent(Event& event);
     void OnImGuiRender();
 
-    Ray CastRayFromMouse(float x, float y, float width, float height, std::shared_ptr<Camera> camera);
-    bool RayIntersectsAABB(const Ray& ray, const AABB& box, float& t);
-    void TrySelectMesh(float mouseX, float mouseY, float screenWidth, float screenHeight, std::shared_ptr<Camera> camera, std::shared_ptr<Model> model);
-
     private:
     void DrawStats();
+    void DrawMenuBar();
+    void DrawViewport();
+
+    void BeginViewportRender();
+    void RenderScene(TimeStep ts);
+    void EndViewportRender();
+
+    void UpdateSelectedEntity();
+    void UpdateHoveredEntity();
+
+    void SetupGizmo();
+    void UseGizmo(Entity entity);
+
     void OpenScene();
     void SaveScene();
+
     bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
     bool OnKeyEvent(KeyboardPressEvent &e);
 
     private:
-    bool m_ViewportFocused = false;
-    bool m_ViewportHovered = false;
-    glm::vec2 m_ViewportSize = {0.0f, 0.0f};
-    glm::vec2 m_ViewportBounds[2];
     float m_Previous = 0;
-
+    Viewport m_Viewport;
     Entity m_HoveredEntity;
 
     Shared<Scene> m_Scene;
@@ -52,12 +101,11 @@ class EditorLayer : public Layer
 
     int m_GizmoType = -1;
 
-    std::shared_ptr<Texture2D> m_Texture;
-    std::shared_ptr<Mesh> m_SelectedMesh;
-    std::shared_ptr<Framebuffer> m_Framebuffer;
+    Shared<Texture2D> m_Texture;
+    Shared<Mesh> m_SelectedMesh;
+    Shared<Framebuffer> m_Framebuffer;
 
     // Panels
-
     SceneHierarchyPanel m_SceneHierarchyPanel;
     ContentBrowserPanel m_ContentBrowserPanel;
 };

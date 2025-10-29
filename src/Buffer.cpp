@@ -2,65 +2,65 @@
 #include "../include/Renderer.h"
 #include "../platform/OpenGL/OpenGLBuffer.h"
 
-std::shared_ptr<IndexBuffer> IndexBuffer::Create(unsigned int* indices, unsigned int size)
+Shared<IndexBuffer> IndexBuffer::Create(unsigned int* indices, unsigned int size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;
-                case RendererAPI::API::OpenGL: return std::make_shared<OpenGLIndexBuffer>(indices, size);
+                case RendererAPI::API::OpenGL: return MakeShared<OpenGLIndexBuffer>(indices, size);
         }
     return nullptr;
 };
 
-std::shared_ptr<VertexBuffer> VertexBuffer::Create(unsigned int size)
+Shared<VertexBuffer> VertexBuffer::Create(unsigned int size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;
-                case RendererAPI::API::OpenGL: return std::make_shared<OpenGLVertexBuffer>(size);
+                case RendererAPI::API::OpenGL: return MakeShared<OpenGLVertexBuffer>(size);
         }
     return nullptr;
 };
 
-std::shared_ptr<VertexBuffer> VertexBuffer::Create(float *vertices, unsigned int size)
+Shared<VertexBuffer> VertexBuffer::Create(float *vertices, unsigned int size)
 {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;
-                case RendererAPI::API::OpenGL: return std::make_shared<OpenGLVertexBuffer>(vertices, size);
+                case RendererAPI::API::OpenGL: return MakeShared<OpenGLVertexBuffer>(vertices, size);
         }
     return nullptr;
 };
 
-std::shared_ptr<VertexArray> VertexArray::Create()
+Shared<VertexArray> VertexArray::Create()
 {
     switch (Renderer::Get()) {
         case RendererAPI::API::None: return nullptr;
-        case RendererAPI::API::OpenGL: return std::make_shared<OpenGLVertexArray>();
+        case RendererAPI::API::OpenGL: return MakeShared<OpenGLVertexArray>();
         }
     return nullptr;
 };
 
-std::shared_ptr<UniformBuffer> UniformBuffer::Create(void* data, unsigned int size)
+Shared<UniformBuffer> UniformBuffer::Create(void* data, unsigned int size)
 {
     switch (Renderer::Get()) {
         case RendererAPI::API::None: return nullptr;
-        case RendererAPI::API::OpenGL: return std::make_shared<OpenGLUniformBuffer>(data, size);
+        case RendererAPI::API::OpenGL: return MakeShared<OpenGLUniformBuffer>(data, size);
         }
     return nullptr;
 };
 
-std::shared_ptr<SSBOBuffer> SSBOBuffer::Create(void* data, unsigned int size)
+Shared<SSBOBuffer> SSBOBuffer::Create(void* data, unsigned int size)
 {
     switch (Renderer::Get()) {
         case RendererAPI::API::None: return nullptr;
-        case RendererAPI::API::OpenGL: return std::make_shared<OpenGLSSBOBuffer>(data, size);
+        case RendererAPI::API::OpenGL: return MakeShared<OpenGLSSBOBuffer>(data, size);
         }
     return nullptr;
 };
 
-std::shared_ptr<Framebuffer> Framebuffer::Create(FramebufferSpecification &specification)
+Shared<Framebuffer> Framebuffer::Create(FramebufferSpecification &specification)
 {
     switch (Renderer::Get()) {
             case RendererAPI::API::None: return nullptr;
-            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLFramebuffer>(specification);
+            case RendererAPI::API::OpenGL: return MakeShared<OpenGLFramebuffer>(specification);
     }
     return nullptr;
 };

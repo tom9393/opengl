@@ -1,9 +1,9 @@
 #pragma once
 
-#include "model.h"
+#include "Model.h"
 
 class ModelLoader
 {
     public:
-    virtual std::shared_ptr<Model> Load(const char* path, int id) = 0;
+    virtual Shared<Model> Load(const char* path, int id) = 0;
 };

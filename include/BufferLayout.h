@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../pch.h"
 #include "Texture.h"
-#include <initializer_list>
 enum class ShaderDataType
 {
     None = 0,
@@ -95,7 +95,7 @@ class BufferLayout
 class TextureLayout
 {
     public:
-    TextureLayout(const std::vector<std::shared_ptr<Texture2D>> &textures)
+    TextureLayout(const std::vector<Shared<Texture2D>> &textures)
     {
         for (auto &texture : textures)
         {
@@ -107,7 +107,7 @@ class TextureLayout
         m_Texture_Keys[TextureType::Normal] = "material.normal";
     }
 
-    std::vector<std::shared_ptr<Texture2D>> &GetByType(TextureType type)
+    std::vector<Shared<Texture2D>> &GetByType(TextureType type)
     {
         return m_Textures[type];
     }
@@ -119,10 +119,10 @@ class TextureLayout
 
     std::string &GetStringByType(TextureType type) { return m_Texture_Keys[type]; }
 
-    std::unordered_map<TextureType, std::vector<std::shared_ptr<Texture2D>>>::const_iterator begin() const { return m_Textures.begin(); }
-    std::unordered_map<TextureType, std::vector<std::shared_ptr<Texture2D>>>::const_iterator end() const { return m_Textures.end(); }
+    std::unordered_map<TextureType, std::vector<Shared<Texture2D>>>::const_iterator begin() const { return m_Textures.begin(); }
+    std::unordered_map<TextureType, std::vector<Shared<Texture2D>>>::const_iterator end() const { return m_Textures.end(); }
 
     private:
-    std::unordered_map<TextureType, std::vector<std::shared_ptr<Texture2D>>> m_Textures;
+    std::unordered_map<TextureType, std::vector<Shared<Texture2D>>> m_Textures;
     std::unordered_map<TextureType, std::string> m_Texture_Keys;
 };

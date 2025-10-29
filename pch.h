@@ -19,6 +19,8 @@
 #include <memory>
 #include <utility>
 #include <unordered_map>
+#include <filesystem>
+#include <initializer_list>
 
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
@@ -34,4 +36,9 @@
 #include "lib/imgui_impl_glfw.h"
 #include "lib/imgui_impl_opengl3.h"
 
+#include "lib/ImGuizmo.h"
+
+#include "lib/stb_image.h"
+
 #include "include/Instrumentor.h"
+#include "include/Preprocessor.h"

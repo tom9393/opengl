@@ -1,5 +1,4 @@
 #include "OpenGLTexture.h"
-#include "../../include/stb_image.h"
 #include "../../pch.h"
 
 OpenGLTexture2D::OpenGLTexture2D(const std::string &path, TextureType type) : m_Path(path), m_Type(type)

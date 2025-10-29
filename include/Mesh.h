@@ -2,22 +2,13 @@
 
 #include "../pch.h"
 
-#include "../include/preprocessor.h"
-#include "AABB.h"
+#include "../include/Preprocessor.h"
 #include "BufferLayout.h"
-#include "Texture.h"
 #include "Buffer.h"
 
-class Mesh {
-public:
-    std::vector<float> m_Vertices;
-    std::vector<unsigned int> m_Indices;
-    Shared<VertexArray> m_VAO;
-    Shared<VertexBuffer> m_VBO;
-    Shared<IndexBuffer> m_EBO;
-    BufferLayout m_BufferLayout;
-    TextureLayout m_TextureLayout;
-
+class Mesh
+{
+    public:
     Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const BufferLayout &bufferLayout, const TextureLayout &textureLayout) : m_Vertices(vertices), m_Indices(indices), m_BufferLayout(bufferLayout), m_TextureLayout(textureLayout) {
         Prepare();
     }
@@ -44,5 +35,15 @@ public:
     {
         return m_BufferLayout == otherLayout;
     }
-};
 
+    private:
+    std::vector<float> m_Vertices;
+    std::vector<unsigned int> m_Indices;
+    Shared<VertexArray> m_VAO;
+    Shared<VertexBuffer> m_VBO;
+    Shared<IndexBuffer> m_EBO;
+    BufferLayout m_BufferLayout;
+    TextureLayout m_TextureLayout;
+
+    friend class Renderer;
+};

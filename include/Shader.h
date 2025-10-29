@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../pch.h"
-#include <initializer_list>
 
 class Shader
 {
@@ -17,7 +16,7 @@ public:
 
     virtual const std::string& GetName() const = 0;
 
-    static std::shared_ptr<Shader> Create(const std::string &name);
+    static Shared<Shader> Create(const std::string &name);
 
     virtual void setBool(const std::string &name, bool value) const = 0;
     virtual void setInt(const std::string &name, int value) const = 0;
@@ -35,15 +34,12 @@ class ShaderLibrary
     public:
     ShaderLibrary(const std::initializer_list<std::string> &shaders);
 
-    void Add(const std::shared_ptr<Shader> &shader);
+    void Add(const Shared<Shader> &shader);
     void AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths);
 
-    std::shared_ptr<Shader> Get(const std::string &name);
-    std::shared_ptr<Shader> GetLatest() { return Get(m_Latest); };
-    void SetLatest(const std::string &name) { m_Latest = name; };
+    Shared<Shader> Get(const std::string &name);
 
     private:
-    std::unordered_map<std::string, std::shared_ptr<Shader>> m_Shaders;
-    std::string m_Latest;
+    std::unordered_map<std::string, Shared<Shader>> m_Shaders;
 };
 
