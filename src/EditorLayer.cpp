@@ -106,6 +106,7 @@ void EditorLayer::OnImGuiRender()
     DrawStats();
 
     m_SceneHierarchyPanel.OnImGuiRender();
+    m_ContentBrowserPanel.OnImGuiRender();
 
     ImGuiWindowFlags window_flags = 0;
     if (Input::IsKeyPressed(KEY_LEFT_CONTROL))

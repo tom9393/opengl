@@ -4,6 +4,7 @@
 #include "EditorCamera.h"
 #include "Events/KeyboardEvent.h"
 #include "Layer.h"
+#include "Panels/ContentBrowserPanel.h"
 #include "Ray.h"
 #include "AABB.h"
 #include "Scene/Scene.h"
@@ -58,4 +59,5 @@ class EditorLayer : public Layer
     // Panels
 
     SceneHierarchyPanel m_SceneHierarchyPanel;
+    ContentBrowserPanel m_ContentBrowserPanel;
 };
