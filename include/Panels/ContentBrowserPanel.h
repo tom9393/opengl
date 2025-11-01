@@ -3,17 +3,22 @@
 #include "../Texture.h"
 #include "../Preprocessor.h"
 
-class ContentBrowserPanel
+namespace Engine
 {
-    public:
 
-    ContentBrowserPanel();
+    class ContentBrowserPanel
+    {
+        public:
 
-    void OnImGuiRender();
+        ContentBrowserPanel();
 
-    private:
-    std::filesystem::path m_CurrentDirectory;
-    Shared<Texture2D> m_DirIcon;
-    Shared<Texture2D> m_FileIcon;
+        void OnImGuiRender();
+
+        private:
+        std::filesystem::path m_CurrentDirectory;
+        Shared<Texture2D> m_DirIcon;
+        Shared<Texture2D> m_FileIcon;
+
+    };
 
 };

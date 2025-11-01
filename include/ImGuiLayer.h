@@ -2,23 +2,28 @@
 
 #include "Layer.h"
 
-class ImGuiLayer : public Layer
+namespace Engine
 {
-    public:
-    ~ImGuiLayer();
 
-    void OnAttach() override;
-    void OnDetach() override;
-    void OnImGuiRender() override;
-    void OnEvent(Event &e) override;
-    void BlockEvents(bool block) { m_BlockEvents = block; }
+    class ImGuiLayer : public Layer
+    {
+        public:
+        ~ImGuiLayer();
 
-    void SetDarkTheme();
+        void OnAttach() override;
+        void OnDetach() override;
+        void OnImGuiRender() override;
+        void OnEvent(Event &e) override;
+        void BlockEvents(bool block) { m_BlockEvents = block; }
 
-    void Begin();
-    void End();
+        void SetDarkTheme();
 
-    private:
-    float m_Previous;
-    bool m_BlockEvents;
+        void Begin();
+        void End();
+
+        private:
+        float m_Previous;
+        bool m_BlockEvents;
+    };
+
 };

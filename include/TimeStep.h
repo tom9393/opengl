@@ -1,18 +1,22 @@
 #pragma once
 
-
-class TimeStep
+namespace Engine
 {
-    public:
 
-    TimeStep(float time = 0.0f) : m_Time(time) {}
+    class TimeStep
+    {
+        public:
 
-    operator float() const { return m_Time; }
+        TimeStep(float time = 0.0f) : m_Time(time) {}
 
-    float GetSeconds() { return m_Time; }
-    float GetMilliSeconds() { return m_Time * 1000.0f; }
+        operator float() const { return m_Time; }
 
-    private:
-    float m_Time;
+        float GetSeconds() { return m_Time; }
+        float GetMilliSeconds() { return m_Time * 1000.0f; }
+
+        private:
+        float m_Time;
+
+    };
 
 };

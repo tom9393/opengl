@@ -1,39 +1,44 @@
 #include "../../pch.h"
 #include "../../include/Texture.h"
 
-class OpenGLTexture2D : public Texture2D
+namespace Engine
 {
-    public:
-    OpenGLTexture2D(const std::string &path, TextureType type);
-    virtual ~OpenGLTexture2D();
 
-    unsigned int GetWidth() const override { return m_Width; }
-    unsigned int GetHeight() const override { return m_Height; }
+    class OpenGLTexture2D : public Texture2D
+    {
+        public:
+        OpenGLTexture2D(const std::string &path, TextureType type);
+        virtual ~OpenGLTexture2D();
 
-    unsigned int GetID() const override;
-    std::string &GetPath() override { return m_Path; }
-    TextureType GetType() const override { return m_Type; }
+        unsigned int GetWidth() const override { return m_Width; }
+        unsigned int GetHeight() const override { return m_Height; }
 
-    void Bind(unsigned int slot) const override;
+        unsigned int GetID() const override;
+        std::string &GetPath() override { return m_Path; }
+        TextureType GetType() const override { return m_Type; }
 
-    private:
-    std::string m_Path;
-    TextureType m_Type;
-    unsigned int m_Width, m_Height;
-    unsigned int m_RendererID;
-};
+        void Bind(unsigned int slot) const override;
 
-class OpenGLBindlessTexture : public BindlessTexture
-{
-    public:
-    OpenGLBindlessTexture();
+        private:
+        std::string m_Path;
+        TextureType m_Type;
+        unsigned int m_Width, m_Height;
+        unsigned int m_RendererID;
+    };
 
-    void MakeHandle(const std::shared_ptr<OpenGLTexture2D> &texture);
-    GLuint64 GetHandle() const { return m_RendererID; }
-    void Bind() const override;
-    void Unbind() const override;
+    class OpenGLBindlessTexture : public BindlessTexture
+    {
+        public:
+        OpenGLBindlessTexture();
 
-    private:
-    GLuint64 m_RendererID;
-    std::shared_ptr<OpenGLTexture2D> m_Texture;
+        void MakeHandle(const std::shared_ptr<OpenGLTexture2D> &texture);
+        GLuint64 GetHandle() const { return m_RendererID; }
+        void Bind() const override;
+        void Unbind() const override;
+
+        private:
+        GLuint64 m_RendererID;
+        std::shared_ptr<OpenGLTexture2D> m_Texture;
+    };
+
 };

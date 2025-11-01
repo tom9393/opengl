@@ -3,47 +3,51 @@
 #include "../../pch.h"
 #include "../../include/Shader.h"
 
-class OpenGLShader : public Shader
+namespace Engine
 {
-public:
 
-    OpenGLShader(const std::string &name);
+    class OpenGLShader : public Shader
+    {
+    public:
 
-    ~OpenGLShader();
+        OpenGLShader(const std::string &name);
 
-    void Bind() const override;
-    void Unbind() const override;
+        ~OpenGLShader();
 
-    const std::string& GetName() const override { return m_Name; }
+        void Bind() const override;
+        void Unbind() const override;
 
-    void AddShaders(const std::vector<std::string> &shaders) override;
-    void AddShaders(const std::initializer_list<std::string> &shaders) override;
+        const std::string& GetName() const override { return m_Name; }
 
-    GLuint GetProgram() const { return id; }
+        void AddShaders(const std::vector<std::string> &shaders) override;
+        void AddShaders(const std::initializer_list<std::string> &shaders) override;
 
-    // utility uniform functions
-    void setBool(const std::string &name, bool value) const override;
-    void setInt(const std::string &name, int value) const override;
-    void setFloat(const std::string &name, float value) const override;
-    void setVec2(const std::string &name, const glm::vec2 &transform) const override;
-    void setVec3(const std::string &name, const glm::vec3 &transform) const override;
-    void setVec4(const std::string &name, const glm::vec4 &transform) const override;
-    void setMat2(const std::string &name, const glm::mat2 &transform) const override;
-    void setMat3(const std::string &name, const glm::mat3 &transform) const override;
-    void setMat4(const std::string &name, const glm::mat4 &transform) const override;
+        GLuint GetProgram() const { return id; }
 
-protected:
+        // utility uniform functions
+        void setBool(const std::string &name, bool value) const override;
+        void setInt(const std::string &name, int value) const override;
+        void setFloat(const std::string &name, float value) const override;
+        void setVec2(const std::string &name, const glm::vec2 &transform) const override;
+        void setVec3(const std::string &name, const glm::vec3 &transform) const override;
+        void setVec4(const std::string &name, const glm::vec4 &transform) const override;
+        void setMat2(const std::string &name, const glm::mat2 &transform) const override;
+        void setMat3(const std::string &name, const glm::mat3 &transform) const override;
+        void setMat4(const std::string &name, const glm::mat4 &transform) const override;
 
-    GLint GetUniformLocation(const char* pUniformName);
-    GLenum GetShaderFromExtension(const std::string &path);
-    GLuint id = 0;
+    protected:
 
-private:
+        GLint GetUniformLocation(const char* pUniformName);
+        GLenum GetShaderFromExtension(const std::string &path);
+        GLuint id = 0;
 
-    void PrintUniformList();
-    bool AddShader(const std::string &file);
-    bool Finalize();
-    std::list<GLuint> shaderObjList;
-    std::string m_Name;
+    private:
+
+        void PrintUniformList();
+        bool AddShader(const std::string &file);
+        bool Finalize();
+        std::list<GLuint> shaderObjList;
+        std::string m_Name;
+    };
+
 };
-

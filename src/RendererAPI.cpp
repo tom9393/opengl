@@ -1,3 +1,8 @@
 #include "../include/RendererAPI.h"
 
-RendererAPI::API RendererAPI::s_API = RendererAPI::API::OpenGL;
+namespace Engine
+{
+
+    RendererAPI::API RendererAPI::s_API = RendererAPI::API::OpenGL;
+
+};

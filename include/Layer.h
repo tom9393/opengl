@@ -4,19 +4,24 @@
 #include "TimeStep.h"
 #include "Events/Event.h"
 
-class Layer
+namespace Engine
 {
-public:
-        Layer(const std::string& name = "Layer") : m_DebugName(name) {}
-        virtual ~Layer() = default;
 
-        virtual void OnAttach() {}
-        virtual void OnDetach() {}
-        virtual void OnUpdate(TimeStep ts) {}
-        virtual void OnImGuiRender() {}
-        virtual void OnEvent(Event& event) {}
+        class Layer
+        {
+        public:
+                Layer(const std::string& name = "Layer") : m_DebugName(name) {}
+                virtual ~Layer() = default;
 
-        const std::string& GetName() const { return m_DebugName; }
-protected:
-        std::string m_DebugName;
+                virtual void OnAttach() {}
+                virtual void OnDetach() {}
+                virtual void OnUpdate(TimeStep ts) {}
+                virtual void OnImGuiRender() {}
+                virtual void OnEvent(Event& event) {}
+
+                const std::string& GetName() const { return m_DebugName; }
+        protected:
+                std::string m_DebugName;
+        };
+
 };

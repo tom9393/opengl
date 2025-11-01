@@ -1,8 +1,13 @@
 #pragma once
 
-class ScopedImGuiStyle
+namespace Engine
 {
-    public:
-    ScopedImGuiStyle(ImGuiStyleVar var, const ImVec2& value) { ImGui::PushStyleVar(var, value); }
-    ~ScopedImGuiStyle() { ImGui::PopStyleVar(); }
+
+    class ScopedImGuiStyle
+    {
+        public:
+        ScopedImGuiStyle(ImGuiStyleVar var, const ImVec2& value) { ImGui::PushStyleVar(var, value); }
+        ~ScopedImGuiStyle() { ImGui::PopStyleVar(); }
+    };
+
 };

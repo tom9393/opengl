@@ -3,44 +3,49 @@
 #include "RendererAPI.h"
 #include "Buffer.h"
 
-class RenderCommand
+namespace Engine
 {
-    public:
 
-    inline static void Init()
+    class RenderCommand
     {
-        s_RendererAPI->Init();
-    }
+        public:
 
-    inline static void SetClearColor(const glm::vec4 &color)
-    {
-        s_RendererAPI->SetClearColor(color);
-    }
-    inline static void Clear()
-    {
-        s_RendererAPI->Clear();
-    }
+        inline static void Init()
+        {
+            s_RendererAPI->Init();
+        }
 
-    inline static void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
-    {
-        s_RendererAPI->DrawIndexed(vertexArray);
-    }
+        inline static void SetClearColor(const glm::vec4 &color)
+        {
+            s_RendererAPI->SetClearColor(color);
+        }
+        inline static void Clear()
+        {
+            s_RendererAPI->Clear();
+        }
 
-    inline static void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count)
-    {
-        s_RendererAPI->DrawIndexedInstances(vertexArray, count);
-    }
+        inline static void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
+        {
+            s_RendererAPI->DrawIndexed(vertexArray);
+        }
 
-    inline static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-    {
-        s_RendererAPI->SetViewport(x, y, width, height);
-    }
+        inline static void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count)
+        {
+            s_RendererAPI->DrawIndexedInstances(vertexArray, count);
+        }
 
-    inline static void ToggleWireframe()
-    {
-        s_RendererAPI->ToggleWireframe();
-    }
+        inline static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+        {
+            s_RendererAPI->SetViewport(x, y, width, height);
+        }
 
-    private:
-    static RendererAPI* s_RendererAPI;
+        inline static void ToggleWireframe()
+        {
+            s_RendererAPI->ToggleWireframe();
+        }
+
+        private:
+        static RendererAPI* s_RendererAPI;
+    };
+
 };

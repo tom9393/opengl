@@ -6,14 +6,14 @@ int main()
 {
 	PROFILE_BEGIN_SESSION("Application", "/tmp/application_data.json");
 
-	Application* app;
+	Engine::Application* app;
 
 	if (editor)
 	{
-		app = new Editor();
+		app = new Engine::Editor();
 	} else
 	{
-		app = new Runtime();
+		app = new Engine::Runtime();
 	}
 
 	app->run();

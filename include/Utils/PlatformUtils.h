@@ -1,8 +1,13 @@
 #pragma once
 
-class FileDialogs
+namespace Engine
 {
-public:
-    static std::string OpenFile(const char* filter);
-    static std::string SaveFile(const char* filter);
+
+    class FileDialogs
+    {
+    public:
+        static std::string OpenFile(const char* filter);
+        static std::string SaveFile(const char* filter);
+    };
+
 };

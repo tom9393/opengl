@@ -3,115 +3,120 @@
 #include "../pch.h"
 #include "BufferLayout.h"
 
-class VertexBuffer
+namespace Engine
 {
-    public:
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
 
-    virtual const BufferLayout& GetLayout() const = 0;
-    virtual void SetLayout(const BufferLayout &layout) = 0;
-    
-    static Shared<VertexBuffer> Create(unsigned int size);
-    static Shared<VertexBuffer> Create(float* vertices, unsigned int size);
-};
+    class VertexBuffer
+    {
+        public:
+        virtual void Bind() const = 0;
+        virtual void Unbind() const = 0;
 
-class IndexBuffer
-{
-    public:
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
+        virtual const BufferLayout& GetLayout() const = 0;
+        virtual void SetLayout(const BufferLayout &layout) = 0;
+        
+        static Shared<VertexBuffer> Create(unsigned int size);
+        static Shared<VertexBuffer> Create(float* vertices, unsigned int size);
+    };
 
-    virtual unsigned int GetCount() const = 0;
-    
-    static Shared<IndexBuffer> Create(unsigned int* indices, unsigned int count);
-};
+    class IndexBuffer
+    {
+        public:
+        virtual void Bind() const = 0;
+        virtual void Unbind() const = 0;
 
-class VertexArray
-{
-    public:
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
+        virtual unsigned int GetCount() const = 0;
+        
+        static Shared<IndexBuffer> Create(unsigned int* indices, unsigned int count);
+    };
 
-    virtual void AddVertexBuffer(const Shared<VertexBuffer> &vertexBuffer) = 0;
-    virtual void SetIndexBuffer(const Shared<IndexBuffer> &indexBuffer) = 0;
+    class VertexArray
+    {
+        public:
+        virtual void Bind() const = 0;
+        virtual void Unbind() const = 0;
 
-    virtual const std::vector<Shared<VertexBuffer>>& GetVertexBuffers() const = 0;
-    virtual const Shared<IndexBuffer>& GetIndexBuffer() const = 0;
-    
-    static Shared<VertexArray> Create();
-};
+        virtual void AddVertexBuffer(const Shared<VertexBuffer> &vertexBuffer) = 0;
+        virtual void SetIndexBuffer(const Shared<IndexBuffer> &indexBuffer) = 0;
 
-class UniformBuffer
-{
-    public:
-    virtual void Bind(unsigned int index) const = 0;
-    virtual void Unbind() const = 0;
+        virtual const std::vector<Shared<VertexBuffer>>& GetVertexBuffers() const = 0;
+        virtual const Shared<IndexBuffer>& GetIndexBuffer() const = 0;
+        
+        static Shared<VertexArray> Create();
+    };
 
-    virtual void Update(unsigned int offset, unsigned int size, void* data) = 0;
+    class UniformBuffer
+    {
+        public:
+        virtual void Bind(unsigned int index) const = 0;
+        virtual void Unbind() const = 0;
 
-    static Shared<UniformBuffer> Create(void* data, unsigned int size);
-};
+        virtual void Update(unsigned int offset, unsigned int size, void* data) = 0;
 
-class SSBOBuffer
-{
-    public:
-    virtual void Bind(unsigned int index) const = 0;
-    virtual void Unbind() const = 0;
+        static Shared<UniformBuffer> Create(void* data, unsigned int size);
+    };
 
-    static Shared<SSBOBuffer> Create(void* data, unsigned int size);
-};
+    class SSBOBuffer
+    {
+        public:
+        virtual void Bind(unsigned int index) const = 0;
+        virtual void Unbind() const = 0;
 
-enum class FramebufferTextureFormat
-{
-    None = 0,
+        static Shared<SSBOBuffer> Create(void* data, unsigned int size);
+    };
 
-    RGBA8,
-    RED_INTEGER,
+    enum class FramebufferTextureFormat
+    {
+        None = 0,
 
-    DEPTH24STENCIL8,
+        RGBA8,
+        RED_INTEGER,
 
-    Depth = DEPTH24STENCIL8
-};
+        DEPTH24STENCIL8,
 
-struct FramebufferTextureSpecification
-{
-    FramebufferTextureSpecification() = default;
-    FramebufferTextureSpecification(FramebufferTextureFormat format) : TextureFormat(format) {};
+        Depth = DEPTH24STENCIL8
+    };
 
-    FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None;
-};
+    struct FramebufferTextureSpecification
+    {
+        FramebufferTextureSpecification() = default;
+        FramebufferTextureSpecification(FramebufferTextureFormat format) : TextureFormat(format) {};
 
-struct FramebufferAttachmentSpecification
-{
-    FramebufferAttachmentSpecification() = default;
-    FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
+        FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None;
+    };
 
-    std::vector<FramebufferTextureSpecification> Attachments;
-};
+    struct FramebufferAttachmentSpecification
+    {
+        FramebufferAttachmentSpecification() = default;
+        FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
 
-struct FramebufferSpecification
-{
-    unsigned int width = 0, height = 0;
-    FramebufferAttachmentSpecification attachments;
-    unsigned int samples = 1;
-    bool swapChainTarget = false;
-};
+        std::vector<FramebufferTextureSpecification> Attachments;
+    };
 
-class Framebuffer
-{
-    public:
-    virtual ~Framebuffer() = default;
+    struct FramebufferSpecification
+    {
+        unsigned int width = 0, height = 0;
+        FramebufferAttachmentSpecification attachments;
+        unsigned int samples = 1;
+        bool swapChainTarget = false;
+    };
 
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
+    class Framebuffer
+    {
+        public:
+        virtual ~Framebuffer() = default;
 
-    virtual void Resize(unsigned int width, unsigned int height) = 0;
-    virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
+        virtual void Bind() const = 0;
+        virtual void Unbind() const = 0;
 
-    virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
+        virtual void Resize(unsigned int width, unsigned int height) = 0;
+        virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
 
-    virtual const FramebufferSpecification &GetSpecification() const = 0;
-    virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
-    static Shared<Framebuffer> Create(FramebufferSpecification &specification);
+        virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
+
+        virtual const FramebufferSpecification &GetSpecification() const = 0;
+        virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
+        static Shared<Framebuffer> Create(FramebufferSpecification &specification);
+    };
+
 };

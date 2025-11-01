@@ -1,20 +1,25 @@
 #include "../../pch.h"
 #include "OpenGLContext.h"
 
-OpenGLContext::OpenGLContext(GLFWwindow* window) : m_WindowHandle(window)
+namespace Engine
 {
-};
 
-void OpenGLContext::Init()
-{
-    glfwMakeContextCurrent(m_WindowHandle);
-    gladLoadGL();
-    std::cout << glGetString(GL_RENDERER) << std::endl;
-    std::cout << glGetString(GL_VENDOR) << std::endl;
-    std::cout << glGetString(GL_VERSION) << std::endl;
-};
+    OpenGLContext::OpenGLContext(GLFWwindow* window) : m_WindowHandle(window)
+    {
+    };
 
-void OpenGLContext::SwapBuffers()
-{
-    glfwSwapBuffers(m_WindowHandle);
+    void OpenGLContext::Init()
+    {
+        glfwMakeContextCurrent(m_WindowHandle);
+        gladLoadGL();
+        std::cout << glGetString(GL_RENDERER) << std::endl;
+        std::cout << glGetString(GL_VENDOR) << std::endl;
+        std::cout << glGetString(GL_VERSION) << std::endl;
+    };
+
+    void OpenGLContext::SwapBuffers()
+    {
+        glfwSwapBuffers(m_WindowHandle);
+    };
+
 };

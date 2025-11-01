@@ -3,21 +3,26 @@
 #include "Model.h"
 #include "ModelLoader.h"
 
-class ModelLibrary
+namespace Engine
 {
-    public:
 
-    ModelLibrary(ModelLoader* loader) : m_Loader(loader) {};
+    class ModelLibrary
+    {
+        public:
 
-    Shared<Model> GetModelByPath(std::string &str, int id) {
-        if (!m_Models[str])
-        {
-            m_Models[str] = m_Loader->Load(str.c_str(), id);
-        }
-        return m_Models[str];
+        ModelLibrary(ModelLoader* loader) : m_Loader(loader) {};
+
+        Shared<Model> GetModelByPath(std::string &str, int id) {
+            if (!m_Models[str])
+            {
+                m_Models[str] = m_Loader->Load(str.c_str(), id);
+            }
+            return m_Models[str];
+        };
+
+        private:
+        std::unordered_map<std::string, Shared<Model>> m_Models;
+        ModelLoader* m_Loader;
     };
 
-    private:
-    std::unordered_map<std::string, Shared<Model>> m_Models;
-    ModelLoader* m_Loader;
 };

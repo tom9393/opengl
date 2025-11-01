@@ -8,26 +8,31 @@
 #include "Model.h"
 #include "Camera.h"
 
-class Testlayer : public Layer
+namespace Engine
 {
-    public:
-    Testlayer();
-    ~Testlayer();
 
-    void OnAttach();
-    void OnDetach();
-    void OnUpdate(TimeStep ts);
-    void OnEvent(Event& event);
-    void OnImGuiRender();
-    bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
+    class Testlayer : public Layer
+    {
+        public:
+        Testlayer();
+        ~Testlayer();
 
-    void TrySelectMesh(float mouseX, float mouseY, float screenWidth, float screenHeight, std::shared_ptr<Camera> camera, std::shared_ptr<Model> model);
+        void OnAttach();
+        void OnDetach();
+        void OnUpdate(TimeStep ts);
+        void OnEvent(Event& event);
+        void OnImGuiRender();
+        bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
-    private:
-    std::shared_ptr<Model> m_Model;
-    bool m_CameraActive = true;
-    float m_Previous = 0;
+        void TrySelectMesh(float mouseX, float mouseY, float screenWidth, float screenHeight, std::shared_ptr<Camera> camera, std::shared_ptr<Model> model);
 
-    std::shared_ptr<Texture2D> m_Texture;
-    std::shared_ptr<Mesh> m_SelectedMesh;
+        private:
+        std::shared_ptr<Model> m_Model;
+        bool m_CameraActive = true;
+        float m_Previous = 0;
+
+        std::shared_ptr<Texture2D> m_Texture;
+        std::shared_ptr<Mesh> m_SelectedMesh;
+    };
+
 };

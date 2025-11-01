@@ -2,8 +2,13 @@
 
 #include "Model.h"
 
-class ModelLoader
+namespace Engine
 {
-    public:
-    virtual Shared<Model> Load(const char* path, int id) = 0;
+
+    class ModelLoader
+    {
+        public:
+        virtual Shared<Model> Load(const char* path, int id) = 0;
+    };
+
 };

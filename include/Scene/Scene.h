@@ -5,31 +5,36 @@
 #include "SceneSerializer.h"
 #include "../ModelLibrary.h"
 
-class Entity;
-
-class Scene
+namespace Engine
 {
-    public:
-    Scene();
-    ~Scene();
 
-    void OnUpdate(TimeStep ts);
-    void OnViewportResize(unsigned int width, unsigned int height);
+    class Entity;
 
-    Entity CreateEntity(const std::string &name = "Entity");
-    void DestroyEntity(Entity entity);
+    class Scene
+    {
+        public:
+        Scene();
+        ~Scene();
 
-    private:
-    template <typename T>
-    void OnComponentAdded(Entity entity, T &component);
+        void OnUpdate(TimeStep ts);
+        void OnViewportResize(unsigned int width, unsigned int height);
 
-    private:
-    entt::registry m_Registry;
-    unsigned int m_ViewportWidth = 0;
-    unsigned int m_ViewportHeight = 0;
-    ModelLibrary m_ModelLibrary;
+        Entity CreateEntity(const std::string &name = "Entity");
+        void DestroyEntity(Entity entity);
 
-    friend class Entity;
-    friend class SceneSerializer;
-    friend class SceneHierarchyPanel;
+        private:
+        template <typename T>
+        void OnComponentAdded(Entity entity, T &component);
+
+        private:
+        entt::registry m_Registry;
+        unsigned int m_ViewportWidth = 0;
+        unsigned int m_ViewportHeight = 0;
+        ModelLibrary m_ModelLibrary;
+
+        friend class Entity;
+        friend class SceneSerializer;
+        friend class SceneHierarchyPanel;
+    };
+
 };

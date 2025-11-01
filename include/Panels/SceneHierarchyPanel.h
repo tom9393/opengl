@@ -3,22 +3,27 @@
 #include "../Scene/Scene.h"
 #include "../Scene/Entity.h"
 
-class SceneHierarchyPanel
+namespace Engine
 {
-    public:
-    SceneHierarchyPanel() = default;
-    SceneHierarchyPanel(const Shared<Scene> &context);
-    void SetContext(const Shared<Scene> &context);
-    void OnImGuiRender();
 
-    Entity GetSelectedEntity() const { return m_SelectionContext; };
-    void SetSelectedEntity(Entity entity);
+    class SceneHierarchyPanel
+    {
+        public:
+        SceneHierarchyPanel() = default;
+        SceneHierarchyPanel(const Shared<Scene> &context);
+        void SetContext(const Shared<Scene> &context);
+        void OnImGuiRender();
 
-    private:
-    void DrawEntityNode(Entity entity);
-    void DrawComponents(Entity entity);
+        Entity GetSelectedEntity() const { return m_SelectionContext; };
+        void SetSelectedEntity(Entity entity);
 
-    private:
-    Shared<Scene> m_Context;
-    Entity m_SelectionContext;
+        private:
+        void DrawEntityNode(Entity entity);
+        void DrawComponents(Entity entity);
+
+        private:
+        Shared<Scene> m_Context;
+        Entity m_SelectionContext;
+    };
+
 };

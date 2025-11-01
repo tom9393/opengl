@@ -4,42 +4,46 @@
 #include "../../include/Context.h"
 #include "../../include/Window.h"
 
-class LinuxWindow : public Window
+namespace Engine
 {
-public:
 
-    LinuxWindow(const WindowProps &props);
-    virtual ~LinuxWindow();
-    virtual void onUpdate() override;
+    class LinuxWindow : public Window
+    {
+    public:
 
-    unsigned int getWidth() const override { return m_Data.width; }
-    unsigned int getHeight() const override { return m_Data.height; }
-    void* GetNativeWindow() override;
+        LinuxWindow(const WindowProps &props);
+        virtual ~LinuxWindow();
+        virtual void onUpdate() override;
 
-    void setEventCallback(const EventCallbackFn &cb) override { m_Data.cb = cb; }
-    virtual void setVsync(bool enabled) override;
-    virtual bool isVsync() override;
+        unsigned int getWidth() const override { return m_Data.width; }
+        unsigned int getHeight() const override { return m_Data.height; }
+        void* GetNativeWindow() override;
 
-    virtual void ToggleCursor() override;
-    virtual bool isCursor() override;
+        void setEventCallback(const EventCallbackFn &cb) override { m_Data.cb = cb; }
+        virtual void setVsync(bool enabled) override;
+        virtual bool isVsync() override;
 
-private:
+        virtual void ToggleCursor() override;
+        virtual bool isCursor() override;
 
-    virtual void Init(const WindowProps &props);
-    virtual void Shutdown();
+    private:
 
-    GLFWwindow* m_Window;
-    Context* m_Context;
+        virtual void Init(const WindowProps &props);
+        virtual void Shutdown();
 
-    struct WindowData {
-        std::string title;
-        unsigned int height, width;
-        bool VSync;
-        bool cursor;
-        EventCallbackFn cb;
+        GLFWwindow* m_Window;
+        Context* m_Context;
+
+        struct WindowData {
+            std::string title;
+            unsigned int height, width;
+            bool VSync;
+            bool cursor;
+            EventCallbackFn cb;
+        };
+
+        WindowData m_Data;
+
     };
 
-    WindowData m_Data;
-
 };
-

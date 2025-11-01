@@ -2,117 +2,122 @@
 
 #include "../../include/Buffer.h"
 
-static const unsigned int s_MaxFramebufferSize = 8192;
-
-class OpenGLVertexBuffer : public VertexBuffer
+namespace Engine
 {
-    public:
-    OpenGLVertexBuffer(unsigned int size);
-    OpenGLVertexBuffer(float* vertices, unsigned int size);
-    ~OpenGLVertexBuffer();
 
-    void Bind() const override;
-    void Unbind() const override;
+    static const unsigned int s_MaxFramebufferSize = 8192;
 
-    const BufferLayout& GetLayout() const override { return m_Layout; }
-    void SetLayout(const BufferLayout &layout) override { m_Layout = layout; }
+    class OpenGLVertexBuffer : public VertexBuffer
+    {
+        public:
+        OpenGLVertexBuffer(unsigned int size);
+        OpenGLVertexBuffer(float* vertices, unsigned int size);
+        ~OpenGLVertexBuffer();
 
-    private:
-    unsigned int m_RendererID;
-    BufferLayout m_Layout;
-};
+        void Bind() const override;
+        void Unbind() const override;
 
-class OpenGLIndexBuffer : public IndexBuffer
-{
-    public:
-    OpenGLIndexBuffer(unsigned int* indices, unsigned int size);
-    ~OpenGLIndexBuffer();
+        const BufferLayout& GetLayout() const override { return m_Layout; }
+        void SetLayout(const BufferLayout &layout) override { m_Layout = layout; }
 
-    void Bind() const;
-    void Unbind() const;
+        private:
+        unsigned int m_RendererID;
+        BufferLayout m_Layout;
+    };
 
-    unsigned int GetCount() const { return m_Count; }
+    class OpenGLIndexBuffer : public IndexBuffer
+    {
+        public:
+        OpenGLIndexBuffer(unsigned int* indices, unsigned int size);
+        ~OpenGLIndexBuffer();
 
-    private:
-    unsigned int m_RendererID;
-    unsigned int m_Count;
-};
+        void Bind() const;
+        void Unbind() const;
 
-class OpenGLVertexArray : public VertexArray
-{
-    public:
-    OpenGLVertexArray();
-    ~OpenGLVertexArray();
+        unsigned int GetCount() const { return m_Count; }
 
-    void Bind() const override;
-    void Unbind() const override;
+        private:
+        unsigned int m_RendererID;
+        unsigned int m_Count;
+    };
 
-    void AddVertexBuffer(const Shared<VertexBuffer> &vertexBuffer) override;
-    void SetIndexBuffer(const Shared<IndexBuffer> &indexBuffer) override;
+    class OpenGLVertexArray : public VertexArray
+    {
+        public:
+        OpenGLVertexArray();
+        ~OpenGLVertexArray();
 
-    const std::vector<Shared<VertexBuffer>>& GetVertexBuffers() const override { return m_VertexBuffers; }
-    const Shared<IndexBuffer>& GetIndexBuffer() const override { return m_IndexBuffer; }
+        void Bind() const override;
+        void Unbind() const override;
 
-    private:
-    std::vector<Shared<VertexBuffer>> m_VertexBuffers;
-    Shared<IndexBuffer> m_IndexBuffer;
-    unsigned int m_RendererID;
-};
+        void AddVertexBuffer(const Shared<VertexBuffer> &vertexBuffer) override;
+        void SetIndexBuffer(const Shared<IndexBuffer> &indexBuffer) override;
 
-class OpenGLUniformBuffer : public UniformBuffer
-{
-    public:
-    OpenGLUniformBuffer(void* data, unsigned int size);
-    ~OpenGLUniformBuffer();
+        const std::vector<Shared<VertexBuffer>>& GetVertexBuffers() const override { return m_VertexBuffers; }
+        const Shared<IndexBuffer>& GetIndexBuffer() const override { return m_IndexBuffer; }
 
-    void Bind(unsigned int index) const override;
-    void Unbind() const override;
+        private:
+        std::vector<Shared<VertexBuffer>> m_VertexBuffers;
+        Shared<IndexBuffer> m_IndexBuffer;
+        unsigned int m_RendererID;
+    };
 
-    void Update(unsigned int offset, unsigned int size, void* data) override;
+    class OpenGLUniformBuffer : public UniformBuffer
+    {
+        public:
+        OpenGLUniformBuffer(void* data, unsigned int size);
+        ~OpenGLUniformBuffer();
 
-    private:
-    unsigned int m_RendererID;
-};
+        void Bind(unsigned int index) const override;
+        void Unbind() const override;
 
-class OpenGLSSBOBuffer : public SSBOBuffer
-{
-    public:
-    OpenGLSSBOBuffer(void* data, unsigned int size);
-    ~OpenGLSSBOBuffer();
+        void Update(unsigned int offset, unsigned int size, void* data) override;
 
-    void Bind(unsigned int index) const override;
-    void Unbind() const override;
+        private:
+        unsigned int m_RendererID;
+    };
 
-    private:
-    unsigned int m_RendererID;
-};
+    class OpenGLSSBOBuffer : public SSBOBuffer
+    {
+        public:
+        OpenGLSSBOBuffer(void* data, unsigned int size);
+        ~OpenGLSSBOBuffer();
 
-class OpenGLFramebuffer : public Framebuffer
-{
-    public:
+        void Bind(unsigned int index) const override;
+        void Unbind() const override;
 
-    OpenGLFramebuffer(FramebufferSpecification &specification);
-    ~OpenGLFramebuffer();
+        private:
+        unsigned int m_RendererID;
+    };
 
-    void Bind() const override;
-    void Unbind() const override;
+    class OpenGLFramebuffer : public Framebuffer
+    {
+        public:
 
-    void Resize(unsigned int width, unsigned int height) override;
-    int ReadPixel(unsigned int attachmentIdx, int x, int y) override;
+        OpenGLFramebuffer(FramebufferSpecification &specification);
+        ~OpenGLFramebuffer();
 
-    void ClearAttachment(unsigned int attachmentIdx, int value) override;
+        void Bind() const override;
+        void Unbind() const override;
 
-    const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
-    const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }
-    void Invalidate();
+        void Resize(unsigned int width, unsigned int height) override;
+        int ReadPixel(unsigned int attachmentIdx, int x, int y) override;
 
-    private:
-    unsigned int m_RendererID = 0;
-    FramebufferSpecification m_Specification;
+        void ClearAttachment(unsigned int attachmentIdx, int value) override;
 
-    std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecs;
-    FramebufferTextureSpecification m_DepthSpec = FramebufferTextureFormat::None;
+        const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
+        const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }
+        void Invalidate();
 
-    std::vector<unsigned int> m_ColorAttachments;
-    unsigned int m_DepthAttachment;
+        private:
+        unsigned int m_RendererID = 0;
+        FramebufferSpecification m_Specification;
+
+        std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecs;
+        FramebufferTextureSpecification m_DepthSpec = FramebufferTextureFormat::None;
+
+        std::vector<unsigned int> m_ColorAttachments;
+        unsigned int m_DepthAttachment;
+    };
+
 };
