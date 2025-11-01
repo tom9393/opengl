@@ -3,9 +3,8 @@
 #include "../include/EditorLayer.h"
 #include "../include/TimeStep.h"
 #include "../include/Renderer.h"
-#include "../include/Input.h"
 #include "../include/KeyCodes.h"
-#include "../include/MouseButtonCodes.h"
+#include "../include/Events/EventBroker.h"
 
 namespace Engine
 {
@@ -16,19 +15,30 @@ namespace Engine
     {
         s_Instance = this;
         m_Window = std::unique_ptr<Window>(Window::Create());
-        m_Window->setEventCallback(std::bind(&Application::onEvent, this, std::placeholders::_1));
+        m_Window->SetEventCallback(
+            [](Engine::Event& e)
+            {
+                EventBroker::Get().Publish(e); 
+            }
+        );
+
+        EventBroker::Get().Subscribe<WindowCloseEvent>(BIND_FN(OnWindowClose), this);
+        EventBroker::Get().Subscribe<WindowResizeEvent>(BIND_FN(OnWindowResize), this);
+        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMouseClick), this);
+        EventBroker::Get().Subscribe<KeyboardPressEvent>(BIND_FN(OnKeyPress), this);
 
         Renderer::Init();
 
         m_ImGuiLayer = new ImGuiLayer();
-        pushOverlayer(m_ImGuiLayer);
+        PushOverlayer(m_ImGuiLayer);
     };
 
     Application::~Application()
     {
+        EventBroker::Get().UnsubscribeAll(this);
     };
 
-    void Application::run()
+    void Application::Run()
     {
 
         while (m_Running)
@@ -52,39 +62,36 @@ namespace Engine
             }
             m_ImGuiLayer->End();
 
-            m_Window->onUpdate();
+            m_Window->OnUpdate();
         }
     };
 
-    void Application::onEvent(Event &e)
+    void Application::OnEvent(Event &e)
     {
+        return;
         EventDispatcher dispatcher(e);
-        dispatcher.dispatch<WindowCloseEvent>(std::bind(&Application::OnWindowClose, this, std::placeholders::_1));
-        dispatcher.dispatch<WindowResizeEvent>(std::bind(&Application::OnWindowResize, this, std::placeholders::_1));
-        dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&Application::OnMouseClick, this, std::placeholders::_1));
-        dispatcher.dispatch<KeyboardPressEvent>(std::bind(&Application::OnKeyPress, this, std::placeholders::_1));
+        dispatcher.Dispatch<WindowCloseEvent>(BIND_FN(OnWindowClose));
+        dispatcher.Dispatch<WindowResizeEvent>(BIND_FN(OnWindowResize));
+        dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_FN(OnMouseClick));
+        dispatcher.Dispatch<KeyboardPressEvent>(BIND_FN(OnKeyPress));
 
-        for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
-        {
-            (*--it)->OnEvent(e);
-            if (e.handled)
-            {
-                break;
-            }
-        }
-
-        if (Input::IsKeyPressed(KEY_Q))
-        {
-            m_Running = false;
-        }
+        // Leave this here for now
+        // for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
+        // {
+        //     (*--it)->OnEvent(e);
+        //     if (e.handled)
+        //     {
+        //         break;
+        //     }
+        // }
     };
 
-    void Application::pushLayer(Layer* layer)
+    void Application::PushLayer(Layer* layer)
     {
         m_LayerStack.PushLayer(layer);
         layer->OnAttach();
     };
-    void Application::pushOverlayer(Layer* layer)
+    void Application::PushOverlayer(Layer* layer)
     {
         m_LayerStack.PushOverlay(layer);
         layer->OnAttach();
@@ -111,15 +118,6 @@ namespace Engine
 
     bool Application::OnMouseClick(MouseButtonPressedEvent &e)
     {
-        if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
-        {
-        }
-
-        // if (e.GetMouseButton() == MOUSE_BUTTON_RIGHT)
-        // {
-        //     m_Window->ToggleCursor();
-        // }
-
         return false;
     };
 
@@ -128,7 +126,7 @@ namespace Engine
         if (e.getKeyCode() == KEY_Q)
         {
             WindowCloseEvent e;
-            onEvent(e);
+            EventBroker::Get().Publish(e);
         }
 
         if (e.getKeyCode() == KEY_E)
@@ -141,12 +139,12 @@ namespace Engine
 
     Runtime::Runtime() : Application()
     {
-        pushLayer(new Testlayer());
+        PushLayer(new Testlayer());
     };
 
     Editor::Editor() : Application()
     {
-        pushLayer(new EditorLayer());
+        PushLayer(new EditorLayer());
     };
 
 };

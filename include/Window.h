@@ -20,17 +20,17 @@ namespace Engine
         using EventCallbackFn = std::function<void(Event&)>;
 
         virtual ~Window() {};
-        virtual void onUpdate() = 0;
+        virtual void OnUpdate() = 0;
 
-        virtual unsigned int getWidth() const = 0;
-        virtual unsigned int getHeight() const = 0;
+        virtual unsigned int GetWidth() const = 0;
+        virtual unsigned int GetHeight() const = 0;
 
-        virtual void setEventCallback(const EventCallbackFn &cb) = 0;
-        virtual void setVsync(bool enabled) = 0;
-        virtual bool isVsync() = 0;
+        virtual void SetEventCallback(const EventCallbackFn &cb) = 0;
+        virtual void SetVsync(bool enabled) = 0;
+        virtual bool IsVsync() = 0;
 
         virtual void ToggleCursor() = 0;
-        virtual bool isCursor() = 0;
+        virtual bool IsCursor() = 0;
 
         virtual void* GetNativeWindow() = 0;
 

@@ -25,25 +25,25 @@ namespace Engine
 
     };
 
-#define EVENT_CLASS_TYPE(type) static EventType getStaticType() { return EventType::type; }\
-                                    virtual EventType getEventType() const override { return getStaticType(); }\
-                                    virtual const char* getName() const override { return #type; }
+#define EVENT_CLASS_TYPE(type) static EventType GetStaticType() { return EventType::type; }\
+                                    virtual EventType GetEventType() const override { return GetStaticType(); }\
+                                    virtual const char* GetName() const override { return #type; }
 
-#define EVENT_CLASS_CATEGORY(category) virtual int getCategoryFlags() const override { return category; }
+#define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
 
     class Event
     {
         friend class EventDispatcher;
 
         public:
-        virtual EventType getEventType() const = 0;
-        virtual const char* getName() const = 0;
-        virtual int getCategoryFlags() const = 0;
-        virtual std::string toString() const { return getName(); }
+        virtual EventType GetEventType() const = 0;
+        virtual const char* GetName() const = 0;
+        virtual int GetCategoryFlags() const = 0;
+        virtual std::string ToString() const { return GetName(); }
 
-        bool isInCategory(EventCategory category)
+        bool IsInCategory(EventCategory category)
         {
-            return getCategoryFlags() & category;
+            return GetCategoryFlags() & category;
         };
 
         bool handled = false;
@@ -57,9 +57,9 @@ namespace Engine
         EventDispatcher(Event &e) : m_Event(e) {}
 
         template<typename T>
-        bool dispatch(EventFunction<T> fn)
+        bool Dispatch(EventFunction<T> fn)
         {
-            if (m_Event.getEventType() == T::getStaticType())
+            if (m_Event.GetEventType() == T::GetStaticType())
             {
                 m_Event.handled = fn(*(T*)&m_Event);
                 return true;

@@ -4,7 +4,6 @@
 #include "LinuxWindow.h"
 #include "../OpenGL/OpenGLContext.h"
 #include <GLFW/glfw3.h>
-#include <regex>
 
 namespace Engine
 {
@@ -54,7 +53,7 @@ namespace Engine
 
         glEnable(GL_DEPTH_TEST);
 
-        setVsync(true);
+        SetVsync(true);
         glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
         // GLFW callbacks
@@ -142,13 +141,13 @@ namespace Engine
         glfwDestroyWindow(m_Window);
     };
 
-    void LinuxWindow::onUpdate()
+    void LinuxWindow::OnUpdate()
     {
         glfwPollEvents();
         m_Context->SwapBuffers();
     };
 
-    void LinuxWindow::setVsync(bool enable)
+    void LinuxWindow::SetVsync(bool enable)
     {
         if (enable)
             glfwSwapInterval(1);
@@ -158,7 +157,7 @@ namespace Engine
         m_Data.VSync = enable;
     };
 
-    bool LinuxWindow::isVsync()
+    bool LinuxWindow::IsVsync()
     {
         return m_Data.VSync;
     };
@@ -180,7 +179,7 @@ namespace Engine
         m_Data.cursor = !m_Data.cursor;
 
     };
-    bool LinuxWindow::isCursor()
+    bool LinuxWindow::IsCursor()
     {
         return m_Data.cursor;
     };

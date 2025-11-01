@@ -20,6 +20,7 @@ namespace Engine
                 public:
                 EditorCamera() = default;
                 EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
+                ~EditorCamera();
 
                 void OnUpdate(TimeStep ts);
                 void OnEvent(Event& e);

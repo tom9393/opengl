@@ -1,4 +1,5 @@
 #include "include/Application.h"
+#include "include/Events/Event.h"
 
 const bool editor = true;
 
@@ -16,7 +17,7 @@ int main()
 		app = new Engine::Runtime();
 	}
 
-	app->run();
+	app->Run();
 
 	delete app;
 

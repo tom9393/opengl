@@ -4,6 +4,7 @@
 #include "../include/Renderer.h"
 #include "../include/Input.h"
 #include "../include/AssimpLoader.h"
+#include "../include/Events/EventBroker.h"
 
 namespace Engine
 {
@@ -20,6 +21,7 @@ namespace Engine
 
     void Testlayer::OnAttach() {
         std::cout << "Testlayer attached" << std::endl;
+        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed), this);
     };
 
     void Testlayer::OnDetach() {
@@ -77,8 +79,7 @@ namespace Engine
 
     void Testlayer::OnEvent(Event& e)
     {
-        EventDispatcher dispatcher(e);
-        dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&Testlayer::OnMouseButtonPressed, this, std::placeholders::_1));
+        return;
     };
 
     bool Testlayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)

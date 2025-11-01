@@ -10,6 +10,7 @@
 #include "../include/Utils/PlatformUtils.h"
 #include "../include/Utils/ScopedImGuiStyle.h"
 #include "../include/Scene/Components.h"
+#include "../include/Events/EventBroker.h"
 
 namespace Engine
 {
@@ -40,10 +41,13 @@ namespace Engine
 
     void EditorLayer::OnAttach() {
         std::cout << "EditorLayer attached" << std::endl;
+        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed), this);
+        EventBroker::Get().Subscribe<KeyboardPressEvent>(BIND_FN(OnKeyEvent), this);
     };
 
     void EditorLayer::OnDetach() {
         std::cout << "EditorLayer detached" << std::endl;
+        EventBroker::Get().UnsubscribeAll(this);
     };
 
     void EditorLayer::OnUpdate(TimeStep ts)
@@ -191,7 +195,7 @@ namespace Engine
             }
             if (ImGui::MenuItem("Exit"))
             {
-                Application::Get().close();
+                Application::Get().Close();
             }
             ImGui::EndMenu();
         }
@@ -216,9 +220,10 @@ namespace Engine
 
     void EditorLayer::OnEvent(Event& e)
     {
+        return;
         EventDispatcher dispatcher(e);
-        dispatcher.dispatch<MouseButtonPressedEvent>(std::bind(&EditorLayer::OnMouseButtonPressed, this, std::placeholders::_1));
-        dispatcher.dispatch<KeyboardPressEvent>(std::bind(&EditorLayer::OnKeyEvent, this, std::placeholders::_1));
+        dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed));
+        dispatcher.Dispatch<KeyboardPressEvent>(BIND_FN(OnKeyEvent));
     };
 
     bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)

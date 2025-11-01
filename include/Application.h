@@ -19,12 +19,12 @@ namespace Engine
         Application();
         virtual ~Application();
 
-        void run();
-        void onEvent(Event &e);
-        void pushLayer(Layer* layer);
-        void pushOverlayer(Layer* layer);
+        void Run();
+        void OnEvent(Event &e);
+        void PushLayer(Layer* layer);
+        void PushOverlayer(Layer* layer);
 
-        void close() { m_Running = false; };
+        void Close() { m_Running = false; };
 
         static Application& Get() { return *s_Instance; }
         Window& GetWindow() { return *m_Window; }

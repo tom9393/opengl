@@ -46,8 +46,8 @@ namespace Engine
         if (m_BlockEvents)
         {
             ImGuiIO &io = ImGui::GetIO();
-            e.handled |= e.isInCategory(EventCategoryMouse) & io.WantCaptureMouse;
-            e.handled |= e.isInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+            e.handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+            e.handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
         }
     };
 
@@ -63,7 +63,7 @@ namespace Engine
     {
         ImGuiIO& io = ImGui::GetIO();
         Application& app = Application::Get();
-        io.DisplaySize = ImVec2(app.GetWindow().getWidth(), app.GetWindow().getHeight());
+        io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

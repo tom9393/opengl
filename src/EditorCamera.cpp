@@ -1,4 +1,5 @@
 #include "../include/EditorCamera.h"
+#include "../include/Events/EventBroker.h"
 #include <functional>
 #include <glm/ext/matrix_transform.hpp>
 
@@ -10,7 +11,13 @@ namespace Engine
 
         EditorCamera::EditorCamera(float fov, float aspectRatio, float near, float far) : m_FOV(fov), m_AspectRatio(aspectRatio), m_NearClip(near), m_FarClip(far), Camera(glm::perspective(glm::radians(fov), aspectRatio, near, far))
         {
+                EventBroker::Get().Subscribe<MouseScrolledEvent>(BIND_FN(OnMouseScroll), this);
                 UpdateView();
+        }
+
+        EditorCamera::~EditorCamera()
+        {
+                EventBroker::Get().UnsubscribeAll(this);
         }
 
         void EditorCamera::UpdateProjection()
@@ -75,8 +82,6 @@ namespace Engine
 
         void EditorCamera::OnEvent(Event& e)
         {
-                EventDispatcher dispatcher(e);
-                dispatcher.dispatch<MouseScrolledEvent>(std::bind(&EditorCamera::OnMouseScroll, this, std::placeholders::_1));
         }
 
         bool EditorCamera::OnMouseScroll(MouseScrolledEvent& e)
