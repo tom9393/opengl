@@ -1,6 +1,6 @@
 #include "OpenGLBuffer.h"
 #include <GL/gl.h>
-#include <glad/glad.h>
+#include "../../pch.h"
 
 namespace Engine
 {
