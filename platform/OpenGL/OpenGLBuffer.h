@@ -107,6 +107,7 @@ namespace Engine
 
         const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
         const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }
+        const unsigned int GetDepthAttachmentRendererID() const override { return m_DepthAttachment; }
         void Invalidate();
 
         private:

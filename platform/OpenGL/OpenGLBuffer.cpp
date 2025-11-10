@@ -217,7 +217,6 @@ namespace Engine
         {
             glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
 
-
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -348,10 +347,8 @@ namespace Engine
         glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIdx);
 
         int pixelData = -1;
-        // Read one pixel from the integer attachment
         glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
 
-        // Optionally unbind or restore previous read buffer if your engine expects it
         return pixelData;
     };
 

@@ -116,6 +116,7 @@ namespace Engine
 
         virtual const FramebufferSpecification &GetSpecification() const = 0;
         virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
+        virtual const unsigned int GetDepthAttachmentRendererID() const = 0;
         static Shared<Framebuffer> Create(FramebufferSpecification &specification);
     };
 
