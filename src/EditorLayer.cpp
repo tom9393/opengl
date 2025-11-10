@@ -100,9 +100,12 @@ namespace Engine
     {
         glm::vec2 mousePos = m_Viewport.GetMousePosition();
 
-        if (m_Viewport.Hovered && m_Viewport.Contains(mousePos))
+        if (m_Viewport.Hovered)
         {
-            int pixelData = m_Framebuffer->ReadPixel(1, mousePos.x, mousePos.y);
+            int mouseX = (int)mousePos.x;
+            int mouseY = (int)(m_Viewport.Size.y - mousePos.y - 1);
+
+            int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
             m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_Scene.get());
         };
     };

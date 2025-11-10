@@ -22,7 +22,6 @@
 #include <filesystem>
 #include <initializer_list>
 
-//#include <glad/glad.h> 
 #include "lib/glad.h"
 #include <GLFW/glfw3.h>
 

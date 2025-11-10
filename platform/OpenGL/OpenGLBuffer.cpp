@@ -1,5 +1,4 @@
 #include "OpenGLBuffer.h"
-#include <GL/gl.h>
 #include "../../pch.h"
 
 namespace Engine
@@ -345,9 +344,14 @@ namespace Engine
 
     int OpenGLFramebuffer::ReadPixel(unsigned int attachmentIdx, int x, int y)
     {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
         glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIdx);
-        int pixelData;
+
+        int pixelData = -1;
+        // Read one pixel from the integer attachment
         glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+
+        // Optionally unbind or restore previous read buffer if your engine expects it
         return pixelData;
     };
 
