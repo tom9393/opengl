@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../pch.h"
-#include "../../include/Shader.h"
+#include "../../include/Render/Shader.h"
 
 namespace Engine
 {

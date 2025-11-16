@@ -6,6 +6,7 @@
 #include "Events/KeyboardEvent.h"
 #include "Layer.h"
 #include "Panels/ContentBrowserPanel.h"
+#include "Render/RenderGraph.h"
 #include "Scene/Scene.h"
 #include "Texture.h"
 #include "TimeStep.h"
@@ -78,9 +79,9 @@ namespace Engine
         void DrawMenuBar();
         void DrawViewport();
 
-        void BeginViewportRender();
-        void RenderScene(TimeStep ts);
-        void EndViewportRender();
+        // void BeginViewportRender();
+        // void RenderScene(TimeStep ts);
+        // void EndViewportRender();
 
         void UpdateSelectedEntity();
         void UpdateHoveredEntity();
@@ -104,9 +105,7 @@ namespace Engine
 
         int m_GizmoType = -1;
 
-        Shared<Texture2D> m_Texture;
-        Shared<Mesh> m_SelectedMesh;
-        Shared<Framebuffer> m_Framebuffer;
+        RenderGraph m_RenderGraph;
 
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;

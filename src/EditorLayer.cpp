@@ -1,7 +1,7 @@
 #include "../pch.h"
 #include "../include/MouseButtonCodes.h"
 #include "../include/EditorLayer.h"
-#include "../include/Renderer.h"
+#include "../include/Render/Renderer.h"
 #include "../include/Input.h"
 #include "../include/KeyCodes.h"
 #include "../include/Application.h"
@@ -16,6 +16,7 @@ namespace Engine
 {
 
     EditorLayer::EditorLayer()
+        : m_RenderGraph(500, 500)
     {
         FramebufferSpecification spec;
         spec.width = 500;
@@ -33,6 +34,22 @@ namespace Engine
         m_Scene = MakeShared<Scene>();
         m_Scene->OnViewportResize(500, 500);
         m_SceneHierarchyPanel.SetContext(m_Scene);
+
+        // Single pass
+        auto& pass = m_RenderGraph.AddPass("ScenePass");
+        pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth });
+        pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
+        pass.SetClearInt(1, -1); // clear entity id attachment to -1
+
+        // Callback will be called each frame (with the frame's TimeStep)
+        pass.SetCallback([this](TimeStep ts)
+        {
+            // This mirrors what BeginViewportRender + RenderScene used to do.
+            Renderer::BeginScene(m_EditorCamera->GetViewProjection());
+            if (m_Scene)
+                m_Scene->OnUpdate(ts);
+            Renderer::EndScene();
+        });
     };
 
     EditorLayer::~EditorLayer()
@@ -56,30 +73,9 @@ namespace Engine
 
         m_EditorCamera->OnUpdate(ts);
 
-        BeginViewportRender();
-        RenderScene(ts);
-        EndViewportRender();
+        m_RenderGraph.Execute(ts);
 
         UpdateHoveredEntity();
-    };
-
-    void EditorLayer::BeginViewportRender()
-    {
-        m_Framebuffer->Bind();
-        RenderCommand::SetClearColor({0.2f, 0.2f, 0.2f, 1.0f});
-        RenderCommand::Clear();
-        m_Framebuffer->ClearAttachment(1, -1);
-        Renderer::BeginScene(m_EditorCamera->GetViewProjection());
-    };
-
-    void EditorLayer::RenderScene(TimeStep ts)
-    {
-        if (m_Scene) m_Scene->OnUpdate(ts);
-    };
-
-    void EditorLayer::EndViewportRender()
-    {
-        m_Framebuffer->Unbind();
     };
 
     void EditorLayer::OnImGuiRender()
