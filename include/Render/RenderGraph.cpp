@@ -1,7 +1,6 @@
 #include "RenderGraph.h"
 #include "RenderCommand.h"
 #include "Renderer.h"
-#include "../Buffer.h"
 
 namespace Engine
 {
@@ -21,46 +20,51 @@ namespace Engine
 
 	void RenderGraph::Execute(TimeStep ts)
 	{
-	    // Execute passes in-order.
+	    m_PassFramebuffers.clear();
+
 	    for (auto& passPtr : m_Passes)
 	    {
 		RenderPass& pass = *passPtr;
 		const auto& attachments = pass.GetAttachments();
 
-		// Acquire framebuffer for this pass
-		Shared<Framebuffer> fb = m_Pool.AcquireFramebuffer(attachments, m_Width, m_Height);
-		if (!fb)
+		Shared<FramebufferHandle> fbHandle = m_Pool.AcquireFramebuffer(attachments, m_Width, m_Height);
+		if (!fbHandle)
 		    continue;
 
-		fb->Bind();
+		// Store handle so client code can query after Execute
+		m_PassFramebuffers[pass.GetName()] = fbHandle;
 
-		// If pass specified clear color, use it and clear. Otherwise keep current clear.
-		if (pass.HasClearColor())
+		// Bind and clear
 		{
-		    RenderCommand::SetClearColor(pass.GetClearColor());
-		    RenderCommand::Clear();
-		}
-		else
-		{
-		    // Even if no clear color specified, we'll still clear depth buffer by default to be safe
-		    // If you want to avoid extra clears, make this configurable.
-		    RenderCommand::Clear();
+		    // Using underlying fb->Bind directly is fine; if you prefer RAII use ScopedFramebufferBind here.
+		    fbHandle->GetFramebuffer()->Bind();
+
+		    if (pass.HasClearColor())
+		    {
+			RenderCommand::SetClearColor(pass.GetClearColor());
+			RenderCommand::Clear();
+		    }
+		    else
+		    {
+			// Default clear (we still clear depth/stencil to be safe)
+			RenderCommand::Clear();
+		    }
+
+		    // Clear integer attachments specified by the pass
+		    for (auto& kv : pass.GetClearInts())
+		    {
+			unsigned int attachmentIndex = kv.first;
+			int value = kv.second;
+			fbHandle->ClearAttachment(attachmentIndex, value);
+		    }
 		}
 
-		// Clear integer attachments (e.g., entity id) using the framebuffer helper
-		for (auto& kv : pass.GetClearInts())
-		{
-		    unsigned int attachmentIndex = kv.first;
-		    int value = kv.second;
-		    fb->ClearAttachment(attachmentIndex, value);
-		}
-
-		// Call the pass callback (client code will issue Renderer::BeginScene / submit geometry)
+		// Execute the pass callback
 		auto cb = pass.GetCallback();
 		if (cb)
 		    cb(ts);
 
-		fb->Unbind();
+		fbHandle->GetFramebuffer()->Unbind();
 	    }
 	}
 
@@ -70,7 +74,22 @@ namespace Engine
 		return;
 	    m_Width = width;
 	    m_Height = height;
-	    m_Pool.Clear(); // Drop cached framebuffers (they will be recreated with new size on next Acquire)
+	    m_Pool.Clear();
+	}
+
+	Shared<FramebufferHandle> RenderGraph::GetPassFramebuffer(const std::string& passName) const
+	{
+	    auto it = m_PassFramebuffers.find(passName);
+	    if (it == m_PassFramebuffers.end())
+		return nullptr;
+	    return it->second;
+	}
+
+	unsigned int RenderGraph::GetPassColorAttachmentRendererID(const std::string& passName, unsigned int idx) const
+	{
+	    auto fb = GetPassFramebuffer(passName);
+	    if (!fb) return 0;
+	    return fb->GetColorAttachmentRendererID(idx);
 	}
 
 };

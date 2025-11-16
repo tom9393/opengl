@@ -79,10 +79,6 @@ namespace Engine
         void DrawMenuBar();
         void DrawViewport();
 
-        // void BeginViewportRender();
-        // void RenderScene(TimeStep ts);
-        // void EndViewportRender();
-
         void UpdateSelectedEntity();
         void UpdateHoveredEntity();
 

@@ -89,6 +89,7 @@ namespace Engine
     {
         FramebufferAttachmentSpecification() = default;
         FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
+        FramebufferAttachmentSpecification(std::vector<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
 
         std::vector<FramebufferTextureSpecification> Attachments;
     };

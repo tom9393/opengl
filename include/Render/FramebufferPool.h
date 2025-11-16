@@ -4,14 +4,47 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "../Buffer.h"
-
-// A small pool that caches created Framebuffers keyed by size + attachment layout.
-// It wraps your existing Framebuffer::Create(FramebufferSpecification).
+#include "../Buffer.h"       // FramebufferSpecification, FramebufferTextureFormat
 
 namespace Engine
 {
 
+    // FramebufferHandle wraps a Shared<Framebuffer> and exposes helper methods the rest of the engine expects:
+    // - GetColorAttachmentRendererID(idx)
+    // - ReadPixel(attachmentIdx, x, y)
+    // - ClearAttachment(attachmentIdx, value)
+    class FramebufferHandle
+    {
+    public:
+        explicit FramebufferHandle(const Shared<Framebuffer>& fb) : m_Framebuffer(fb) {}
+
+        // Expose underlying framebuffer for advanced operations
+        Shared<Framebuffer> GetFramebuffer() const { return m_Framebuffer; }
+
+        unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const
+        {
+            if (!m_Framebuffer) return 0;
+            return m_Framebuffer->GetColorAttachmentRendererID(idx);
+        }
+
+        int ReadPixel(unsigned int attachmentIdx, int x, int y) const
+        {
+            if (!m_Framebuffer) return -1;
+            return m_Framebuffer->ReadPixel(attachmentIdx, x, y);
+        }
+
+        void ClearAttachment(unsigned int attachmentIdx, int value) const
+        {
+            if (!m_Framebuffer) return;
+            m_Framebuffer->ClearAttachment(attachmentIdx, value);
+        }
+
+    private:
+        Shared<Framebuffer> m_Framebuffer;
+    };
+
+    // A small pool that caches created Framebuffers keyed by size + attachment layout.
+    // It wraps your existing Framebuffer::Create(FramebufferSpecification).
     class FramebufferPool
     {
     public:
@@ -19,8 +52,8 @@ namespace Engine
         ~FramebufferPool() = default;
 
         // Acquire or create a framebuffer configured with the given attachments and size.
-        // The attachments vector is a list of FramebufferTextureFormat in attachment order.
-        Shared<Framebuffer> AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height);
+        // Returns a FramebufferHandle (wrapped in Shared) that provides the convenience methods.
+        Shared<FramebufferHandle> AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height);
 
         // Clears the pool (free all resources)
         void Clear();
@@ -29,7 +62,7 @@ namespace Engine
         std::string BuildKey(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height) const;
 
     private:
-        std::unordered_map<std::string, Shared<Framebuffer>> m_Pool;
+        std::unordered_map<std::string, Shared<FramebufferHandle>> m_Pool;
     };
 
-}
+};

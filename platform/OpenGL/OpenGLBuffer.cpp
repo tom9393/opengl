@@ -354,8 +354,27 @@ namespace Engine
 
     void OpenGLFramebuffer::ClearAttachment(unsigned int attachmentIdx, int value)
     {
+        // auto& spec = m_ColorAttachmentSpecs[attachmentIdx];
+        // glClearTexImage(m_ColorAttachments[attachmentIdx], 0, FBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
+
         auto& spec = m_ColorAttachmentSpecs[attachmentIdx];
-        glClearTexImage(m_ColorAttachments[attachmentIdx], 0, FBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
+
+        // If this is an integer attachment (RED_INTEGER / R32I), clear via the bound framebuffer with glClearBufferiv.
+        // This works regardless of multisampling on the FBO (glClearTexImage cannot be used on multisample textures).
+        if (spec.TextureFormat == FramebufferTextureFormat::RED_INTEGER)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+            GLint clearValue = value;
+            glClearBufferiv(GL_COLOR, attachmentIdx, &clearValue);
+        }
+        else
+        {
+            // For color attachments like RGBA8, clearing via glClearBufferfv is safe and simple.
+            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+            GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+            // If you want to accept a color parameter, extend the API. For now we clear to zero.
+            glClearBufferfv(GL_COLOR, attachmentIdx, clearColor);
+        }
     };
 
 };

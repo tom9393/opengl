@@ -18,12 +18,6 @@ namespace Engine
     EditorLayer::EditorLayer()
         : m_RenderGraph(500, 500)
     {
-        FramebufferSpecification spec;
-        spec.width = 500;
-        spec.height = 500;
-        spec.attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
-        m_Framebuffer = Framebuffer::Create(spec);
-
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -101,7 +95,11 @@ namespace Engine
             int mouseX = (int)mousePos.x;
             int mouseY = (int)(m_Viewport.Size.y - mousePos.y - 1);
 
-            int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
+            Shared<FramebufferHandle> fbHandle = m_RenderGraph.GetPassFramebuffer("ScenePass");
+            if (!fbHandle)
+                return;
+
+            int pixelData = fbHandle->ReadPixel(1, mouseX, mouseY);
             m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_Scene.get());
         };
     };
@@ -169,10 +167,16 @@ namespace Engine
 
         if (m_Viewport.Updated)
         {
-            m_Framebuffer->Resize(m_Viewport.Size.x, m_Viewport.Size.y);
+            m_RenderGraph.Resize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
             m_EditorCamera->SetViewportSize(m_Viewport.Size.x, m_Viewport.Size.y);
+            m_Scene->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
         }
-        ImGui::Image(m_Framebuffer->GetColorAttachmentRendererID(0), ImVec2{m_Viewport.Size.x, m_Viewport.Size.y}, ImVec2{0, 1}, ImVec2{1, 0});
+
+        unsigned int texID = m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
+        if (texID != 0)
+        {
+            ImGui::Image((void*)(intptr_t)texID, ImVec2{m_Viewport.Size.x, m_Viewport.Size.y}, ImVec2{0, 1}, ImVec2{1, 0});
+        }
 
         UpdateSelectedEntity();
         

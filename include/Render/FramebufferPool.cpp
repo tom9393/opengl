@@ -5,24 +5,32 @@
 namespace Engine
 {
 
-	Shared<Framebuffer> FramebufferPool::AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height)
+	Shared<FramebufferHandle> FramebufferPool::AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height)
 	{
 	    std::string key = BuildKey(attachments, width, height);
 	    auto it = m_Pool.find(key);
 	    if (it != m_Pool.end())
 		return it->second;
 
-	    // Build FramebufferSpecification consistent with the rest of your codebase
+	    std::vector<FramebufferTextureSpecification> specs;
+	    for (auto &attachment : attachments)
+		{
+			specs.emplace_back(attachment);
+		}
+
 	    FramebufferSpecification spec;
 	    spec.width = width;
 	    spec.height = height;
 	    spec.samples = 1;
-	    // reinterpret existing API: earlier you set spec.attachments directly to FramebufferTextureFormat list
-	    spec.attachments = attachments;
+	    spec.attachments = specs;
 
 	    Shared<Framebuffer> fb = Framebuffer::Create(spec);
-	    m_Pool.emplace(key, fb);
-	    return fb;
+	    if (!fb)
+		return nullptr;
+
+	    Shared<FramebufferHandle> handle = MakeShared<FramebufferHandle>(fb);
+	    m_Pool.emplace(key, handle);
+	    return handle;
 	}
 
 	void FramebufferPool::Clear()
