@@ -42,6 +42,26 @@ namespace Engine
 		Renderer::EndScene();
 	};
 
+	void Scene::OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera)
+	{
+		Renderer::BeginScene(camera->GetViewProjection());
+
+		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
+		for (auto entity : group)
+		{
+			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
+			glm::mat4 t = transform.GetTransform();
+			auto meshes = m_ModelLibrary.GetModelByPath(model.model, (int)entity)->GetMeshes();
+			for (auto& mesh : meshes)
+			{
+				Renderer::SetTexture(mesh->GetTextureLayout());
+				Renderer::Submit(mesh, t);
+			}
+		}
+
+		Renderer::EndScene();
+	}
+
 	void Scene::OnViewportResize(unsigned int width, unsigned int height)
 	{
 		m_ViewportWidth = width;
@@ -76,12 +96,6 @@ namespace Engine
 	void Scene::OnComponentAdded<SceneCameraComponent>(Entity entity, SceneCameraComponent &component)
 	{
 		component.sceneCamera->SetViewportSize(m_ViewportWidth, m_ViewportHeight);
-	}
-
-	template <>
-	void Scene::OnComponentAdded<EditorCameraComponent>(Entity entity, EditorCameraComponent &component)
-	{
-		component.editorCamera->SetViewportSize(m_ViewportWidth, m_ViewportHeight);
 	}
 
 	template <>

@@ -21,28 +21,34 @@ namespace Engine
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        io.Fonts->AddFontFromFileTTF("/home/tom/Coding/c++/opengl/assets/fonts/opensans/OpenSans-Bold.ttf", 18.0f);
-        io.FontDefault = io.Fonts->AddFontFromFileTTF("/home/tom/Coding/c++/opengl/assets/fonts/opensans/OpenSans-Regular.ttf", 18.0f);
+        io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", 18.0f);
+        io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", 18.0f);
 
         m_EditorCamera = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
         m_Scene = MakeShared<Scene>();
         m_Scene->OnViewportResize(500, 500);
         m_SceneHierarchyPanel.SetContext(m_Scene);
 
-        // Single pass
         auto& pass = m_RenderGraph.AddPass("ScenePass");
         pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth });
         pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
-        pass.SetClearInt(1, -1); // clear entity id attachment to -1
+        pass.SetClearInt(1, -1);
 
         // Callback will be called each frame (with the frame's TimeStep)
         pass.SetCallback([this](TimeStep ts)
         {
-            // This mirrors what BeginViewportRender + RenderScene used to do.
-            Renderer::BeginScene(m_EditorCamera->GetViewProjection());
-            if (m_Scene)
-                m_Scene->OnUpdate(ts);
-            Renderer::EndScene();
+            switch (m_SceneState) {
+                case Engine::SceneState::Edit:
+                {
+                    m_Scene->OnUpdateEditor(ts, m_EditorCamera);
+                    break;
+                }
+                case Engine::SceneState::Play:
+                {
+                    m_Scene->OnUpdate(ts);
+                    break;
+                }
+            }
         });
     };
 
@@ -66,7 +72,6 @@ namespace Engine
         PROFILE_FUNCTION();
 
         m_EditorCamera->OnUpdate(ts);
-
         m_RenderGraph.Execute(ts);
 
         UpdateHoveredEntity();
@@ -79,6 +84,7 @@ namespace Engine
         DrawMenuBar();
         DrawStats();
         DrawViewport();
+        DrawToolbar();
 
         m_SceneHierarchyPanel.OnImGuiRender();
         m_ContentBrowserPanel.OnImGuiRender();
@@ -178,10 +184,38 @@ namespace Engine
             ImGui::Image((void*)(intptr_t)texID, ImVec2{m_Viewport.Size.x, m_Viewport.Size.y}, ImVec2{0, 1}, ImVec2{1, 0});
         }
 
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE"))
+            {
+                const char* path = (char*)payload->Data;
+                std::cout << path << std::endl;
+                OpenScene(path);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
         UpdateSelectedEntity();
         
         ImGui::End();
     };
+    
+    void EditorLayer::DrawToolbar()
+    {
+        ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        const char* txt = m_SceneState == SceneState::Edit ? "Play" : "Stop";
+        if (ImGui::Button(txt))
+        {
+            if (m_SceneState == SceneState::Edit)
+                OnScenePlay();
+            else if (m_SceneState == SceneState::Play)
+                OnSceneStop();
+        }
+
+        ImGui::End();
+        
+    }
 
     void EditorLayer::DrawMenuBar()
     {
@@ -274,6 +308,18 @@ namespace Engine
         }
     };
 
+    void EditorLayer::OpenScene(const char* path)
+    {
+        if (path != nullptr)
+        {
+            m_Scene = MakeShared<Scene>();
+            m_Scene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
+            m_SceneHierarchyPanel.SetContext(m_Scene);
+            SceneSerializer serializer(m_Scene);
+            serializer.Deserialize(path);
+        }
+    }
+
     void EditorLayer::SaveScene()
     {
         std::string filepath = FileDialogs::SaveFile("*.pmblend");
@@ -283,5 +329,15 @@ namespace Engine
             serializer.Serialize(filepath);
         }
     };
+
+    void EditorLayer::OnScenePlay()
+    {
+        m_SceneState = SceneState::Play;
+    }
+
+    void EditorLayer::OnSceneStop()
+    {
+        m_SceneState = SceneState::Edit;
+    }
 
 };

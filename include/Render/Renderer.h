@@ -35,6 +35,7 @@ namespace Engine
         static void ToggleWireframe();
 
         static void BeginScene(const glm::mat4& viewProjection);
+        static void BeginScene();
         static void EndScene();
 
         static void SetTexture(TextureLayout &textureLayout);

@@ -74,15 +74,4 @@ namespace Engine
         SceneCameraComponent(const Shared<SceneCamera> camera) : sceneCamera(camera) {}
     };
 
-    struct EditorCameraComponent
-    {
-        Shared<EditorCamera> editorCamera;
-        bool primary = true;
-        bool fixedAspectRatio = false;
-
-        EditorCameraComponent() = default;
-        EditorCameraComponent(const EditorCameraComponent&) = default;
-        EditorCameraComponent(const Shared<EditorCamera> camera) : editorCamera(camera) {}
-    };
-
 };

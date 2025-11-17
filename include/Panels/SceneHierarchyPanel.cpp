@@ -248,25 +248,13 @@ namespace Engine
 
 			if (ImGui::MenuItem("Camera"))
 			{
-				m_SelectionContext.AddComponent<SceneCameraComponent>();
+				m_SelectionContext.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
 				ImGui::CloseCurrentPopup();
 			}
 
-			if (ImGui::MenuItem("Leopard"))
+			if (ImGui::MenuItem("Model"))
 			{
-				m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Sukhoi"))
-			{
-				m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/sukhoi.assbin");
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Floor"))
-			{
-				m_SelectionContext.AddComponent<ModelComponent>("/home/tom/Coding/c++/opengl/assets/floor.assbin");
+				m_SelectionContext.AddComponent<ModelComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -282,7 +270,20 @@ namespace Engine
 
 		ImGui::PopItemWidth();
 
-		DrawComponent<ModelComponent>("Model", entity, [](auto &component){});
+		DrawComponent<ModelComponent>("Model", entity, [](auto &component)
+		{
+			ImGui::Button("Model", ImVec2(100.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
+			    {
+				const char* path = (char*)payload->Data;
+				std::cout << path << std::endl;
+				component.model = std::string(path);
+			    }
+			    ImGui::EndDragDropTarget();
+			}
+		});
 		DrawComponent<TransformComponent>("Transform", entity, [](auto &component)
 		{
 			glm::vec3 translation = component.translation;

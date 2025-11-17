@@ -62,6 +62,12 @@ namespace Engine
         }
     };
 
+    enum class SceneState
+    {
+        Edit = 0,
+        Play = 1
+    };
+
     class EditorLayer : public Layer
     {
         public:
@@ -78,6 +84,7 @@ namespace Engine
         void DrawStats();
         void DrawMenuBar();
         void DrawViewport();
+        void DrawToolbar();
 
         void UpdateSelectedEntity();
         void UpdateHoveredEntity();
@@ -86,7 +93,11 @@ namespace Engine
         void UseGizmo(Entity entity);
 
         void OpenScene();
+        void OpenScene(const char* path);
         void SaveScene();
+
+        void OnScenePlay();
+        void OnSceneStop();
 
         bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
         bool OnKeyEvent(KeyboardPressEvent &e);
@@ -106,6 +117,8 @@ namespace Engine
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;
         ContentBrowserPanel m_ContentBrowserPanel;
+
+        SceneState m_SceneState = SceneState::Edit;
     };
 
 };

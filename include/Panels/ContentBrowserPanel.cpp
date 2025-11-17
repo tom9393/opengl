@@ -7,8 +7,8 @@ namespace Engine
 
 	ContentBrowserPanel::ContentBrowserPanel() : m_CurrentDirectory(s_AssetPath)
 	{
-		m_DirIcon = Texture2D::Create("/home/tom/Coding/c++/opengl/assets/folderIcon.png", TextureType::None);
-		m_FileIcon = Texture2D::Create("/home/tom/Coding/c++/opengl/assets/documentIcon.png", TextureType::None);
+		m_DirIcon = Texture2D::Create("assets/folderIcon.png", TextureType::None);
+		m_FileIcon = Texture2D::Create("assets/documentIcon.png", TextureType::None);
 	};
 
 	void ContentBrowserPanel::OnImGuiRender()
@@ -24,6 +24,16 @@ namespace Engine
 		};
 
 		float imageSize = 128.0f;
+		static float padding = 16.0f;
+		static float thumbnailSize = 128.0f;
+		float cellSize = thumbnailSize + padding;
+
+		float panelWidth = ImGui::GetContentRegionAvail().x;
+		int columnCount = (int)(panelWidth / cellSize);
+		if (columnCount < 1)
+			columnCount = 1;
+
+		ImGui::Columns(columnCount, 0, false);
 
 		for (auto& entry : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
@@ -35,18 +45,38 @@ namespace Engine
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::ImageButton("Image", (ImTextureID)icon->GetID(), { imageSize, imageSize }, { 0, 1 }, { 1, 0 });
 			ImGui::PopStyleColor();
-			if (entry.is_directory())
+			if (ImGui::BeginDragDropSource())
 			{
-				if (ImGui::Button(relativePath.filename().string().c_str()))
+				std::filesystem::path relativePath(path);
+				const char* itemPath = relativePath.c_str();
+
+				std::filesystem::path itemExtension = relativePath.extension();
+				if (itemExtension == ".pmblend")
 				{
+					ImGui::SetDragDropPayload("SCENE", itemPath, strlen(itemPath) + 1);
+				} else if (itemExtension == ".assbin") {
+					ImGui::SetDragDropPayload("MODEL", itemPath, strlen(itemPath) + 1);
+				} else {
+					ImGui::SetDragDropPayload("UNKNOWN_ITEM", itemPath, strlen(itemPath) + 1);
+				}
+
+				ImGui::EndDragDropSource();
+			}
+			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				if (entry.is_directory())
 					m_CurrentDirectory /= path.filename();
-				};
+
 			}
-			else {
-				if (ImGui::Button(relativePath.filename().string().c_str())) {};
-			}
+			ImGui::TextWrapped(path.filename().c_str());
+			ImGui::NextColumn();
 			ImGui::PopID();
 		};
+
+		ImGui::Columns(1);
+
+		ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 16, 512);
+		ImGui::SliderFloat("Padding", &padding, 0, 32);
 
 		ImGui::End();
 	};

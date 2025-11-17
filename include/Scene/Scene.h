@@ -4,6 +4,7 @@
 #include "../TimeStep.h"
 #include "SceneSerializer.h"
 #include "../ModelLibrary.h"
+#include "../EditorCamera.h"
 
 namespace Engine
 {
@@ -17,6 +18,8 @@ namespace Engine
         ~Scene();
 
         void OnUpdate(TimeStep ts);
+        void OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera);
+
         void OnViewportResize(unsigned int width, unsigned int height);
 
         Entity CreateEntity(const std::string &name = "Entity");

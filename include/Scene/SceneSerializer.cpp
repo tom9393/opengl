@@ -249,7 +249,7 @@ namespace Engine
 				auto cameraComponent = entity["CameraComponent"];
 				if (cameraComponent)
 				{
-					auto& cc = deserializedEntity.AddComponent<SceneCameraComponent>();
+					auto& cc = deserializedEntity.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
 
 					auto cameraData = cameraComponent["Camera"];
 					cc.sceneCamera->SetProjectionType((SceneCamera::ProjectionType)cameraData["ProjectionType"].as<int>());
