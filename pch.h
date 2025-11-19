@@ -22,7 +22,7 @@
 #include <filesystem>
 #include <initializer_list>
 
-#include "lib/glad.h"
+#include "lib/glad/glad.h"
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -38,7 +38,7 @@
 
 #include "lib/ImGuizmo.h"
 
-#include "lib/stb_image.h"
+#include "lib/stb/stb_image.h"
 
 #include "include/Instrumentor.h"
 #include "include/Preprocessor.h"

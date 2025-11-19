@@ -1,5 +1,4 @@
 #!/bin/bash
 
-cmake .
-make
-./opengl.exe
+cd build
+./opengl
