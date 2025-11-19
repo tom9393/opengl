@@ -3,12 +3,12 @@
 namespace Engine
 {
 
-	static const std::filesystem::path s_AssetPath = "assets";
+	static const std::filesystem::path s_AssetPath = "../assets";
 
 	ContentBrowserPanel::ContentBrowserPanel() : m_CurrentDirectory(s_AssetPath)
 	{
-		m_DirIcon = Texture2D::Create("assets/folderIcon.png", TextureType::None);
-		m_FileIcon = Texture2D::Create("assets/documentIcon.png", TextureType::None);
+		m_DirIcon = Texture2D::Create("../assets/folderIcon.png", TextureType::None);
+		m_FileIcon = Texture2D::Create("../assets/documentIcon.png", TextureType::None);
 	};
 
 	void ContentBrowserPanel::OnImGuiRender()

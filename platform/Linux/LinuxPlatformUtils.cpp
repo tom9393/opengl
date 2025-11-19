@@ -8,7 +8,7 @@ namespace Engine
     {
         std::array<char, 256> buffer{};
         std::string result;
-        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+        std::unique_ptr<FILE, int(*)(FILE*)> pipe(popen(command.c_str(), "r"), static_cast<int(*)(FILE*)>(pclose));
         if (!pipe)
             return "";
         while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)

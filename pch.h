@@ -22,7 +22,7 @@
 #include <filesystem>
 #include <initializer_list>
 
-#include "lib/glad/glad.h"
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -31,14 +31,14 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
 
-#include "lib/imgui/imgui.h"
-#include "lib/imgui/imgui_internal.h"
-#include "lib/imgui/backends/imgui_impl_glfw.h"
-#include "lib/imgui/backends/imgui_impl_opengl3.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
+#include <imgui/backends/imgui_impl_glfw.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
 
-#include "lib/imguizmo/ImGuizmo.h"
+#include <imguizmo/ImGuizmo.h>
 
-#include "lib/stb/stb_image.h"
+#include <stb/stb_image.h>
 
 #include "include/Instrumentor.h"
 #include "include/Preprocessor.h"
