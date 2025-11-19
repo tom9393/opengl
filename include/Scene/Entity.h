@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../lib/entt.hpp"
+#include "../../lib/entt/single_include/entt/entt.hpp"
 #include "Scene.h"
 
 namespace Engine

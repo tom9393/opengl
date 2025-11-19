@@ -31,12 +31,12 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
 
-#include "lib/imgui.h"
-#include "lib/imgui_internal.h"
-#include "lib/imgui_impl_glfw.h"
-#include "lib/imgui_impl_opengl3.h"
+#include "lib/imgui/imgui.h"
+#include "lib/imgui/imgui_internal.h"
+#include "lib/imgui/backends/imgui_impl_glfw.h"
+#include "lib/imgui/backends/imgui_impl_opengl3.h"
 
-#include "lib/ImGuizmo.h"
+#include "lib/imguizmo/ImGuizmo.h"
 
 #include "lib/stb/stb_image.h"
 
