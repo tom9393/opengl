@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME} main.cpp ${ENGINE_SOURCES})
 add_subdirectory(lib/glfw)
 add_subdirectory(lib/glm)
 add_subdirectory(lib/yaml-cpp)
+add_subdirectory(lib/bullet)
 
 add_library(imgui
     lib/imgui/imgui.cpp
@@ -60,6 +61,6 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC lib/entt
 )
 
-target_link_libraries(${PROJECT_NAME} GL dl glfw stb imgui glad glm imguizmo assimp yaml-cpp)
+target_link_libraries(${PROJECT_NAME} GL dl glfw stb imgui glad glm imguizmo assimp yaml-cpp BulletCollision BulletDynamics LinearMath)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/pch.cpp>)
