@@ -11,11 +11,16 @@ file(GLOB_RECURSE ENGINE_SOURCES
 
 add_executable(${PROJECT_NAME} main.cpp ${ENGINE_SOURCES})
 
+# === Disable Bullet examples, extras, and demos ===
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "Disable bullet demos" FORCE)
+set(BUILD_EXTRAS OFF CACHE BOOL "Disable bullet extras" FORCE)
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "Disable bullet unit tests" FORCE)
+
 # === Third-party libs ===
+add_subdirectory(lib/bullet)
 add_subdirectory(lib/glfw)
 add_subdirectory(lib/glm)
 add_subdirectory(lib/yaml-cpp)
-add_subdirectory(lib/bullet)
 
 add_library(imgui
     lib/imgui/imgui.cpp
@@ -58,9 +63,26 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC platform/Linux
 	PUBLIC platform/OpenGL
 	
-	PUBLIC lib/entt
+	PUBLIC lib/entt # Entt is a single header library
+
+	PUBLIC lib/bullet/src # Bullet expects this to work
 )
 
-target_link_libraries(${PROJECT_NAME} GL dl glfw stb imgui glad glm imguizmo assimp yaml-cpp BulletCollision BulletDynamics LinearMath)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    GL
+    dl
+    glfw
+    stb
+    imgui
+    glad
+    glm
+    imguizmo
+    assimp
+    yaml-cpp
+    BulletDynamics
+    BulletCollision
+    LinearMath
+    Bullet3Common
+)
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/pch.cpp>)
+target_precompile_headers(${PROJECT_NAME} PRIVATE pch.h)

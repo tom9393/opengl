@@ -5,6 +5,7 @@
 #include "SceneSerializer.h"
 #include "../ModelLibrary.h"
 #include "../EditorCamera.h"
+#include "../PhysicsWorld.h"
 
 namespace Engine
 {
@@ -20,6 +21,9 @@ namespace Engine
         void OnUpdate(TimeStep ts);
         void OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera);
 
+        void OnRuntimeStart();
+        void OnRuntimeStop();
+
         void OnViewportResize(unsigned int width, unsigned int height);
 
         Entity CreateEntity(const std::string &name = "Entity");
@@ -34,6 +38,8 @@ namespace Engine
         unsigned int m_ViewportWidth = 0;
         unsigned int m_ViewportHeight = 0;
         ModelLibrary m_ModelLibrary;
+
+        PhysicsWorld* m_PhysicsWorld;
 
         friend class Entity;
         friend class SceneSerializer;

@@ -265,6 +265,12 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
+			if (ImGui::MenuItem("RigidBody"))
+			{
+				m_SelectionContext.AddComponent<RigidBodyComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
 			ImGui::EndPopup();
 		}
 
@@ -300,70 +306,94 @@ namespace Engine
 
 		});
 		DrawComponent<SceneCameraComponent>("Camera", entity, [](auto &component)
-		      {
-				auto &camera = component.sceneCamera;
+		{
+			auto &camera = component.sceneCamera;
 
-				const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
-				const char* currentProjectionTypeString = projectionTypeStrings[(int)camera->GetProjectionType()];
+			const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
+			const char* currentProjectionTypeString = projectionTypeStrings[(int)camera->GetProjectionType()];
 
-				if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
+			if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
+			{
+				for (unsigned int i = 0; i < 2; i++)
 				{
-
-					for (unsigned int i = 0; i < 2; i++)
+					bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
+					if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
 					{
-						bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
-						if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
-						{
-							currentProjectionTypeString = projectionTypeStrings[i];
-							camera->SetProjectionType((SceneCamera::ProjectionType)i);
-						}
-
-						if (isSelected)
-						{
-							ImGui::SetItemDefaultFocus();
-						}
+						currentProjectionTypeString = projectionTypeStrings[i];
+						camera->SetProjectionType((SceneCamera::ProjectionType)i);
 					}
 
-					ImGui::EndCombo();
+					if (isSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
 				}
 
-				bool enabled = component.primary;
-				if (ImGui::Checkbox("Use", &enabled))
+				ImGui::EndCombo();
+			}
+
+			bool enabled = component.primary;
+			if (ImGui::Checkbox("Use", &enabled))
+			{
+				component.primary = !component.primary;
+			}
+
+			if (camera->GetProjectionType() == SceneCamera::ProjectionType::Perspective)
+			{
+				float fov = glm::degrees(camera->GetPerspectiveVerticalFOV());
+				if(ImGui::DragFloat("Fov", &fov))
+					camera->SetPerspectiveVerticalFOV(glm::radians(fov));
+
+				float near = camera->GetOrthographicNearClip();
+				if(ImGui::DragFloat("Near", &near))
+					camera->SetOrthographicNearClip(near);
+
+				float far = camera->GetOrthographicFarClip();
+				if(ImGui::DragFloat("Far", &far))
+					camera->SetOrthographicFarClip(far);
+			}
+
+			if (camera->GetProjectionType() == SceneCamera::ProjectionType::Orthographic)
+			{
+				float orthoSize = camera->GetOrthographicSize();
+				if(ImGui::DragFloat("Size", &orthoSize))
+					camera->SetOrthographicSize(orthoSize);
+
+				float near = camera->GetOrthographicNearClip();
+				if(ImGui::DragFloat("Near", &near))
+					camera->SetOrthographicNearClip(near);
+
+				float far = camera->GetOrthographicFarClip();
+				if(ImGui::DragFloat("Far", &far))
+					camera->SetOrthographicFarClip(far);
+			}
+
+		});
+		DrawComponent<RigidBodyComponent>("RigidBody", entity, [](auto &component)
+		{
+			const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
+			const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
+
+			if (ImGui::BeginCombo("Body Type", currentBodyTypeString))
+			{
+				for (unsigned int i = 0; i < 3; i++)
 				{
-					component.primary = !component.primary;
+					bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
+					if (ImGui::Selectable(bodyTypeStrings[i], isSelected))
+					{
+						currentBodyTypeString = bodyTypeStrings[i];
+						component.type = (RigidBodyComponent::BodyType)i;
+					}
+
+					if (isSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
 				}
 
-				if (camera->GetProjectionType() == SceneCamera::ProjectionType::Perspective)
-				{
-					float fov = glm::degrees(camera->GetPerspectiveVerticalFOV());
-					if(ImGui::DragFloat("Fov", &fov))
-						camera->SetPerspectiveVerticalFOV(glm::radians(fov));
-
-					float near = camera->GetOrthographicNearClip();
-					if(ImGui::DragFloat("Near", &near))
-						camera->SetOrthographicNearClip(near);
-
-					float far = camera->GetOrthographicFarClip();
-					if(ImGui::DragFloat("Far", &far))
-						camera->SetOrthographicFarClip(far);
-				}
-
-				if (camera->GetProjectionType() == SceneCamera::ProjectionType::Orthographic)
-				{
-					float orthoSize = camera->GetOrthographicSize();
-					if(ImGui::DragFloat("Size", &orthoSize))
-						camera->SetOrthographicSize(orthoSize);
-
-					float near = camera->GetOrthographicNearClip();
-					if(ImGui::DragFloat("Near", &near))
-						camera->SetOrthographicNearClip(near);
-
-					float far = camera->GetOrthographicFarClip();
-					if(ImGui::DragFloat("Far", &far))
-						camera->SetOrthographicFarClip(far);
-				}
-
-		      });
+				ImGui::EndCombo();
+			}
+		});
 	};
 
 };

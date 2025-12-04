@@ -26,6 +26,28 @@ namespace Engine
 			}
 		}
 
+		{
+			m_PhysicsWorld->stepSimulation(ts);
+
+			auto view = m_Registry.view<RigidBodyComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				auto& transform = entity.GetComponent<TransformComponent>();
+
+				btRigidBody* rigidBody = (btRigidBody*)entity.GetComponent<RigidBodyComponent>().runtimeBody;
+
+				btTransform btTransform;
+				rigidBody->getMotionState()->getWorldTransform(btTransform);
+				btVector3 pos = btTransform.getOrigin();
+
+				transform.translation.x = (float)pos.x();
+				transform.translation.y = (float)pos.y();
+				transform.translation.z = (float)pos.z();
+			}
+
+		}
+
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)
 		{
@@ -45,7 +67,6 @@ namespace Engine
 	void Scene::OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera)
 	{
 		Renderer::BeginScene(camera->GetViewProjection());
-
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)
 		{
@@ -73,6 +94,33 @@ namespace Engine
 			if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
 		}
 	};
+
+	void Scene::OnRuntimeStart()
+	{
+		m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
+		m_PhysicsWorld->createStaticPlane(btVector3(0, 1, 0), 0.0f);
+
+		auto view = m_Registry.view<RigidBodyComponent>();
+		for (auto e : view)
+		{
+			Entity entity = { e, this };
+			auto& transform = entity.GetComponent<TransformComponent>();
+			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
+			btTransform btTransform;
+			btTransform.setIdentity();
+			btTransform.setOrigin(btVector3(transform.translation.x, transform.translation.y, transform.translation.z));
+			btRigidBody* body = m_PhysicsWorld->createBoxRigidBody(800.0f, btVector3(1.5f, 0.75f, 2.5f), btTransform);
+			
+			rigidbody.runtimeBody = body;
+		}
+	}
+
+	void Scene::OnRuntimeStop()
+	{
+		delete m_PhysicsWorld;
+		m_PhysicsWorld = nullptr;
+	}
+
 
 	Entity Scene::CreateEntity(const std::string &name)
 	{
@@ -115,6 +163,11 @@ namespace Engine
 
 	template <>
 	void Scene::OnComponentAdded<TextureComponent>(Entity entity, TextureComponent &component)
+	{
+	}
+
+	template <>
+	void Scene::OnComponentAdded<RigidBodyComponent>(Entity entity, RigidBodyComponent &component)
 	{
 	}
 

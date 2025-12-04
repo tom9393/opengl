@@ -100,6 +100,24 @@ YAML::Emitter& operator<<(YAML::Emitter &out, const glm::vec4 &v)
 namespace Engine
 {
 
+	static std::string RigidBodyToString(RigidBodyComponent::BodyType bodyType)
+	{
+		switch (bodyType) {
+			case RigidBodyComponent::BodyType::Static: return "Static";
+			case RigidBodyComponent::BodyType::Dynamic: return "Dynamic";
+			case RigidBodyComponent::BodyType::Kinematic: return "Kinematic";
+		}
+
+		return "Unknown type";
+	}
+
+	static RigidBodyComponent::BodyType RigidBodyFromString(std::string &str)
+	{
+		if (str == "Static") return RigidBodyComponent::BodyType::Static;
+		if (str == "Dynamic") return RigidBodyComponent::BodyType::Dynamic;
+		if (str == "Kinematic") return RigidBodyComponent::BodyType::Kinematic;
+	}
+
 	static void SerializeEntity(YAML::Emitter &out, Entity e)
 	{
 		out << YAML::BeginMap;
@@ -177,6 +195,18 @@ namespace Engine
 			auto& model = e.GetComponent<ModelComponent>();
 			out << YAML::Key << "Model";
 			out << YAML::Value << model.model;
+
+			out << YAML::EndMap;
+		}
+
+		if (e.HasComponent<RigidBodyComponent>())
+		{
+			out << YAML::Key << "RigidBodyComponent";
+			out << YAML::BeginMap;
+
+			auto& rigidBody = e.GetComponent<RigidBodyComponent>();
+			out << YAML::Key << "BodyType";
+			out << YAML::Value << RigidBodyToString(rigidBody.type);
 
 			out << YAML::EndMap;
 		}
@@ -272,6 +302,14 @@ namespace Engine
 					auto& mc = deserializedEntity.AddComponent<ModelComponent>();
 					std::string path = modelComponent["Model"].as<std::string>();
 					mc.model = path;
+				}
+
+				auto rigidBodyComponent = entity["RigidBodyComponent"];
+				if (rigidBodyComponent)
+				{
+					auto& rbc = deserializedEntity.AddComponent<RigidBodyComponent>();
+					std::string bodyTypeString = rigidBodyComponent["BodyType"].as<std::string>();
+					rbc.type = RigidBodyFromString(bodyTypeString);
 				}
 			}
 		}

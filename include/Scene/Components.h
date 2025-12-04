@@ -74,4 +74,15 @@ namespace Engine
         SceneCameraComponent(const Shared<SceneCamera> camera) : sceneCamera(camera) {}
     };
 
+    struct RigidBodyComponent
+    {
+        enum class BodyType { Static = 0, Dynamic, Kinematic };
+        BodyType type = BodyType::Static;
+        
+        void* runtimeBody = nullptr;
+
+        RigidBodyComponent() = default;
+        RigidBodyComponent(const RigidBodyComponent&) = default;
+    };
+
 };
