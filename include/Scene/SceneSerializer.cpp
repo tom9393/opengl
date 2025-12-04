@@ -113,16 +113,16 @@ namespace Engine
 
 	static RigidBodyComponent::BodyType RigidBodyFromString(std::string &str)
 	{
-		if (str == "Static") return RigidBodyComponent::BodyType::Static;
 		if (str == "Dynamic") return RigidBodyComponent::BodyType::Dynamic;
 		if (str == "Kinematic") return RigidBodyComponent::BodyType::Kinematic;
+		return RigidBodyComponent::BodyType::Static;
 	}
 
 	static void SerializeEntity(YAML::Emitter &out, Entity e)
 	{
 		out << YAML::BeginMap;
 		out << YAML::Key << "Entity";
-		out << YAML::Value << "12345"; // Key goes here
+		out << YAML::Value << e.GetUUID();
 		
 		if (e.HasComponent<TagComponent>())
 		{
@@ -259,13 +259,13 @@ namespace Engine
 		{
 			for (auto entity : entities)
 			{
-				//uint64_t uuid = entity["Entity"].as<uint64_t>(); // Todo
+				uint64_t uuid = entity["Entity"].as<uint64_t>();
 				
 				std::string name;
 				auto tagComponent = entity["TagComponent"];
 				if (tagComponent) name = tagComponent["Tag"].as<std::string>();
 
-				Entity deserializedEntity = m_Scene->CreateEntity(name);
+				Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
 				auto transformComponent = entity["TransformComponent"];
 				if (transformComponent)

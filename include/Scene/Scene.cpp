@@ -124,8 +124,14 @@ namespace Engine
 
 	Entity Scene::CreateEntity(const std::string &name)
 	{
+		return CreateEntityWithUUID(UUID(), name);
+	};
+
+	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
+	{
 		Entity e = { m_Registry.create(), this };
 		e.AddComponent<TagComponent>(name);
+		e.AddComponent<IDComponent>(uuid);
 		return e;
 	};
 
@@ -168,6 +174,11 @@ namespace Engine
 
 	template <>
 	void Scene::OnComponentAdded<RigidBodyComponent>(Entity entity, RigidBodyComponent &component)
+	{
+	}
+
+	template <>
+	void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent &component)
 	{
 	}
 

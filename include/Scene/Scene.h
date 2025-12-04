@@ -6,6 +6,7 @@
 #include "../ModelLibrary.h"
 #include "../EditorCamera.h"
 #include "../PhysicsWorld.h"
+#include "../UUID.h"
 
 namespace Engine
 {
@@ -27,6 +28,7 @@ namespace Engine
         void OnViewportResize(unsigned int width, unsigned int height);
 
         Entity CreateEntity(const std::string &name = "Entity");
+        Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
         void DestroyEntity(Entity entity);
 
         private:

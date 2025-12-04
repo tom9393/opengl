@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../../lib/entt/single_include/entt/entt.hpp"
+#include "Components.h"
 #include "Scene.h"
+#include "UUID.h"
 
 namespace Engine
 {
@@ -50,6 +52,8 @@ namespace Engine
         {
             return m_Scene->m_Registry.all_of<T>(m_Handle);
         }
+
+        UUID GetUUID() { return GetComponent<IDComponent>().id; };
 
         bool operator==(const Entity &other) const { return m_Handle == other.GetHandle() && m_Scene == other.m_Scene; };
         operator bool() const { return m_Handle != entt::null; }

@@ -6,12 +6,20 @@
 #include "SceneCamera.h"
 #include "../EditorCamera.h"
 #include "../MathTools.h"
+#include "UUID.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
 namespace Engine
 {
+    struct IDComponent
+    {
+        UUID id;
+        
+        IDComponent() = default;
+        IDComponent(const IDComponent&) = default;
+    };
 
     struct TransformComponent
     {
