@@ -72,7 +72,6 @@ namespace Engine {
 
         btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
         btRigidBody* body = new btRigidBody(rbInfo);
-        // Tweak physical properties for your tank/airplane feel
         body->setFriction(0.8f);
         body->setRestitution(0.1f);
         body->setActivationState(ACTIVE_TAG);
@@ -100,6 +99,53 @@ namespace Engine {
         btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
         auto* body = new btRigidBody(rbInfo);
         world->addRigidBody(body);
+        return body;
+    }
+
+    // src/PhysicsWorld.cpp
+    btRigidBody* PhysicsWorld::createModelRigidBody(btScalar mass, const std::vector<Shared<Mesh>>& meshes, const btTransform& initialTransform) {
+        auto compoundShape = std::make_unique<btCompoundShape>();
+
+        for (const auto& mesh : meshes) {
+            // Create a hull for this specific mesh
+            auto* hull = new btConvexHullShape();
+            const auto& vertices = mesh->GetVertices();
+            uint32_t stride = mesh->GetLayout().GetStride() / sizeof(float);
+
+            for (size_t i = 0; i < vertices.size(); i += stride) {
+                hull->addPoint(btVector3(vertices[i], vertices[i + 1], vertices[i + 2]));
+            }
+
+            // Track the hull for cleanup
+            collisionShapes.emplace_back(hull);
+
+            // Add to compound shape with an identity local transform
+            // (assuming meshes are already relative to the model origin)
+            btTransform localTrans;
+            localTrans.setIdentity();
+            compoundShape->addChildShape(localTrans, hull);
+        }
+
+        // CRITICAL: Calculate inertia for the ENTIRE compound shape, not sub-shapes
+        btVector3 localInertia(0, 0, 0);
+        if (mass != 0.0f) {
+            compoundShape->calculateLocalInertia(mass, localInertia);
+        }
+
+        auto* motionState = new btDefaultMotionState(initialTransform);
+        motionStates.emplace_back(motionState);
+
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, compoundShape.get(), localInertia);
+        auto* body = new btRigidBody(rbInfo);
+        
+        body->setFriction(0.8f);
+        body->setActivationState(ACTIVE_TAG);
+
+        world->addRigidBody(body);
+        
+        // Store compound shape for cleanup
+        compoundShapes.emplace_back(std::move(compoundShape));
+        
         return body;
     }
 

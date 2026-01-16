@@ -39,11 +39,14 @@ namespace Engine
 
 				btTransform btTransform;
 				rigidBody->getMotionState()->getWorldTransform(btTransform);
-				btVector3 pos = btTransform.getOrigin();
 
-				transform.translation.x = (float)pos.x();
-				transform.translation.y = (float)pos.y();
-				transform.translation.z = (float)pos.z();
+				// Position
+				btVector3 pos = btTransform.getOrigin();
+				transform.translation = { pos.getX(), pos.getY(), pos.getZ() };
+
+				// Rotation
+				btQuaternion q = btTransform.getRotation();
+				transform.rotation = glm::eulerAngles(glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()));
 			}
 
 		}
@@ -97,8 +100,11 @@ namespace Engine
 
 	void Scene::OnRuntimeStart()
 	{
-		m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
-		m_PhysicsWorld->createStaticPlane(btVector3(0, 1, 0), 0.0f);
+		if (m_PhysicsWorld == nullptr)
+		{
+			m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
+			m_PhysicsWorld->createStaticPlane(btVector3(0, 1, 0), 0.0f);
+		}
 
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto e : view)
@@ -108,40 +114,46 @@ namespace Engine
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 			auto& modelComp = entity.GetComponent<ModelComponent>();
 
-			// 1. Get the mesh data from your model library
-			// This is a placeholder; replace with your actual model retrieval logic
 			glm::mat4 t = transform.GetTransform();
 			auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
-
-			// auto model = ModelLibrary::Get(modelComp.model); 
-			// auto& meshes = model->GetMeshes();
 
 			btTransform btTrans;
 			btTrans.setIdentity();
 			btTrans.setOrigin({transform.translation.x, transform.translation.y, transform.translation.z});
 
-			// Use the first mesh to create the collision hull
-			auto& mesh = meshes[0]; 
+			btQuaternion btRot;
+			btRot.setEulerZYX(transform.rotation.z, transform.rotation.y, transform.rotation.x);
+			btTrans.setRotation(btRot);
+			
+			if (rigidbody.runtimeBody == nullptr)
+			{
+				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(800.0f, meshes, btTrans);
+			} else {
+				btRigidBody* body = (btRigidBody*)rigidbody.runtimeBody;
 
-			// 2. Create the convex hull using the mesh vertices
-			// Note: You need the 'stride' from your Mesh's BufferLayout
-			uint32_t stride = mesh->GetLayout().GetStride() / sizeof(float);
+				// 1. Update the actual physics transform
+				body->setWorldTransform(btTrans);
+				 
+				// 2. Update the motion state (crucial for visual synchronization)
+				if (body->getMotionState())
+				{
+					body->getMotionState()->setWorldTransform(btTrans);
+				}
 
-			btRigidBody* body = m_PhysicsWorld->createConvexHullRigidBody(
-				800.0f, 
-				mesh->GetVertices(), 
-				stride, 
-				btTrans
-			);
-
-			rigidbody.runtimeBody = body;
+				// 3. Clear velocities (prevents "explosive" movement if teleporting)
+				body->setLinearVelocity(btVector3(0, 0, 0));
+				body->setAngularVelocity(btVector3(0, 0, 0));
+				
+				// 4. Force the body to stay active so the solver processes the change
+				body->activate(true);
+			}
 		}
 	}
 
 	void Scene::OnRuntimeStop()
 	{
-		delete m_PhysicsWorld;
-		m_PhysicsWorld = nullptr;
+		// delete m_PhysicsWorld;
+		// m_PhysicsWorld = nullptr;
 	}
 
 

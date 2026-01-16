@@ -41,7 +41,7 @@ namespace Engine
         unsigned int m_ViewportHeight = 0;
         ModelLibrary m_ModelLibrary;
 
-        PhysicsWorld* m_PhysicsWorld;
+        PhysicsWorld* m_PhysicsWorld = nullptr;
 
         friend class Entity;
         friend class SceneSerializer;
