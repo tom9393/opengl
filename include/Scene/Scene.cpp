@@ -94,7 +94,7 @@ namespace Engine
 		if (m_PhysicsWorld == nullptr)
 		{
 			m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
-			m_PhysicsWorld->createStaticPlane({0, 1, 0}, 0.0f);
+			//m_PhysicsWorld->createStaticPlane({0, 1, 0}, 0.0f);
 		}
 
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
@@ -112,7 +112,7 @@ namespace Engine
 			
 			if (body != nullptr)
 			{
-				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation, rigidbody.weight);
+				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation);
 			} else {
 				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(rigidbody.weight, meshes, transform.translation, transform.rotation);
 			}
@@ -124,7 +124,6 @@ namespace Engine
 		// delete m_PhysicsWorld;
 		// m_PhysicsWorld = nullptr;
 	}
-
 
 	Entity Scene::CreateEntity(const std::string &name)
 	{

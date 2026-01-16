@@ -1,4 +1,5 @@
 #include "../include/PhysicsWorld.h"
+#include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 
 namespace Engine {
@@ -182,7 +183,7 @@ namespace Engine {
         rotation = glm::eulerAngles(glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()));
     }
 
-    void PhysicsWorld::SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation, float mass)
+    void PhysicsWorld::SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation)
     {
         btTransform btTransform;
         btTransform.setIdentity();
@@ -198,11 +199,17 @@ namespace Engine {
             body->getMotionState()->setWorldTransform(btTransform);
         }
 
+        float mass = 100.0f;
 
         btVector3 localInertia(0, 0, 0);
-        if (mass != 0.0f) {
+        if (mass > 0.0f) {
             body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
             body->setMassProps(mass, localInertia);
+            // Clear static flags to allow movement
+            body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_STATIC_OBJECT);
+        } else {
+            body->setMassProps(0.0f, btVector3(0, 0, 0));
+            body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
         }
 
         body->updateInertiaTensor();

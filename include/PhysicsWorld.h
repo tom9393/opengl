@@ -34,7 +34,7 @@ namespace Engine {
 
         void GetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation);
 
-        void SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation, float mass = 0);
+        void SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation);
 
         // Remove and delete a rigid body previously added
         void removeRigidBody(btRigidBody* body);
