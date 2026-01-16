@@ -80,10 +80,6 @@ namespace Engine
                 UpdateView();
         }
 
-        void EditorCamera::OnEvent(Event& e)
-        {
-        }
-
         bool EditorCamera::OnMouseScroll(MouseScrolledEvent& e)
         {
                 float delta = e.GetYOffset() * 0.1f;

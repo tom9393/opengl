@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TimeStep.h"
-#include "Events/Event.h"
 #include "Events/ApplicationEvent.h"
 #include "Camera.h"
 
@@ -27,7 +26,6 @@ namespace Engine
 
         CameraController(float aspectRatio);
 
-        void OnEvent(Event &e);
         void OnUpdate(TimeStep ts);
         void Resize(float width, float height);
 

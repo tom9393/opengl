@@ -4,7 +4,6 @@
 #include "Input.h"
 #include "KeyCodes.h"
 #include "Camera.h"
-#include "Events/Event.h"
 #include "Events/MouseEvent.h"
 #include "../pch.h"
 
@@ -23,7 +22,6 @@ namespace Engine
                 ~EditorCamera();
 
                 void OnUpdate(TimeStep ts);
-                void OnEvent(Event& e);
 
                 inline float GetDistance() const { return m_Distance; }
                 inline void SetDistance(float distance) { m_Distance = distance; }

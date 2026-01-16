@@ -29,9 +29,8 @@ namespace Engine
         // Note: Buffer::Create methods usually handle API-specific implementation internally.
         m_Data.shaderLibrary = new ShaderLibrary({"Texture"});
         
-        // Suggestion: Use relative paths instead of absolute local paths
-        const std::string vert = "shaders/main.vert";
-        const std::string frag = "shaders/main.frag";
+        const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
+        const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
         m_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
 
         m_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(glm::mat4));
@@ -50,7 +49,6 @@ namespace Engine
                 if (openglShader)
                 {
                     openglShader->Bind();
-                    // OpenGL-specific calls should be kept within API-specific cases or classes
                     unsigned int viewprojectionIndex = glGetUniformBlockIndex(openglShader->GetProgram(), "Camera");
                     glUniformBlockBinding(openglShader->GetProgram(), viewprojectionIndex, 0);
                 }
