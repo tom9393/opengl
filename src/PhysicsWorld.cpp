@@ -81,6 +81,28 @@ namespace Engine {
         return body;
     }
 
+    btRigidBody* PhysicsWorld::createConvexHullRigidBody(btScalar mass, const std::vector<float>& vertices, uint32_t stride, const btTransform& initialTransform) {
+        auto* shape = new btConvexHullShape();
+        
+        // stride is the number of floats per vertex (e.g., 8 if layout is Pos/Norm/Tex)
+        for (size_t i = 0; i < vertices.size(); i += stride) {
+            shape->addPoint(btVector3(vertices[i], vertices[i+1], vertices[i+2]));
+        }
+        
+        collisionShapes.emplace_back(shape);
+
+        btVector3 localInertia(0, 0, 0);
+        if (mass != 0.0f) shape->calculateLocalInertia(mass, localInertia);
+
+        auto* motionState = new btDefaultMotionState(initialTransform);
+        motionStates.emplace_back(motionState);
+
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
+        auto* body = new btRigidBody(rbInfo);
+        world->addRigidBody(body);
+        return body;
+    }
+
     void PhysicsWorld::removeRigidBody(btRigidBody* body) {
         if (!body) return;
         world->removeRigidBody(body);

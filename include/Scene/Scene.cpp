@@ -100,17 +100,40 @@ namespace Engine
 		m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
 		m_PhysicsWorld->createStaticPlane(btVector3(0, 1, 0), 0.0f);
 
-		auto view = m_Registry.view<RigidBodyComponent>();
+		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto e : view)
 		{
 			Entity entity = { e, this };
 			auto& transform = entity.GetComponent<TransformComponent>();
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
-			btTransform btTransform;
-			btTransform.setIdentity();
-			btTransform.setOrigin(btVector3(transform.translation.x, transform.translation.y, transform.translation.z));
-			btRigidBody* body = m_PhysicsWorld->createBoxRigidBody(800.0f, btVector3(1.5f, 0.75f, 2.5f), btTransform);
-			
+			auto& modelComp = entity.GetComponent<ModelComponent>();
+
+			// 1. Get the mesh data from your model library
+			// This is a placeholder; replace with your actual model retrieval logic
+			glm::mat4 t = transform.GetTransform();
+			auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
+
+			// auto model = ModelLibrary::Get(modelComp.model); 
+			// auto& meshes = model->GetMeshes();
+
+			btTransform btTrans;
+			btTrans.setIdentity();
+			btTrans.setOrigin({transform.translation.x, transform.translation.y, transform.translation.z});
+
+			// Use the first mesh to create the collision hull
+			auto& mesh = meshes[0]; 
+
+			// 2. Create the convex hull using the mesh vertices
+			// Note: You need the 'stride' from your Mesh's BufferLayout
+			uint32_t stride = mesh->GetLayout().GetStride() / sizeof(float);
+
+			btRigidBody* body = m_PhysicsWorld->createConvexHullRigidBody(
+				800.0f, 
+				mesh->GetVertices(), 
+				stride, 
+				btTrans
+			);
+
 			rigidbody.runtimeBody = body;
 		}
 	}

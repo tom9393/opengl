@@ -25,6 +25,12 @@ namespace Engine {
         // halfExtents = size/2 in each axis. initialTransform is the starting transform.
         btRigidBody* createBoxRigidBody(btScalar mass, const btVector3& halfExtents, const btTransform& initialTransform);
 
+        // Create a convex hull from vertex data (for dynamic objects)
+        btRigidBody* createConvexHullRigidBody(btScalar mass, const std::vector<float>& vertices, uint32_t stride, const btTransform& initialTransform);
+
+        // Create a triangle mesh (for static objects)
+        //btRigidBody* createTriangleMeshRigidBody(const std::vector<float>& vertices, const std::vector<unsigned int>& indices, uint32_t stride, const btTransform& initialTransform);
+
         // Remove and delete a rigid body previously added
         void removeRigidBody(btRigidBody* body);
 
