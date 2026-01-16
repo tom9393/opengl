@@ -91,11 +91,7 @@ namespace Engine
 
 	void Scene::OnRuntimeStart()
 	{
-		if (m_PhysicsWorld == nullptr)
-		{
-			m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
-			//m_PhysicsWorld->createStaticPlane({0, 1, 0}, 0.0f);
-		}
+		if (m_PhysicsWorld == nullptr) m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
 
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto e : view)
@@ -105,16 +101,15 @@ namespace Engine
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 			auto& modelComp = entity.GetComponent<ModelComponent>();
 
-			glm::mat4 t = transform.GetTransform();
 			auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
 
 			btRigidBody* body = (btRigidBody*)rigidbody.runtimeBody;
 			
 			if (body != nullptr)
 			{
-				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation);
+				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation, rigidbody.mass);
 			} else {
-				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(rigidbody.weight, meshes, transform.translation, transform.rotation);
+				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(rigidbody.mass, meshes, transform.translation, transform.rotation);
 			}
 		}
 	}

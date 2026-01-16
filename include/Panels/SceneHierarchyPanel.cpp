@@ -394,11 +394,11 @@ namespace Engine
 				ImGui::EndCombo();
 			}
 
-			float weight = component.weight;
+			float mass = component.mass;
 
-			if (ImGui::DragFloat("Weight", &weight))
+			if (ImGui::DragFloat("Mass", &mass))
 			{
-				component.weight = weight;
+				component.mass = mass;
 			}
 		});
 	};
