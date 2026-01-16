@@ -2,7 +2,6 @@
 
 #include "../pch.h"
 #include "TimeStep.h"
-#include "Events/Event.h"
 
 namespace Engine
 {
@@ -17,7 +16,6 @@ namespace Engine
                 virtual void OnDetach() {}
                 virtual void OnUpdate(TimeStep ts) {}
                 virtual void OnImGuiRender() {}
-                virtual void OnEvent(Event& event) {}
 
                 const std::string& GetName() const { return m_DebugName; }
         protected:

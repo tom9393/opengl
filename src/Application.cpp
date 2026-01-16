@@ -36,6 +36,7 @@ namespace Engine
     Application::~Application()
     {
         EventBroker::Get().UnsubscribeAll(this);
+        delete m_ImGuiLayer;
     };
 
     void Application::Run()
@@ -64,26 +65,6 @@ namespace Engine
 
             m_Window->OnUpdate();
         }
-    };
-
-    void Application::OnEvent(Event &e)
-    {
-        return;
-        EventDispatcher dispatcher(e);
-        dispatcher.Dispatch<WindowCloseEvent>(BIND_FN(OnWindowClose));
-        dispatcher.Dispatch<WindowResizeEvent>(BIND_FN(OnWindowResize));
-        dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_FN(OnMouseClick));
-        dispatcher.Dispatch<KeyboardPressEvent>(BIND_FN(OnKeyPress));
-
-        // Leave this here for now
-        // for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
-        // {
-        //     (*--it)->OnEvent(e);
-        //     if (e.handled)
-        //     {
-        //         break;
-        //     }
-        // }
     };
 
     void Application::PushLayer(Layer* layer)

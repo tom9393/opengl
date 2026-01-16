@@ -6,7 +6,6 @@
 #include "LayerStack.h"
 #include "Window.h"
 #include "Events/ApplicationEvent.h"
-#include "Events/Event.h"
 #include "Events/KeyboardEvent.h"
 #include "Events/MouseEvent.h"
 
@@ -20,7 +19,6 @@ namespace Engine
         virtual ~Application();
 
         void Run();
-        void OnEvent(Event &e);
         void PushLayer(Layer* layer);
         void PushOverlayer(Layer* layer);
 

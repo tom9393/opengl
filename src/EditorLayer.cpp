@@ -255,14 +255,6 @@ namespace Engine
         ImGui::End();
     };
 
-    void EditorLayer::OnEvent(Event& e)
-    {
-        return;
-        EventDispatcher dispatcher(e);
-        dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed));
-        dispatcher.Dispatch<KeyboardPressEvent>(BIND_FN(OnKeyEvent));
-    };
-
     bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
     {
         if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)

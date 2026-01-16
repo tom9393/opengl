@@ -13,7 +13,6 @@ namespace Engine
         void OnAttach() override;
         void OnDetach() override;
         void OnImGuiRender() override;
-        void OnEvent(Event &e) override;
         void BlockEvents(bool block) { m_BlockEvents = block; }
 
         void SetDarkTheme();

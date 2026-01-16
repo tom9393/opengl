@@ -20,7 +20,6 @@ namespace Engine
         void OnAttach();
         void OnDetach();
         void OnUpdate(TimeStep ts);
-        void OnEvent(Event& event);
         void OnImGuiRender();
         bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 

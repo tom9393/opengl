@@ -1,14 +1,12 @@
 #pragma once
 
 #include "Application.h"
-#include "Buffer.h"
 #include "EditorCamera.h"
 #include "Events/KeyboardEvent.h"
 #include "Layer.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Render/RenderGraph.h"
 #include "Scene/Scene.h"
-#include "Texture.h"
 #include "TimeStep.h"
 #include "Events/MouseEvent.h"
 #include "Panels/SceneHierarchyPanel.h"
@@ -77,7 +75,6 @@ namespace Engine
         void OnAttach();
         void OnDetach();
         void OnUpdate(TimeStep ts);
-        void OnEvent(Event& event);
         void OnImGuiRender();
 
         private:

@@ -77,11 +77,6 @@ namespace Engine
         Renderer::ResetStatistics();
     }
 
-    void Testlayer::OnEvent(Event& e)
-    {
-        return;
-    };
-
     bool Testlayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
     {
         if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
