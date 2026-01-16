@@ -25,21 +25,50 @@ namespace Engine
 
         RenderCommand::Init();
 
-        const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
-        const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
+        // Generic setup: Create the shader library and uniform buffer.
+        // Note: Buffer::Create methods usually handle API-specific implementation internally.
         m_Data.shaderLibrary = new ShaderLibrary({"Texture"});
+        
+        // Suggestion: Use relative paths instead of absolute local paths
+        const std::string vert = "shaders/main.vert";
+        const std::string frag = "shaders/main.frag";
         m_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
 
         m_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(glm::mat4));
         m_Data.uniformBuffer->Bind(0);
 
-        Shared<Shader> shader = m_Data.shaderLibrary->Get("Texture");
-        auto openglshader = std::dynamic_pointer_cast<OpenGLShader>(shader);
-        openglshader->Bind();
+        switch (Renderer::Get())
+        {
+            case RendererAPI::API::None:
+                break;
 
-        unsigned int viewprojectionIndex = glGetUniformBlockIndex(openglshader->GetProgram(), "Camera");
-        glUniformBlockBinding(openglshader->GetProgram(), viewprojectionIndex, 0);
-    };
+            case RendererAPI::API::OpenGL:
+            {
+                Shared<Shader> shader = m_Data.shaderLibrary->Get("Texture");
+                auto openglShader = std::dynamic_pointer_cast<OpenGLShader>(shader);
+                
+                if (openglShader)
+                {
+                    openglShader->Bind();
+                    // OpenGL-specific calls should be kept within API-specific cases or classes
+                    unsigned int viewprojectionIndex = glGetUniformBlockIndex(openglShader->GetProgram(), "Camera");
+                    glUniformBlockBinding(openglShader->GetProgram(), viewprojectionIndex, 0);
+                }
+                break;
+            }
+
+            /* case RendererAPI::API::Vulkan:
+            {
+                // Add Vulkan-specific initialization here
+                // e.g., descriptor set layout creation, pipeline state setup, etc.
+                break;
+            }
+            */
+
+            default:
+                break;
+        }
+    }
 
     void Renderer::OnWindowResize(unsigned int width, unsigned int height)
     {
