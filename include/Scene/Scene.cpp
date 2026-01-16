@@ -29,24 +29,15 @@ namespace Engine
 		{
 			m_PhysicsWorld->stepSimulation(ts);
 
-			auto view = m_Registry.view<RigidBodyComponent>();
+			auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
 			for (auto e : view)
 			{
-				Entity entity = { e, this };
-				auto& transform = entity.GetComponent<TransformComponent>();
+				auto [rb, transform] = view.get<RigidBodyComponent, TransformComponent>(e);
 
-				btRigidBody* rigidBody = (btRigidBody*)entity.GetComponent<RigidBodyComponent>().runtimeBody;
-
-				btTransform btTransform;
-				rigidBody->getMotionState()->getWorldTransform(btTransform);
-
-				// Position
-				btVector3 pos = btTransform.getOrigin();
-				transform.translation = { pos.getX(), pos.getY(), pos.getZ() };
-
-				// Rotation
-				btQuaternion q = btTransform.getRotation();
-				transform.rotation = glm::eulerAngles(glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()));
+				if (rb.runtimeBody)
+				{
+					m_PhysicsWorld->GetTransform((btRigidBody*)rb.runtimeBody, transform.translation, transform.rotation);
+				}
 			}
 
 		}
@@ -103,7 +94,7 @@ namespace Engine
 		if (m_PhysicsWorld == nullptr)
 		{
 			m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
-			m_PhysicsWorld->createStaticPlane(btVector3(0, 1, 0), 0.0f);
+			m_PhysicsWorld->createStaticPlane({0, 1, 0}, 0.0f);
 		}
 
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
@@ -117,35 +108,13 @@ namespace Engine
 			glm::mat4 t = transform.GetTransform();
 			auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
 
-			btTransform btTrans;
-			btTrans.setIdentity();
-			btTrans.setOrigin({transform.translation.x, transform.translation.y, transform.translation.z});
-
-			btQuaternion btRot;
-			btRot.setEulerZYX(transform.rotation.z, transform.rotation.y, transform.rotation.x);
-			btTrans.setRotation(btRot);
+			btRigidBody* body = (btRigidBody*)rigidbody.runtimeBody;
 			
-			if (rigidbody.runtimeBody == nullptr)
+			if (body != nullptr)
 			{
-				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(800.0f, meshes, btTrans);
+				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation);
 			} else {
-				btRigidBody* body = (btRigidBody*)rigidbody.runtimeBody;
-
-				// 1. Update the actual physics transform
-				body->setWorldTransform(btTrans);
-				 
-				// 2. Update the motion state (crucial for visual synchronization)
-				if (body->getMotionState())
-				{
-					body->getMotionState()->setWorldTransform(btTrans);
-				}
-
-				// 3. Clear velocities (prevents "explosive" movement if teleporting)
-				body->setLinearVelocity(btVector3(0, 0, 0));
-				body->setAngularVelocity(btVector3(0, 0, 0));
-				
-				// 4. Force the body to stay active so the solver processes the change
-				body->activate(true);
+				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(800.0f, meshes, transform.translation, transform.rotation);
 			}
 		}
 	}

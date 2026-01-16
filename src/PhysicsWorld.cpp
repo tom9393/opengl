@@ -1,4 +1,5 @@
 #include "../include/PhysicsWorld.h"
+#include "BulletDynamics/Dynamics/btRigidBody.h"
 
 namespace Engine {
 
@@ -33,9 +34,9 @@ namespace Engine {
         if (world) world->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
     }
 
-    btRigidBody* PhysicsWorld::createStaticPlane(const btVector3& planeNormal, btScalar planeConstant, const btVector3&) {
+    btRigidBody* PhysicsWorld::createStaticPlane(const glm::vec3 &planeNormal, float planeConstant, const glm::vec3 &localInertia) {
         // Create plane shape
-        btCollisionShape* shape = new btStaticPlaneShape(planeNormal, planeConstant);
+        btCollisionShape* shape = new btStaticPlaneShape((btVector3&)planeNormal, planeConstant);
         collisionShapes.emplace_back(shape);
 
         btTransform startTransform;
@@ -43,12 +44,11 @@ namespace Engine {
 
         // mass 0 => static
         btScalar mass = 0.0f;
-        btVector3 localInertia(0,0,0);
 
         btDefaultMotionState* motionState = new btDefaultMotionState(startTransform);
         motionStates.emplace_back(motionState);
 
-        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, (btVector3&)localInertia);
         btRigidBody* body = new btRigidBody(rbInfo);
         // Optional properties
         body->setFriction(1.0f);
@@ -58,16 +58,23 @@ namespace Engine {
         return body;
     }
 
-    btRigidBody* PhysicsWorld::createBoxRigidBody(btScalar mass, const btVector3& halfExtents, const btTransform& initialTransform) {
-        btCollisionShape* shape = new btBoxShape(halfExtents);
+    btRigidBody* PhysicsWorld::createBoxRigidBody(float mass, const glm::vec3 &halfExtents, const glm::vec3 &transform, const glm::vec3 &rotation) {
+        btCollisionShape* shape = new btBoxShape((btVector3&)halfExtents);
         collisionShapes.emplace_back(shape);
 
         btVector3 localInertia(0,0,0);
         if (mass != 0.0f) {
             shape->calculateLocalInertia(mass, localInertia);
         }
+        btTransform btTrans;
+        btTrans.setIdentity();
+        btTrans.setOrigin({transform.x, transform.y, transform.z});
 
-        btDefaultMotionState* motionState = new btDefaultMotionState(initialTransform);
+        btQuaternion btRot;
+        btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
+        btTrans.setRotation(btRot);
+
+        btDefaultMotionState* motionState = new btDefaultMotionState(btTrans);
         motionStates.emplace_back(motionState);
 
         btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
@@ -80,7 +87,7 @@ namespace Engine {
         return body;
     }
 
-    btRigidBody* PhysicsWorld::createConvexHullRigidBody(btScalar mass, const std::vector<float>& vertices, uint32_t stride, const btTransform& initialTransform) {
+    btRigidBody* PhysicsWorld::createConvexHullRigidBody(float mass, const std::vector<float>& vertices, uint32_t stride, const glm::vec3 &transform, const glm::vec3 &rotation) {
         auto* shape = new btConvexHullShape();
         
         // stride is the number of floats per vertex (e.g., 8 if layout is Pos/Norm/Tex)
@@ -92,8 +99,15 @@ namespace Engine {
 
         btVector3 localInertia(0, 0, 0);
         if (mass != 0.0f) shape->calculateLocalInertia(mass, localInertia);
+        btTransform btTrans;
+        btTrans.setIdentity();
+        btTrans.setOrigin({transform.x, transform.y, transform.z});
 
-        auto* motionState = new btDefaultMotionState(initialTransform);
+        btQuaternion btRot;
+        btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
+        btTrans.setRotation(btRot);
+
+        auto* motionState = new btDefaultMotionState(btTrans);
         motionStates.emplace_back(motionState);
 
         btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, shape, localInertia);
@@ -103,7 +117,7 @@ namespace Engine {
     }
 
     // src/PhysicsWorld.cpp
-    btRigidBody* PhysicsWorld::createModelRigidBody(btScalar mass, const std::vector<Shared<Mesh>>& meshes, const btTransform& initialTransform) {
+    btRigidBody* PhysicsWorld::createModelRigidBody(float mass, const std::vector<Shared<Mesh>>& meshes, const glm::vec3 &transform, const glm::vec3 &rotation) {
         auto compoundShape = std::make_unique<btCompoundShape>();
 
         for (const auto& mesh : meshes) {
@@ -131,8 +145,15 @@ namespace Engine {
         if (mass != 0.0f) {
             compoundShape->calculateLocalInertia(mass, localInertia);
         }
+        btTransform btTrans;
+        btTrans.setIdentity();
+        btTrans.setOrigin({transform.x, transform.y, transform.z});
 
-        auto* motionState = new btDefaultMotionState(initialTransform);
+        btQuaternion btRot;
+        btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
+        btTrans.setRotation(btRot);
+
+        auto* motionState = new btDefaultMotionState(btTrans);
         motionStates.emplace_back(motionState);
 
         btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, compoundShape.get(), localInertia);
@@ -147,6 +168,40 @@ namespace Engine {
         compoundShapes.emplace_back(std::move(compoundShape));
         
         return body;
+    }
+
+    void PhysicsWorld::GetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation)
+    {
+        btTransform btTransform;
+        body->getMotionState()->getWorldTransform(btTransform);
+
+        btVector3 pos = btTransform.getOrigin();
+        translation = { pos.getX(), pos.getY(), pos.getZ() };
+
+        btQuaternion q = btTransform.getRotation();
+        rotation = glm::eulerAngles(glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()));
+    }
+
+    void PhysicsWorld::SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation)
+    {
+        btTransform btTransform;
+        btTransform.setIdentity();
+        btTransform.setOrigin({translation.x, translation.y, translation.z});
+
+        btQuaternion btRot;
+        btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
+        btTransform.setRotation(btRot);
+        body->setWorldTransform(btTransform);
+         
+        if (body->getMotionState())
+        {
+                body->getMotionState()->setWorldTransform(btTransform);
+        }
+
+        body->setLinearVelocity(btVector3(0, 0, 0));
+        body->setAngularVelocity(btVector3(0, 0, 0));
+        
+        body->activate(true);
     }
 
     void PhysicsWorld::removeRigidBody(btRigidBody* body) {
