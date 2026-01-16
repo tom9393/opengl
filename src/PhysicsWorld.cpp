@@ -182,7 +182,7 @@ namespace Engine {
         rotation = glm::eulerAngles(glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()));
     }
 
-    void PhysicsWorld::SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation)
+    void PhysicsWorld::SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation, float mass)
     {
         btTransform btTransform;
         btTransform.setIdentity();
@@ -195,8 +195,17 @@ namespace Engine {
          
         if (body->getMotionState())
         {
-                body->getMotionState()->setWorldTransform(btTransform);
+            body->getMotionState()->setWorldTransform(btTransform);
         }
+
+
+        btVector3 localInertia(0, 0, 0);
+        if (mass != 0.0f) {
+            body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
+            body->setMassProps(mass, localInertia);
+        }
+
+        body->updateInertiaTensor();
 
         body->setLinearVelocity(btVector3(0, 0, 0));
         body->setAngularVelocity(btVector3(0, 0, 0));

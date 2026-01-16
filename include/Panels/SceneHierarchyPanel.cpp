@@ -393,6 +393,13 @@ namespace Engine
 
 				ImGui::EndCombo();
 			}
+
+			float weight = component.weight;
+
+			if (ImGui::DragFloat("Weight", &weight))
+			{
+				component.weight = weight;
+			}
 		});
 	};
 

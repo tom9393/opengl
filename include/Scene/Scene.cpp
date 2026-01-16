@@ -112,9 +112,9 @@ namespace Engine
 			
 			if (body != nullptr)
 			{
-				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation);
+				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation, rigidbody.weight);
 			} else {
-				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(800.0f, meshes, transform.translation, transform.rotation);
+				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(rigidbody.weight, meshes, transform.translation, transform.rotation);
 			}
 		}
 	}

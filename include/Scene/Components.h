@@ -86,6 +86,7 @@ namespace Engine
     {
         enum class BodyType { Static = 0, Dynamic, Kinematic };
         BodyType type = BodyType::Static;
+        float weight = 0;
         
         void* runtimeBody = nullptr;
 
