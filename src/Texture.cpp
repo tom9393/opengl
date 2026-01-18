@@ -4,11 +4,11 @@
 namespace Engine
 {
 
-    std::shared_ptr<Texture2D> Texture2D::Create(const std::string &path, TextureType type)
+    std::shared_ptr<Texture2D> Texture2D::Create(const std::string &path)
     {
         switch (Renderer::Get()) {
             case RendererAPI::API::None: return nullptr;
-            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLTexture2D>(path, type);
+            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLTexture2D>(path);
             }
         return nullptr;
 

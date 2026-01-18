@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pch.h"
+#include "Asset.h"
 
 namespace Engine
 {
@@ -14,7 +15,7 @@ namespace Engine
         Height
     };
 
-    class Texture
+    class Texture : public Asset
     {
         public:
         virtual ~Texture() = default;
@@ -23,21 +24,26 @@ namespace Engine
 
         virtual unsigned int GetID() const = 0;
         virtual std::string &GetPath() = 0;
-        virtual TextureType GetType() const = 0;
+
+        TextureType GetType() { return m_Type; };
+        void SetType(TextureType type) { m_Type = type; };
 
         virtual void Bind(unsigned int slot) const = 0;
+
+        private:
+        TextureType m_Type = TextureType::None;
     };
 
     class Texture2D : public Texture
     {
         public:
-        static std::shared_ptr<Texture2D> Create(const std::string &path, TextureType type);
+        static std::shared_ptr<Texture2D> Create(const std::string &path);
     };
 
     class Texture3D : public Texture
     {
         public:
-        static std::shared_ptr<Texture3D> Create(const std::string &path, TextureType type);
+        static std::shared_ptr<Texture3D> Create(const std::string &path);
     };
 
     class BindlessTexture

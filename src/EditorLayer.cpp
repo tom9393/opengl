@@ -1,4 +1,5 @@
 #include "../pch.h"
+#include "AssetManager.h"
 #include "MouseButtonCodes.h"
 #include "EditorLayer.h"
 #include "Render/Renderer.h"
@@ -304,11 +305,9 @@ namespace Engine
     {
         if (path != nullptr)
         {
-            m_Scene = MakeShared<Scene>();
+            m_Scene = std::static_pointer_cast<Scene>(AssetManager::LoadAsset(path));
             m_Scene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
             m_SceneHierarchyPanel.SetContext(m_Scene);
-            SceneSerializer serializer(m_Scene);
-            serializer.Deserialize(path);
         }
     }
 

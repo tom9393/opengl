@@ -7,7 +7,7 @@ namespace Engine
     class OpenGLTexture2D : public Texture2D
     {
         public:
-        OpenGLTexture2D(const std::string &path, TextureType type);
+        OpenGLTexture2D(const std::string &path);
         virtual ~OpenGLTexture2D();
 
         unsigned int GetWidth() const override { return m_Width; }
@@ -15,13 +15,11 @@ namespace Engine
 
         unsigned int GetID() const override;
         std::string &GetPath() override { return m_Path; }
-        TextureType GetType() const override { return m_Type; }
 
         void Bind(unsigned int slot) const override;
 
         private:
         std::string m_Path;
-        TextureType m_Type;
         unsigned int m_Width, m_Height;
         unsigned int m_RendererID;
     };

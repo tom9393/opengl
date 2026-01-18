@@ -1,0 +1,26 @@
+#pragma once
+
+#include "UUID.h"
+
+namespace Engine {
+
+    enum class AssetType
+    {
+        None = 0,
+        Texture2D,
+        Texture3D,
+        Scene
+    };
+
+    class Asset
+    {
+        public:
+        UUID GetHandle() { return m_Handle; };
+        AssetType GetType() { return m_Type; };
+
+        private:
+        bool m_Loaded = false;
+        UUID m_Handle;
+        AssetType m_Type;
+    };
+}

@@ -5,6 +5,7 @@
 #include <assimp/material.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include "AssetManager.h"
 #include "Mesh.h"
 #include "BufferLayout.h"
 #include "ModelLoader.h"
@@ -156,7 +157,10 @@ namespace Engine
                 if (type == aiTextureType_HEIGHT) txtType = TextureType::Normal;
                 if (type == aiTextureType_AMBIENT) txtType = TextureType::Height;
 
-                textures.emplace_back(Texture2D::Create(filename, txtType));
+                Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
+                texture->SetType(txtType);
+
+                textures.emplace_back(texture);
             }
             return textures;
         }

@@ -1,4 +1,5 @@
 #include "ContentBrowserPanel.h"
+#include "AssetManager.h"
 
 namespace Engine
 {
@@ -7,8 +8,8 @@ namespace Engine
 
 	ContentBrowserPanel::ContentBrowserPanel() : m_CurrentDirectory(s_AssetPath)
 	{
-		m_DirIcon = Texture2D::Create("../assets/folderIcon.png", TextureType::None);
-		m_FileIcon = Texture2D::Create("../assets/documentIcon.png", TextureType::None);
+		m_DirIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/folderIcon.png"));
+		m_DirIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/documentIcon.png"));
 	};
 
 	void ContentBrowserPanel::OnImGuiRender()

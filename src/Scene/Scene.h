@@ -13,7 +13,7 @@ namespace Engine
 
     class Entity;
 
-    class Scene
+    class Scene : public Asset
     {
         public:
         Scene();
