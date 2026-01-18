@@ -208,6 +208,12 @@ namespace Engine
 			out << YAML::Key << "BodyType";
 			out << YAML::Value << RigidBodyToString(rigidBody.type);
 
+			out << YAML::Key << "Mass";
+			out << YAML::Value << rigidBody.mass;
+
+			out << YAML::Key << "Inertia";
+			out << YAML::Value << rigidBody.inertia;
+
 			out << YAML::EndMap;
 		}
 		
@@ -310,6 +316,10 @@ namespace Engine
 					auto& rbc = deserializedEntity.AddComponent<RigidBodyComponent>();
 					std::string bodyTypeString = rigidBodyComponent["BodyType"].as<std::string>();
 					rbc.type = RigidBodyFromString(bodyTypeString);
+
+					rbc.mass = rigidBodyComponent["Mass"].as<float>();
+
+					rbc.inertia = rigidBodyComponent["Inertia"].as<glm::vec3>();
 				}
 			}
 		}

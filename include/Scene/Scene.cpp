@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "Entity.h"
 #include "../AssimpLoader.h"
+#include "RigidBody.h"
 
 namespace Engine
 {
@@ -36,7 +37,8 @@ namespace Engine
 
 				if (rb.runtimeBody)
 				{
-					m_PhysicsWorld->GetTransform((btRigidBody*)rb.runtimeBody, transform.translation, transform.rotation);
+					RigidBody* body = (RigidBody*)rb.runtimeBody;
+					body->GetTransform(transform.translation, transform.rotation);
 				}
 			}
 
@@ -101,15 +103,18 @@ namespace Engine
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 			auto& modelComp = entity.GetComponent<ModelComponent>();
 
-			auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
-
-			btRigidBody* body = (btRigidBody*)rigidbody.runtimeBody;
+			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
 			
 			if (body != nullptr)
 			{
-				m_PhysicsWorld->SetTransform(body, transform.translation, transform.rotation, rigidbody.mass);
+				body->SetTransform(transform.translation, transform.rotation);
 			} else {
-				rigidbody.runtimeBody = m_PhysicsWorld->createModelRigidBody(rigidbody.mass, meshes, transform.translation, transform.rotation);
+				auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
+				RBComplexShape* shape = new RBComplexShape(meshes);
+				RigidBody* body = new RigidBody(shape, transform.translation, transform.rotation, rigidbody.inertia, rigidbody.mass);
+				body->SetWorld(m_PhysicsWorld->getWorld());
+				m_PhysicsWorld->AddRigidBody(body);
+				rigidbody.runtimeBody = body;
 			}
 		}
 	}

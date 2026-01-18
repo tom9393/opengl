@@ -87,6 +87,7 @@ namespace Engine
         enum class BodyType { Static = 0, Dynamic, Kinematic };
         BodyType type = BodyType::Static;
         float mass = 0;
+        glm::vec3 inertia = glm::vec3(0, 0, 0);
         
         void* runtimeBody = nullptr;
 

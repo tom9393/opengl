@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.h"
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
+#include "RigidBody.h"
 
 namespace Engine
 {
@@ -394,11 +395,16 @@ namespace Engine
 				ImGui::EndCombo();
 			}
 
-			float mass = component.mass;
-
-			if (ImGui::DragFloat("Mass", &mass))
+			RigidBody* body = (RigidBody*) component.runtimeBody;
+			if (body != nullptr)
 			{
-				component.mass = mass;
+				float mass = component.mass;
+
+				if (ImGui::DragFloat("Mass", &mass))
+				{
+					component.mass = mass;
+					body->SetMass(mass);
+				}
 			}
 		});
 	};

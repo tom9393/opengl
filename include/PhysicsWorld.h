@@ -1,45 +1,22 @@
 #pragma once
 
-#include "Mesh.h"
+#include "RigidBody.h"
 #include <vector>
 #include <memory>
 #include <bullet/src/btBulletDynamicsCommon.h>
 
 namespace Engine {
 
-    // Simple wrapper for a Bullet physics world
     class PhysicsWorld {
     public:
         PhysicsWorld(const btVector3& gravity = btVector3(0, -9.81f, 0));
         ~PhysicsWorld();
 
-        // Step the simulation. typical call from your game loop
         void stepSimulation(float deltaTime, int maxSubSteps = 10, float fixedTimeStep = 1.0f / 60.0f);
 
-        // Create static plane ground: planeNormal and planeConstant (distance along normal)
-        // Returns pointer to the created btRigidBody (owned by the world until removed)
-        btRigidBody* createStaticPlane(const glm::vec3 &planeNormal, float planeConstant, const glm::vec3 &localInertia = glm::vec3(0,0,0));
+        void AddRigidBody(RigidBody* body);
+        void RemoveRigidBody(RigidBody* body);
 
-        // Create a box-shaped rigid body. mass == 0 => static, otherwise dynamic
-        // halfExtents = size/2 in each axis. initialTransform is the starting transform.
-        btRigidBody* createBoxRigidBody(float mass, const glm::vec3 &halfExtents, const glm::vec3 &transform, const glm::vec3 &rotation);
-
-        // Create a convex hull from vertex data (for dynamic objects)
-        btRigidBody* createConvexHullRigidBody(float mass, const std::vector<float>& vertices, uint32_t stride, const glm::vec3 &transform, const glm::vec3 &rotation);
-
-        // Create a triangle mesh (for static objects)
-        //btRigidBody* createTriangleMeshRigidBody(const std::vector<float>& vertices, const std::vector<unsigned int>& indices, uint32_t stride, const btTransform& initialTransform);
-
-        btRigidBody* createModelRigidBody(float mass, const std::vector<Shared<Mesh>>& meshes, const glm::vec3 &transform, const glm::vec3 &rotation);
-
-        void GetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation);
-
-        void SetTransform(btRigidBody* body, glm::vec3 &translation, glm::vec3 &rotation, float mass = 0.0f);
-
-        // Remove and delete a rigid body previously added
-        void removeRigidBody(btRigidBody* body);
-
-        // Access to the underlying world when you need lower-level calls
         btDiscreteDynamicsWorld* getWorld() { return world.get(); }
 
     private:
