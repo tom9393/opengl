@@ -1,6 +1,6 @@
-#include "../include/CameraController.h"
-#include "../include/KeyCodes.h"
-#include "../include/Input.h"
+#include "CameraController.h"
+#include "KeyCodes.h"
+#include "Input.h"
 #include "../pch.h"
 
 namespace Engine

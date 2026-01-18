@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../pch.h"
-#include "../include/Events/Event.h"
+#include "Events/Event.h"
 
 namespace Engine
 {

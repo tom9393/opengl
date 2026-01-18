@@ -5,7 +5,7 @@
 #include <assimp/material.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "../include/Mesh.h"
+#include "Mesh.h"
 #include "BufferLayout.h"
 #include "ModelLoader.h"
 #include "Texture.h"

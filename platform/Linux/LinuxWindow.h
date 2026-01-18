@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../pch.h"
-#include "../../include/Context.h"
-#include "../../include/Window.h"
+#include "../../src/Context.h"
+#include "../../src/Window.h"
 
 namespace Engine
 {

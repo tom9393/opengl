@@ -1,4 +1,4 @@
-#include "../include/Render/RenderCommand.h"
+#include "Render/RenderCommand.h"
 #include "../platform/OpenGL/OpenGLRendererAPI.h"
 
 namespace Engine

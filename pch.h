@@ -40,5 +40,5 @@
 
 #include <stb/stb_image.h>
 
-#include "include/Instrumentor.h"
-#include "include/Preprocessor.h"
+#include "src/Instrumentor.h"
+#include "src/Preprocessor.h"

@@ -1,5 +1,5 @@
-#include "../../include/Application.h"
-#include "../../include/Input.h"
+#include "../../src/Application.h"
+#include "../../src/Input.h"
 #include <GLFW/glfw3.h>
 
 namespace Engine

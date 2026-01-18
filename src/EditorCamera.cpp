@@ -1,5 +1,5 @@
-#include "../include/EditorCamera.h"
-#include "../include/Events/EventBroker.h"
+#include "EditorCamera.h"
+#include "Events/EventBroker.h"
 #include <functional>
 #include <glm/ext/matrix_transform.hpp>
 

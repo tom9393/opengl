@@ -1,6 +1,6 @@
 #include "../pch.h"
-#include "../include/ImGuiLayer.h"
-#include "../include/Application.h"
+#include "ImGuiLayer.h"
+#include "Application.h"
 #include "../lib/imguizmo/ImGuizmo.h"
 
 namespace Engine

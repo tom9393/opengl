@@ -1,10 +1,10 @@
-#include "../include/Application.h"
-#include "../include/TestLayer.h"
-#include "../include/EditorLayer.h"
-#include "../include/TimeStep.h"
-#include "../include/Render/Renderer.h"
-#include "../include/KeyCodes.h"
-#include "../include/Events/EventBroker.h"
+#include "Application.h"
+#include "TestLayer.h"
+#include "EditorLayer.h"
+#include "TimeStep.h"
+#include "Render/Renderer.h"
+#include "KeyCodes.h"
+#include "Events/EventBroker.h"
 
 namespace Engine
 {

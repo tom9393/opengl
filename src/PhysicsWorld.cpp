@@ -1,4 +1,4 @@
-#include "../include/PhysicsWorld.h"
+#include "PhysicsWorld.h"
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "RigidBody.h"

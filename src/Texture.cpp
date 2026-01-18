@@ -1,5 +1,5 @@
-#include "../include/Texture.h"
-#include "../include/Render/Renderer.h"
+#include "Texture.h"
+#include "Render/Renderer.h"
 
 namespace Engine
 {

@@ -1,5 +1,5 @@
 #include "../pch.h"
-#include "../include/MathTools.h"
+#include "MathTools.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_decompose.hpp>

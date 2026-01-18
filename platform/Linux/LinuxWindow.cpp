@@ -1,6 +1,6 @@
-#include "../../include/Events/ApplicationEvent.h"
-#include "../../include/Events/MouseEvent.h"
-#include "../../include/Events/KeyboardEvent.h"
+#include "../../src/Events/ApplicationEvent.h"
+#include "../../src/Events/MouseEvent.h"
+#include "../../src/Events/KeyboardEvent.h"
 #include "LinuxWindow.h"
 #include "../OpenGL/OpenGLContext.h"
 #include <GLFW/glfw3.h>

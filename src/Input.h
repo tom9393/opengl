@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../pch.h"
-#include "../include/KeyCodes.h"
-#include "../include/MouseButtonCodes.h"
+#include "KeyCodes.h"
+#include "MouseButtonCodes.h"
 
 namespace Engine
 {

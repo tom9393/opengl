@@ -4,9 +4,9 @@ project(opengl)
 
 file(GLOB_RECURSE ENGINE_SOURCES
     src/*.cpp
+    src/**/*.cpp
     platform/Linux/*.cpp
     platform/OpenGL/*.cpp
-    include/**/*.cpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${ENGINE_SOURCES})
@@ -56,10 +56,10 @@ target_include_directories(imguizmo
 )
 
 target_include_directories(${PROJECT_NAME}
-	PUBLIC include
-	PUBLIC include/Scene
-	PUBLIC include/Panels
-	PUBLIC include/Render
+	PUBLIC src
+	PUBLIC src/Scene
+	PUBLIC src/Panels
+	PUBLIC src/Render
 	PUBLIC platform/Linux
 	PUBLIC platform/OpenGL
 	
