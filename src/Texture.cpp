@@ -4,7 +4,7 @@
 namespace Engine
 {
 
-    std::shared_ptr<Texture2D> Texture2D::Create(const std::string &path)
+    std::shared_ptr<Texture2D> Texture2D::Create(const std::filesystem::path &path)
     {
         switch (Renderer::Get()) {
             case RendererAPI::API::None: return nullptr;

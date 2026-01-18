@@ -9,7 +9,7 @@ namespace Engine
 	ContentBrowserPanel::ContentBrowserPanel() : m_CurrentDirectory(s_AssetPath)
 	{
 		m_DirIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/folderIcon.png"));
-		m_DirIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/documentIcon.png"));
+		m_FileIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/documentIcon.png"));
 	};
 
 	void ContentBrowserPanel::OnImGuiRender()
@@ -46,6 +46,7 @@ namespace Engine
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::ImageButton("Image", (ImTextureID)icon->GetID(), { imageSize, imageSize }, { 0, 1 }, { 1, 0 });
 			ImGui::PopStyleColor();
+
 			if (ImGui::BeginDragDropSource())
 			{
 				std::filesystem::path relativePath(path);

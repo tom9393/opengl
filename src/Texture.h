@@ -23,7 +23,7 @@ namespace Engine
         virtual unsigned int GetHeight() const = 0;
 
         virtual unsigned int GetID() const = 0;
-        virtual std::string &GetPath() = 0;
+        virtual std::filesystem::path &GetPath() = 0;
 
         TextureType GetType() { return m_Type; };
         void SetType(TextureType type) { m_Type = type; };
@@ -37,13 +37,13 @@ namespace Engine
     class Texture2D : public Texture
     {
         public:
-        static std::shared_ptr<Texture2D> Create(const std::string &path);
+        static std::shared_ptr<Texture2D> Create(const std::filesystem::path &path);
     };
 
     class Texture3D : public Texture
     {
         public:
-        static std::shared_ptr<Texture3D> Create(const std::string &path);
+        static std::shared_ptr<Texture3D> Create(const std::filesystem::path &path);
     };
 
     class BindlessTexture

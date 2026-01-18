@@ -4,7 +4,7 @@
 namespace Engine
 {
 
-    OpenGLTexture2D::OpenGLTexture2D(const std::string &path) : m_Path(path)
+    OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path &path) : m_Path(path)
     {
         int width, height, channels;
         unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
