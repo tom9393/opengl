@@ -27,8 +27,7 @@ namespace Engine
             LoadModel();
             auto clock_now = std::chrono::system_clock::now();
             auto res = clock_now - clock_start;
-            std::cout << "Time it took" << std::endl;
-            std::cout << res.count() / 1000000 << std::endl;
+            std::cout << "Time in ms to load model: " << res.count() / 1000000 << std::endl;
             return MakeShared<Model>(m_Meshes, m_Path);
         }
         
@@ -36,7 +35,7 @@ namespace Engine
         void LoadModel()
         {
             Assimp::Importer importer;
-            const aiScene* scene = importer.ReadFile(m_Path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
+            const aiScene* scene = importer.ReadFile(m_Path, aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality);
             // check for errors
             if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
             {
