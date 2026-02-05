@@ -91,14 +91,14 @@ namespace Engine
                 {
                     vertices.push_back(mesh->mTextureCoords[0][i].x);
                     vertices.push_back(mesh->mTextureCoords[0][i].y);
-
-                    vertices.push_back(mesh->mTangents[i].x);
-                    vertices.push_back(mesh->mTangents[i].y);
-                    vertices.push_back(mesh->mTangents[i].z);
-
-                    vertices.push_back(mesh->mBitangents[i].x);
-                    vertices.push_back(mesh->mBitangents[i].y);
-                    vertices.push_back(mesh->mBitangents[i].z);
+                    //
+                    // vertices.push_back(mesh->mTangents[i].x); // Not used
+                    // vertices.push_back(mesh->mTangents[i].y);
+                    // vertices.push_back(mesh->mTangents[i].z);
+                    //
+                    // vertices.push_back(mesh->mBitangents[i].x); // Not used
+                    // vertices.push_back(mesh->mBitangents[i].y);
+                    // vertices.push_back(mesh->mBitangents[i].z);
                 }
                 else
                 {
@@ -131,8 +131,8 @@ namespace Engine
                 {ShaderDataType::Float3, "a_Position"},
                 {ShaderDataType::Float3, "a_Normal"},
                 {ShaderDataType::Float2, "a_TexCoord"},
-                {ShaderDataType::Float3, "a_Tangent"},
-                {ShaderDataType::Float3, "a_Bitangent"},
+                //{ShaderDataType::Float3, "a_Tangent"}, // Not used
+                //{ShaderDataType::Float3, "a_Bitangent"}, // Not used
                 {ShaderDataType::Float, "a_EntityID"}
             };
 
@@ -158,6 +158,7 @@ namespace Engine
 
                 Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
                 texture->SetType(txtType);
+                std::cout << texture->GetPath() << std::endl;
 
                 textures.emplace_back(texture);
             }
