@@ -55,6 +55,7 @@ namespace Engine
 
     EditorLayer::~EditorLayer()
     {
+        EventBroker::Get().UnsubscribeAll(this);
     };
 
     void EditorLayer::OnAttach() {

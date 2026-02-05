@@ -36,7 +36,6 @@ namespace Engine
     Application::~Application()
     {
         EventBroker::Get().UnsubscribeAll(this);
-        delete m_ImGuiLayer;
     };
 
     void Application::Run()

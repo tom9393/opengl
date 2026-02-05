@@ -17,8 +17,8 @@ int main()
 	}
 
 	app->Run();
-
-	delete app;
+	
+	//delete app; // Todo; make closing down the app not crash the whole program
 
 	PROFILE_END_SESSION();
 

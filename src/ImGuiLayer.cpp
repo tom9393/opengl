@@ -2,12 +2,14 @@
 #include "ImGuiLayer.h"
 #include "Application.h"
 #include "../lib/imguizmo/ImGuizmo.h"
+#include "Events/EventBroker.h"
 
 namespace Engine
 {
 
     ImGuiLayer::~ImGuiLayer()
     {
+        EventBroker::Get().UnsubscribeAll(this);
     };
 
     void ImGuiLayer::OnAttach()
@@ -32,6 +34,7 @@ namespace Engine
 
     void ImGuiLayer::OnDetach()
     {
+        EventBroker::Get().UnsubscribeAll(this);
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
