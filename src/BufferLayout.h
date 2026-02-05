@@ -15,6 +15,17 @@ namespace Engine
         Bool
     };
 
+    enum class VertexAttribute {
+        None = 0,
+        Vertex,
+        Normal,
+        Texture,
+        Tangent,
+        Bitangent,
+        Color,
+        ID
+    };
+
     static unsigned int ShaderDataTypeSize(ShaderDataType type)
     {
         switch (type)
@@ -65,6 +76,30 @@ namespace Engine
         }
     };
 
+    class VertexLayout
+    {
+        public:
+        VertexLayout() {};
+
+        void AddVertexAttrib(VertexAttribute attrib, ShaderDataType type, const std::string &str)
+        {
+            if (m_Contains.find(attrib) != m_Contains.end()) return;
+
+            m_Attribs.emplace_back(attrib);
+            m_Elements.emplace_back(type, str);
+            m_Contains[attrib] = true;
+        }
+
+        std::vector<VertexAttribute> GetAttribs() { return m_Attribs; };
+        std::vector<BufferElement> GetElements() { return m_Elements; };
+
+        private:
+        std::vector<VertexAttribute> m_Attribs;
+        std::vector<BufferElement> m_Elements;
+        std::unordered_map<VertexAttribute, bool> m_Contains;
+
+    };
+
     class BufferLayout
     {
         public:
@@ -99,16 +134,17 @@ namespace Engine
     class TextureLayout
     {
         public:
-        TextureLayout(const std::vector<Shared<Texture2D>> &textures)
+        TextureLayout()
         {
-            for (auto &texture : textures)
-            {
-                m_Textures[texture->GetType()].emplace_back(texture);
-            }
             m_Texture_Keys[TextureType::Diffuse] = "material.diffuse";
             m_Texture_Keys[TextureType::Specular] = "material.specular";
             m_Texture_Keys[TextureType::Height] = "material.height";
             m_Texture_Keys[TextureType::Normal] = "material.normal";
+        }
+
+        void AddTexture(TextureType type, Shared<Texture2D> texture)
+        {
+            m_Textures[type].emplace_back(texture);
         }
 
         std::vector<Shared<Texture2D>> &GetByType(TextureType type)

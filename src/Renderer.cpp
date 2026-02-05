@@ -17,6 +17,12 @@ namespace Engine
 
     void Renderer::EndScene()
     {
+        for (auto &renderCall : m_Data.renderQueue)
+        {
+            SetTexture(renderCall.mesh->GetTextureLayout());
+            Submit(renderCall.mesh, renderCall.transform);
+        }
+        m_Data.renderQueue.clear();
     };
 
     void Renderer::Init()
@@ -104,6 +110,16 @@ namespace Engine
         m_Data.statistics.DrawCalls++;
         m_Data.statistics.VerticeCount += mesh->m_Vertices.size();
         m_Data.statistics.IndicesCount += mesh->m_Indices.size();
+    };
+
+    void Renderer::SubmitModel(const Shared<Model> &model, const glm::mat4 &transform)
+    {
+        PROFILE_FUNCTION();
+        for (auto& mesh : model->GetMeshes())
+        {
+            // Batching or Material sorting can happen here
+            m_Data.renderQueue.emplace_back(mesh, transform);
+        }
     };
 
     void Renderer::ToggleWireframe()

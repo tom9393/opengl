@@ -3,8 +3,8 @@
 #include "../../pch.h"
 #include "../Preprocessor.h"
 #include "../Texture.h"
+#include "Model.h"
 #include "SceneCamera.h"
-#include "../EditorCamera.h"
 #include "../MathTools.h"
 #include "UUID.h"
 
@@ -46,11 +46,11 @@ namespace Engine
 
     struct ModelComponent
     {
-        std::string model = "";
+        Shared<Model> model = nullptr;
 
         ModelComponent() = default;
         ModelComponent(const ModelComponent&) = default;
-        ModelComponent(const std::string &model) : model(model) {}
+        ModelComponent(const Shared<Model> model) : model(model) {}
     };
 
     struct TagComponent

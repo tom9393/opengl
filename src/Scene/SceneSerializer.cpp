@@ -1,6 +1,9 @@
 #include "SceneSerializer.h"
+#include "AssetManager.h"
+#include "AssimpLoader.h"
 #include "Entity.h"
 #include "Components.h"
+#include "ModelLibrary.h"
 #include <fstream>
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
@@ -194,7 +197,7 @@ namespace Engine
 
 			auto& model = e.GetComponent<ModelComponent>();
 			out << YAML::Key << "Model";
-			out << YAML::Value << model.model;
+			out << YAML::Value << model.model->GetPath();
 
 			out << YAML::EndMap;
 		}
@@ -307,7 +310,8 @@ namespace Engine
 				{
 					auto& mc = deserializedEntity.AddComponent<ModelComponent>();
 					std::string path = modelComponent["Model"].as<std::string>();
-					mc.model = path;
+					ModelLibrary lib(new AssimpLoader);
+					mc.model = lib.GetModelByPath(path, uuid);
 				}
 
 				auto rigidBodyComponent = entity["RigidBodyComponent"];

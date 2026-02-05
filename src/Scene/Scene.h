@@ -2,8 +2,8 @@
 
 #include "../../lib/entt/single_include/entt/entt.hpp"
 #include "../TimeStep.h"
+#include "Components.h"
 #include "SceneSerializer.h"
-#include "../ModelLibrary.h"
 #include "../EditorCamera.h"
 #include "../PhysicsWorld.h"
 #include "../UUID.h"
@@ -16,8 +16,6 @@ namespace Engine
     class Scene : public Asset
     {
         public:
-        Scene();
-        ~Scene();
 
         void OnUpdate(TimeStep ts);
         void OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera);
@@ -31,15 +29,19 @@ namespace Engine
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
         void DestroyEntity(Entity entity);
 
+        void SyncPhysicsTransforms();
+        SceneCameraComponent* GetPrimaryCamera();
+
         private:
         template <typename T>
         void OnComponentAdded(Entity entity, T &component);
+        
+        void RenderScene(const glm::mat4 &viewProjection);
 
         private:
         entt::registry m_Registry;
         unsigned int m_ViewportWidth = 0;
         unsigned int m_ViewportHeight = 0;
-        ModelLibrary m_ModelLibrary;
 
         PhysicsWorld* m_PhysicsWorld = nullptr;
 

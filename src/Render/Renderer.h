@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Buffer.h"
+#include "Model.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
 #include "Shader.h"
@@ -17,12 +18,21 @@ namespace Engine
         unsigned int IndicesCount = 0;
     };
 
+    struct RenderCall
+    {
+        Shared<Mesh> mesh;
+        glm::mat4 transform;
+        
+        RenderCall(const Shared<Mesh> &mesh, const glm::mat4 &transform) : mesh(mesh), transform(transform) {};
+    };
+
     struct RenderStorage
     {
         ShaderLibrary* shaderLibrary;
         Shared<SSBOBuffer> matrixBuffer;
         Shared<UniformBuffer> uniformBuffer;
         Statistics statistics;
+        std::vector<RenderCall> renderQueue;
     };
 
     class Renderer
@@ -40,6 +50,7 @@ namespace Engine
 
         static void SetTexture(TextureLayout &textureLayout);
         static void Submit(const Shared<Mesh> &mesh, glm::mat4 &transform);
+        static void SubmitModel(const Shared<Model> &model, const glm::mat4 &transform);
 
         static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

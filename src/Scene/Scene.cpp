@@ -2,81 +2,26 @@
 #include "../Render/Renderer.h"
 #include "Components.h"
 #include "Entity.h"
-#include "../AssimpLoader.h"
 #include "RigidBody.h"
 
 namespace Engine
 {
 
-	Scene::Scene() : m_ModelLibrary(new AssimpLoader()) {};
-
-	Scene::~Scene()
-	{
-	};
-
 	void Scene::OnUpdate(TimeStep ts)
 	{
-		auto sceneView = m_Registry.view<SceneCameraComponent>();
-		for (auto entity : sceneView)
+		m_PhysicsWorld->stepSimulation(ts);
+		SyncPhysicsTransforms();
+
+		SceneCameraComponent* primaryCamera = GetPrimaryCamera();
+		if (primaryCamera)
 		{
-			auto camera = sceneView.get<SceneCameraComponent>(entity);
-			if (camera.primary)
-			{
-				Renderer::BeginScene(camera.sceneCamera->GetProjection());
-				break;
-			}
+			RenderScene(primaryCamera->sceneCamera->GetProjection());
 		}
-
-		{
-			m_PhysicsWorld->stepSimulation(ts);
-
-			auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
-			for (auto e : view)
-			{
-				auto [rb, transform] = view.get<RigidBodyComponent, TransformComponent>(e);
-
-				if (rb.runtimeBody)
-				{
-					RigidBody* body = (RigidBody*)rb.runtimeBody;
-					body->GetTransform(transform.translation, transform.rotation);
-				}
-			}
-
-		}
-
-		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
-		for (auto entity : group)
-		{
-			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
-			glm::mat4 t = transform.GetTransform();
-			auto meshes = m_ModelLibrary.GetModelByPath(model.model, (int)entity)->GetMeshes();
-			for (auto& mesh : meshes)
-			{
-				Renderer::SetTexture(mesh->GetTextureLayout());
-				Renderer::Submit(mesh, t);
-			}
-		}
-
-		Renderer::EndScene();
 	};
 
 	void Scene::OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera)
 	{
-		Renderer::BeginScene(camera->GetViewProjection());
-		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
-		for (auto entity : group)
-		{
-			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
-			glm::mat4 t = transform.GetTransform();
-			auto meshes = m_ModelLibrary.GetModelByPath(model.model, (int)entity)->GetMeshes();
-			for (auto& mesh : meshes)
-			{
-				Renderer::SetTexture(mesh->GetTextureLayout());
-				Renderer::Submit(mesh, t);
-			}
-		}
-
-		Renderer::EndScene();
+		RenderScene(camera->GetViewProjection());
 	}
 
 	void Scene::OnViewportResize(unsigned int width, unsigned int height)
@@ -101,7 +46,7 @@ namespace Engine
 			Entity entity = { e, this };
 			auto& transform = entity.GetComponent<TransformComponent>();
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
-			auto& modelComp = entity.GetComponent<ModelComponent>();
+			auto& model = entity.GetComponent<ModelComponent>();
 
 			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
 			
@@ -109,7 +54,7 @@ namespace Engine
 			{
 				body->SetTransform(transform.translation, transform.rotation);
 			} else {
-				auto meshes = m_ModelLibrary.GetModelByPath(modelComp.model, (int)entity)->GetMeshes();
+				auto meshes = model.model->GetMeshes();
 				RBComplexShape* shape = new RBComplexShape(meshes);
 				RigidBody* body = new RigidBody(shape, transform.translation, transform.rotation, rigidbody.inertia, rigidbody.mass);
 				body->SetWorld(m_PhysicsWorld->getWorld());
@@ -117,6 +62,47 @@ namespace Engine
 				rigidbody.runtimeBody = body;
 			}
 		}
+	}
+
+	void Scene::RenderScene(const glm::mat4 &viewProjection)
+	{
+		Renderer::BeginScene(viewProjection);
+
+		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
+		for (auto entity : group)
+		{
+			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
+			if (model.model) 
+				Renderer::SubmitModel(model.model, transform.GetTransform());
+		}
+
+		Renderer::EndScene();
+	}
+
+	void Scene::SyncPhysicsTransforms()
+	{
+		auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
+		for (auto e : view)
+		{
+			auto [rb, transform] = view.get<RigidBodyComponent, TransformComponent>(e);
+
+			// Use a proper cast and check for the internal body
+			if (auto* body = static_cast<RigidBody*>(rb.runtimeBody))
+			{
+			    body->GetTransform(transform.translation, transform.rotation);
+			}
+		}
+	}
+
+	SceneCameraComponent* Scene::GetPrimaryCamera()
+	{
+		auto view = m_Registry.view<SceneCameraComponent>();
+		for (auto entity : view)
+		{
+			const auto& camera = view.get<SceneCameraComponent>(entity);
+			if (camera.primary) return const_cast<SceneCameraComponent*>(&camera);
+		}
+		return nullptr;
 	}
 
 	void Scene::OnRuntimeStop()

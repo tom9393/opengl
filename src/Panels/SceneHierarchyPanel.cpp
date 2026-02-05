@@ -1,6 +1,8 @@
 #include "SceneHierarchyPanel.h"
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
+#include "AssimpLoader.h"
+#include "ModelLibrary.h"
 #include "RigidBody.h"
 
 namespace Engine
@@ -277,16 +279,18 @@ namespace Engine
 
 		ImGui::PopItemWidth();
 
-		DrawComponent<ModelComponent>("Model", entity, [](auto &component)
+		DrawComponent<ModelComponent>("Model", entity, [entity](auto &component)
 		{
 			ImGui::Button("Model", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
 			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
 			    {
-				const char* path = (char*)payload->Data;
-				std::cout << path << std::endl;
-				component.model = std::string(path);
+				const char* p = (char*)payload->Data;
+				std::string path = std::string(p);
+				std::cout << p << std::endl;
+				ModelLibrary lib(new AssimpLoader);
+				component.model = lib.GetModelByPath(path, (int)entity);
 			    }
 			    ImGui::EndDragDropTarget();
 			}

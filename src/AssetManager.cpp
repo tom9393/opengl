@@ -38,6 +38,8 @@ namespace Engine {
         {
             m_Loaded[asset->GetHandle()] = asset;
             m_Paths[asset->GetHandle()] = path;
+        } else {
+            std::cout << "Failed to load asset" << std::endl;
         }
         return asset;
     };

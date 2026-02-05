@@ -9,10 +9,14 @@ namespace Engine
     enum class TextureType
     {
         None = 0,
-        Diffuse,
-        Specular,
-        Normal,
-        Height
+        Albedo,    // PBR: Base color
+        Normal,    // PBR: Surface detail
+        Metallic,  // PBR: Metalness
+        Roughness, // PBR: Micro-surface detail
+        AO,        // PBR: Ambient Occlusion
+        Height,    // Often used for parallax
+        Diffuse,   // Legacy
+        Specular   // Legacy
     };
 
     class Texture : public Asset
@@ -25,13 +29,7 @@ namespace Engine
         virtual unsigned int GetID() const = 0;
         virtual std::filesystem::path &GetPath() = 0;
 
-        TextureType GetType() { return m_Type; };
-        void SetType(TextureType type) { m_Type = type; };
-
         virtual void Bind(unsigned int slot) const = 0;
-
-        private:
-        TextureType m_Type = TextureType::None;
     };
 
     class Texture2D : public Texture
