@@ -289,8 +289,7 @@ namespace Engine
 				const char* p = (char*)payload->Data;
 				std::string path = std::string(p);
 				std::cout << p << std::endl;
-				ModelLibrary lib(new AssimpLoader);
-				component.model = lib.GetModelByPath(path, (int)entity);
+				component.path = path;
 			    }
 			    ImGui::EndDragDropTarget();
 			}

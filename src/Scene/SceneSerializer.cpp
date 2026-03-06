@@ -121,105 +121,69 @@ namespace Engine
 		return RigidBodyComponent::BodyType::Static;
 	}
 
-	static void SerializeEntity(YAML::Emitter &out, Entity e)
+	template<typename T, typename Function>
+	static void SerializeComponent(YAML::Emitter& out, Entity e, const std::string& name, Function func)
+	{
+	    if (e.HasComponent<T>())
+	    {
+		out << YAML::Key << name;
+		out << YAML::BeginMap;
+
+		auto& component = e.GetComponent<T>();
+		func(out, component);
+
+		out << YAML::EndMap;
+	    }
+	}
+
+	void SerializeEntity(YAML::Emitter &out, Entity e)
 	{
 		out << YAML::BeginMap;
-		out << YAML::Key << "Entity";
-		out << YAML::Value << e.GetUUID();
-		
-		if (e.HasComponent<TagComponent>())
-		{
-			out << YAML::Key << "TagComponent";
-			out << YAML::BeginMap;
+		out << YAML::Key << "Entity" << YAML::Value << e.GetUUID();
 
-			auto& tag = e.GetComponent<TagComponent>();
-			out << YAML::Key << "Tag";
-			out << YAML::Value << tag.tag;
+		SerializeComponent<TagComponent>(out, e, "TagComponent", [](auto& out, auto& tc) {
+			out << YAML::Key << "Tag" << YAML::Value << tc.tag;
+		});
 
-			out << YAML::EndMap;
-		}
+		SerializeComponent<TransformComponent>(out, e, "TransformComponent", [](auto& out, auto& tc) {
+			out << YAML::Key << "Translation" << YAML::Value << tc.translation;
+			out << YAML::Key << "Rotation"    << YAML::Value << tc.rotation;
+			out << YAML::Key << "Scale"       << YAML::Value << tc.scale;
+		});
 
-		if (e.HasComponent<TransformComponent>())
-		{
-			out << YAML::Key << "TransformComponent";
-			out << YAML::BeginMap;
-
-			auto& tc = e.GetComponent<TransformComponent>();
-			out << YAML::Key << "Translation";
-			out << YAML::Value << tc.translation;
-			out << YAML::Key << "Rotation";
-			out << YAML::Value << tc.rotation;
-			out << YAML::Key << "Scale";
-			out << YAML::Value << tc.scale;
-
-			out << YAML::EndMap;
-		}
-
-		if (e.HasComponent<SceneCameraComponent>())
-		{
-			out << YAML::Key << "CameraComponent";
-			out << YAML::BeginMap;
-
+		SerializeComponent<SceneCameraComponent>(out, e, "CameraComponent", [&](auto& out, auto& cc) {
 			auto& cameraComponent = e.GetComponent<SceneCameraComponent>();
 			auto& camera = cameraComponent.sceneCamera;
 
-			out << YAML::Key << "Camera";
-			out << YAML::Value;
+			out << YAML::Key << "Camera" << YAML::Value;
 
 			out << YAML::BeginMap;
 
-			out << YAML::Key << "ProjectionType";
-			out << YAML::Value << (int)camera->GetProjectionType();
-			out << YAML::Key << "PerspectiveFOV";
-			out << YAML::Value << camera->GetPerspectiveVerticalFOV();
-			out << YAML::Key << "PerspectiveNear";
-			out << YAML::Value << camera->GetPerspectiveNearClip();
-			out << YAML::Key << "PerspectiveFar";
-			out << YAML::Value << camera->GetPerspectiveFarClip();
-			out << YAML::Key << "OrthographicSize";
-			out << YAML::Value << camera->GetOrthographicSize();
-			out << YAML::Key << "OrthographicNear";
-			out << YAML::Value << camera->GetOrthographicNearClip();
-			out << YAML::Key << "OrthographicFar";
-			out << YAML::Value << camera->GetOrthographicFarClip();
+			out << YAML::Key << "ProjectionType" << YAML::Value << (int)camera->GetProjectionType();
 
-			out << YAML::Key << "Primary";
-			out << YAML::Value << cameraComponent.primary;
+			out << YAML::Key << "PerspectiveFOV" << YAML::Value << camera->GetPerspectiveVerticalFOV();
+			out << YAML::Key << "PerspectiveNear" << YAML::Value << camera->GetPerspectiveNearClip();
+			out << YAML::Key << "PerspectiveFar" << YAML::Value << camera->GetPerspectiveFarClip();
+			out << YAML::Key << "OrthographicSize" << YAML::Value << camera->GetOrthographicSize();
+			out << YAML::Key << "OrthographicNear" << YAML::Value << camera->GetOrthographicNearClip();
+			out << YAML::Key << "OrthographicFar" << YAML::Value << camera->GetOrthographicFarClip();
 
-			out << YAML::Key << "FixedAspectRatio";
-			out << YAML::Value << cameraComponent.fixedAspectRatio;
-		}
+			out << YAML::Key << "Primary" << YAML::Value << cameraComponent.primary;
 
-		if (e.HasComponent<ModelComponent>())
-		{
-			out << YAML::Key << "ModelComponent";
-			out << YAML::BeginMap;
-
-			auto& model = e.GetComponent<ModelComponent>();
-			out << YAML::Key << "Model";
-			out << YAML::Value << model.model->GetPath();
-
+			out << YAML::Key << "FixedAspectRatio" << YAML::Value << cameraComponent.fixedAspectRatio;
 			out << YAML::EndMap;
-		}
+		});
 
-		if (e.HasComponent<RigidBodyComponent>())
-		{
-			out << YAML::Key << "RigidBodyComponent";
-			out << YAML::BeginMap;
+		SerializeComponent<ModelComponent>(out, e, "ModelComponent", [](auto& out, auto& mc) {
+			out << YAML::Key << "Model" << YAML::Value << mc.path;
+		});
 
-			auto& rigidBody = e.GetComponent<RigidBodyComponent>();
-			out << YAML::Key << "BodyType";
-			out << YAML::Value << RigidBodyToString(rigidBody.type);
+		SerializeComponent<RigidBodyComponent>(out, e, "RigidBodyComponent", [](auto& out, auto& rb) {
+			out << YAML::Key << "BodyType" << YAML::Value << RigidBodyToString(rb.type);
+			out << YAML::Key << "Mass"     << YAML::Value << rb.mass;
+			out << YAML::Key << "Inertia"  << YAML::Value << rb.inertia;
+		});
 
-			out << YAML::Key << "Mass";
-			out << YAML::Value << rigidBody.mass;
-
-			out << YAML::Key << "Inertia";
-			out << YAML::Value << rigidBody.inertia;
-
-			out << YAML::EndMap;
-		}
-		
 		out << YAML::EndMap;
 	};
 
@@ -231,8 +195,8 @@ namespace Engine
 	{
 		YAML::Emitter out;
 		out << YAML::BeginMap;
-		out << YAML::Key << "Scene";
-		out << YAML::Value << "Unnamed scene";
+
+		out << YAML::Key << "Scene" << YAML::Value << "Unnamed scene";
 		out << YAML::Key << "Entities";
 		out << YAML::Value << YAML::BeginSeq;
 		m_Scene->m_Registry.view<entt::entity>().each([this, &out](entt::entity entity)
@@ -250,84 +214,86 @@ namespace Engine
 		fout << out.c_str();
 	};
 
-	bool SceneSerializer::Deserialize(const std::string &path)
-	{
-		std::ifstream stream(path);
-		std::stringstream strStream;
-		strStream << stream.rdbuf();
+	template <typename T>
+	void DeserializeComponent(Entity entity, YAML::Node node) {
+	}
 
-		YAML::Node data = YAML::Load(strStream.str());
+	template <>
+	void DeserializeComponent<TransformComponent>(Entity entity, YAML::Node node) {
+		if (node)
+		{
+			glm::vec3 translation = node["Translation"].as<glm::vec3>();
+			glm::vec3 rotation = node["Rotation"].as<glm::vec3>();
+			glm::vec3 size = node["Scale"].as<glm::vec3>();
+			entity.AddComponent<TransformComponent>(translation, rotation, size);
+		}
+	}
 
+	template <>
+	void DeserializeComponent<SceneCameraComponent>(Entity entity, YAML::Node node) {
+		if (node)
+		{
+			auto& cc = entity.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
+
+			auto cameraData = node["Camera"];
+			cc.sceneCamera->SetProjectionType((SceneCamera::ProjectionType)cameraData["ProjectionType"].as<int>());
+
+			cc.sceneCamera->SetPerspectiveVerticalFOV(cameraData["PerspectiveFOV"].as<float>());
+			cc.sceneCamera->SetPerspectiveNearClip(cameraData["PerspectiveNear"].as<float>());
+			cc.sceneCamera->SetPerspectiveFarClip(cameraData["PerspectiveFar"].as<float>());
+
+			cc.sceneCamera->SetOrthographicSize(cameraData["OrthographicSize"].as<float>());
+			cc.sceneCamera->SetOrthographicNearClip(cameraData["OrthographicNear"].as<float>());
+			cc.sceneCamera->SetOrthographicFarClip(cameraData["OrthographicFar"].as<float>());
+
+			cc.primary = node["Primary"].as<bool>();
+			cc.fixedAspectRatio = node["FixedAspectRatio"].as<bool>();
+		}
+	}
+
+	template <>
+	void DeserializeComponent<ModelComponent>(Entity entity, YAML::Node node) {
+		if (node)
+		{
+			auto& mc = entity.AddComponent<ModelComponent>();
+			mc.path = node["Model"].as<std::string>();
+		}
+	}
+
+	template <>
+	void DeserializeComponent<RigidBodyComponent>(Entity entity, YAML::Node node) {
+		if (node)
+		{
+			auto& rbc = entity.AddComponent<RigidBodyComponent>();
+			std::string bodyTypeString = node["BodyType"].as<std::string>();
+			rbc.type = RigidBodyFromString(bodyTypeString);
+			rbc.mass = node["Mass"].as<float>();
+			rbc.inertia = node["Inertia"].as<glm::vec3>();
+		}
+	}
+
+	void DeserializeEntity(Shared<Scene> &scene, YAML::Node& node) {
+		uint64_t uuid = node["Entity"].as<uint64_t>();
+		std::string tag = node["TagComponent"]["Tag"].as<std::string>("");
+
+		Entity entity = scene->CreateEntityWithUUID(uuid, tag);
+
+		DeserializeComponent<TransformComponent>(entity, node["TransformComponent"]);
+		DeserializeComponent<SceneCameraComponent>(entity, node["CameraComponent"]);
+		DeserializeComponent<ModelComponent>(entity, node["ModelComponent"]);
+		DeserializeComponent<RigidBodyComponent>(entity, node["RigidBodyComponent"]);
+	}
+
+	bool SceneSerializer::Deserialize(const std::string& path) {
+		YAML::Node data = YAML::LoadFile(path);
 		if (!data["Scene"]) return false;
 
-		std::string sceneName = data["Scene"].as<std::string>();
-
-		auto entities = data["Entities"];
-
-		if (entities)
-		{
-			for (auto entity : entities)
-			{
-				uint64_t uuid = entity["Entity"].as<uint64_t>();
-				
-				std::string name;
-				auto tagComponent = entity["TagComponent"];
-				if (tagComponent) name = tagComponent["Tag"].as<std::string>();
-
-				Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
-
-				auto transformComponent = entity["TransformComponent"];
-				if (transformComponent)
-				{
-					glm::vec3 translation = transformComponent["Translation"].as<glm::vec3>();
-					glm::vec3 rotation = transformComponent["Rotation"].as<glm::vec3>();
-					glm::vec3 size = transformComponent["Scale"].as<glm::vec3>();
-					auto& tc = deserializedEntity.AddComponent<TransformComponent>(translation, rotation, size);
-				}
-
-				auto cameraComponent = entity["CameraComponent"];
-				if (cameraComponent)
-				{
-					auto& cc = deserializedEntity.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
-
-					auto cameraData = cameraComponent["Camera"];
-					cc.sceneCamera->SetProjectionType((SceneCamera::ProjectionType)cameraData["ProjectionType"].as<int>());
-
-					cc.sceneCamera->SetPerspectiveVerticalFOV(cameraData["PerspectiveFOV"].as<float>());
-					cc.sceneCamera->SetPerspectiveNearClip(cameraData["PerspectiveNear"].as<float>());
-					cc.sceneCamera->SetPerspectiveFarClip(cameraData["PerspectiveFar"].as<float>());
-
-					cc.sceneCamera->SetOrthographicSize(cameraData["OrthographicSize"].as<float>());
-					cc.sceneCamera->SetOrthographicNearClip(cameraData["OrthographicNear"].as<float>());
-					cc.sceneCamera->SetOrthographicFarClip(cameraData["OrthographicFar"].as<float>());
-
-					cc.primary = cameraComponent["Primary"].as<bool>();
-					cc.fixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
-				}
-
-				auto modelComponent = entity["ModelComponent"];
-				if (modelComponent)
-				{
-					auto& mc = deserializedEntity.AddComponent<ModelComponent>();
-					std::string path = modelComponent["Model"].as<std::string>();
-					ModelLibrary lib(new AssimpLoader);
-					mc.model = lib.GetModelByPath(path, uuid);
-				}
-
-				auto rigidBodyComponent = entity["RigidBodyComponent"];
-				if (rigidBodyComponent)
-				{
-					auto& rbc = deserializedEntity.AddComponent<RigidBodyComponent>();
-					std::string bodyTypeString = rigidBodyComponent["BodyType"].as<std::string>();
-					rbc.type = RigidBodyFromString(bodyTypeString);
-
-					rbc.mass = rigidBodyComponent["Mass"].as<float>();
-
-					rbc.inertia = rigidBodyComponent["Inertia"].as<glm::vec3>();
-				}
+		YAML::Node entities = data["Entities"];
+		if (entities) {
+			for (YAML::Node entityNode : entities) {
+				DeserializeEntity(m_Scene, entityNode);
 			}
 		}
 		return true;
-	};
-
+	}
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pch.h"
+#include "Model.h"
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>
@@ -8,20 +9,18 @@
 #include "AssetManager.h"
 #include "Mesh.h"
 #include "BufferLayout.h"
-#include "ModelLoader.h"
 #include "Texture.h"
 
 namespace Engine
 {
 
-    class AssimpLoader : public ModelLoader
+    class AssimpLoader
     {
         public:
-        Shared<Model> Load(const char* path, int id) override
+        Shared<Model> Load(const std::filesystem::path &path)
         {
             m_Meshes.clear();
             m_Path = std::string(path);
-            m_EntityID = id;
             stbi_set_flip_vertically_on_load(true);
             auto clock_start = std::chrono::system_clock::now();
             LoadModel();
@@ -123,9 +122,6 @@ namespace Engine
                     vertices.emplace_back(diffuseColor.b);
                     vertices.emplace_back(diffuseColor.a);
                 }
-
-                vertexLayout.AddVertexAttrib(VertexAttribute::ID, ShaderDataType::Float, "a_EntityID");
-                vertices.emplace_back(m_EntityID);
             }
         }
 
@@ -193,7 +189,5 @@ namespace Engine
         std::vector<Shared<Mesh>> m_Meshes;
         std::string m_Directory;
         std::string m_Path;
-        int m_EntityID;
     };
-
 };

@@ -1,7 +1,7 @@
 #version 460 core
 
 layout (location = 0) out vec4 FragColor;
-layout (location = 1) out int SelectedEntity;
+//layout (location = 1) out int SelectedEntity;
 
 struct Material {
     sampler2D diffuse;
@@ -18,7 +18,7 @@ struct VertexOutput
 };
 
 layout (location = 0) in VertexOutput Input;
-layout (location = 4) in flat int v_EntityID;
+//layout (location = 4) in flat int v_EntityID;
 
 in vec3 v_FragPos;
 in vec3 v_Normal;
@@ -31,5 +31,5 @@ void main()
 {    
     //FragColor = texture(material.diffuse, Input.TexCoord);
     FragColor = Input.Color;
-    SelectedEntity = v_EntityID;
+//    SelectedEntity = v_EntityID;
 }

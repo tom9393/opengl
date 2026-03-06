@@ -12,10 +12,12 @@ namespace Engine {
 
         private:
         static Shared<Asset> GetByType(const std::filesystem::path &path);
-        static bool IsLoaded(UUID id);
+        static bool IsLoaded(const std::string &path);
+        //static bool IsLoaded(UUID id);
 
         private:
-        static inline std::unordered_map<UUID, Shared<Asset>> m_Loaded;
-        static inline std::unordered_map<UUID, std::string> m_Paths;
+        static inline std::unordered_map<std::string, Shared<Asset>> m_Loaded; // For now, later on make the system use UUIDs
+        // static inline std::unordered_map<UUID, Shared<Asset>> m_Loaded;
+        // static inline std::unordered_map<UUID, std::string> m_Paths;
     };
 }

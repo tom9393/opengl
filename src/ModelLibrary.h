@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Model.h"
-#include "ModelLoader.h"
+#include "ModelImporter.h"
 
 namespace Engine
 {
@@ -10,19 +10,19 @@ namespace Engine
     {
         public:
 
-        ModelLibrary(ModelLoader* loader) : m_Loader(loader) {};
+        ModelLibrary(ModelImporter* loader) : m_Loader(loader) {};
 
-        Shared<Model> GetModelByPath(std::string &str, int id) {
+        Shared<Model> GetModelByPath(std::string &str) {
             if (!m_Models[str])
             {
-                m_Models[str] = m_Loader->Load(str.c_str(), id);
+                m_Models[str] = m_Loader->LoadModel(str.c_str());
             }
             return m_Models[str];
         };
 
         private:
         std::unordered_map<std::string, Shared<Model>> m_Models;
-        ModelLoader* m_Loader;
+        ModelImporter* m_Loader;
     };
 
 };

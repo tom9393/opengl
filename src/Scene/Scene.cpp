@@ -1,8 +1,10 @@
 #include "Scene.h"
 #include "../Render/Renderer.h"
+#include "AssetManager.h"
 #include "Components.h"
 #include "Entity.h"
 #include "RigidBody.h"
+#include <memory>
 
 namespace Engine
 {
@@ -54,7 +56,8 @@ namespace Engine
 			{
 				body->SetTransform(transform.translation, transform.rotation);
 			} else {
-				auto meshes = model.model->GetMeshes();
+				Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(model.path));
+				auto meshes = m->GetMeshes();
 				RBComplexShape* shape = new RBComplexShape(meshes);
 				RigidBody* body = new RigidBody(shape, transform.translation, transform.rotation, rigidbody.inertia, rigidbody.mass);
 				body->SetWorld(m_PhysicsWorld->getWorld());
@@ -72,8 +75,11 @@ namespace Engine
 		for (auto entity : group)
 		{
 			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
-			if (model.model) 
-				Renderer::SubmitModel(model.model, transform.GetTransform());
+
+			Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(model.path));
+
+			if (m) 
+				Renderer::SubmitModel(m, transform.GetTransform());
 		}
 
 		Renderer::EndScene();

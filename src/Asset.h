@@ -9,7 +9,8 @@ namespace Engine {
         None = 0,
         Texture2D,
         Texture3D,
-        Scene
+        Scene,
+        Model
     };
 
     class Asset

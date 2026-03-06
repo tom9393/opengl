@@ -12,7 +12,7 @@ namespace Engine
     Testlayer::Testlayer()
     {
         AssimpLoader loader;
-        m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin", 0);
+        m_Model = loader.Load("/home/tom/Coding/c++/opengl/assets/Leopard2A4.assbin");
     };
 
     Testlayer::~Testlayer()

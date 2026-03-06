@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../pch.h"
+#include "Asset.h"
 #include "Mesh.h"
 
 namespace Engine
 {
 
-    class Model
+    class Model : public Asset
     {
         public:
         Model(std::vector<Shared<Mesh>> &meshes, std::string &path) : m_Meshes(meshes), m_Directory(path) {}

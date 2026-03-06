@@ -4,6 +4,7 @@
 #include "../Preprocessor.h"
 #include "../Texture.h"
 #include "Model.h"
+#include "ModelLibrary.h"
 #include "SceneCamera.h"
 #include "../MathTools.h"
 #include "UUID.h"
@@ -44,15 +45,6 @@ namespace Engine
         }
     };
 
-    struct ModelComponent
-    {
-        Shared<Model> model = nullptr;
-
-        ModelComponent() = default;
-        ModelComponent(const ModelComponent&) = default;
-        ModelComponent(const Shared<Model> model) : model(model) {}
-    };
-
     struct TagComponent
     {
         std::string tag = "";
@@ -62,13 +54,22 @@ namespace Engine
         TagComponent(const std::string &tag) : tag(tag) {}
     };
 
+    struct ModelComponent
+    {
+        std::string path = "";
+
+        ModelComponent() = default;
+        ModelComponent(const ModelComponent&) = default;
+        ModelComponent(const std::string &path) : path(path) {}
+    };
+
     struct TextureComponent
     {
-        Shared<Texture2D> texture = nullptr;
+        std::string path = "";
 
         TextureComponent() = default;
         TextureComponent(const TextureComponent&) = default;
-        TextureComponent(const Shared<Texture2D> &texture) : texture(texture) {}
+        TextureComponent(const std::string &path) : path(path) {}
     };
 
     struct SceneCameraComponent
@@ -93,6 +94,5 @@ namespace Engine
 
         RigidBodyComponent() = default;
         RigidBodyComponent(const RigidBodyComponent&) = default;
-    };
-
+};
 };
