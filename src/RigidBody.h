@@ -79,7 +79,7 @@ namespace Engine {
     class RigidBody
     {
         public:
-        RigidBody(RBShape* shape, const glm::vec3 &translation, const glm::vec3 &rotation, const glm::vec3 &inertia = glm::vec3(0, 0, 0), float mass = 0.0f) : m_Shape(shape)
+        RigidBody(RBShape* shape, const glm::vec3 &translation = glm::vec3(0, 0, 0), const glm::vec3 &rotation = glm::vec3(0, 0, 0), const glm::vec3 &inertia = glm::vec3(0, 0, 0), float mass = 0.0f) : m_Shape(shape)
         {
             btVector3 localInertia = GlmToBullet(inertia);
             if (mass > 0.0f) {
@@ -106,9 +106,6 @@ namespace Engine {
         btRigidBody* GetBody() { return m_Body; };
         void SetBody(btRigidBody* body) { m_Body = body; };
 
-        btDiscreteDynamicsWorld* GetWorld() { return m_World; };
-        void SetWorld(btDiscreteDynamicsWorld* world) { m_World = world; };
-
         void SetTransform(const glm::vec3 &translation, const glm::vec3 &rotation)
         {
             btTransform btTransform;
@@ -118,6 +115,7 @@ namespace Engine {
             btQuaternion btRot;
             btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
             btTransform.setRotation(btRot);
+
             m_Body->setWorldTransform(btTransform);
             if (m_Body->getMotionState())
             {
@@ -140,30 +138,25 @@ namespace Engine {
 
         void SetMass(float mass)
         {
-        m_World->removeRigidBody(m_Body); // For whatever reason we need to remove and add again the body for mass to apply
+            btVector3 localInertia(0, 0, 0);
+            if (mass > 0.0f) {
+                m_Body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
+                m_Body->setMassProps(mass, localInertia);
+            } else {
+                m_Body->setMassProps(0.0f, btVector3(0, 0, 0));
+            }
 
-        btVector3 localInertia(0, 0, 0);
-        if (mass > 0.0f) {
-            m_Body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
-            m_Body->setMassProps(mass, localInertia);
-        } else {
-            m_Body->setMassProps(0.0f, btVector3(0, 0, 0));
-        }
+            m_Body->updateInertiaTensor();
 
-        m_Body->updateInertiaTensor();
+            m_Body->setLinearVelocity(btVector3(0, 0, 0));
+            m_Body->setAngularVelocity(btVector3(0, 0, 0));
 
-        m_Body->setLinearVelocity(btVector3(0, 0, 0));
-        m_Body->setAngularVelocity(btVector3(0, 0, 0));
-
-        m_World->addRigidBody(m_Body);
-        
-        m_Body->activate(true);
+            m_Body->activate(true);
         }
 
         private:
         RBShape* m_Shape;
         btRigidBody* m_Body;
-        btDiscreteDynamicsWorld* m_World;
     };
 
 }

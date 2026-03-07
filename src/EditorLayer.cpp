@@ -90,6 +90,7 @@ namespace Engine
 
         m_SceneHierarchyPanel.OnImGuiRender();
         m_ContentBrowserPanel.OnImGuiRender();
+        m_SettingsPanel.OnImGuiRender();
 
         Renderer::ResetStatistics();
     }
@@ -197,7 +198,8 @@ namespace Engine
             ImGui::EndDragDropTarget();
         }
 
-        UpdateSelectedEntity();
+        if (m_SceneState == SceneState::Edit)
+            UpdateSelectedEntity();
         
         ImGui::End();
     };
@@ -334,7 +336,6 @@ namespace Engine
         m_SceneState = SceneState::Edit;
         m_RuntimeScene->OnRuntimeStop();
         m_RuntimeScene = nullptr;
-        
     }
 
 };

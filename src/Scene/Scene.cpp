@@ -4,7 +4,6 @@
 #include "Components.h"
 #include "Entity.h"
 #include "RigidBody.h"
-#include <memory>
 
 namespace Engine
 {
@@ -133,9 +132,8 @@ namespace Engine
 			
 			if (body)
 			{
-				body->SetWorld(m_Physicsworld.getWorld());
-				body->SetTransform(transform.translation, transform.rotation); // Crashes here
 				m_Physicsworld.AddRigidBody(body);
+				body->SetTransform(transform.translation, transform.rotation);
 			};
 		}
 	}

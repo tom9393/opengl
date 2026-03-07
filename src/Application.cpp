@@ -103,15 +103,10 @@ namespace Engine
 
     bool Application::OnKeyPress(KeyboardPressEvent &e)
     {
-        if (e.getKeyCode() == KEY_Q)
+        if (e.getKeyCode() == KEY_ESCAPE)
         {
             WindowCloseEvent e;
             EventBroker::Get().Publish(e);
-        }
-
-        if (e.getKeyCode() == KEY_E)
-        {
-            Renderer::ToggleWireframe();
         }
 
         return false;

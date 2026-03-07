@@ -4,12 +4,13 @@
 #include "EditorCamera.h"
 #include "Events/KeyboardEvent.h"
 #include "Layer.h"
-#include "Panels/ContentBrowserPanel.h"
 #include "Render/RenderGraph.h"
 #include "Scene/Scene.h"
 #include "TimeStep.h"
 #include "Events/MouseEvent.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
+#include "Panels/SettingsPanel.h"
 
 namespace Engine
 {
@@ -115,6 +116,7 @@ namespace Engine
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;
         ContentBrowserPanel m_ContentBrowserPanel;
+        SettingsPanel m_SettingsPanel;
 
         SceneState m_SceneState = SceneState::Edit;
     };

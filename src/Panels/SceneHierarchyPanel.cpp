@@ -274,9 +274,9 @@ namespace Engine
 				{
 					// Fix this
 					m_SelectionContext.AddComponent<RigidBodyComponent>();
-					ModelComponent modelComponent = entity.GetComponent<ModelComponent>();
-					TransformComponent transformComponent = entity.GetComponent<TransformComponent>();
-					RigidBodyComponent rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+					ModelComponent &modelComponent = entity.GetComponent<ModelComponent>();
+					TransformComponent &transformComponent = entity.GetComponent<TransformComponent>();
+					RigidBodyComponent &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
 					Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
 					std::vector<Shared<Mesh>> meshes = m->GetMeshes();
 					RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
