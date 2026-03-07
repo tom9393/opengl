@@ -104,7 +104,8 @@ namespace Engine
         Viewport m_Viewport;
         Entity m_HoveredEntity;
 
-        Shared<Scene> m_Scene;
+        Shared<Scene> m_EditingScene;
+        Shared<Scene> m_RuntimeScene;
         Shared<EditorCamera> m_EditorCamera;
 
         int m_GizmoType = -1;

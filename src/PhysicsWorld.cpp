@@ -15,6 +15,8 @@ namespace Engine {
         // Optional: tune other parameters here (solver iterations, etc.)
     }
 
+    PhysicsWorld::PhysicsWorld(float x, float y, float z) : PhysicsWorld(btVector3(x, y, z)) {}
+
     PhysicsWorld::~PhysicsWorld() {
         // Remove rigid bodies from world and delete them (world does not free motion states or collision shapes)
         if (world) {

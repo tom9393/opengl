@@ -26,7 +26,6 @@ namespace Engine
                 return GetComponent<T>();
             }
             T& component = m_Scene->m_Registry.emplace<T>(m_Handle, std::forward<Args>(args)...);
-            m_Scene->OnComponentAdded<T>(*this, component);
             return component;
         }
 

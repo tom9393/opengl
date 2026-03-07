@@ -26,9 +26,9 @@ namespace Engine
         io.FontDefault = io.Fonts->AddFontFromFileTTF("../assets/fonts/opensans/OpenSans-Regular.ttf", 18.0f);
 
         m_EditorCamera = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
-        m_Scene = MakeShared<Scene>();
-        m_Scene->OnViewportResize(500, 500);
-        m_SceneHierarchyPanel.SetContext(m_Scene);
+        m_EditingScene = MakeShared<Scene>();
+        m_EditingScene->OnViewportResize(500, 500);
+        m_SceneHierarchyPanel.SetContext(m_EditingScene);
 
         auto& pass = m_RenderGraph.AddPass("ScenePass");
         pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth });
@@ -41,12 +41,12 @@ namespace Engine
             switch (m_SceneState) {
                 case Engine::SceneState::Edit:
                 {
-                    m_Scene->OnUpdateEditor(ts, m_EditorCamera);
+                    m_EditingScene->OnUpdateEditor(ts, m_EditorCamera);
                     break;
                 }
                 case Engine::SceneState::Play:
                 {
-                    m_Scene->OnUpdate(ts);
+                    m_RuntimeScene->OnUpdate(ts);
                     break;
                 }
             }
@@ -108,7 +108,7 @@ namespace Engine
                 return;
 
             int pixelData = fbHandle->ReadPixel(1, mouseX, mouseY);
-            m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_Scene.get());
+            m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_EditingScene.get());
         };
     };
 
@@ -177,7 +177,7 @@ namespace Engine
         {
             m_RenderGraph.Resize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
             m_EditorCamera->SetViewportSize(m_Viewport.Size.x, m_Viewport.Size.y);
-            m_Scene->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
+            m_EditingScene->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
         }
 
         unsigned int texID = m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
@@ -294,10 +294,10 @@ namespace Engine
         std::string filepath = FileDialogs::OpenFile("*.pmblend");
         if (!filepath.empty())
         {
-            m_Scene = MakeShared<Scene>();
-            m_Scene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
-            m_SceneHierarchyPanel.SetContext(m_Scene);
-            SceneSerializer serializer(m_Scene);
+            m_EditingScene = MakeShared<Scene>();
+            m_EditingScene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
+            m_SceneHierarchyPanel.SetContext(m_EditingScene);
+            SceneSerializer serializer(m_EditingScene);
             serializer.Deserialize(filepath);
         }
     };
@@ -306,9 +306,9 @@ namespace Engine
     {
         if (path != nullptr)
         {
-            m_Scene = std::static_pointer_cast<Scene>(AssetManager::LoadAsset(path));
-            m_Scene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
-            m_SceneHierarchyPanel.SetContext(m_Scene);
+            m_EditingScene = std::static_pointer_cast<Scene>(AssetManager::LoadAsset(path));
+            m_EditingScene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
+            m_SceneHierarchyPanel.SetContext(m_EditingScene);
         }
     }
 
@@ -317,7 +317,7 @@ namespace Engine
         std::string filepath = FileDialogs::SaveFile("*.pmblend");
         if (!filepath.empty())
         {
-            SceneSerializer serializer(m_Scene);
+            SceneSerializer serializer(m_EditingScene);
             serializer.Serialize(filepath);
         }
     };
@@ -325,13 +325,16 @@ namespace Engine
     void EditorLayer::OnScenePlay()
     {
         m_SceneState = SceneState::Play;
-        m_Scene->OnRuntimeStart();
+        m_RuntimeScene = Scene::Copy(m_EditingScene);
+        m_RuntimeScene->OnRuntimeStart();
     }
 
     void EditorLayer::OnSceneStop()
     {
         m_SceneState = SceneState::Edit;
-        m_Scene->OnRuntimeStop();
+        m_RuntimeScene->OnRuntimeStop();
+        m_RuntimeScene = nullptr;
+        
     }
 
 };

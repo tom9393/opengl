@@ -9,9 +9,52 @@
 namespace Engine
 {
 
+	template <typename Component>
+	static void CopyComponent(entt::registry &destination, entt::registry &source, const std::unordered_map<UUID, entt::entity> &map)
+	{
+		auto view = source.view<Component>();
+		for (auto e : view)
+		{
+			UUID id = source.get<IDComponent>(e).id;
+			entt::entity entityId = map.at(id);
+			auto& component = source.get<Component>(e);
+			destination.emplace_or_replace<Component>(entityId, component);
+		}
+	};
+
+	Shared<Scene> Scene::Copy(Shared<Scene> other)
+	{
+		Shared<Scene> newScene = MakeShared<Scene>();
+		
+		newScene->m_ViewportHeight = other->m_ViewportHeight;
+		newScene->m_ViewportWidth = other->m_ViewportWidth;
+		
+		std::unordered_map<UUID, entt::entity> map;
+
+		auto& source = other->m_Registry;
+		auto& destination = newScene->m_Registry;
+
+		auto ids = source.view<IDComponent>();
+		for (auto e : ids)
+		{
+			UUID id = source.get<IDComponent>(e).id;
+			Entity newEntity = newScene->CreateEntityWithUUID(id);
+			
+			map[id] = newEntity;
+		}
+		
+		CopyComponent<TagComponent>(destination, source, map);
+		CopyComponent<TransformComponent>(destination, source, map);
+		CopyComponent<ModelComponent>(destination, source, map);
+		CopyComponent<SceneCameraComponent>(destination, source, map);
+		CopyComponent<RigidBodyComponent>(destination, source, map);
+
+		return newScene;
+	};
+
 	void Scene::OnUpdate(TimeStep ts)
 	{
-		m_PhysicsWorld->stepSimulation(ts);
+		m_Physicsworld.stepSimulation(ts);
 		SyncPhysicsTransforms();
 
 		auto view = m_Registry.view<SceneCameraComponent, TransformComponent>(); // Camera must have location
@@ -20,7 +63,8 @@ namespace Engine
 			auto [camera, transform] = view.get<SceneCameraComponent, TransformComponent>(entity);
 			if (camera.primary)
 			{
-				RenderScene(camera.sceneCamera->GetProjection() * transform.GetTransform());
+				glm::mat4 viewMatrix = glm::inverse(transform.GetTransform());
+				RenderScene(camera.sceneCamera->GetProjection() * viewMatrix);
 				return;
 			}
 		}
@@ -44,9 +88,7 @@ namespace Engine
 	};
 
 	void Scene::OnRuntimeStart()
-	{
-		if (m_PhysicsWorld == nullptr) m_PhysicsWorld = new PhysicsWorld(btVector3(0, -9.81f, 0));
-
+	{	
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto e : view)
 		{
@@ -57,18 +99,12 @@ namespace Engine
 
 			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
 			
-			if (body != nullptr)
+			if (body)
 			{
 				body->SetTransform(transform.translation, transform.rotation);
-			} else {
-				Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(model.path));
-				auto meshes = m->GetMeshes();
-				RBComplexShape* shape = new RBComplexShape(meshes);
-				RigidBody* body = new RigidBody(shape, transform.translation, transform.rotation, rigidbody.inertia, rigidbody.mass);
-				body->SetWorld(m_PhysicsWorld->getWorld());
-				m_PhysicsWorld->AddRigidBody(body);
-				rigidbody.runtimeBody = body;
-			}
+				body->SetWorld(m_Physicsworld.getWorld());
+				m_Physicsworld.AddRigidBody(body);
+			};
 		}
 	}
 
@@ -107,8 +143,6 @@ namespace Engine
 
 	void Scene::OnRuntimeStop()
 	{
-		// delete m_PhysicsWorld;
-		// m_PhysicsWorld = nullptr;
 	}
 
 	Entity Scene::CreateEntity(const std::string &name)
@@ -128,47 +162,4 @@ namespace Engine
 	{
 		m_Registry.destroy(entity);
 	};
-
-	template <typename T>
-	void Scene::OnComponentAdded(Entity entity, T &component)
-	{
-		static_assert(false);
-	}
-
-	template <>
-	void Scene::OnComponentAdded<SceneCameraComponent>(Entity entity, SceneCameraComponent &component)
-	{
-		component.sceneCamera->SetViewportSize(m_ViewportWidth, m_ViewportHeight);
-	}
-
-	template <>
-	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent &component)
-	{
-	}
-
-	template <>
-	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent &component)
-	{
-	}
-
-	template <>
-	void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
-	{
-	}
-
-	template <>
-	void Scene::OnComponentAdded<TextureComponent>(Entity entity, TextureComponent &component)
-	{
-	}
-
-	template <>
-	void Scene::OnComponentAdded<RigidBodyComponent>(Entity entity, RigidBodyComponent &component)
-	{
-	}
-
-	template <>
-	void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent &component)
-	{
-	}
-
 };

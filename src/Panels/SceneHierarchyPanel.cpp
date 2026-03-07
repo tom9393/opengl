@@ -268,10 +268,24 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
-			if (ImGui::MenuItem("RigidBody"))
+			if (entity.HasComponent<ModelComponent>())
 			{
-				m_SelectionContext.AddComponent<RigidBodyComponent>();
-				ImGui::CloseCurrentPopup();
+				if (ImGui::MenuItem("RigidBody"))
+				{
+					// Fix this
+					m_SelectionContext.AddComponent<RigidBodyComponent>();
+					ModelComponent modelComponent = entity.GetComponent<ModelComponent>();
+					TransformComponent transformComponent = entity.GetComponent<TransformComponent>();
+					RigidBodyComponent rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+					Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
+					std::vector<Shared<Mesh>> meshes = m->GetMeshes();
+					RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
+					RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
+					body->SetWorld(m_Context->m_Physicsworld.getWorld());
+					m_Context->m_Physicsworld.AddRigidBody(body);
+					rigidbodyComponent.runtimeBody = body;
+					ImGui::CloseCurrentPopup();
+				}
 			}
 
 			ImGui::EndPopup();
@@ -399,7 +413,7 @@ namespace Engine
 			}
 
 			RigidBody* body = (RigidBody*) component.runtimeBody;
-			if (body != nullptr)
+			if (body)
 			{
 				float mass = component.mass;
 

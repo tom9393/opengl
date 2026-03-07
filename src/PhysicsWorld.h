@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LinearMath/btVector3.h"
 #include "RigidBody.h"
 #include <vector>
 #include <memory>
@@ -10,6 +11,7 @@ namespace Engine {
     class PhysicsWorld {
     public:
         PhysicsWorld(const btVector3& gravity = btVector3(0, -9.81f, 0));
+        PhysicsWorld(float x, float y, float z);
         ~PhysicsWorld();
 
         void stepSimulation(float deltaTime, int maxSubSteps = 10, float fixedTimeStep = 1.0f / 60.0f);
@@ -18,6 +20,9 @@ namespace Engine {
         void RemoveRigidBody(RigidBody* body);
 
         btDiscreteDynamicsWorld* getWorld() { return world.get(); }
+
+        bool IsActive() { return m_Active; }
+        void SetActive(bool active) { m_Active = active; }
 
     private:
         // Bullet core objects
@@ -31,6 +36,8 @@ namespace Engine {
         std::vector<std::unique_ptr<btCollisionShape>> collisionShapes;
         std::vector<std::unique_ptr<btCompoundShape>> compoundShapes;
         std::vector<std::unique_ptr<btDefaultMotionState>> motionStates;
+
+        bool m_Active = false;
     };
 
 }

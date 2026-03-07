@@ -22,6 +22,15 @@ namespace Engine
         IDComponent(const IDComponent&) = default;
     };
 
+    struct TagComponent
+    {
+        std::string tag = "";
+
+        TagComponent() = default;
+        TagComponent(const TagComponent&) = default;
+        TagComponent(const std::string &tag) : tag(tag) {}
+    };
+
     struct TransformComponent
     {
         glm::vec3 translation;
@@ -43,15 +52,6 @@ namespace Engine
         {
             MathTools::DecomposeMatrix(matrix, translation, rotation, scale);
         }
-    };
-
-    struct TagComponent
-    {
-        std::string tag = "";
-
-        TagComponent() = default;
-        TagComponent(const TagComponent&) = default;
-        TagComponent(const std::string &tag) : tag(tag) {}
     };
 
     struct ModelComponent

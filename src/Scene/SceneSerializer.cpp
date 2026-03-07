@@ -215,11 +215,11 @@ namespace Engine
 	};
 
 	template <typename T>
-	void DeserializeComponent(Entity entity, YAML::Node node) {
+	void DeserializeComponent(Entity entity, Shared<Scene> &scene, YAML::Node node) {
 	}
 
 	template <>
-	void DeserializeComponent<TransformComponent>(Entity entity, YAML::Node node) {
+	void DeserializeComponent<TransformComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
 			glm::vec3 translation = node["Translation"].as<glm::vec3>();
@@ -230,29 +230,32 @@ namespace Engine
 	}
 
 	template <>
-	void DeserializeComponent<SceneCameraComponent>(Entity entity, YAML::Node node) {
+	void DeserializeComponent<SceneCameraComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
+			// Fix this mess
 			auto& cc = entity.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
 
 			auto cameraData = node["Camera"];
 			cc.sceneCamera->SetProjectionType((SceneCamera::ProjectionType)cameraData["ProjectionType"].as<int>());
 
-			cc.sceneCamera->SetPerspectiveVerticalFOV(cameraData["PerspectiveFOV"].as<float>());
-			cc.sceneCamera->SetPerspectiveNearClip(cameraData["PerspectiveNear"].as<float>());
-			cc.sceneCamera->SetPerspectiveFarClip(cameraData["PerspectiveFar"].as<float>());
-
 			cc.sceneCamera->SetOrthographicSize(cameraData["OrthographicSize"].as<float>());
 			cc.sceneCamera->SetOrthographicNearClip(cameraData["OrthographicNear"].as<float>());
 			cc.sceneCamera->SetOrthographicFarClip(cameraData["OrthographicFar"].as<float>());
 
-			cc.primary = node["Primary"].as<bool>();
-			cc.fixedAspectRatio = node["FixedAspectRatio"].as<bool>();
+			cc.sceneCamera->SetPerspective(
+			    cameraData["PerspectiveFOV"].as<float>(),
+			    cameraData["PerspectiveNear"].as<float>(),
+			    cameraData["PerspectiveFar"].as<float>()
+			);
+
+			cc.primary = cameraData["Primary"].as<bool>();
+			cc.fixedAspectRatio = cameraData["FixedAspectRatio"].as<bool>();
 		}
 	}
 
 	template <>
-	void DeserializeComponent<ModelComponent>(Entity entity, YAML::Node node) {
+	void DeserializeComponent<ModelComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
 			auto& mc = entity.AddComponent<ModelComponent>();
@@ -261,7 +264,7 @@ namespace Engine
 	}
 
 	template <>
-	void DeserializeComponent<RigidBodyComponent>(Entity entity, YAML::Node node) {
+	void DeserializeComponent<RigidBodyComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
 			auto& rbc = entity.AddComponent<RigidBodyComponent>();
@@ -269,6 +272,17 @@ namespace Engine
 			rbc.type = RigidBodyFromString(bodyTypeString);
 			rbc.mass = node["Mass"].as<float>();
 			rbc.inertia = node["Inertia"].as<glm::vec3>();
+
+			ModelComponent modelComponent = entity.GetComponent<ModelComponent>();
+			TransformComponent transformComponent = entity.GetComponent<TransformComponent>();
+			RigidBodyComponent rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+			Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
+			std::vector<Shared<Mesh>> meshes = m->GetMeshes();
+			RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
+			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
+			body->SetWorld(scene->m_Physicsworld.getWorld());
+			scene->m_Physicsworld.AddRigidBody(body);
+			rigidbodyComponent.runtimeBody = body;
 		}
 	}
 
@@ -278,10 +292,10 @@ namespace Engine
 
 		Entity entity = scene->CreateEntityWithUUID(uuid, tag);
 
-		DeserializeComponent<TransformComponent>(entity, node["TransformComponent"]);
-		DeserializeComponent<SceneCameraComponent>(entity, node["CameraComponent"]);
-		DeserializeComponent<ModelComponent>(entity, node["ModelComponent"]);
-		DeserializeComponent<RigidBodyComponent>(entity, node["RigidBodyComponent"]);
+		DeserializeComponent<TransformComponent>(entity, scene, node["TransformComponent"]);
+		DeserializeComponent<SceneCameraComponent>(entity, scene, node["CameraComponent"]);
+		DeserializeComponent<ModelComponent>(entity, scene, node["ModelComponent"]);
+		DeserializeComponent<RigidBodyComponent>(entity, scene, node["RigidBodyComponent"]);
 	}
 
 	bool SceneSerializer::Deserialize(const std::string& path) {

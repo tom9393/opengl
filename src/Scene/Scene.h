@@ -15,6 +15,7 @@ namespace Engine
     class Scene : public Asset
     {
         public:
+        static Shared<Scene> Copy(Shared<Scene> other);
 
         void OnUpdate(TimeStep ts);
         void OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera);
@@ -31,17 +32,13 @@ namespace Engine
         void SyncPhysicsTransforms();
 
         private:
-        template <typename T>
-        void OnComponentAdded(Entity entity, T &component);
-        
         void RenderScene(const glm::mat4 &viewProjection);
 
-        private:
-        entt::registry m_Registry;
+        public:
         unsigned int m_ViewportWidth = 0;
         unsigned int m_ViewportHeight = 0;
-
-        PhysicsWorld* m_PhysicsWorld = nullptr;
+        entt::registry m_Registry;
+        PhysicsWorld m_Physicsworld = PhysicsWorld(0, -9.81f, 0);
 
         friend class Entity;
         friend class SceneSerializer;
