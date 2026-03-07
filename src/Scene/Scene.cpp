@@ -14,10 +14,15 @@ namespace Engine
 		m_PhysicsWorld->stepSimulation(ts);
 		SyncPhysicsTransforms();
 
-		SceneCameraComponent* primaryCamera = GetPrimaryCamera();
-		if (primaryCamera)
+		auto view = m_Registry.view<SceneCameraComponent, TransformComponent>(); // Camera must have location
+		for (auto entity : view)
 		{
-			RenderScene(primaryCamera->sceneCamera->GetProjection());
+			auto [camera, transform] = view.get<SceneCameraComponent, TransformComponent>(entity);
+			if (camera.primary)
+			{
+				RenderScene(camera.sceneCamera->GetProjection() * transform.GetTransform());
+				return;
+			}
 		}
 	};
 
@@ -98,17 +103,6 @@ namespace Engine
 			    body->GetTransform(transform.translation, transform.rotation);
 			}
 		}
-	}
-
-	SceneCameraComponent* Scene::GetPrimaryCamera()
-	{
-		auto view = m_Registry.view<SceneCameraComponent>();
-		for (auto entity : view)
-		{
-			const auto& camera = view.get<SceneCameraComponent>(entity);
-			if (camera.primary) return const_cast<SceneCameraComponent*>(&camera);
-		}
-		return nullptr;
 	}
 
 	void Scene::OnRuntimeStop()

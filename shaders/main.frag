@@ -14,7 +14,7 @@ struct VertexOutput
     vec3 FragPos;
     vec3 Normal;
     vec2 TexCoord;
-    vec4 Color;
+//    vec4 Color;
 };
 
 layout (location = 0) in VertexOutput Input;
@@ -29,7 +29,7 @@ uniform Material material;
 
 void main()
 {    
-    //FragColor = texture(material.diffuse, Input.TexCoord);
-    FragColor = Input.Color;
+    FragColor = texture(material.diffuse, Input.TexCoord);
+//    FragColor = Input.Color;
 //    SelectedEntity = v_EntityID;
 }

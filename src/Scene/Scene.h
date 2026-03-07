@@ -2,7 +2,6 @@
 
 #include "../../lib/entt/single_include/entt/entt.hpp"
 #include "../TimeStep.h"
-#include "Components.h"
 #include "SceneSerializer.h"
 #include "../EditorCamera.h"
 #include "../PhysicsWorld.h"
@@ -30,7 +29,6 @@ namespace Engine
         void DestroyEntity(Entity entity);
 
         void SyncPhysicsTransforms();
-        SceneCameraComponent* GetPrimaryCamera();
 
         private:
         template <typename T>

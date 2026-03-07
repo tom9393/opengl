@@ -4,9 +4,7 @@ project(opengl)
 
 file(GLOB_RECURSE ENGINE_SOURCES
     src/*.cpp
-    src/**/*.cpp
-    platform/Linux/*.cpp
-    platform/OpenGL/*.cpp
+    platform/*.cpp
 )
 
 add_executable(${PROJECT_NAME} main.cpp ${ENGINE_SOURCES})
