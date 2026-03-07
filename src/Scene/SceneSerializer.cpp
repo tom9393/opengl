@@ -215,11 +215,11 @@ namespace Engine
 	};
 
 	template <typename T>
-	void DeserializeComponent(Entity entity, Shared<Scene> &scene, YAML::Node node) {
+	void DeserializeComponent(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
 	}
 
 	template <>
-	void DeserializeComponent<TransformComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
+	void DeserializeComponent<TransformComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
 			glm::vec3 translation = node["Translation"].as<glm::vec3>();
@@ -230,10 +230,9 @@ namespace Engine
 	}
 
 	template <>
-	void DeserializeComponent<SceneCameraComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
+	void DeserializeComponent<SceneCameraComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
-			// Fix this mess
 			auto& cc = entity.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
 
 			auto cameraData = node["Camera"];
@@ -255,7 +254,7 @@ namespace Engine
 	}
 
 	template <>
-	void DeserializeComponent<ModelComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
+	void DeserializeComponent<ModelComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
 			auto& mc = entity.AddComponent<ModelComponent>();
@@ -264,7 +263,7 @@ namespace Engine
 	}
 
 	template <>
-	void DeserializeComponent<RigidBodyComponent>(Entity entity, Shared<Scene> &scene, YAML::Node node) {
+	void DeserializeComponent<RigidBodyComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
 			auto& rbc = entity.AddComponent<RigidBodyComponent>();
@@ -273,16 +272,13 @@ namespace Engine
 			rbc.mass = node["Mass"].as<float>();
 			rbc.inertia = node["Inertia"].as<glm::vec3>();
 
-			ModelComponent modelComponent = entity.GetComponent<ModelComponent>();
-			TransformComponent transformComponent = entity.GetComponent<TransformComponent>();
-			RigidBodyComponent rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+			ModelComponent& modelComponent = entity.GetComponent<ModelComponent>();
+			TransformComponent& transformComponent = entity.GetComponent<TransformComponent>();
 			Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
 			std::vector<Shared<Mesh>> meshes = m->GetMeshes();
 			RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
-			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-			body->SetWorld(scene->m_Physicsworld.getWorld());
-			scene->m_Physicsworld.AddRigidBody(body);
-			rigidbodyComponent.runtimeBody = body;
+			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rbc.inertia, rbc.mass);
+			rbc.runtimeBody = body;
 		}
 	}
 

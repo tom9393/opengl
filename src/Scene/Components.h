@@ -2,9 +2,6 @@
 
 #include "../../pch.h"
 #include "../Preprocessor.h"
-#include "../Texture.h"
-#include "Model.h"
-#include "ModelLibrary.h"
 #include "SceneCamera.h"
 #include "../MathTools.h"
 #include "UUID.h"

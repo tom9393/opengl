@@ -87,27 +87,6 @@ namespace Engine
 		}
 	};
 
-	void Scene::OnRuntimeStart()
-	{	
-		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
-		for (auto e : view)
-		{
-			Entity entity = { e, this };
-			auto& transform = entity.GetComponent<TransformComponent>();
-			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
-			auto& model = entity.GetComponent<ModelComponent>();
-
-			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
-			
-			if (body)
-			{
-				body->SetTransform(transform.translation, transform.rotation);
-				body->SetWorld(m_Physicsworld.getWorld());
-				m_Physicsworld.AddRigidBody(body);
-			};
-		}
-	}
-
 	void Scene::RenderScene(const glm::mat4 &viewProjection)
 	{
 		Renderer::BeginScene(viewProjection);
@@ -141,8 +120,41 @@ namespace Engine
 		}
 	}
 
+	void Scene::OnRuntimeStart()
+	{	
+		auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
+		for (auto e : view)
+		{
+			Entity entity = { e, this };
+			auto& transform = entity.GetComponent<TransformComponent>();
+			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
+
+			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
+			
+			if (body)
+			{
+				body->SetWorld(m_Physicsworld.getWorld());
+				body->SetTransform(transform.translation, transform.rotation); // Crashes here
+				m_Physicsworld.AddRigidBody(body);
+			};
+		}
+	}
+
 	void Scene::OnRuntimeStop()
 	{
+		auto view = m_Registry.view<RigidBodyComponent>();
+		for (auto e : view)
+		{
+			Entity entity = { e, this };
+			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
+
+			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
+			
+			if (body)
+			{
+				m_Physicsworld.RemoveRigidBody(body);
+			};
+		}
 	}
 
 	Entity Scene::CreateEntity(const std::string &name)

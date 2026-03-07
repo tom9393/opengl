@@ -281,8 +281,6 @@ namespace Engine
 					std::vector<Shared<Mesh>> meshes = m->GetMeshes();
 					RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
 					RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-					body->SetWorld(m_Context->m_Physicsworld.getWorld());
-					m_Context->m_Physicsworld.AddRigidBody(body);
 					rigidbodyComponent.runtimeBody = body;
 					ImGui::CloseCurrentPopup();
 				}
