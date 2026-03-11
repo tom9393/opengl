@@ -46,6 +46,7 @@ namespace Engine
 		CopyComponent<TransformComponent>(destination, source, map);
 		CopyComponent<ModelComponent>(destination, source, map);
 		CopyComponent<SceneCameraComponent>(destination, source, map);
+		CopyComponent<NativeScriptComponent>(destination, source, map);
 		CopyComponent<RigidBodyComponent>(destination, source, map);
 
 		return newScene;
@@ -66,6 +67,13 @@ namespace Engine
 				RenderScene(camera.sceneCamera->GetProjection() * viewMatrix);
 				return;
 			}
+		}
+		auto scripts = m_Registry.view<NativeScriptComponent>();
+		for (auto e : scripts)
+		{
+			Entity entity = { e, this };
+			auto& nsc = entity.GetComponent<NativeScriptComponent>();
+			nsc.instance->OnUpdate(ts);
 		}
 	};
 
@@ -140,7 +148,6 @@ namespace Engine
 		auto scripts = m_Registry.view<NativeScriptComponent>();
 		for (auto e : scripts)
 		{
-			std::cout << "This should run" << std::endl;
 			Entity entity = { e, this };
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
 			nsc.instance->OnCreate();
@@ -161,6 +168,14 @@ namespace Engine
 			{
 				m_Physicsworld.RemoveRigidBody(body);
 			};
+		}
+
+		auto scripts = m_Registry.view<NativeScriptComponent>();
+		for (auto e : scripts)
+		{
+			Entity entity = { e, this };
+			auto& nsc = entity.GetComponent<NativeScriptComponent>();
+			nsc.instance->OnDestroyed();
 		}
 	}
 

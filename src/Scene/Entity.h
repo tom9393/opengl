@@ -83,6 +83,8 @@ namespace Engine
         operator bool() const { return m_Handle != entt::null; }
         operator entt::entity() const { return m_Handle; }
 
+        Scene* GetScene() { return m_Scene; }
+
         private:
         entt::entity m_Handle { entt::null };
         Scene* m_Scene = nullptr;

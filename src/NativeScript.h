@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Scene.h"
 #include "TimeStep.h"
 
 namespace Engine {
@@ -12,9 +13,11 @@ namespace Engine {
         virtual void OnCreate() {}
         virtual void OnDestroyed() {}
         virtual void OnUpdate(TimeStep ts) {}
+        virtual void OnCollision() {}
 
-        private:
+        protected:
         Entity* m_Entity = nullptr;
+
         friend class Entity;
     };
 
