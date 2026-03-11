@@ -5,8 +5,13 @@
 #include <vector>
 #include <memory>
 #include <bullet/src/btBulletDynamicsCommon.h>
+#include <entt/src/entt/entt.hpp>
 
 namespace Engine {
+
+    class Scene;
+
+    using Callback = std::function<void(entt::entity, entt::entity)>;
 
     class PhysicsWorld {
     public:
@@ -19,7 +24,13 @@ namespace Engine {
         void AddRigidBody(RigidBody* body);
         void RemoveRigidBody(RigidBody* body);
 
+        void RegisterCollisionCallback(Callback cb) { m_Callback = cb; }
+        void CheckCollisions();
+
         btDiscreteDynamicsWorld* getWorld() { return world.get(); }
+
+        Scene* GetScene() { return m_Scene; }
+        void SetScene(Scene* scene) { m_Scene = scene; }
 
         bool IsActive() { return m_Active; }
         void SetActive(bool active) { m_Active = active; }
@@ -36,6 +47,9 @@ namespace Engine {
         std::vector<std::unique_ptr<btCollisionShape>> collisionShapes;
         std::vector<std::unique_ptr<btCompoundShape>> compoundShapes;
         std::vector<std::unique_ptr<btDefaultMotionState>> motionStates;
+
+        Callback m_Callback;
+        Scene* m_Scene;
 
         bool m_Active = false;
     };

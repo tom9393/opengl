@@ -19,6 +19,7 @@ namespace Engine {
             }
             void OnUpdate(TimeStep ts) override
             {
+                return;
                 // Currently this is just for testing
                 RigidBodyComponent& rbc = m_Entity->GetComponent<RigidBodyComponent>();
                 
@@ -39,9 +40,13 @@ namespace Engine {
                     body->SetTransform(transform, rotation);
                 }
             }
-            void OnCollision() override
+            void OnCollision(Entity &other) override
             {
                 std::cout << "Test collision function" << std::endl;
+                if (other.HasComponent<TagComponent>()) {
+                    auto& tag = other.GetComponent<TagComponent>().tag;
+                    std::cout << "I hit: " << tag << std::endl;
+                }
             }
     };
 }

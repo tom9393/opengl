@@ -278,6 +278,7 @@ namespace Engine
 			std::vector<Shared<Mesh>> meshes = m->GetMeshes();
 			RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
 			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rbc.inertia, rbc.mass);
+			body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
 			rbc.runtimeBody = body;
 		}
 	}

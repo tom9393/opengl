@@ -13,7 +13,7 @@ namespace Engine {
         virtual void OnCreate() {}
         virtual void OnDestroyed() {}
         virtual void OnUpdate(TimeStep ts) {}
-        virtual void OnCollision() {}
+        virtual void OnCollision(Entity &other) {}
 
         protected:
         Entity* m_Entity = nullptr;

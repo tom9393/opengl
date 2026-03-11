@@ -2,10 +2,12 @@
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "RigidBody.h"
+#include "Entity.h"
 
 namespace Engine {
 
-    PhysicsWorld::PhysicsWorld(const btVector3& gravity) {
+    PhysicsWorld::PhysicsWorld(const btVector3& gravity)
+    {
         collisionConfig = std::make_unique<btDefaultCollisionConfiguration>();
         dispatcher = std::make_unique<btCollisionDispatcher>(collisionConfig.get());
         broadphase = std::make_unique<btDbvtBroadphase>();
@@ -17,7 +19,8 @@ namespace Engine {
 
     PhysicsWorld::PhysicsWorld(float x, float y, float z) : PhysicsWorld(btVector3(x, y, z)) {}
 
-    PhysicsWorld::~PhysicsWorld() {
+    PhysicsWorld::~PhysicsWorld()
+    {
         // Remove rigid bodies from world and delete them (world does not free motion states or collision shapes)
         if (world) {
             int numObjects = world->getNumCollisionObjects();
@@ -34,16 +37,42 @@ namespace Engine {
         // collisionShapes and motionStates are unique_ptrs and will be freed automatically
     }
 
-    void PhysicsWorld::stepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep) {
+    void PhysicsWorld::stepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep)
+    {
         if (world) world->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
     }
 
-    void PhysicsWorld::AddRigidBody(RigidBody* body) {
+    void PhysicsWorld::CheckCollisions()
+    {
+        int numManifolds = dispatcher->getNumManifolds();
+        for (int i = 0; i < numManifolds; i++) {
+            btPersistentManifold* contactManifold = dispatcher->getManifoldByIndexInternal(i);
+            const btCollisionObject* objA = contactManifold->getBody0();
+            const btCollisionObject* objB = contactManifold->getBody1();
+
+            // Only trigger if there are actual contact points
+            if (contactManifold->getNumContacts() > 0) {
+                auto entityA = (entt::entity)(uintptr_t)objA->getUserPointer();
+                auto entityB = (entt::entity)(uintptr_t)objB->getUserPointer();
+
+                Entity a = Entity { entityA, m_Scene };
+                Entity b = Entity { entityB, m_Scene };
+
+                // Notify the Scene/Scripts
+                m_Callback(a, b);
+                m_Callback(b, a);
+            }
+        }
+    }
+
+    void PhysicsWorld::AddRigidBody(RigidBody* body)
+    {
         if (!body) return;
         world->addRigidBody(body->GetBody());
     }
 
-    void PhysicsWorld::RemoveRigidBody(RigidBody* body) {
+    void PhysicsWorld::RemoveRigidBody(RigidBody* body)
+    {
         if (!body) return;
         world->removeRigidBody(body->GetBody());
         // Note: associated motion state and collision shape are kept in vectors; if you want to free them here,

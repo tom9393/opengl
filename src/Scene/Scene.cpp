@@ -55,6 +55,7 @@ namespace Engine
 	void Scene::OnUpdate(TimeStep ts)
 	{
 		m_Physicsworld.stepSimulation(ts);
+		m_Physicsworld.CheckCollisions();
 		SyncPhysicsTransforms();
 
 		auto view = m_Registry.view<SceneCameraComponent, TransformComponent>(); // Camera must have location
@@ -153,6 +154,20 @@ namespace Engine
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
 			nsc.instance->OnCreate();
 		}
+
+		m_Physicsworld.RegisterCollisionCallback([&](entt::entity a, entt::entity b){
+		Entity collider = Entity { a, this };
+		if (collider.HasComponent<NativeScriptComponent>())
+		{
+		std::cout << "Here I am" << std::endl;
+		auto& nsc = collider.GetComponent<NativeScriptComponent>();
+		if (nsc.instance) {
+		    // Pass the other entity so the script knows what it hit!
+		    Entity other = { b, this };
+		    nsc.instance->OnCollision(other); 
+		}
+		}
+		});
 	}
 
 	void Scene::OnRuntimeStop()
