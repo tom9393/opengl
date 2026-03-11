@@ -155,17 +155,17 @@ namespace Engine
 			nsc.instance->OnCreate();
 		}
 
-		m_Physicsworld.RegisterCollisionCallback([&, this](entt::entity a, entt::entity b){
+		m_Physicsworld.RegisterCollisionCallback([this](entt::entity &a, entt::entity &b){
 		Entity collider = Entity { a, this };
 		if (collider.HasComponent<NativeScriptComponent>())
 		{
-		auto& nsc = collider.GetComponent<NativeScriptComponent>();
-		if (nsc.instance)
-		{
-		    // Pass the other entity so the script knows what it hit!
-		    Entity other = { b, this };
-		    nsc.instance->OnCollision(other); 
-		}
+			auto& nsc = collider.GetComponent<NativeScriptComponent>();
+			if (nsc.instance)
+			{
+			    // Pass the other entity so the script knows what it hit!
+			    Entity other = { b, this };
+			    nsc.instance->OnCollision(other); 
+			}
 		}
 		});
 	}
@@ -193,6 +193,7 @@ namespace Engine
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
 			nsc.instance->OnDestroyed();
 		}
+		m_Physicsworld.RegisterCollisionCallback(nullptr);
 	}
 
 	Entity Scene::CreateEntity(const std::string &name)

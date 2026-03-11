@@ -2,7 +2,6 @@
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "RigidBody.h"
-#include "Entity.h"
 
 namespace Engine {
 
@@ -52,11 +51,8 @@ namespace Engine {
 
             // Only trigger if there are actual contact points
             if (contactManifold->getNumContacts() > 0) {
-                auto entityA = (entt::entity)(uintptr_t)objA->getUserPointer();
-                auto entityB = (entt::entity)(uintptr_t)objB->getUserPointer();
-
-                Entity a = Entity { entityA, m_Scene };
-                Entity b = Entity { entityB, m_Scene };
+                entt::entity a = (entt::entity)(uintptr_t)objA->getUserPointer();
+                entt::entity b = (entt::entity)(uintptr_t)objB->getUserPointer();
 
                 // Notify the Scene/Scripts
                 m_Callback(a, b);

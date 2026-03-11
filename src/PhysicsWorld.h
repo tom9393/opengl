@@ -11,7 +11,7 @@ namespace Engine {
 
     class Scene;
 
-    using Callback = std::function<void(entt::entity, entt::entity)>;
+    using Callback = std::function<void(entt::entity&, entt::entity&)>;
 
     class PhysicsWorld {
     public:

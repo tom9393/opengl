@@ -42,9 +42,13 @@ namespace Engine {
             }
             void OnCollision(Entity &other) override
             {
+                auto& tagComponent = m_Entity->GetComponent<TagComponent>();
+                std::cout << "I am " << tagComponent.tag << std::endl;
+                std::cout << "I am " << (int)m_Entity->GetHandle() << std::endl;
                 if (other.HasComponent<TagComponent>()) {
                     auto& tag = other.GetComponent<TagComponent>().tag;
-                    std::cout << "I hit: " << tag << std::endl;
+                    std::cout << "I was hit by: " << tag << std::endl;
+                    std::cout << "I was hit by: " << (int)other.GetHandle() << std::endl;
                 }
             }
     };
