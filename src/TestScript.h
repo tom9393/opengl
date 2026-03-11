@@ -19,10 +19,24 @@ namespace Engine {
             }
             void OnUpdate(TimeStep ts) override
             {
-                TransformComponent& transformComponent = m_Entity->GetComponent<TransformComponent>();
-                if (transformComponent.translation.y < 4)
+                // Currently this is just for testing
+                RigidBodyComponent& rbc = m_Entity->GetComponent<RigidBodyComponent>();
+                
+                glm::vec3 transform = glm::vec3(0);
+                glm::vec3 rotation = glm::vec3(0);
+
+                auto* body = static_cast<RigidBody*>(rbc.runtimeBody);
+
+                if (body)
+                {
+                    body->GetTransform(transform, rotation);
+                }
+
+                if (transform.y < 2)
                 {
                     std::cout << "The y is less than 2" << std::endl;
+                    transform.y = 20;
+                    body->SetTransform(transform, rotation);
                 }
             }
             void OnCollision() override

@@ -65,9 +65,10 @@ namespace Engine
 			{
 				glm::mat4 viewMatrix = glm::inverse(transform.GetTransform());
 				RenderScene(camera.sceneCamera->GetProjection() * viewMatrix);
-				return;
+				break;
 			}
 		}
+
 		auto scripts = m_Registry.view<NativeScriptComponent>();
 		for (auto e : scripts)
 		{
