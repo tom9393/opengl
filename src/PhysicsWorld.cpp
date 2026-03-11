@@ -64,13 +64,13 @@ namespace Engine {
     void PhysicsWorld::AddRigidBody(RigidBody* body)
     {
         if (!body) return;
-        world->addRigidBody(body->GetBody());
+        world->addRigidBody(body->GetBody().get());
     }
 
     void PhysicsWorld::RemoveRigidBody(RigidBody* body)
     {
         if (!body) return;
-        world->removeRigidBody(body->GetBody());
+        world->removeRigidBody(body->GetBody().get());
         // Note: associated motion state and collision shape are kept in vectors; if you want to free them here,
         // you'd need to track mapping from body -> indices and erase from vectors too.
     }

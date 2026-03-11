@@ -14,9 +14,17 @@ namespace Engine {
         virtual void OnDestroyed() {}
         virtual void OnUpdate(TimeStep ts) {}
         virtual void OnCollision(Entity &other) {}
+        
+        Scene* GetScene() { return m_Scene; }
 
-        protected:
-        Entity* m_Entity = nullptr;
+        template <typename T>
+        T& GetComponent() {
+            return m_Scene->m_Registry.get<T>(m_Entity);
+        }
+
+        private:
+        entt::entity m_Entity;
+        Scene* m_Scene;
 
         friend class Entity;
     };

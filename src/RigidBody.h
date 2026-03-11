@@ -9,6 +9,7 @@
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "LinearMath/btDefaultMotionState.h"
 #include "Mesh.h"
+#include "src/entt/entity/fwd.hpp"
 
 namespace Engine {
 
@@ -97,14 +98,13 @@ namespace Engine {
             btDefaultMotionState* motionState = new btDefaultMotionState(btTrans);
 
             btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, m_Shape->GetShape(), localInertia);
-            m_Body = new btRigidBody(rbInfo);
+            m_Body = std::make_unique<btRigidBody>(rbInfo);
             
             m_Body->setFriction(0.8f);
             m_Body->setActivationState(ACTIVE_TAG);
         }
 
-        btRigidBody* GetBody() { return m_Body; };
-        void SetBody(btRigidBody* body) { m_Body = body; };
+        std::unique_ptr<btRigidBody> &GetBody() { return m_Body; };
 
         void SetTransform(const glm::vec3 &translation, const glm::vec3 &rotation)
         {
@@ -155,8 +155,8 @@ namespace Engine {
         }
 
         private:
-        RBShape* m_Shape;
-        btRigidBody* m_Body;
+        std::unique_ptr<RBShape> m_Shape;
+        std::unique_ptr<btRigidBody> m_Body;
     };
 
 }

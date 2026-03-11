@@ -275,10 +275,9 @@ namespace Engine
 			ModelComponent& modelComponent = entity.GetComponent<ModelComponent>();
 			TransformComponent& transformComponent = entity.GetComponent<TransformComponent>();
 			Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-			std::vector<Shared<Mesh>> meshes = m->GetMeshes();
-			RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
+			RBComplexShape* shape = new RBComplexShape(m->GetMeshes()); // Heavy to calculate
 			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rbc.inertia, rbc.mass);
-			body->GetBody()->setUserPointer((void*)entity.GetHandle());
+			auto& tagg = entity.GetComponent<TagComponent>();
 			rbc.runtimeBody = body;
 		}
 	}

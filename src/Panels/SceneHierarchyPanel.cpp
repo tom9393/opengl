@@ -237,7 +237,11 @@ namespace Engine
 			memset(buffer, 0, sizeof(buffer));
 			strcpy(buffer, tag.c_str());
 			if (ImGui::InputText("##Tag", buffer, sizeof(buffer))) tag = std::string(buffer);
-
+			// Add the Handle next to it
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			ImGui::Text("[%d]", (uint32_t)entity.GetHandle());
+			ImGui::PopStyleColor();
 		}
 
 		ImGui::SameLine();
@@ -290,10 +294,8 @@ namespace Engine
 					TransformComponent &transformComponent = entity.GetComponent<TransformComponent>();
 					RigidBodyComponent &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
 					Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-					std::vector<Shared<Mesh>> meshes = m->GetMeshes();
-					RBComplexShape* shape = new RBComplexShape(meshes); // Heavy to calculate
+					RBComplexShape* shape = new RBComplexShape(m->GetMeshes()); // Heavy to calculate
 					RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-					body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
 					rigidbodyComponent.runtimeBody = body;
 					ImGui::CloseCurrentPopup();
 				}

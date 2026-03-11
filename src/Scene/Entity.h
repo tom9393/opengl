@@ -39,7 +39,9 @@ namespace Engine
             }
             NativeScriptComponent& nsc = AddComponent<NativeScriptComponent>();
             nsc.instance = new T();
-            nsc.instance->m_Entity = this;
+            nsc.instance->m_Entity = m_Handle;
+            nsc.instance->m_Scene = m_Scene;
+            
         }
 
         template <typename T>
@@ -48,7 +50,7 @@ namespace Engine
             if (HasComponent<NativeScriptComponent>())
             {
                 NativeScriptComponent& nsc = GetComponent<NativeScriptComponent>();
-                nsc.instance->m_Entity = nullptr;
+                nsc.instance->m_Scene = nullptr;
                 nsc.instance = nullptr;
                 RemoveComponent<NativeScriptComponent>();
             }

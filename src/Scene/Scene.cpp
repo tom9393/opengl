@@ -143,6 +143,7 @@ namespace Engine
 			if (body)
 			{
 				m_Physicsworld.AddRigidBody(body);
+				body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
 				body->SetTransform(transform.translation, transform.rotation);
 			};
 		}
@@ -155,16 +156,15 @@ namespace Engine
 			nsc.instance->OnCreate();
 		}
 
-		m_Physicsworld.RegisterCollisionCallback([this](entt::entity &a, entt::entity &b){
+		m_Physicsworld.RegisterCollisionCallback([this](entt::entity a, entt::entity b){
 		Entity collider = Entity { a, this };
 		if (collider.HasComponent<NativeScriptComponent>())
 		{
 			auto& nsc = collider.GetComponent<NativeScriptComponent>();
 			if (nsc.instance)
 			{
-			    // Pass the other entity so the script knows what it hit!
-			    Entity other = { b, this };
-			    nsc.instance->OnCollision(other); 
+				Entity other = { b, this };
+				nsc.instance->OnCollision(other); 
 			}
 		}
 		});

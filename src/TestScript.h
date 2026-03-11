@@ -21,7 +21,7 @@ namespace Engine {
             {
                 return;
                 // Currently this is just for testing
-                RigidBodyComponent& rbc = m_Entity->GetComponent<RigidBodyComponent>();
+                RigidBodyComponent& rbc = GetComponent<RigidBodyComponent>();
                 
                 glm::vec3 transform = glm::vec3(0);
                 glm::vec3 rotation = glm::vec3(0);
@@ -42,13 +42,11 @@ namespace Engine {
             }
             void OnCollision(Entity &other) override
             {
-                auto& tagComponent = m_Entity->GetComponent<TagComponent>();
+                TagComponent &tagComponent = GetComponent<TagComponent>();
                 std::cout << "I am " << tagComponent.tag << std::endl;
-                std::cout << "I am " << (int)m_Entity->GetHandle() << std::endl;
                 if (other.HasComponent<TagComponent>()) {
                     auto& tag = other.GetComponent<TagComponent>().tag;
                     std::cout << "I was hit by: " << tag << std::endl;
-                    std::cout << "I was hit by: " << (int)other.GetHandle() << std::endl;
                 }
             }
     };
