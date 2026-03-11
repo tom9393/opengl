@@ -136,6 +136,15 @@ namespace Engine
 				body->SetTransform(transform.translation, transform.rotation);
 			};
 		}
+
+		auto scripts = m_Registry.view<NativeScriptComponent>();
+		for (auto e : scripts)
+		{
+			std::cout << "This should run" << std::endl;
+			Entity entity = { e, this };
+			auto& nsc = entity.GetComponent<NativeScriptComponent>();
+			nsc.instance->OnCreate();
+		}
 	}
 
 	void Scene::OnRuntimeStop()

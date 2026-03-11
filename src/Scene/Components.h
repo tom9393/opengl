@@ -2,6 +2,7 @@
 
 #include "../../pch.h"
 #include "../Preprocessor.h"
+#include "NativeScript.h"
 #include "SceneCamera.h"
 #include "../MathTools.h"
 #include "UUID.h"
@@ -91,5 +92,13 @@ namespace Engine
 
         RigidBodyComponent() = default;
         RigidBodyComponent(const RigidBodyComponent&) = default;
-};
+    };
+
+    struct NativeScriptComponent
+    {
+        NativeScript* instance = nullptr;
+
+        NativeScriptComponent() = default;
+        NativeScriptComponent(const NativeScriptComponent&) = default;
+    };
 };

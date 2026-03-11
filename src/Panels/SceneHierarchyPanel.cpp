@@ -4,6 +4,8 @@
 #include "AssimpLoader.h"
 #include "ModelLibrary.h"
 #include "RigidBody.h"
+#include "TestScript.h"
+#include "imgui.h"
 
 namespace Engine
 {
@@ -268,6 +270,16 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
+			if (ImGui::BeginMenu("NativeScript"))
+			{
+				if (ImGui::MenuItem("NativeScript"))
+				{
+					m_SelectionContext.AddNativeScript<TestScript>();
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndMenu();
+			}
+
 			if (entity.HasComponent<ModelComponent>())
 			{
 				if (ImGui::MenuItem("RigidBody"))
@@ -383,6 +395,10 @@ namespace Engine
 				if(ImGui::DragFloat("Far", &far))
 					camera->SetOrthographicFarClip(far);
 			}
+
+		});
+		DrawComponent<NativeScriptComponent>("NativeScript", entity, [](auto &component)
+		{
 
 		});
 		DrawComponent<RigidBodyComponent>("RigidBody", entity, [](auto &component)

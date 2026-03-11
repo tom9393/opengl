@@ -30,6 +30,31 @@ namespace Engine
         }
 
         template <typename T>
+        void AddNativeScript()
+        {
+            if (HasComponent<NativeScriptComponent>())
+            {
+                std::cout << "Already has scripting component" << std::endl;
+                return;
+            }
+            NativeScriptComponent& nsc = AddComponent<NativeScriptComponent>();
+            nsc.instance = new T();
+            nsc.instance->m_Entity = this;
+        }
+
+        template <typename T>
+        void RemoveNativeScript()
+        {
+            if (HasComponent<NativeScriptComponent>())
+            {
+                NativeScriptComponent& nsc = GetComponent<NativeScriptComponent>();
+                nsc.instance->m_Entity = nullptr;
+                nsc.instance = nullptr;
+                RemoveComponent<NativeScriptComponent>();
+            }
+        }
+
+        template <typename T>
         void RemoveComponent()
         {
             if (!HasComponent<T>())
