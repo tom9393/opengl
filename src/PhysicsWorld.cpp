@@ -5,6 +5,16 @@
 
 namespace Engine {
 
+    static glm::vec3 BtToGlmVec3(btVector3 &vec)
+    {
+        return glm::vec3(vec.getX(), vec.getY(), vec.getZ());
+    }
+
+    static btVector3 GlmToBtVec3(glm::vec3 &vec)
+    {
+        return btVector3(vec.x, vec.y, vec.z);
+    }
+
     PhysicsWorld::PhysicsWorld(const btVector3& gravity)
     {
         collisionConfig = std::make_unique<btDefaultCollisionConfiguration>();
@@ -45,19 +55,34 @@ namespace Engine {
     {
         int numManifolds = dispatcher->getNumManifolds();
         for (int i = 0; i < numManifolds; i++) {
+            // Manifold -> which two objects are touching, may have 1 (sphere) or 4 (cube) points of touch
+            // Point -> simple geometrical point in space where two manifolds are intersecting
+
             btPersistentManifold* contactManifold = dispatcher->getManifoldByIndexInternal(i);
+
+            // Make sure they are actually touching
+            if (contactManifold->getNumContacts() == 0) continue;
+
             const btCollisionObject* objA = contactManifold->getBody0();
             const btCollisionObject* objB = contactManifold->getBody1();
 
-            // Only trigger if there are actual contact points
-            if (contactManifold->getNumContacts() > 0) {
-                entt::entity a = (entt::entity)(uintptr_t)objA->getUserPointer();
-                entt::entity b = (entt::entity)(uintptr_t)objB->getUserPointer();
+            void* ptrA = objA->getUserPointer();
+            void* ptrB = objB->getUserPointer();
 
-                // Notify the Scene/Scripts
-                m_Callback(a, b);
-                m_Callback(b, a);
-            }
+            // Only trigger if there are actual contact points
+            if (!ptrA || !ptrB) continue;
+
+            // Get the first contact point for now
+            btManifoldPoint& cp = contactManifold->getContactPoint(0);
+            
+            // Convert Bullet vectors to your engine's vector type (e.g., glm::vec3)
+            glm::vec3 hitPos = BtToGlmVec3(cp.m_normalWorldOnB);
+            glm::vec3 normal = BtToGlmVec3(cp.m_normalWorldOnB);
+            glm::vec3 flippedNormal = -normal;
+
+            // Notify the Scene/Scripts
+            m_Callback(ptrA, ptrB, hitPos, normal);
+            m_Callback(ptrB, ptrA, hitPos, flippedNormal);
         }
     }
 
@@ -76,3 +101,10 @@ namespace Engine {
     }
 
 }
+
+// Sample for getting X, Y and Z of some object
+// btTransform mytrans = objB->getWorldTransform();
+// btVector3 pos = mytrans.getOrigin();
+// Info(pos.getX());
+// Info(pos.getY());
+// Info(pos.getZ());

@@ -13,7 +13,7 @@ namespace Engine {
         virtual void OnCreate() {}
         virtual void OnDestroyed() {}
         virtual void OnUpdate(TimeStep ts) {}
-        virtual void OnCollision(Entity &other) {}
+        virtual void OnCollision(CollisionData &data) {}
         
         Scene* GetScene() { return m_Scene; }
 
@@ -22,11 +22,12 @@ namespace Engine {
             return m_Scene->m_Registry.get<T>(m_Entity);
         }
 
-        private:
+        protected:
         entt::entity m_Entity;
         Scene* m_Scene;
 
         friend class Entity;
+        friend class Scene;
     };
 
 }

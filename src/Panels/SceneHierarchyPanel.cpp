@@ -278,7 +278,8 @@ namespace Engine
 			{
 				if (ImGui::MenuItem("NativeScript"))
 				{
-					m_SelectionContext.AddNativeScript<TestScript>();
+					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
+					nsc.Bind<TestScript>();
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndMenu();

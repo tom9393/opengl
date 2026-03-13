@@ -98,7 +98,20 @@ namespace Engine
     {
         NativeScript* instance = nullptr;
 
-        NativeScriptComponent() = default;
-        NativeScriptComponent(const NativeScriptComponent&) = default;
+        std::function<void(NativeScriptComponent*)> InstantiateScript;
+        std::function<void(NativeScriptComponent*)> DestroyScript;
+
+        template<typename T>
+        void Bind()
+        {
+            InstantiateScript = [](NativeScriptComponent* nsc) { 
+                nsc->instance = new T(); 
+            };
+            
+            DestroyScript = [](NativeScriptComponent* nsc) { 
+                delete (T*)nsc->instance; 
+                nsc->instance = nullptr; 
+            };
+        }
     };
 };

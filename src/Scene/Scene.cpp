@@ -46,8 +46,8 @@ namespace Engine
 		CopyComponent<TransformComponent>(destination, source, map);
 		CopyComponent<ModelComponent>(destination, source, map);
 		CopyComponent<SceneCameraComponent>(destination, source, map);
-		CopyComponent<NativeScriptComponent>(destination, source, map);
 		CopyComponent<RigidBodyComponent>(destination, source, map);
+		CopyComponent<NativeScriptComponent>(destination, source, map);
 
 		return newScene;
 	};
@@ -153,18 +153,32 @@ namespace Engine
 		{
 			Entity entity = { e, this };
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
+			nsc.InstantiateScript(&nsc);
+			nsc.instance->m_Entity = e;
+			nsc.instance->m_Scene = this;
 			nsc.instance->OnCreate();
 		}
 
-		m_Physicsworld.RegisterCollisionCallback([this](entt::entity a, entt::entity b){
+		m_Physicsworld.RegisterCollisionCallback([this](void* ptrA, void* ptrB, glm::vec3 &hitPos, glm::vec3 &normal){
+                entt::entity a = (entt::entity)(uintptr_t)ptrA;
+                entt::entity b = (entt::entity)(uintptr_t)ptrB;
+
 		Entity collider = Entity { a, this };
+
 		if (collider.HasComponent<NativeScriptComponent>())
 		{
 			auto& nsc = collider.GetComponent<NativeScriptComponent>();
 			if (nsc.instance)
 			{
 				Entity other = { b, this };
-				nsc.instance->OnCollision(other); 
+
+				CollisionData data;
+				data.OtherPointer = ptrB;
+				data.HitPoint = hitPos;
+				data.Normal = normal;
+				data.Impulse = 20.0f;
+
+				nsc.instance->OnCollision(data); 
 			}
 		}
 		});
@@ -192,6 +206,7 @@ namespace Engine
 			Entity entity = { e, this };
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
 			nsc.instance->OnDestroyed();
+			nsc.DestroyScript(&nsc);
 		}
 		m_Physicsworld.RegisterCollisionCallback(nullptr);
 	}

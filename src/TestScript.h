@@ -40,13 +40,25 @@ namespace Engine {
                     body->SetTransform(transform, rotation);
                 }
             }
-            void OnCollision(Entity &other) override
+            void OnCollision(CollisionData &data) override
             {
                 TagComponent &tagComponent = GetComponent<TagComponent>();
-                std::cout << "I am " << tagComponent.tag << std::endl;
-                if (other.HasComponent<TagComponent>()) {
-                    auto& tag = other.GetComponent<TagComponent>().tag;
-                    std::cout << "I was hit by: " << tag << std::endl;
+
+                entt::entity otherEnt = (entt::entity)(uintptr_t)data.OtherPointer;
+                Entity other = { otherEnt, m_Scene };
+
+                RigidBodyComponent &rbc = other.GetComponent<RigidBodyComponent>();
+
+                if (rbc.runtimeBody)
+                {
+                    RigidBody* rb = (RigidBody*)rbc.runtimeBody;
+
+                    glm::vec3 trans;
+                    glm::vec3 rot;
+
+                    rb->GetTransform(trans, rot);
+                    trans.y -= 1;
+                    rb->SetTransform(trans, rot);
                 }
             }
     };

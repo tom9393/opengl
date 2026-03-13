@@ -9,9 +9,17 @@
 
 namespace Engine {
 
+    struct CollisionData
+    {
+        void* OtherPointer;
+        glm::vec3 HitPoint;
+        glm::vec3 Normal;
+        float Impulse;
+    };
+
     class Scene;
 
-    using Callback = std::function<void(entt::entity, entt::entity)>;
+    using Callback = std::function<void(void*, void*, glm::vec3&, glm::vec3&)>;
 
     class PhysicsWorld {
     public:
