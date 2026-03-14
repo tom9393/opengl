@@ -86,6 +86,7 @@ namespace Engine
 
     void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer> &vertexBuffer)
     {
+        Bind();
         vertexBuffer->Bind();
 
         const auto &layout = vertexBuffer->GetLayout();

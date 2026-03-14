@@ -39,6 +39,15 @@ namespace Engine
         TransformComponent(const TransformComponent&) = default;
         TransformComponent(const glm::vec3 &translation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &rotation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &scale = glm::vec3(1.0f, 1.0f, 1.0f)) : translation(translation), rotation(rotation), scale(scale) {}
 
+        glm::vec3 GetForward() const
+        {
+            glm::quat orientation = glm::quat(rotation);
+            return orientation * glm::vec3(0.0f, 0.0f, -1.0f);
+        }
+
+        glm::vec3 GetUp() const { return glm::quat(rotation) * glm::vec3(0.0f, 1.0f, 0.0f); }
+        glm::vec3 GetRight() const { return glm::quat(rotation) * glm::vec3(1.0f, 0.0f, 0.0f); }
+
         glm::mat4 GetTransform() const
         {
             glm::mat4 rot = glm::toMat4(glm::quat(rotation));

@@ -4,7 +4,9 @@
 #include "AssimpLoader.h"
 #include "CollisionBaker.h"
 #include "ModelLibrary.h"
+#include "PlayerScript.h"
 #include "RigidBody.h"
+#include "ShootScript.h"
 #include "TestScript.h"
 #include "imgui.h"
 
@@ -277,10 +279,22 @@ namespace Engine
 
 			if (ImGui::BeginMenu("NativeScript"))
 			{
-				if (ImGui::MenuItem("NativeScript"))
+				if (ImGui::MenuItem("TestScript"))
 				{
 					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
 					nsc.Bind<TestScript>();
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::MenuItem("ShootScript"))
+				{
+					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
+					nsc.Bind<ShootScript>();
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::MenuItem("PlayerScript"))
+				{
+					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
+					nsc.Bind<PlayerScript>();
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndMenu();

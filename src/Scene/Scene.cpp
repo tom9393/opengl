@@ -112,7 +112,6 @@ namespace Engine
 				Renderer::SubmitModel(m, transform.GetTransform());
 		}
 		m_Physicsworld.RenderDebug(viewProjection);
-		Renderer::DrawLine({ 0, -20, 0 }, { 0, 20, 0 }, { 1, 0, 0, 1 }); // Bright Red X-axis
 
 		Renderer::EndScene();
 	}

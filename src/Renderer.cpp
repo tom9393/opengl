@@ -147,8 +147,7 @@ namespace Engine
         s_LineData.LineShader->Bind();
         s_LineData.LineShader->setMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
 
-        // Set line width (optional, depends on driver support)
-        glLineWidth(5.0f); 
+        glLineWidth(1.0f); 
         RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.LineVertexCount);
 
         s_LineData.LineVertexCount = 0;
