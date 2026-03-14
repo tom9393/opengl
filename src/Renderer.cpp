@@ -1,5 +1,6 @@
 #include "Render/Renderer.h"
 #include "../platform/OpenGL/OpenGLShader.h"
+#include "Buffer.h"
 
 namespace Engine
 {
@@ -15,7 +16,10 @@ namespace Engine
 
         s_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
 
-        s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase.data();
+        s_LineData.LineVertexArray = VertexArray::Create();
+        s_LineData.LineVertexBuffer = VertexBuffer::Create(s_LineData.MaxLines * sizeof(LineVertex));
+        s_LineData.LineVertexArray->AddVertexBuffer(s_LineData.LineVertexBuffer);
+	s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
         s_LineData.LineVertexCount = 0;
         s_SceneData.ViewProjectionMatrix = viewProjection;
     };
@@ -63,7 +67,7 @@ namespace Engine
 
         const std::string vert_line = "/home/tom/Coding/c++/opengl/shaders/line.vert";
         const std::string frag_line = "/home/tom/Coding/c++/opengl/shaders/line.frag";
-        s_LineData.LineShader = std::make_shared<OpenGLShader>("LineShader");
+        s_LineData.LineShader = Shader::Create("LineShader");
         s_LineData.LineShader->AddShaders({vert_line, frag_line});
 
         switch (Renderer::Get())
@@ -140,14 +144,14 @@ namespace Engine
     {
         if (s_LineData.LineVertexCount == 0) return;
 
-        uint32_t dataSize = (uint32_t)((uint8_t*)s_LineData.LineVertexBufferPtr - (uint8_t*)s_LineData.LineVertexBufferBase.data());
-        s_LineData.LineVertexBuffer->SetData(s_LineData.LineVertexBufferBase.data(), dataSize);
+        uint32_t dataSize = (uint32_t)((uint8_t*)s_LineData.LineVertexBufferPtr - (uint8_t*)s_LineData.LineVertexBufferBase);
+        s_LineData.LineVertexBuffer->SetData(s_LineData.LineVertexBufferBase, dataSize);
 
         s_LineData.LineShader->Bind();
         s_LineData.LineShader->setMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
 
         // Set line width (optional, depends on driver support)
-        glLineWidth(2.0f); 
+        glLineWidth(5.0f); 
         RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.LineVertexCount);
         s_Data.statistics.DrawCalls++;
     }

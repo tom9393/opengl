@@ -49,12 +49,8 @@ namespace Engine
         Shared<Shader> LineShader;
 
         uint32_t LineVertexCount = 0;
-
-        // Fixed-size array for CPU storage
-        std::array<LineVertex, MaxVertices> LineVertexBufferBase;
-        
-        // We still need a pointer to track WHERE we are currently writing
-        LineVertex* LineVertexBufferPtr = nullptr; 
+        LineVertex* LineVertexBufferBase = nullptr;
+        LineVertex* LineVertexBufferPtr = nullptr;
     };
 
     class Renderer

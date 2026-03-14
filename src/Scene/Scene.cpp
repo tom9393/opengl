@@ -101,8 +101,6 @@ namespace Engine
 	{
 		Renderer::BeginScene(viewProjection);
 
-		m_Physicsworld.RenderDebug(viewProjection);
-
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)
 		{
@@ -113,6 +111,8 @@ namespace Engine
 			if (m) 
 				Renderer::SubmitModel(m, transform.GetTransform());
 		}
+		m_Physicsworld.RenderDebug(viewProjection);
+		Renderer::DrawLine({ 0, -20, 0 }, { 0, 20, 0 }, { 1, 0, 0, 1 }); // Bright Red X-axis
 
 		Renderer::EndScene();
 	}
