@@ -61,19 +61,35 @@ namespace Engine {
     class RBComplexShape : public RBShape
     {
         public:
-        RBComplexShape(const std::vector<Shared<Mesh>> &meshes) : RBShape(new btCompoundShape)
+        RBComplexShape(const std::string &modelPath) : RBShape(new btCompoundShape)
         {
-            // Compound shape is made of many different meshes
-            btCompoundShape* compoundShape = static_cast<btCompoundShape*>(m_Shape);
+        std::string bakePath = modelPath + ".pmcol";
+        std::ifstream in(bakePath, std::ios::binary);
 
-            for (const auto& mesh : meshes) {
-                uint32_t stride = mesh->GetLayout().GetStride() / sizeof(float);
-                RBConvexShape* hull = new RBConvexShape(mesh->GetVertices(), stride);
+        if (!in.is_open()) {
+            std::cerr << "[Physics] No bake file found for " << modelPath << std::endl;
+            return;
+        }
 
-                btTransform localTrans;
-                localTrans.setIdentity();
-                compoundShape->addChildShape(localTrans, hull->GetShape());
+        btCompoundShape* compound = static_cast<btCompoundShape*>(m_Shape);
+        uint32_t meshCount;
+        in.read((char*)&meshCount, sizeof(uint32_t));
+
+        for (uint32_t i = 0; i < meshCount; i++) {
+            uint32_t vCount;
+            in.read((char*)&vCount, sizeof(uint32_t));
+            
+            btConvexHullShape* hull = new btConvexHullShape();
+            for (uint32_t j = 0; j < vCount; j++) {
+                glm::vec3 v;
+                in.read((char*)&v, sizeof(glm::vec3));
+                hull->addPoint(btVector3(v.x, v.y, v.z));
             }
+
+            btTransform localTrans;
+            localTrans.setIdentity();
+            compound->addChildShape(localTrans, hull);
+        }
         }
     };
 

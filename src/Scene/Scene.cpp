@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "../Render/Renderer.h"
 #include "AssetManager.h"
+#include "CollisionBaker.h"
 #include "Components.h"
 #include "Entity.h"
 #include "RigidBody.h"
@@ -100,6 +101,9 @@ namespace Engine
 	{
 		Renderer::BeginScene(viewProjection);
 
+		if (true)
+			m_Physicsworld.RenderDebug(viewProjection);
+
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)
 		{
@@ -131,21 +135,31 @@ namespace Engine
 
 	void Scene::OnRuntimeStart()
 	{	
-		auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
+		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto e : view)
 		{
-			Entity entity = { e, this };
-			auto& transform = entity.GetComponent<TransformComponent>();
-			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 
-			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
-			
-			if (body)
-			{
-				m_Physicsworld.AddRigidBody(body);
-				body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
-				body->SetTransform(transform.translation, transform.rotation);
-			};
+			Entity entity = { e, this };
+			auto& transformComponent = entity.GetComponent<TransformComponent>();
+			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+			auto& modelComponent = entity.GetComponent<ModelComponent>();
+
+			// 1. Ensure a bake exists (or bake it now if missing)
+			std::string bakePath = modelComponent.path + ".pmcol";
+			if (!std::filesystem::exists(bakePath)) {
+			    Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
+			    CollisionBaker::Bake(modelComponent.path, m->GetMeshes());
+			}
+
+			RBComplexShape* shape = new RBComplexShape(modelComponent.path);
+			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
+			if (!body) return;
+
+			rigidbodyComponent.runtimeBody = body;
+
+			m_Physicsworld.AddRigidBody(body);
+			body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
+			body->SetTransform(transformComponent.translation, transformComponent.rotation);
 		}
 
 		auto scripts = m_Registry.view<NativeScriptComponent>();
@@ -197,6 +211,7 @@ namespace Engine
 			if (body)
 			{
 				m_Physicsworld.RemoveRigidBody(body);
+				delete body;
 			};
 		}
 

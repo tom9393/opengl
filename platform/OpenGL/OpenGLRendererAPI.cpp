@@ -30,6 +30,11 @@ namespace Engine
         glDrawElementsInstanced(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr, count);
     };
 
+    void OpenGLRendererAPI::DrawLines(const std::shared_ptr<VertexArray> &vertexArray, uint32_t size)
+    {
+        glDrawElements(GL_LINES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+    }
+
     void OpenGLRendererAPI::SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
     {
         glViewport(x, y, width, height);

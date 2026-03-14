@@ -35,6 +35,28 @@ namespace Engine
         std::vector<RenderCall> renderQueue;
     };
 
+    struct LineVertex {
+        glm::vec3 Position;
+        glm::vec4 Color;
+    };
+
+    struct LineRendererData {
+        static const uint32_t MaxLines = 10000;
+        static const uint32_t MaxVertices = MaxLines * 2;
+
+        Shared<VertexArray> LineVertexArray;
+        Shared<VertexBuffer> LineVertexBuffer;
+        Shared<Shader> LineShader;
+
+        uint32_t LineVertexCount = 0;
+
+        // Fixed-size array for CPU storage
+        std::array<LineVertex, MaxVertices> LineVertexBufferBase;
+        
+        // We still need a pointer to track WHERE we are currently writing
+        LineVertex* LineVertexBufferPtr = nullptr; 
+    };
+
     class Renderer
     {
         public:
@@ -52,13 +74,18 @@ namespace Engine
         static void Submit(const Shared<Mesh> &mesh, glm::mat4 &transform);
         static void SubmitModel(const Shared<Model> &model, const glm::mat4 &transform);
 
+        static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
+
         static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 
         static void ResetStatistics()
         {
-            memset(&m_Data.statistics, 0, sizeof(Statistics));
+            memset(&s_Data.statistics, 0, sizeof(Statistics));
         }
-        static Statistics &GetStatistics() { return m_Data.statistics; }
+        static Statistics &GetStatistics() { return s_Data.statistics; }
+
+        private:
+        static void FlushLines();
 
         private:
         struct SceneData
@@ -66,8 +93,9 @@ namespace Engine
             glm::mat4 ViewProjectionMatrix;
         };
 
-        static SceneData m_SceneData;
-        static RenderStorage m_Data;
+        static SceneData s_SceneData;
+        static RenderStorage s_Data;
+        static LineRendererData s_LineData;
 
     };
 

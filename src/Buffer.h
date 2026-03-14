@@ -14,6 +14,8 @@ namespace Engine
 
         virtual const BufferLayout& GetLayout() const = 0;
         virtual void SetLayout(const BufferLayout &layout) = 0;
+
+        virtual void SetData(const void* data, uint32_t size) = 0;
         
         static Shared<VertexBuffer> Create(unsigned int size);
         static Shared<VertexBuffer> Create(float* vertices, unsigned int size);

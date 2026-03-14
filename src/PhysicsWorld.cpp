@@ -22,7 +22,9 @@ namespace Engine {
         broadphase = std::make_unique<btDbvtBroadphase>();
         solver = std::make_unique<btSequentialImpulseConstraintSolver>();
         world = std::make_unique<btDiscreteDynamicsWorld>(dispatcher.get(), broadphase.get(), solver.get(), collisionConfig.get());
+        debug = std::make_unique<PhysicsDebugDrawer>();
         world->setGravity(gravity);
+        world->setDebugDrawer(debug.get());
         // Optional: tune other parameters here (solver iterations, etc.)
     }
 
@@ -49,6 +51,14 @@ namespace Engine {
     void PhysicsWorld::stepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep)
     {
         if (world) world->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
+    }
+
+    void PhysicsWorld::RenderDebug(const glm::mat4 &viewProjection)
+    {
+        if (world && world->getDebugDrawer())
+        {
+            world->debugDrawWorld();
+        }
     }
 
     void PhysicsWorld::CheckCollisions()

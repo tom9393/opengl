@@ -34,6 +34,11 @@ namespace Engine
             s_RendererAPI->DrawIndexedInstances(vertexArray, count);
         }
 
+        inline static void DrawLines(Shared<VertexArray> &lines, uint32_t count)
+        {
+            s_RendererAPI->DrawLines(lines, count);
+        }
+
         inline static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
         {
             s_RendererAPI->SetViewport(x, y, width, height);

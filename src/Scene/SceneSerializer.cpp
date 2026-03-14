@@ -271,14 +271,6 @@ namespace Engine
 			rbc.type = RigidBodyFromString(bodyTypeString);
 			rbc.mass = node["Mass"].as<float>();
 			rbc.inertia = node["Inertia"].as<glm::vec3>();
-
-			ModelComponent& modelComponent = entity.GetComponent<ModelComponent>();
-			TransformComponent& transformComponent = entity.GetComponent<TransformComponent>();
-			Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-			RBComplexShape* shape = new RBComplexShape(m->GetMeshes()); // Heavy to calculate
-			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rbc.inertia, rbc.mass);
-			auto& tagg = entity.GetComponent<TagComponent>();
-			rbc.runtimeBody = body;
 		}
 	}
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LinearMath/btVector3.h"
+#include "PhysicsDebugDrawer.h"
 #include "RigidBody.h"
 #include <vector>
 #include <memory>
@@ -37,6 +38,8 @@ namespace Engine {
 
         btDiscreteDynamicsWorld* getWorld() { return world.get(); }
 
+        void RenderDebug(const glm::mat4 &viewProjection);
+
         Scene* GetScene() { return m_Scene; }
         void SetScene(Scene* scene) { m_Scene = scene; }
 
@@ -50,6 +53,7 @@ namespace Engine {
         std::unique_ptr<btDbvtBroadphase> broadphase;
         std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
         std::unique_ptr<btDiscreteDynamicsWorld> world;
+        std::unique_ptr<PhysicsDebugDrawer> debug;
 
         // Keep ownership of created shapes and motion states so they live as long as the rigid bodies
         std::vector<std::unique_ptr<btCollisionShape>> collisionShapes;

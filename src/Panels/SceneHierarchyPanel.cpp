@@ -2,6 +2,7 @@
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
 #include "AssimpLoader.h"
+#include "CollisionBaker.h"
 #include "ModelLibrary.h"
 #include "RigidBody.h"
 #include "TestScript.h"
@@ -285,21 +286,11 @@ namespace Engine
 				ImGui::EndMenu();
 			}
 
-			if (entity.HasComponent<ModelComponent>())
+			if (ImGui::MenuItem("RigidBody"))
 			{
-				if (ImGui::MenuItem("RigidBody"))
-				{
-					// Fix this
-					m_SelectionContext.AddComponent<RigidBodyComponent>();
-					ModelComponent &modelComponent = entity.GetComponent<ModelComponent>();
-					TransformComponent &transformComponent = entity.GetComponent<TransformComponent>();
-					RigidBodyComponent &rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
-					Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-					RBComplexShape* shape = new RBComplexShape(m->GetMeshes()); // Heavy to calculate
-					RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-					rigidbodyComponent.runtimeBody = body;
-					ImGui::CloseCurrentPopup();
-				}
+				// Fix this
+				m_SelectionContext.AddComponent<RigidBodyComponent>();
+				ImGui::CloseCurrentPopup();
 			}
 
 			ImGui::EndPopup();
@@ -405,7 +396,7 @@ namespace Engine
 		{
 
 		});
-		DrawComponent<RigidBodyComponent>("RigidBody", entity, [](auto &component)
+		DrawComponent<RigidBodyComponent>("RigidBody", entity, [&entity](auto &component)
 		{
 			const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
 			const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
@@ -429,17 +420,24 @@ namespace Engine
 
 				ImGui::EndCombo();
 			}
-
-			RigidBody* body = (RigidBody*) component.runtimeBody;
-			if (body)
+			if (ImGui::Button("Re-Bake Collision Data"))
 			{
-				float mass = component.mass;
-
-				if (ImGui::DragFloat("Mass", &mass))
-				{
-					component.mass = mass;
-					body->SetMass(mass);
+				auto& mc = entity.GetComponent<ModelComponent>();
+				// We load the asset and bake it immediately
+				Shared<Model> model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(mc.path));
+				if (model) {
+					CollisionBaker::Bake(mc.path, model->GetMeshes());
+					std::cout << "[Editor] Manual Re-Bake successful for " << mc.path << std::endl;
 				}
+			}
+			// Add a small hint so the user knows what this does
+			if (ImGui::IsItemHovered())
+			    ImGui::SetTooltip("Recalculates the simplified physics hull from the high-poly mesh.");
+
+			float mass = component.mass;
+			if (ImGui::DragFloat("Mass", &mass))
+			{
+				component.mass = mass;
 			}
 		});
 	};
