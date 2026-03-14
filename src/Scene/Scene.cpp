@@ -101,8 +101,7 @@ namespace Engine
 	{
 		Renderer::BeginScene(viewProjection);
 
-		if (true)
-			m_Physicsworld.RenderDebug(viewProjection);
+		m_Physicsworld.RenderDebug(viewProjection);
 
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)

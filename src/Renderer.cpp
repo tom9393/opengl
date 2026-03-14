@@ -15,6 +15,7 @@ namespace Engine
 
         s_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
 
+        s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase.data();
         s_LineData.LineVertexCount = 0;
         s_SceneData.ViewProjectionMatrix = viewProjection;
     };
@@ -144,7 +145,7 @@ namespace Engine
 
         s_LineData.LineShader->Bind();
         s_LineData.LineShader->setMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
-        
+
         // Set line width (optional, depends on driver support)
         glLineWidth(2.0f); 
         RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.LineVertexCount);
@@ -154,7 +155,7 @@ namespace Engine
     void Renderer::DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color)
     {
         // If buffer is full, flush and start over
-        if (s_LineData.LineVertexCount >= s_LineData.MaxVertices)
+        if (s_LineData.LineVertexCount + 2 >= s_LineData.MaxVertices)
             FlushLines();
 
         s_LineData.LineVertexBufferPtr->Position = p0;

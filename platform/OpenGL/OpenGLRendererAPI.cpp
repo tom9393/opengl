@@ -32,7 +32,8 @@ namespace Engine
 
     void OpenGLRendererAPI::DrawLines(const std::shared_ptr<VertexArray> &vertexArray, uint32_t size)
     {
-        glDrawElements(GL_LINES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+        vertexArray->Bind();
+        glDrawArrays(GL_LINES, 0, size);
     }
 
     void OpenGLRendererAPI::SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
