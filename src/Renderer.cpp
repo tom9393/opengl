@@ -15,12 +15,6 @@ namespace Engine
         shader->Bind();
 
         s_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
-
-        s_LineData.LineVertexArray = VertexArray::Create();
-        s_LineData.LineVertexBuffer = VertexBuffer::Create(s_LineData.MaxLines * sizeof(LineVertex));
-        s_LineData.LineVertexArray->AddVertexBuffer(s_LineData.LineVertexBuffer);
-	s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
-        s_LineData.LineVertexCount = 0;
         s_SceneData.ViewProjectionMatrix = viewProjection;
     };
 
@@ -57,13 +51,16 @@ namespace Engine
 
         // Mainly for drawing debugging lines
         s_LineData.LineVertexArray = VertexArray::Create();
-        s_LineData.LineVertexBuffer = VertexBuffer::Create(s_LineData.MaxVertices * sizeof(LineVertex));
-        
+        s_LineData.LineVertexBuffer = VertexBuffer::Create(s_LineData.MaxLines * sizeof(LineVertex));
+
         s_LineData.LineVertexBuffer->SetLayout({
             { ShaderDataType::Float3, "a_Position" },
             { ShaderDataType::Float4, "a_Color"    }
         });
         s_LineData.LineVertexArray->AddVertexBuffer(s_LineData.LineVertexBuffer);
+	s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
+        s_LineData.LineVertexCount = 0;
+        s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase;
 
         const std::string vert_line = "/home/tom/Coding/c++/opengl/shaders/line.vert";
         const std::string frag_line = "/home/tom/Coding/c++/opengl/shaders/line.frag";
@@ -153,6 +150,9 @@ namespace Engine
         // Set line width (optional, depends on driver support)
         glLineWidth(5.0f); 
         RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.LineVertexCount);
+
+        s_LineData.LineVertexCount = 0;
+        s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase;
         s_Data.statistics.DrawCalls++;
     }
 
