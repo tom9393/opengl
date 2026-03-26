@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pch.h"
+#include "Application.h"
 #include "Model.h"
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
@@ -22,64 +23,66 @@ namespace Engine
             m_Meshes.clear();
             m_Path = std::string(path);
             stbi_set_flip_vertically_on_load(true);
-            auto clock_start = std::chrono::system_clock::now();
-            LoadModel();
-            auto clock_now = std::chrono::system_clock::now();
-            auto res = clock_now - clock_start;
-            std::cout << "Time in ms to load model: " << res.count() / 1000000 << std::endl;
-            return MakeShared<Model>(m_Meshes, m_Path);
-        }
-        
-        private:
-        void LoadModel()
-        {
             Assimp::Importer importer;
             const aiScene* scene = importer.ReadFile(m_Path, aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality);
 
             if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                return;
+                return nullptr;
             }
 
             m_Directory = m_Path.substr(0, m_Path.find_last_of('/'));
-            ProcessNode(scene->mRootNode, scene);
-        }
+            std::vector<aiMesh*> flatMeshes;
+            CollectMeshes(scene->mRootNode, scene, flatMeshes);
+            m_Meshes.resize(flatMeshes.size());
 
-        void ProcessNode(aiNode *node, const aiScene *scene)
-        {
-            for(unsigned int i = 0; i < node->mNumMeshes; i++)
+            std::vector<std::future<void>> results;
+            ThreadPool& tp = Application::Get().GetThreadPool();
+
+            // Cpu only
+            for (size_t i = 0; i < flatMeshes.size(); i++)
             {
-                aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-                m_Meshes.emplace_back(ProcessMesh(mesh, scene));
+                aiMesh* mesh = flatMeshes[i];
+                
+                results.push_back(tp.Enqueue([this, mesh, scene, i]() {
+                    VertexLayout vertexLayout;
+                    std::vector<float> vertices;
+                    std::vector<unsigned int> indices;
+
+                    // This is the heavy math/parsing part, safe for threads
+                    LoadVertices(vertices, mesh, scene, vertexLayout);
+                    LoadIndices(indices, mesh);
+
+                    BufferLayout bufferLayout(vertexLayout.GetElements());
+                    TextureLayout emptyTextureLayout;
+
+                    m_Meshes[i] = MakeShared<Mesh>(vertices, indices, bufferLayout, emptyTextureLayout);
+                }));
             }
 
-            for(unsigned int i = 0; i < node->mNumChildren; i++)
-                ProcessNode(node->mChildren[i], scene);
+            for (auto& res : results) {
+                res.wait();
+            }
 
-        }
-
-        Shared<Mesh> ProcessMesh(aiMesh *mesh, const aiScene *scene)
-        {
-            VertexLayout vertexLayout;
-            TextureLayout textureLayout;
-            std::vector<float> vertices;
-            std::vector<unsigned int> indices;
-
-            vertices.reserve(mesh->mNumVertices * 10);
-            indices.reserve(mesh->mNumFaces * 3); // Three indices per face
-            
-            LoadVertices(vertices, mesh, scene, vertexLayout);
-            LoadIndices(indices, mesh);
-            LoadMaterialTextures(scene->mMaterials[mesh->mMaterialIndex], textureLayout);
-
-            BufferLayout bufferLayout(vertexLayout.GetElements());
-
-            return MakeShared<Mesh>(std::move(vertices), std::move(indices), bufferLayout, textureLayout);
+            // OpenGL calls & gpu uploads
+            for (size_t i = 0; i < flatMeshes.size(); i++)
+            {
+                aiMesh* mesh = flatMeshes[i];
+                
+                // 1. Load Textures (This calls glGenTextures)
+                LoadMaterialTextures(scene->mMaterials[mesh->mMaterialIndex], m_Meshes[i]->GetTextureLayout());
+                
+                // 2. Upload Mesh to GPU (This calls glGenVertexArrays/Buffers)
+                m_Meshes[i]->Prepare();
+            }
+            return MakeShared<Model>(m_Meshes, m_Path);
         }
 
         void LoadVertices(std::vector<float> &vertices, aiMesh* mesh, const aiScene* scene, VertexLayout &vertexLayout)
         {
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            aiColor4D diffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+            aiReturn col = aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor);
             for(unsigned int i = 0; i < mesh->mNumVertices; i++)
             {
                 vertexLayout.AddVertexAttrib(VertexAttribute::Vertex, ShaderDataType::Float3, "a_Position");
@@ -113,9 +116,7 @@ namespace Engine
                         vertices.emplace_back(mesh->mBitangents[i].z);
                     }
                 }
-
-                aiColor4D diffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-                if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor)) {
+                if (AI_SUCCESS == col) {
                     vertexLayout.AddVertexAttrib(VertexAttribute::Color, ShaderDataType::Float4, "a_Color");
                     vertices.emplace_back(diffuseColor.r);
                     vertices.emplace_back(diffuseColor.g);
@@ -182,6 +183,15 @@ namespace Engine
                     Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
                     layout.AddTexture(AssimpToTextureType(type), texture);
                 }
+            }
+        }
+        void CollectMeshes(aiNode* node, const aiScene* scene, std::vector<aiMesh*>& outMeshes)
+        {
+            for(unsigned int i = 0; i < node->mNumMeshes; i++) {
+                outMeshes.push_back(scene->mMeshes[node->mMeshes[i]]);
+            }
+            for(unsigned int i = 0; i < node->mNumChildren; i++) {
+                CollectMeshes(node->mChildren[i], scene, outMeshes);
             }
         }
 

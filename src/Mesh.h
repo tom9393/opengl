@@ -12,9 +12,7 @@ namespace Engine
     class Mesh
     {
         public:
-        Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const BufferLayout &bufferLayout, const TextureLayout &textureLayout) : m_Vertices(vertices), m_Indices(indices), m_BufferLayout(bufferLayout), m_TextureLayout(textureLayout) {
-            Prepare();
-        }
+        Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const BufferLayout &bufferLayout, const TextureLayout &textureLayout) : m_Vertices(vertices), m_Indices(indices), m_BufferLayout(bufferLayout), m_TextureLayout(textureLayout) {}
 
         std::vector<float> &GetVertices() { return m_Vertices; }
         std::vector<unsigned int> &GetIndices() { return m_Indices; }

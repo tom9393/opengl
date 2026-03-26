@@ -29,7 +29,7 @@ namespace Engine
         virtual unsigned int GetID() const = 0;
         virtual std::filesystem::path &GetPath() = 0;
 
-        virtual void Bind(unsigned int slot) const = 0;
+        virtual void Bind(unsigned int slot) = 0;
     };
 
     class Texture2D : public Texture

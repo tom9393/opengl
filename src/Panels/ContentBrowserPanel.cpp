@@ -1,5 +1,6 @@
 #include "ContentBrowserPanel.h"
 #include "AssetManager.h"
+#include "Renderer.h"
 
 namespace Engine
 {
@@ -10,6 +11,8 @@ namespace Engine
 	{
 		m_DirIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/folderIcon.png"));
 		m_FileIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/documentIcon.png"));
+		std::static_pointer_cast<OpenGLTexture2D>(m_DirIcon)->Initialize();
+		std::static_pointer_cast<OpenGLTexture2D>(m_FileIcon)->Initialize();
 	};
 
 	void ContentBrowserPanel::OnImGuiRender()

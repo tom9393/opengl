@@ -5,6 +5,7 @@
 #include "Render/Renderer.h"
 #include "KeyCodes.h"
 #include "Events/EventBroker.h"
+#include <thread>
 
 namespace Engine
 {
@@ -15,6 +16,7 @@ namespace Engine
     {
         s_Instance = this;
         m_Window = std::unique_ptr<Window>(Window::Create());
+        m_ThreadPool = new ThreadPool(std::thread::hardware_concurrency());
         m_Window->SetEventCallback(
             [](Engine::Event& e)
             {

@@ -16,11 +16,13 @@ namespace Engine
         unsigned int GetID() const override;
         std::filesystem::path &GetPath() override { return m_Path; }
 
-        void Bind(unsigned int slot) const override;
+        void Bind(unsigned int slot) override;
+        void Initialize();
 
         private:
         std::filesystem::path m_Path;
-        unsigned int m_Width, m_Height;
+        unsigned char* m_RawData;
+        unsigned int m_Width, m_Height, m_Channels;
         unsigned int m_RendererID;
     };
 

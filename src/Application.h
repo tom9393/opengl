@@ -4,6 +4,7 @@
 
 #include "ImGuiLayer.h"
 #include "LayerStack.h"
+#include "Utils/ThreadPool.h"
 #include "Window.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyboardEvent.h"
@@ -26,6 +27,7 @@ namespace Engine
 
         static Application& Get() { return *s_Instance; }
         Window& GetWindow() { return *m_Window; }
+        ThreadPool& GetThreadPool() { return *m_ThreadPool; }
         ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
         private:
@@ -33,6 +35,7 @@ namespace Engine
         ImGuiLayer* m_ImGuiLayer;
         std::unique_ptr<Window> m_Window;
         LayerStack m_LayerStack;
+        ThreadPool* m_ThreadPool;
         bool m_Running = true;
         bool m_Minimized = false;
         float m_LastTime = 0.0f;
