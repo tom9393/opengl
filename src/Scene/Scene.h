@@ -32,7 +32,7 @@ namespace Engine
         void SyncPhysicsTransforms();
 
         private:
-        void RenderScene(const glm::mat4 &viewProjection);
+        void RenderScene(CameraData &cameraData);
 
         public:
         unsigned int m_ViewportWidth = 0;

@@ -9,6 +9,7 @@ layout (location = 4) in vec3 a_Bitangent;
 layout (std140, binding = 0) uniform Camera
 {
     mat4 u_ViewProjection;
+    vec3 u_CameraPosition;
 };
 
 struct VertexOutput
@@ -24,6 +25,7 @@ layout (location = 0) out VertexOutput Output;
 
 void main()
 {
+    vec4 WorldPos = u_Transform * vec4(a_Position, 1.0);
     // Calculate the TBN matrix for normal mapping
     vec3 T = normalize(vec3(u_Transform * vec4(a_Tangent,   0.0)));
     vec3 B = normalize(vec3(u_Transform * vec4(a_Bitangent, 0.0)));
@@ -33,5 +35,5 @@ void main()
     Output.FragPos = vec3(u_Transform * vec4(a_Position, 1.0));
     Output.TBN = mat3(T, B, N);
 
-    gl_Position = u_ViewProjection * vec4(WorldPos, 1.0);
+    gl_Position = u_ViewProjection * WorldPos;
 }

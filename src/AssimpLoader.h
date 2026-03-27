@@ -85,43 +85,60 @@ namespace Engine
             VertexLayout vertexLayout;
             std::vector<float> &vertices = mesh->GetVertices();
 
+            // 1. FORCE A STRICT LAYOUT (No more `if (hasUVs)` here!)
+            vertexLayout.AddVertexAttrib(VertexAttribute::Vertex, ShaderDataType::Float3, "a_Position");
+            vertexLayout.AddVertexAttrib(VertexAttribute::Normal, ShaderDataType::Float3, "a_Normal");
+            vertexLayout.AddVertexAttrib(VertexAttribute::Texture, ShaderDataType::Float2, "a_TexCoord");
+            vertexLayout.AddVertexAttrib(VertexAttribute::Tangent, ShaderDataType::Float3, "a_Tangent");
+            vertexLayout.AddVertexAttrib(VertexAttribute::Bitangent, ShaderDataType::Float3, "a_Bitangent");
+
+            // A standard PBR vertex is exactly 14 floats
+            const size_t floatsPerVertex = 14; 
+            vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
+
+            bool hasNormals = aiMesh->HasNormals();
+            bool hasUVs = aiMesh->mTextureCoords[0] != nullptr;
+            bool hasTangents = aiMesh->HasTangentsAndBitangents();
+
             for(unsigned int i = 0; i < aiMesh->mNumVertices; i++)
             {
-                glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
-
-                minExtents = glm::min(minExtents, pos);
-                maxExtents = glm::max(maxExtents, pos);
-
-                vertexLayout.AddVertexAttrib(VertexAttribute::Vertex, ShaderDataType::Float3, "a_Position");
+                // --- 1. POSITION (Location 0) ---
                 vertices.emplace_back(aiMesh->mVertices[i].x);
                 vertices.emplace_back(aiMesh->mVertices[i].y);
                 vertices.emplace_back(aiMesh->mVertices[i].z);
 
-                if (aiMesh->HasNormals())
-                {
-                    vertexLayout.AddVertexAttrib(VertexAttribute::Normal, ShaderDataType::Float3, "a_Normal");
+                // --- 2. NORMAL (Location 1) ---
+                if (hasNormals) {
                     vertices.emplace_back(aiMesh->mNormals[i].x);
                     vertices.emplace_back(aiMesh->mNormals[i].y);
                     vertices.emplace_back(aiMesh->mNormals[i].z);
+                } else {
+                    // Dummy normal pointing straight up
+                    vertices.emplace_back(0.0f); vertices.emplace_back(1.0f); vertices.emplace_back(0.0f); 
                 }
-                if (aiMesh->mTextureCoords[0])
-                {
-                    vertexLayout.AddVertexAttrib(VertexAttribute::Texture, ShaderDataType::Float2, "a_TexCoord");
+
+                // --- 3. UVs (Location 2) ---
+                if (hasUVs) {
                     vertices.emplace_back(aiMesh->mTextureCoords[0][i].x);
                     vertices.emplace_back(aiMesh->mTextureCoords[0][i].y);
+                } else {
+                    // Dummy UVs
+                    vertices.emplace_back(0.0f); vertices.emplace_back(0.0f);
+                }
 
-                    if (aiMesh->HasTangentsAndBitangents())
-                    {
-                        vertexLayout.AddVertexAttrib(VertexAttribute::Tangent, ShaderDataType::Float3, "a_Tangent");
-                        vertices.emplace_back(aiMesh->mTangents[i].x);
-                        vertices.emplace_back(aiMesh->mTangents[i].y);
-                        vertices.emplace_back(aiMesh->mTangents[i].z);
-
-                        vertexLayout.AddVertexAttrib(VertexAttribute::Bitangent, ShaderDataType::Float3, "a_Bitangent");
-                        vertices.emplace_back(aiMesh->mBitangents[i].x);
-                        vertices.emplace_back(aiMesh->mBitangents[i].y);
-                        vertices.emplace_back(aiMesh->mBitangents[i].z);
-                    }
+                // --- 4. TANGENT & BITANGENT (Location 3 & 4) ---
+                if (hasTangents) {
+                    vertices.emplace_back(aiMesh->mTangents[i].x);
+                    vertices.emplace_back(aiMesh->mTangents[i].y);
+                    vertices.emplace_back(aiMesh->mTangents[i].z);
+                    
+                    vertices.emplace_back(aiMesh->mBitangents[i].x);
+                    vertices.emplace_back(aiMesh->mBitangents[i].y);
+                    vertices.emplace_back(aiMesh->mBitangents[i].z);
+                } else {
+                    // DUMMY TANGENTS (Crucial: Must NOT be 0,0,0 to prevent NaN explosions!)
+                    vertices.emplace_back(1.0f); vertices.emplace_back(0.0f); vertices.emplace_back(0.0f); // Tangent
+                    vertices.emplace_back(0.0f); vertices.emplace_back(0.0f); vertices.emplace_back(1.0f); // Bitangent
                 }
             }
             AABB aabb{ minExtents, maxExtents };

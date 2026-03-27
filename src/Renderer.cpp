@@ -10,13 +10,13 @@ namespace Engine
     RenderStorage Renderer::s_Data;
     LineRendererData Renderer::s_LineData;
 
-    void Renderer::BeginScene(const glm::mat4& viewProjection)
+    void Renderer::BeginScene(CameraData& cameraData)
     {
         Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
         shader->Bind();
 
-        s_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
-        s_SceneData.ViewProjectionMatrix = viewProjection;
+        s_Data.uniformBuffer->Update(0, sizeof(CameraData), &cameraData);
+        s_SceneData.ViewProjectionMatrix = cameraData.ViewProjection;
 	s_SceneData.cameraFrustum = CreateFrustumFromMatrix(s_SceneData.ViewProjectionMatrix);
     };
 
@@ -69,7 +69,7 @@ namespace Engine
             shader->setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
         }
 
-        s_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(glm::mat4));
+        s_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
         s_Data.uniformBuffer->Bind(0);
 
         // Mainly for drawing debugging lines

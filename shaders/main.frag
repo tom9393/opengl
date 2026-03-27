@@ -22,6 +22,7 @@ layout (location = 0) in VertexOutput Input;
 layout (std140, binding = 0) uniform Camera
 {
     mat4 u_ViewProjection;
+    vec3 u_CameraPosition;
 };
 
 uniform vec3 lightPositions[4]; 
@@ -77,18 +78,26 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 
 void main()
 {
-    // Extract map data
-    vec3 albedo     = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2)); // Convert to linear space
-    float metallic  = texture(metallicMap, TexCoords).r;
-    float roughness = texture(roughnessMap, TexCoords).r;
-    float ao        = texture(aoMap, TexCoords).r;
+    vec2 TexCoords = Input.TexCoord;
+    mat3 TBN = Input.TBN;
 
+    // Extract map data
+    vec3 albedo     = pow(texture(material.albedoMap, TexCoords).rgb, vec3(2.2)); // Convert to linear space
+    // float metallic  = texture(material.metallicMap, TexCoords).r;
+    // float roughness = texture(material.roughnessMap, TexCoords).r;
+    // float ao        = texture(material.aoMap, TexCoords).r;
+    // For testing
+    float metallic = 1;
+    float ao = 1;
+    float roughness = 0.5;
+
+    vec3 WorldPos = Input.FragPos;
     // Extract and transform normal
-    vec3 normal = texture(normalMap, TexCoords).rgb;
+    vec3 normal = texture(material.normalMap, TexCoords).rgb;
     normal = normal * 2.0 - 1.0; // Map from [0,1] to [-1,1]
     vec3 N = normalize(TBN * normal);
 
-    vec3 V = normalize(camPos - WorldPos);
+    vec3 V = normalize(u_CameraPosition - WorldPos);
 
     // Base reflectivity (F0). 0.04 is a good default for non-metals (dielectrics).
     // If it's a metal, use the albedo color as the base reflectivity.

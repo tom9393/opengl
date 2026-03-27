@@ -54,6 +54,12 @@ namespace Engine
         LineVertex* LineVertexBufferPtr = nullptr;
     };
 
+    struct CameraData {
+        glm::mat4 ViewProjection;
+        glm::vec3 Position;
+        float padding;
+    };
+
     class Renderer
     {
         public:
@@ -63,7 +69,7 @@ namespace Engine
 
         static void ToggleWireframe();
 
-        static void BeginScene(const glm::mat4& viewProjection);
+        static void BeginScene(CameraData& viewProjection);
         static void BeginScene();
         static void EndScene();
 

@@ -66,7 +66,10 @@ namespace Engine
 			if (camera.primary)
 			{
 				glm::mat4 viewMatrix = glm::inverse(transform.GetTransform());
-				RenderScene(camera.sceneCamera->GetProjection() * viewMatrix);
+				CameraData cameraData;
+				cameraData.ViewProjection = camera.sceneCamera->GetProjection() * viewMatrix;
+				cameraData.Position = transform.translation;
+				RenderScene(cameraData);
 				break;
 			}
 		}
@@ -82,7 +85,10 @@ namespace Engine
 
 	void Scene::OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera)
 	{
-		RenderScene(camera->GetViewProjection());
+		CameraData cameraData;
+		cameraData.ViewProjection = camera->GetViewProjection();
+		cameraData.Position = camera->GetPosition();
+		RenderScene(cameraData);
 	}
 
 	void Scene::OnViewportResize(unsigned int width, unsigned int height)
@@ -97,9 +103,9 @@ namespace Engine
 		}
 	};
 
-	void Scene::RenderScene(const glm::mat4 &viewProjection)
+	void Scene::RenderScene(CameraData &cameraData)
 	{
-		Renderer::BeginScene(viewProjection);
+		Renderer::BeginScene(cameraData);
 
 		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
 		for (auto entity : group)
@@ -109,7 +115,7 @@ namespace Engine
 			if (model.model) 
 				Renderer::SubmitModel(model.model, transform.GetTransform());
 		}
-		m_Physicsworld.RenderDebug(viewProjection);
+		m_Physicsworld.RenderDebug(cameraData.ViewProjection);
 
 		Renderer::EndScene();
 	}
