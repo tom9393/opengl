@@ -259,6 +259,7 @@ namespace Engine
 		{
 			auto& mc = entity.AddComponent<ModelComponent>();
 			mc.path = node["Model"].as<std::string>();
+			mc.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(mc.path));
 		}
 	}
 

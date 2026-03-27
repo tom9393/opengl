@@ -91,8 +91,7 @@ namespace Engine {
                 // 1. Ensure a bake exists (or bake it now if missing)
                 std::string bakePath = modelComponent.path + ".pmcol";
                 if (!std::filesystem::exists(bakePath)) {
-                    Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-                    CollisionBaker::Bake(modelComponent.path, m->GetMeshes());
+                    CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
                 }
 
                 RBComplexShape* shape = new RBComplexShape(modelComponent.path);

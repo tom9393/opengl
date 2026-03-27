@@ -435,9 +435,8 @@ namespace Engine
 			{
 				auto& mc = entity.GetComponent<ModelComponent>();
 				// We load the asset and bake it immediately
-				Shared<Model> model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(mc.path));
-				if (model) {
-					CollisionBaker::Bake(mc.path, model->GetMeshes());
+				if (mc.model) {
+					CollisionBaker::Bake(mc.path, mc.model->GetMeshes());
 					std::cout << "[Editor] Manual Re-Bake successful for " << mc.path << std::endl;
 				}
 			}

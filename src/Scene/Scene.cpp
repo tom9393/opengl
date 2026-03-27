@@ -106,10 +106,8 @@ namespace Engine
 		{
 			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
 
-			Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(model.path));
-
-			if (m) 
-				Renderer::SubmitModel(m, transform.GetTransform());
+			if (model.model) 
+				Renderer::SubmitModel(model.model, transform.GetTransform());
 		}
 		m_Physicsworld.RenderDebug(viewProjection);
 
@@ -142,11 +140,12 @@ namespace Engine
 			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
 			auto& modelComponent = entity.GetComponent<ModelComponent>();
 
+			modelComponent.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
+
 			// 1. Ensure a bake exists (or bake it now if missing)
 			std::string bakePath = modelComponent.path + ".pmcol";
 			if (!std::filesystem::exists(bakePath)) {
-			    Shared<Model> m = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-			    CollisionBaker::Bake(modelComponent.path, m->GetMeshes());
+			    CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
 			}
 
 			RBComplexShape* shape = new RBComplexShape(modelComponent.path);

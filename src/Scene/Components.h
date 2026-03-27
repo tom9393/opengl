@@ -64,6 +64,7 @@ namespace Engine
     struct ModelComponent
     {
         std::string path = "";
+        Shared<Model> model = nullptr;
 
         ModelComponent() = default;
         ModelComponent(const ModelComponent&) = default;
