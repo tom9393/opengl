@@ -102,6 +102,11 @@ namespace Engine
 
             for(unsigned int i = 0; i < aiMesh->mNumVertices; i++)
             {
+                // Calculate the bounds for this specific vertex
+                glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
+                minExtents = glm::min(minExtents, pos);
+                maxExtents = glm::max(maxExtents, pos);
+
                 // --- 1. POSITION (Location 0) ---
                 vertices.emplace_back(aiMesh->mVertices[i].x);
                 vertices.emplace_back(aiMesh->mVertices[i].y);
