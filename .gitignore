@@ -14,7 +14,7 @@
 **/*.obj
 
 # 2. Specifically allow .obj files in the asset folder
-!asset/**/*.obj
+!assets/**/*.obj
 
 # Precompiled Headers
 *.gch
