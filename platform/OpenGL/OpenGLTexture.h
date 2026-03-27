@@ -22,6 +22,7 @@ namespace Engine
         private:
         std::filesystem::path m_Path;
         unsigned char* m_RawData;
+        unsigned int m_DataFormat, m_InternalFormat;
         unsigned int m_Width, m_Height, m_Channels;
         unsigned int m_RendererID;
     };

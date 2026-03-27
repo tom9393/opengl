@@ -19,7 +19,7 @@ namespace Engine {
         UUID GetHandle() { return m_Handle; };
         AssetType GetType() { return m_Type; };
 
-        private:
+        protected:
         bool m_Loaded = false;
         UUID m_Handle;
         AssetType m_Type;

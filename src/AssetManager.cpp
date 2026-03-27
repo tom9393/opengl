@@ -12,6 +12,8 @@ namespace Engine {
             { ".png", AssetType::Texture2D },
             { ".jpg", AssetType::Texture2D },
             { ".jpeg", AssetType::Texture2D },
+            { ".ktx", AssetType::Texture2D },
+            { ".ktx2", AssetType::Texture2D },
             { ".assbin", AssetType::Model },
             { ".obj", AssetType::Model }
     };
@@ -24,8 +26,10 @@ namespace Engine {
         if (ext == ".png")     return AssetType::Texture2D;
         if (ext == ".jpg")     return AssetType::Texture2D;
         if (ext == ".jpeg")    return AssetType::Texture2D;
-        if (ext == ".assbin")    return AssetType::Model;
-        if (ext == ".obj")    return AssetType::Model;
+        if (ext == ".ktx")     return AssetType::Texture2D;
+        if (ext == ".ktx2")    return AssetType::Texture2D;
+        if (ext == ".assbin")  return AssetType::Model;
+        if (ext == ".obj")     return AssetType::Model;
 
         return AssetType::None;
     }

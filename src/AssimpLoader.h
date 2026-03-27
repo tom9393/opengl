@@ -180,8 +180,26 @@ namespace Engine
                     std::string filename = std::string(str.C_Str());
                     filename = m_Directory + "/" + filename;
 
-                    Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
-                    layout.AddTexture(AssimpToTextureType(type), texture);
+                    size_t lastindex = filename.find_last_of("."); 
+
+                    std::string ktxExtensionPath = filename.substr(0, lastindex).append(".ktx");
+                    std::string ktxExtensionPath2 = filename.substr(0, lastindex).append(".ktx2");
+                    
+                    if (std::filesystem::exists(ktxExtensionPath))
+                    {
+                        Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath));
+                        layout.AddTexture(AssimpToTextureType(type), texture);
+                    }
+                    else if (std::filesystem::exists(ktxExtensionPath2))
+                    {
+                        Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath2));
+                        layout.AddTexture(AssimpToTextureType(type), texture);
+                    }
+                    else
+                    {
+                        Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
+                        layout.AddTexture(AssimpToTextureType(type), texture);
+                    };
                 }
             }
         }

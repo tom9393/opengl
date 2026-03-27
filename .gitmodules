@@ -20,3 +20,6 @@
 [submodule "lib/bullet"]
 	path = lib/bullet
 	url = https://github.com/bulletphysics/bullet3.git
+[submodule "lib/ktx"]
+	path = lib/ktx
+	url = https://github.com/KhronosGroup/KTX-Software.git

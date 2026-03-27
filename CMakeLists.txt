@@ -13,12 +13,15 @@ add_executable(${PROJECT_NAME} main.cpp ${ENGINE_SOURCES})
 set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "Disable bullet demos" FORCE)
 set(BUILD_EXTRAS OFF CACHE BOOL "Disable bullet extras" FORCE)
 set(BUILD_UNIT_TESTS OFF CACHE BOOL "Disable bullet unit tests" FORCE)
+set(KTX_FEATURE_TESTS OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE)
 
 # === Third-party libs ===
 add_subdirectory(lib/bullet)
 add_subdirectory(lib/glfw)
 add_subdirectory(lib/glm)
 add_subdirectory(lib/yaml-cpp)
+add_subdirectory(lib/ktx)
 
 add_library(imgui
     lib/imgui/imgui.cpp
@@ -64,6 +67,8 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC lib/entt # Entt is a single header library
 
 	PUBLIC lib/bullet/src # Bullet expects this to work
+
+	PUBLIC lib/ktx/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -81,6 +86,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     BulletCollision
     LinearMath
     Bullet3Common
+    ktx
 )
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE pch.h)

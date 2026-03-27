@@ -9,7 +9,12 @@
 *.slo
 *.lo
 *.o
-*.obj
+
+# 1. Ignore all .obj files everywhere
+**/*.obj
+
+# 2. Specifically allow .obj files in the asset folder
+!asset/**/*.obj
 
 # Precompiled Headers
 *.gch
@@ -68,5 +73,9 @@ CMakeUserPresets.json
 
 # Build folder
 build/
+
+# Ignore ktx files
+*.ktx
+*.ktx2
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,cmake
