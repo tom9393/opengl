@@ -1,6 +1,7 @@
 #include "Render/Renderer.h"
 #include "../platform/OpenGL/OpenGLShader.h"
 #include "Buffer.h"
+#include "MathTools.h"
 
 namespace Engine
 {
@@ -16,6 +17,7 @@ namespace Engine
 
         s_Data.uniformBuffer->Update(0, sizeof(glm::mat4), (void*)glm::value_ptr(viewProjection));
         s_SceneData.ViewProjectionMatrix = viewProjection;
+	s_SceneData.cameraFrustum = CreateFrustumFromMatrix(s_SceneData.ViewProjectionMatrix);
     };
 
     void Renderer::EndScene()
@@ -175,10 +177,12 @@ namespace Engine
     void Renderer::SubmitModel(const Shared<Model> &model, const glm::mat4 &transform)
     {
         PROFILE_FUNCTION();
+
         for (auto& mesh : model->GetMeshes())
         {
             // Batching or Material sorting can happen here
-            s_Data.renderQueue.emplace_back(mesh, transform);
+            if (IsAABBInFrustum(s_SceneData.cameraFrustum, mesh->GetAABB(), transform))
+                s_Data.renderQueue.emplace_back(mesh, transform);
         }
     };
 

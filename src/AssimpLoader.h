@@ -42,21 +42,19 @@ namespace Engine
             // Cpu only
             for (size_t i = 0; i < flatMeshes.size(); i++)
             {
-                aiMesh* mesh = flatMeshes[i];
+                aiMesh* aiMesh = flatMeshes[i];
+                m_Meshes[i] = MakeShared<Mesh>();
                 
-                results.push_back(tp.Enqueue([this, mesh, scene, i]() {
-                    VertexLayout vertexLayout;
-                    std::vector<float> vertices;
-                    std::vector<unsigned int> indices;
-
+                results.push_back(tp.Enqueue([this, aiMesh, scene, i]() {
+                    auto& mesh = m_Meshes[i];
                     // This is the heavy math/parsing part, safe for threads
-                    LoadVertices(vertices, mesh, scene, vertexLayout);
-                    LoadIndices(indices, mesh);
+                    LoadVertices(mesh, aiMesh, scene);
+                    LoadIndices(mesh, aiMesh);
 
-                    BufferLayout bufferLayout(vertexLayout.GetElements());
                     TextureLayout emptyTextureLayout;
+                    mesh->SetTextureLayout(emptyTextureLayout);
 
-                    m_Meshes[i] = MakeShared<Mesh>(vertices, indices, bufferLayout, emptyTextureLayout);
+                    m_Meshes[i] = mesh;
                 }));
             }
 
@@ -78,59 +76,66 @@ namespace Engine
             return MakeShared<Model>(m_Meshes, m_Path);
         }
 
-        void LoadVertices(std::vector<float> &vertices, aiMesh* mesh, const aiScene* scene, VertexLayout &vertexLayout)
+        void LoadVertices(Shared<Mesh> &mesh, aiMesh* aiMesh, const aiScene* scene)
         {
-            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-            aiColor4D diffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-            aiReturn col = aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor);
-            for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-            {
-                vertexLayout.AddVertexAttrib(VertexAttribute::Vertex, ShaderDataType::Float3, "a_Position");
-                vertices.emplace_back(mesh->mVertices[i].x);
-                vertices.emplace_back(mesh->mVertices[i].y);
-                vertices.emplace_back(mesh->mVertices[i].z);
+            aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
+            glm::vec3 minExtents(std::numeric_limits<float>::max());
+            glm::vec3 maxExtents(std::numeric_limits<float>::lowest());
 
-                if (mesh->HasNormals())
+            VertexLayout vertexLayout;
+            std::vector<float> &vertices = mesh->GetVertices();
+
+            for(unsigned int i = 0; i < aiMesh->mNumVertices; i++)
+            {
+                glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
+
+                minExtents = glm::min(minExtents, pos);
+                maxExtents = glm::max(maxExtents, pos);
+
+                vertexLayout.AddVertexAttrib(VertexAttribute::Vertex, ShaderDataType::Float3, "a_Position");
+                vertices.emplace_back(aiMesh->mVertices[i].x);
+                vertices.emplace_back(aiMesh->mVertices[i].y);
+                vertices.emplace_back(aiMesh->mVertices[i].z);
+
+                if (aiMesh->HasNormals())
                 {
                     vertexLayout.AddVertexAttrib(VertexAttribute::Normal, ShaderDataType::Float3, "a_Normal");
-                    vertices.emplace_back(mesh->mNormals[i].x);
-                    vertices.emplace_back(mesh->mNormals[i].y);
-                    vertices.emplace_back(mesh->mNormals[i].z);
+                    vertices.emplace_back(aiMesh->mNormals[i].x);
+                    vertices.emplace_back(aiMesh->mNormals[i].y);
+                    vertices.emplace_back(aiMesh->mNormals[i].z);
                 }
-                if (mesh->mTextureCoords[0])
+                if (aiMesh->mTextureCoords[0])
                 {
                     vertexLayout.AddVertexAttrib(VertexAttribute::Texture, ShaderDataType::Float2, "a_TexCoord");
-                    vertices.emplace_back(mesh->mTextureCoords[0][i].x);
-                    vertices.emplace_back(mesh->mTextureCoords[0][i].y);
+                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].x);
+                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].y);
 
-                    if (mesh->HasTangentsAndBitangents())
+                    if (aiMesh->HasTangentsAndBitangents())
                     {
                         vertexLayout.AddVertexAttrib(VertexAttribute::Tangent, ShaderDataType::Float3, "a_Tangent");
-                        vertices.emplace_back(mesh->mTangents[i].x);
-                        vertices.emplace_back(mesh->mTangents[i].y);
-                        vertices.emplace_back(mesh->mTangents[i].z);
+                        vertices.emplace_back(aiMesh->mTangents[i].x);
+                        vertices.emplace_back(aiMesh->mTangents[i].y);
+                        vertices.emplace_back(aiMesh->mTangents[i].z);
 
                         vertexLayout.AddVertexAttrib(VertexAttribute::Bitangent, ShaderDataType::Float3, "a_Bitangent");
-                        vertices.emplace_back(mesh->mBitangents[i].x);
-                        vertices.emplace_back(mesh->mBitangents[i].y);
-                        vertices.emplace_back(mesh->mBitangents[i].z);
+                        vertices.emplace_back(aiMesh->mBitangents[i].x);
+                        vertices.emplace_back(aiMesh->mBitangents[i].y);
+                        vertices.emplace_back(aiMesh->mBitangents[i].z);
                     }
                 }
-                if (AI_SUCCESS == col) {
-                    vertexLayout.AddVertexAttrib(VertexAttribute::Color, ShaderDataType::Float4, "a_Color");
-                    vertices.emplace_back(diffuseColor.r);
-                    vertices.emplace_back(diffuseColor.g);
-                    vertices.emplace_back(diffuseColor.b);
-                    vertices.emplace_back(diffuseColor.a);
-                }
             }
+            AABB aabb{ minExtents, maxExtents };
+            BufferLayout bufferLayout(vertexLayout.GetElements());
+            mesh->SetLayout(bufferLayout);
+            mesh->SetAABB(aabb);
         }
 
-        void LoadIndices(std::vector<unsigned int> &indices, aiMesh* mesh)
+        void LoadIndices(Shared<Mesh> &mesh, aiMesh* aiMesh)
         {
-            for(unsigned int i = 0; i < mesh->mNumFaces; i++)
+            std::vector<unsigned int> &indices = mesh->GetIndices();
+            for(unsigned int i = 0; i < aiMesh->mNumFaces; i++)
             {
-                aiFace face = mesh->mFaces[i];
+                aiFace face = aiMesh->mFaces[i];
                 for(unsigned int j = 0; j < face.mNumIndices; j++)
                     indices.emplace_back(face.mIndices[j]);        
             }
@@ -161,13 +166,14 @@ namespace Engine
         void LoadMaterialTextures(aiMaterial *mat, TextureLayout &layout)
         {
             std::vector<aiTextureType> textureTypes = { 
-                aiTextureType_DIFFUSE,          // Often used as Albedo in legacy files
-                aiTextureType_BASE_COLOR,       // Modern Albedo
-                aiTextureType_NORMALS,          // PBR Normals
-                aiTextureType_HEIGHT,           // Sometimes used for Normals in OBJ
-                aiTextureType_METALNESS,        // PBR Metallic
-                aiTextureType_DIFFUSE_ROUGHNESS,// PBR Roughness
-                aiTextureType_AMBIENT_OCCLUSION // PBR AO
+                aiTextureType_DIFFUSE,          // 1  Often used as Albedo in legacy files
+                aiTextureType_BASE_COLOR,       // 12 Modern Albedo
+                aiTextureType_NORMALS,          // 6  PBR Normals
+                aiTextureType_HEIGHT,           // 5  Sometimes used for Normals in OBJ
+                aiTextureType_METALNESS,        // 15 PBR Metallic
+                aiTextureType_DIFFUSE_ROUGHNESS,// 16 PBR Roughness
+                aiTextureType_AMBIENT_OCCLUSION, //17 PBR AO
+                aiTextureType_SHININESS          // 7 Shininess
             };
 
             for (auto &type : textureTypes)
@@ -184,7 +190,7 @@ namespace Engine
 
                     std::string ktxExtensionPath = filename.substr(0, lastindex).append(".ktx");
                     std::string ktxExtensionPath2 = filename.substr(0, lastindex).append(".ktx2");
-                    
+
                     if (std::filesystem::exists(ktxExtensionPath))
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath));
@@ -203,6 +209,7 @@ namespace Engine
                 }
             }
         }
+
         void CollectMeshes(aiNode* node, const aiScene* scene, std::vector<aiMesh*>& outMeshes)
         {
             for(unsigned int i = 0; i < node->mNumMeshes; i++) {

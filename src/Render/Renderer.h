@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Buffer.h"
+#include "MathTools.h"
 #include "Model.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
@@ -87,6 +88,7 @@ namespace Engine
         struct SceneData
         {
             glm::mat4 ViewProjectionMatrix;
+            Frustum cameraFrustum;
         };
 
         static SceneData s_SceneData;

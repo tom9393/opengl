@@ -5,8 +5,6 @@ layout (location = 1) in vec3 a_Normal;
 layout (location = 2) in vec2 a_TexCoord;
 layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec3 a_Bitangent;
-//layout (location = 5) in vec4 a_Color;
-//layout (location = 6) in float a_EntityID;
 
 layout (std140, binding = 0) uniform Camera
 {
@@ -18,13 +16,11 @@ struct VertexOutput
     vec3 FragPos;
     vec3 Normal;
     vec2 TexCoord;
-//    vec4 Color;
 };
 
 uniform mat4 u_Transform;
 
 layout (location = 0) out VertexOutput Output;
-//layout (location = 4) out flat int v_EntityID;
 
 void main()
 {
@@ -32,8 +28,6 @@ void main()
     Output.FragPos = vec3(WorldPos);
     Output.Normal = mat3(transpose(inverse(u_Transform))) * a_Normal;
     Output.TexCoord = a_TexCoord;
-//    Output.Color = a_Color;
 
     gl_Position = u_ViewProjection * WorldPos;
-//    v_EntityID = int(a_EntityID);
 }

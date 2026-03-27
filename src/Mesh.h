@@ -2,6 +2,7 @@
 
 #include "../pch.h"
 
+#include "MathTools.h"
 #include "Preprocessor.h"
 #include "BufferLayout.h"
 #include "Buffer.h"
@@ -13,12 +14,20 @@ namespace Engine
     {
         public:
         Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const BufferLayout &bufferLayout, const TextureLayout &textureLayout) : m_Vertices(vertices), m_Indices(indices), m_BufferLayout(bufferLayout), m_TextureLayout(textureLayout) {}
+        Mesh() {}
 
         std::vector<float> &GetVertices() { return m_Vertices; }
         std::vector<unsigned int> &GetIndices() { return m_Indices; }
+
         BufferLayout &GetLayout() { return m_BufferLayout; }
-        Shared<VertexArray> &GetVAO() { return m_VAO; }
+        void SetLayout(BufferLayout &layout) { m_BufferLayout = layout; }
         TextureLayout &GetTextureLayout() { return m_TextureLayout; }
+        void SetTextureLayout(TextureLayout &layout) { m_TextureLayout = layout; }
+
+        Shared<VertexArray> &GetVAO() { return m_VAO; }
+
+        const AABB& GetAABB() const { return m_AABB; }
+        void SetAABB(const AABB &aabb) { m_AABB = aabb; }
 
         void Prepare()
         {
@@ -45,6 +54,7 @@ namespace Engine
         Shared<IndexBuffer> m_EBO;
         BufferLayout m_BufferLayout;
         TextureLayout m_TextureLayout;
+        AABB m_AABB;
 
         friend class Renderer;
     };
