@@ -25,15 +25,15 @@ layout (location = 0) out VertexOutput Output;
 
 void main()
 {
-    vec4 WorldPos = u_Transform * vec4(a_Position, 1.0);
+    vec3 WorldPos = vec3(u_Transform * vec4(a_Position, 1.0));
     // Calculate the TBN matrix for normal mapping
     vec3 T = normalize(vec3(u_Transform * vec4(a_Tangent,   0.0)));
     vec3 B = normalize(vec3(u_Transform * vec4(a_Bitangent, 0.0)));
     vec3 N = normalize(vec3(u_Transform * vec4(a_Normal,    0.0)));
 
+    Output.FragPos = WorldPos;
     Output.TexCoord = a_TexCoord;
-    Output.FragPos = vec3(u_Transform * vec4(a_Position, 1.0));
     Output.TBN = mat3(T, B, N);
 
-    gl_Position = u_ViewProjection * WorldPos;
+    gl_Position = u_ViewProjection * vec4(WorldPos, 1.0);
 }

@@ -136,11 +136,11 @@ namespace Engine
         public:
         TextureLayout()
         {
-            m_Texture_Keys[TextureType::Diffuse] = "albedoMap";
-            m_Texture_Keys[TextureType::Normal] = "normalMap";
-            m_Texture_Keys[TextureType::Metallic] = "metallicMap";
-            m_Texture_Keys[TextureType::Roughness] = "roughnessMap";
-            m_Texture_Keys[TextureType::AO] = "aoMap";
+            m_Texture_Keys[TextureType::Diffuse] = "pbr.albedoMap";
+            m_Texture_Keys[TextureType::Normal] = "pbr.normalMap";
+            m_Texture_Keys[TextureType::Metallic] = "pbr.metallicMap";
+            m_Texture_Keys[TextureType::Roughness] = "pbr.roughnessMap";
+            m_Texture_Keys[TextureType::AO] = "pbr.aoMap";
         }
 
         void AddTexture(TextureType type, Shared<Texture2D> texture)

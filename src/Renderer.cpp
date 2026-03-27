@@ -17,7 +17,7 @@ namespace Engine
 
         s_Data.uniformBuffer->Update(0, sizeof(CameraData), &cameraData);
         s_SceneData.ViewProjectionMatrix = cameraData.ViewProjection;
-	s_SceneData.cameraFrustum = CreateFrustumFromMatrix(s_SceneData.ViewProjectionMatrix);
+	s_SceneData.cameraFrustum = CreateFrustumFromMatrix(cameraData.ViewProjection);
     };
 
     void Renderer::EndScene()
@@ -54,14 +54,16 @@ namespace Engine
             glm::vec3(-10.0f, -10.0f, 10.0f),
             glm::vec3( 10.0f, -10.0f, 10.0f),
         };
+        float intensity = 1000.0f;
         glm::vec3 lightColors[] = {
-            glm::vec3(300.0f, 300.0f, 300.0f),
-            glm::vec3(300.0f, 300.0f, 300.0f),
-            glm::vec3(300.0f, 300.0f, 300.0f),
-            glm::vec3(300.0f, 300.0f, 300.0f)
+            glm::vec3(intensity, intensity, intensity),
+            glm::vec3(intensity, intensity, intensity),
+            glm::vec3(intensity, intensity, intensity),
+            glm::vec3(intensity, intensity, intensity)
         };
 
         Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
+        shader->Bind();
 
         // Assuming you have a way to set arrays in your shader class:
         for (unsigned int i = 0; i < 4; ++i) {
@@ -141,7 +143,7 @@ namespace Engine
             {
                 texture->Bind(idx);
                 shader->setInt(layout.GetStringByType(type), idx++);
-                shader->setFloat("material.shininess", 0.75f);
+                //shader->setFloat("material.shininess", 0.75f);
             }
         }
     };

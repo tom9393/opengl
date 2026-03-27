@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec4 FragColor;
 
-struct Material {
+struct PBR {
     sampler2D albedoMap;
     sampler2D normalMap;
     sampler2D metallicMap;
@@ -30,12 +30,7 @@ uniform vec3 lightColors[4];
 
 const float PI = 3.14159265359;
 
-in vec3 v_FragPos;
-in vec3 v_Normal;
-in vec2 v_TexCoord;
-in vec4 v_Color;
-
-uniform Material material;
+uniform PBR pbr;
 
 // 1. Normal Distribution Function (GGX)
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -82,18 +77,14 @@ void main()
     mat3 TBN = Input.TBN;
 
     // Extract map data
-    vec3 albedo     = pow(texture(material.albedoMap, TexCoords).rgb, vec3(2.2)); // Convert to linear space
-    // float metallic  = texture(material.metallicMap, TexCoords).r;
-    // float roughness = texture(material.roughnessMap, TexCoords).r;
-    // float ao        = texture(material.aoMap, TexCoords).r;
-    // For testing
-    float metallic = 1;
-    float ao = 1;
-    float roughness = 0.5;
+    vec3 albedo     = pow(texture(pbr.albedoMap, TexCoords).rgb, vec3(2.2)); // Convert to linear space
+    float metallic  = texture(pbr.metallicMap, TexCoords).r;
+    float roughness = texture(pbr.roughnessMap, TexCoords).r;
+    float ao        = texture(pbr.aoMap, TexCoords).r;
 
     vec3 WorldPos = Input.FragPos;
     // Extract and transform normal
-    vec3 normal = texture(material.normalMap, TexCoords).rgb;
+    vec3 normal = texture(pbr.normalMap, TexCoords).rgb;
     normal = normal * 2.0 - 1.0; // Map from [0,1] to [-1,1]
     vec3 N = normalize(TBN * normal);
 
