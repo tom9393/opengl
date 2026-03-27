@@ -136,10 +136,11 @@ namespace Engine
         public:
         TextureLayout()
         {
-            m_Texture_Keys[TextureType::Diffuse] = "material.diffuse";
-            m_Texture_Keys[TextureType::Specular] = "material.specular";
-            m_Texture_Keys[TextureType::Height] = "material.height";
-            m_Texture_Keys[TextureType::Normal] = "material.normal";
+            m_Texture_Keys[TextureType::Diffuse] = "albedoMap";
+            m_Texture_Keys[TextureType::Normal] = "normalMap";
+            m_Texture_Keys[TextureType::Metallic] = "metallicMap";
+            m_Texture_Keys[TextureType::Roughness] = "roughnessMap";
+            m_Texture_Keys[TextureType::AO] = "aoMap";
         }
 
         void AddTexture(TextureType type, Shared<Texture2D> texture)

@@ -48,6 +48,27 @@ namespace Engine
         const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
         s_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
 
+        glm::vec3 lightPositions[] = {
+            glm::vec3(-10.0f,  10.0f, 10.0f),
+            glm::vec3( 10.0f,  10.0f, 10.0f),
+            glm::vec3(-10.0f, -10.0f, 10.0f),
+            glm::vec3( 10.0f, -10.0f, 10.0f),
+        };
+        glm::vec3 lightColors[] = {
+            glm::vec3(300.0f, 300.0f, 300.0f),
+            glm::vec3(300.0f, 300.0f, 300.0f),
+            glm::vec3(300.0f, 300.0f, 300.0f),
+            glm::vec3(300.0f, 300.0f, 300.0f)
+        };
+
+        Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
+
+        // Assuming you have a way to set arrays in your shader class:
+        for (unsigned int i = 0; i < 4; ++i) {
+            shader->setVec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
+            shader->setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+        }
+
         s_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(glm::mat4));
         s_Data.uniformBuffer->Bind(0);
 
