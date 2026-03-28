@@ -3,7 +3,6 @@
 #include "../../lib/entt/single_include/entt/entt.hpp"
 #include "../TimeStep.h"
 #include "SceneSerializer.h"
-#include "../EditorCamera.h"
 #include "../PhysicsWorld.h"
 #include "../UUID.h"
 
@@ -18,7 +17,6 @@ namespace Engine
         static Shared<Scene> Copy(Shared<Scene> other);
 
         void OnUpdate(TimeStep ts);
-        void OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera);
 
         void OnRuntimeStart();
         void OnRuntimeStop();
@@ -29,20 +27,24 @@ namespace Engine
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
         void DestroyEntity(Entity entity);
 
+        entt::registry& GetRegistry() { return m_Registry; }
+
         void SyncPhysicsTransforms();
 
         private:
         void RenderScene(CameraData &cameraData);
 
-        public:
+        private:
         unsigned int m_ViewportWidth = 0;
         unsigned int m_ViewportHeight = 0;
         entt::registry m_Registry;
         PhysicsWorld m_Physicsworld = PhysicsWorld(0, -9.81f, 0);
 
+        friend class SceneRenderer;
         friend class Entity;
         friend class SceneSerializer;
         friend class SceneHierarchyPanel;
+        friend class NativeScript;
     };
 
 };

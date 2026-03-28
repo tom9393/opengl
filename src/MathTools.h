@@ -121,4 +121,59 @@ namespace Engine
         return true; // AABB is inside or intersecting the frustum
     }
 
+    inline glm::vec3 ScreenPosToWorldRay(
+        float mouseX, float mouseY, 
+        float viewportWidth, float viewportHeight, 
+        const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) 
+    {
+        // 1. Convert Screen coordinates to Normalized Device Coordinates (NDC) [-1 to 1]
+        float x = (2.0f * mouseX) / viewportWidth - 1.0f;
+        float y = 1.0f - (2.0f * mouseY) / viewportHeight; // Y is inverted in screen space!
+
+        // 2. Clip Space
+        glm::vec4 rayClip = glm::vec4(x, y, -1.0f, 1.0f);
+
+        // 3. View Space (Reverse Projection)
+        glm::vec4 rayView = glm::inverse(projectionMatrix) * rayClip;
+        rayView = glm::vec4(rayView.x, rayView.y, -1.0f, 0.0f); // Set Z to point forwards, W to 0 (it's a vector, not a point)
+
+        // 4. World Space (Reverse View)
+        glm::vec3 rayWorld = glm::vec3(glm::inverse(viewMatrix) * rayView);
+        
+        return glm::normalize(rayWorld);
+    }
+
+    inline bool RayIntersectsAABB(
+        const glm::vec3& rayOrigin, const glm::vec3& rayDir, 
+        const AABB& aabb, const glm::mat4& entityTransform, 
+        float& outIntersectionDistance) 
+    {
+        // 1. Transform the Ray into the Entity's Local Space
+        glm::mat4 inverseTransform = glm::inverse(entityTransform);
+        
+        glm::vec3 localRayOrigin = glm::vec3(inverseTransform * glm::vec4(rayOrigin, 1.0f));
+        // W is 0.0f for direction vectors so they aren't affected by translation
+        glm::vec3 localRayDir = glm::normalize(glm::vec3(inverseTransform * glm::vec4(rayDir, 0.0f))); 
+
+        // 2. The "Slab" Intersection Math
+        glm::vec3 invDir = 1.0f / localRayDir;
+        
+        glm::vec3 t0 = (aabb.Min - localRayOrigin) * invDir;
+        glm::vec3 t1 = (aabb.Max - localRayOrigin) * invDir;
+
+        glm::vec3 tMin = glm::min(t0, t1);
+        glm::vec3 tMax = glm::max(t0, t1);
+
+        float tNear = glm::max(glm::max(tMin.x, tMin.y), tMin.z);
+        float tFar = glm::min(glm::min(tMax.x, tMax.y), tMax.z);
+
+        // If tNear is greater than tFar, the ray missed the box
+        // If tFar is negative, the box is completely behind the camera
+        if (tNear >= tFar || tFar < 0.0f) 
+            return false;
+
+        outIntersectionDistance = tNear;
+        return true;
+    }
+
 };

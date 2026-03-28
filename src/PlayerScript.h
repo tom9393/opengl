@@ -6,6 +6,7 @@
 #include "Components.h"
 #include "Entity.h"
 #include "Events/EventBroker.h"
+#include "Input.h"
 #include "NativeScript.h"
 #include "TimeStep.h"
 
@@ -100,7 +101,7 @@ namespace Engine {
 
                 rigidbodyComponent.runtimeBody = body;
 
-                m_Scene->m_Physicsworld.AddRigidBody(body);
+                //m_Scene->m_Physicsworld.AddRigidBody(body);
                 body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
                 body->SetTransform(transformComponent.translation, transformComponent.rotation);
 

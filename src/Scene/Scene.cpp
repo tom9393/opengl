@@ -13,7 +13,7 @@ namespace Engine
 	static void CopyComponent(entt::registry &destination, entt::registry &source, const std::unordered_map<UUID, entt::entity> &map)
 	{
 		auto view = source.view<Component>();
-		for (auto e : view)
+		for (auto& e : view)
 		{
 			UUID id = source.get<IDComponent>(e).id;
 			entt::entity entityId = map.at(id);
@@ -34,8 +34,8 @@ namespace Engine
 		auto& source = other->m_Registry;
 		auto& destination = newScene->m_Registry;
 
-		auto ids = source.view<IDComponent>();
-		for (auto e : ids)
+		auto view = source.view<IDComponent>();
+		for (auto& e : view)
 		{
 			UUID id = source.get<IDComponent>(e).id;
 			Entity newEntity = newScene->CreateEntityWithUUID(id);
@@ -59,23 +59,8 @@ namespace Engine
 		m_Physicsworld.CheckCollisions();
 		SyncPhysicsTransforms();
 
-		auto view = m_Registry.view<SceneCameraComponent, TransformComponent>(); // Camera must have location
-		for (auto entity : view)
-		{
-			auto [camera, transform] = view.get<SceneCameraComponent, TransformComponent>(entity);
-			if (camera.primary)
-			{
-				glm::mat4 viewMatrix = glm::inverse(transform.GetTransform());
-				CameraData cameraData;
-				cameraData.ViewProjection = camera.sceneCamera->GetProjection() * viewMatrix;
-				cameraData.Position = transform.translation;
-				RenderScene(cameraData);
-				break;
-			}
-		}
-
 		auto scripts = m_Registry.view<NativeScriptComponent>();
-		for (auto e : scripts)
+		for (auto& e : scripts)
 		{
 			Entity entity = { e, this };
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
@@ -83,62 +68,34 @@ namespace Engine
 		}
 	};
 
-	void Scene::OnUpdateEditor(TimeStep ts, Shared<EditorCamera> &camera)
-	{
-		CameraData cameraData;
-		cameraData.ViewProjection = camera->GetViewProjection();
-		cameraData.Position = camera->GetPosition();
-		RenderScene(cameraData);
-	}
-
 	void Scene::OnViewportResize(unsigned int width, unsigned int height)
 	{
 		m_ViewportWidth = width;
 		m_ViewportHeight = height;
 		auto view = m_Registry.view<SceneCameraComponent>();
-		for (auto entity : view)
+		for (auto& e : view)
 		{
-			auto& cameraComponent = view.get<SceneCameraComponent>(entity);
+			auto& cameraComponent = view.get<SceneCameraComponent>(e);
 			if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
 		}
 	};
 
-	void Scene::RenderScene(CameraData &cameraData)
-	{
-		Renderer::BeginScene(cameraData);
-
-		auto group = m_Registry.group<ModelComponent>(entt::get<TransformComponent>);
-		for (auto entity : group)
-		{
-			auto [model, transform] = group.get<ModelComponent, TransformComponent>(entity);
-
-			if (model.model) 
-				Renderer::SubmitModel(model.model, transform.GetTransform());
-		}
-		m_Physicsworld.RenderDebug(cameraData.ViewProjection);
-
-		Renderer::EndScene();
-	}
-
 	void Scene::SyncPhysicsTransforms()
 	{
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
-		for (auto e : view)
+		for (auto& e : view)
 		{
 			auto [rb, transform] = view.get<RigidBodyComponent, TransformComponent>(e);
 
-			// Use a proper cast and check for the internal body
 			if (auto* body = static_cast<RigidBody*>(rb.runtimeBody))
-			{
-			    body->GetTransform(transform.translation, transform.rotation);
-			}
+				body->GetTransform(transform.translation, transform.rotation);
 		}
 	}
 
 	void Scene::OnRuntimeStart()
 	{	
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
-		for (auto e : view)
+		for (auto& e : view)
 		{
 
 			Entity entity = { e, this };
@@ -166,7 +123,7 @@ namespace Engine
 		}
 
 		auto scripts = m_Registry.view<NativeScriptComponent>();
-		for (auto e : scripts)
+		for (auto& e : scripts)
 		{
 			Entity entity = { e, this };
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();

@@ -27,6 +27,7 @@ namespace Engine
 
         m_EditorCamera = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
         m_EditingScene = MakeShared<Scene>();
+        m_SceneRenderer = MakeShared<SceneRenderer>(m_EditingScene.get());
         m_EditingScene->OnViewportResize(500, 500);
         m_SceneHierarchyPanel.SetContext(m_EditingScene);
 
@@ -41,12 +42,14 @@ namespace Engine
             switch (m_SceneState) {
                 case Engine::SceneState::Edit:
                 {
-                    m_EditingScene->OnUpdateEditor(ts, m_EditorCamera);
+                    m_EditingScene->OnUpdate(ts);
+                    m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition());
                     break;
                 }
                 case Engine::SceneState::Play:
                 {
                     m_RuntimeScene->OnUpdate(ts);
+                    m_SceneRenderer->RenderRuntime();
                     break;
                 }
             }
@@ -75,8 +78,6 @@ namespace Engine
 
         m_EditorCamera->OnUpdate(ts);
         m_RenderGraph.Execute(ts);
-
-        UpdateHoveredEntity();
     };
 
     void EditorLayer::OnImGuiRender()
@@ -99,18 +100,54 @@ namespace Engine
     {
         glm::vec2 mousePos = m_Viewport.GetMousePosition();
 
-        if (m_Viewport.Hovered)
+        int mouseX = (int)mousePos.x;
+        int mouseY = (int)(m_Viewport.Size.y - mousePos.y - 1);
+        float width = m_Viewport.Size.x;
+        float height = m_Viewport.Size.y;
+
+        // 1. Calculate Ray
+        glm::vec3 rayOrigin = m_EditorCamera->GetPosition();
+        glm::mat4 cameraViewMatrix = m_EditorCamera->GetViewMatrix();
+        glm::mat4 cameraProjection = m_EditorCamera->GetProjection();
+        glm::vec3 rayDir = ScreenPosToWorldRay(mouseX, mouseY, width, height, cameraViewMatrix, cameraProjection);
+
+        // 2. Variables to track the closest hit
+        entt::entity selectedEntity = entt::null;
+        float closestDistance = std::numeric_limits<float>::max();
+
+        // 3. Iterate all entities with a Mesh
+        auto view = m_EditingScene->GetRegistry().view<TransformComponent, ModelComponent>();
+        for (auto entity : view)
         {
-            int mouseX = (int)mousePos.x;
-            int mouseY = (int)(m_Viewport.Size.y - mousePos.y - 1);
+            auto [transformComponent, modelComponent] = view.get<TransformComponent, ModelComponent>(entity);
 
-            Shared<FramebufferHandle> fbHandle = m_RenderGraph.GetPassFramebuffer("ScenePass");
-            if (!fbHandle)
-                return;
+            for (auto& mesh : modelComponent.model->GetMeshes())
+            {
+                float hitDistance;
+                // Test if the ray hits this mesh's AABB
+                if (RayIntersectsAABB(rayOrigin, rayDir, mesh->GetAABB(), transformComponent.GetTransform(), hitDistance))
+                {
+                    // If it hits, check if it's the CLOSEST object we've hit so far
+                    // (prevents clicking on a wall behind a tank and selecting the wall)
+                    if (hitDistance < closestDistance)
+                    {
+                        closestDistance = hitDistance;
+                        selectedEntity = entity;
+                    }
+                }
+            }
+        }
 
-            int pixelData = fbHandle->ReadPixel(1, mouseX, mouseY);
-            m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_EditingScene.get());
-        };
+        // 4. Handle Selection!
+        if (selectedEntity != entt::null)
+        {
+            Entity entity = {selectedEntity, m_EditingScene.get()};
+            m_SceneHierarchyPanel.SetSelectedEntity(entity);
+        }
+        else {
+            Entity entity;
+            m_SceneHierarchyPanel.SetSelectedEntity(entity);
+        }
     };
 
     void EditorLayer::UpdateSelectedEntity()
@@ -262,12 +299,7 @@ namespace Engine
     bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
     {
         if (e.GetMouseButton() == MOUSE_BUTTON_LEFT)
-        {
-            if (m_Viewport.Hovered && !ImGuizmo::IsOver())
-            {
-                m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
-            }
-        }
+            UpdateHoveredEntity();
 
         return false;
     };
@@ -301,6 +333,8 @@ namespace Engine
             m_SceneHierarchyPanel.SetContext(m_EditingScene);
             SceneSerializer serializer(m_EditingScene);
             serializer.Deserialize(filepath);
+
+            m_SceneRenderer->SetScene(m_EditingScene.get());
         }
     };
 
@@ -311,6 +345,8 @@ namespace Engine
             m_EditingScene = std::static_pointer_cast<Scene>(AssetManager::LoadAsset(path));
             m_EditingScene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
             m_SceneHierarchyPanel.SetContext(m_EditingScene);
+
+            m_SceneRenderer->SetScene(m_EditingScene.get());
         }
     }
 
@@ -328,6 +364,7 @@ namespace Engine
     {
         m_SceneState = SceneState::Play;
         m_RuntimeScene = Scene::Copy(m_EditingScene);
+        m_SceneRenderer->SetScene(m_RuntimeScene.get());
         m_RuntimeScene->OnRuntimeStart();
     }
 
@@ -335,6 +372,7 @@ namespace Engine
     {
         m_SceneState = SceneState::Edit;
         m_RuntimeScene->OnRuntimeStop();
+        m_SceneRenderer->SetScene(m_EditingScene.get());
         m_RuntimeScene = nullptr;
     }
 

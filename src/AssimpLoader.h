@@ -155,6 +155,7 @@ namespace Engine
         void LoadIndices(Shared<Mesh> &mesh, aiMesh* aiMesh)
         {
             std::vector<unsigned int> &indices = mesh->GetIndices();
+            indices.reserve(aiMesh->mNumFaces * 3);
             for(unsigned int i = 0; i < aiMesh->mNumFaces; i++)
             {
                 aiFace face = aiMesh->mFaces[i];

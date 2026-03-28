@@ -6,6 +6,7 @@
 #include "Layer.h"
 #include "Render/RenderGraph.h"
 #include "Scene/Scene.h"
+#include "SceneRenderer.h"
 #include "TimeStep.h"
 #include "Events/MouseEvent.h"
 #include "Panels/SceneHierarchyPanel.h"
@@ -103,10 +104,10 @@ namespace Engine
         private:
         float m_Previous = 0;
         Viewport m_Viewport;
-        Entity m_HoveredEntity;
 
         Shared<Scene> m_EditingScene;
         Shared<Scene> m_RuntimeScene;
+        Shared<SceneRenderer> m_SceneRenderer;
         Shared<EditorCamera> m_EditorCamera;
 
         int m_GizmoType = -1;
