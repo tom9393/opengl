@@ -34,7 +34,6 @@ namespace Engine
 
         // Generic setup: Create the shader library and uniform buffer.
         // Note: Buffer::Create methods usually handle API-specific implementation internally.
-        
         // Main program
         s_Data.shaderLibrary = new ShaderLibrary({"Texture"});
         
@@ -141,20 +140,6 @@ namespace Engine
         }
     };
 
-    void Renderer::Submit(const Shared<Mesh> &mesh, const glm::mat4 &transform)
-    {
-        PROFILE_FUNCTION();
-
-        s_Data.shaderLibrary->Get("Texture")->setMat4("u_Transform", transform);
-
-        Shared<VertexArray> VAO = mesh->GetVAO();
-        VAO->Bind();
-        RenderCommand::DrawIndexed(VAO);
-        s_Data.statistics.DrawCalls++;
-        s_Data.statistics.VerticeCount += mesh->m_Vertices.size();
-        s_Data.statistics.IndicesCount += mesh->m_Indices.size();
-    };
-
     void Renderer::FlushLines()
     {
         if (s_LineData.LineVertexCount == 0) return;
@@ -175,7 +160,6 @@ namespace Engine
 
     void Renderer::DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color)
     {
-        // If buffer is full, flush and start over
         if (s_LineData.LineVertexCount + 2 >= s_LineData.MaxVertices)
             FlushLines();
 
@@ -193,18 +177,42 @@ namespace Engine
     void Renderer::SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform)
     {
         uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(mesh.get());
-
         if (currentMaterialKey != s_SceneData.s_LastBoundMaterial)
         {
-            // This is where your heavy OpenGL calls happen 
-            // (e.g., binding Albedo, Normal, Metallic to Texture Units)
             SetTexture(mesh->GetTextureLayout()); 
             
             s_SceneData.s_LastBoundMaterial = currentMaterialKey;
             s_Data.statistics.MaterialSwitches++;
         }
 
-        Submit(mesh, transform);
+        s_Data.shaderLibrary->Get("Texture")->setMat4("u_Transform", transform);
+
+        Shared<VertexArray> VAO = mesh->GetVAO();
+        VAO->Bind();
+        RenderCommand::DrawIndexed(VAO);
+        s_Data.statistics.DrawCalls++;
+        s_Data.statistics.VerticeCount += mesh->m_Vertices.size();
+        s_Data.statistics.IndicesCount += mesh->m_Indices.size();
+    }
+
+    void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const std::vector<glm::mat4> &transforms)
+    {
+        if (transforms.empty()) return;
+
+        uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(mesh.get());
+        if (currentMaterialKey != s_SceneData.s_LastBoundMaterial) {
+            SetTexture(mesh->GetTextureLayout()); 
+            
+            s_SceneData.s_LastBoundMaterial = currentMaterialKey;
+            s_Data.statistics.MaterialSwitches++;
+        }
+
+        Shared<VertexArray> VAO = mesh->GetVAO();
+        VAO->Bind();
+        RenderCommand::DrawIndexedInstances(VAO, transforms);
+        s_Data.statistics.DrawCalls++;
+        s_Data.statistics.VerticeCount += mesh->m_Vertices.size();
+        s_Data.statistics.IndicesCount += mesh->m_Indices.size();
     }
 
     void Renderer::ToggleWireframe()

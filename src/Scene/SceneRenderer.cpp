@@ -66,12 +66,34 @@ namespace Engine {
             return a.SortKey < b.SortKey;
         });
 
-	for (const auto& cmd : m_OpaqueDrawList) 
+	size_t i = 0;
+        while (i < m_OpaqueDrawList.size())
         {
-            Renderer::SubmitMesh(cmd.TargetMesh, cmd.Transform); 
+            uintptr_t currentKey = m_OpaqueDrawList[i].SortKey;
+            Shared<Mesh> currentMesh = m_OpaqueDrawList[i].TargetMesh;
+
+            // 1. Count how many consecutive instances have the EXACT same mesh
+            size_t batchSize = 0;
+            while (i + batchSize < m_OpaqueDrawList.size() && m_OpaqueDrawList[i + batchSize].SortKey == currentKey) 
+            {
+                batchSize++;
+            }
+
+            // 2. Extract their transforms into an array
+            std::vector<glm::mat4> transforms(batchSize);
+            for (size_t j = 0; j < batchSize; j++) 
+            {
+                transforms[j] = m_OpaqueDrawList[i + j].Transform;
+            }
+
+            // 3. Send the entire batch to the GPU at once
+            Renderer::SubmitInstancedMesh(currentMesh, transforms);
+
+            // 4. Jump forward to the next entirely different mesh
+            i += batchSize;
         }
 
-	m_Scene->m_Physicsworld.RenderDebug(viewProjection);
+	//m_Scene->m_Physicsworld.RenderDebug(viewProjection);
 
 	Renderer::EndScene();
     }

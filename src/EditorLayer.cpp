@@ -98,6 +98,7 @@ namespace Engine
 
     void EditorLayer::UpdateHoveredEntity()
     {
+        if (!m_Viewport.Hovered) return;
         glm::vec2 mousePos = m_Viewport.GetMousePosition();
 
         int mouseX = (int)mousePos.x;

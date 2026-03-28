@@ -7,6 +7,9 @@ file(GLOB_RECURSE ENGINE_SOURCES
     platform/*.cpp
 )
 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+# set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
+
 add_executable(${PROJECT_NAME} main.cpp ${ENGINE_SOURCES})
 
 # === Disable Bullet examples, extras, and demos ===

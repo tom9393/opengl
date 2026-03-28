@@ -76,8 +76,7 @@ namespace Engine {
             }
             void OnClick(MouseButtonEvent &e)
             {
-                Entity entity = m_Scene->CreateEntity("New sukhoi");
-                Info("Placeholder");
+                Entity entity = m_Scene->CreateEntity("New Kawasaki");
 
                 glm::vec3 thistrans = GetComponent<TransformComponent>().translation;
 
@@ -85,7 +84,8 @@ namespace Engine {
                 auto& rigidbodyComponent = entity.AddComponent<RigidBodyComponent>();
                 auto& modelComponent = entity.AddComponent<ModelComponent>();
 
-                modelComponent.path = "../assets/sukhoi.assbin";
+                modelComponent.path = "../assets/kawasaki/kawasaki.obj";
+                modelComponent.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
                 rigidbodyComponent.type = RigidBodyComponent::BodyType::Dynamic;
                 rigidbodyComponent.mass = 20;
 
@@ -101,7 +101,7 @@ namespace Engine {
 
                 rigidbodyComponent.runtimeBody = body;
 
-                //m_Scene->m_Physicsworld.AddRigidBody(body);
+                m_Scene->GetPhysicsWorld().AddRigidBody(body);
                 body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
                 body->SetTransform(transformComponent.translation, transformComponent.rotation);
 

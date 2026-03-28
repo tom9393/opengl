@@ -28,6 +28,7 @@ namespace Engine
         void DestroyEntity(Entity entity);
 
         entt::registry& GetRegistry() { return m_Registry; }
+        PhysicsWorld& GetPhysicsWorld() { return m_Physicsworld; }
 
         void SyncPhysicsTransforms();
 

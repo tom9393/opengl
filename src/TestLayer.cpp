@@ -48,7 +48,7 @@ namespace Engine
         {
             Renderer::SetTexture(mesh->GetTextureLayout());
              glm::mat4 a = {1.0f};
-            Renderer::Submit(mesh, a);
+            //Renderer::Submit(mesh, a);
         }
 
         Renderer::EndScene();

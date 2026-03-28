@@ -4,6 +4,7 @@
 #include "CollisionBaker.h"
 #include "Components.h"
 #include "Entity.h"
+#include "Model.h"
 #include "RigidBody.h"
 
 namespace Engine
@@ -64,7 +65,8 @@ namespace Engine
 		{
 			Entity entity = { e, this };
 			auto& nsc = entity.GetComponent<NativeScriptComponent>();
-			nsc.instance->OnUpdate(ts);
+			if (nsc.instance)
+				nsc.instance->OnUpdate(ts);
 		}
 	};
 
