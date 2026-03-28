@@ -2,6 +2,7 @@
 
 #include "../../pch.h"
 #include "../Preprocessor.h"
+#include "Model.h"
 #include "NativeScript.h"
 #include "SceneCamera.h"
 #include "../MathTools.h"

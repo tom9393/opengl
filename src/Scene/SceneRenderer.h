@@ -6,6 +6,13 @@
 
 namespace Engine {
 
+    struct DrawCommand
+    {
+        Shared<Mesh> TargetMesh;
+        glm::mat4 Transform;
+        uintptr_t SortKey;
+    };
+
     class SceneRenderer {
     public:
         SceneRenderer(Scene* scene);
@@ -21,6 +28,7 @@ namespace Engine {
 
     private:
         Scene* m_Scene;
+        std::vector<DrawCommand> m_OpaqueDrawList;
     };
 
 }

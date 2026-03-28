@@ -18,17 +18,11 @@ namespace Engine
         s_Data.uniformBuffer->Update(0, sizeof(CameraData), &cameraData);
         s_SceneData.ViewProjectionMatrix = cameraData.ViewProjection;
 	s_SceneData.cameraFrustum = CreateFrustumFromMatrix(cameraData.ViewProjection);
+        s_SceneData.s_LastBoundMaterial = 0;
     };
 
     void Renderer::EndScene()
     {
-        for (auto &renderCall : s_Data.renderQueue)
-        {
-            SetTexture(renderCall.mesh->GetTextureLayout());
-            Submit(renderCall.mesh, renderCall.transform);
-        }
-        s_Data.renderQueue.clear();
-
         FlushLines();
     };
 
@@ -143,12 +137,11 @@ namespace Engine
             {
                 texture->Bind(idx);
                 shader->setInt(layout.GetStringByType(type), idx++);
-                //shader->setFloat("material.shininess", 0.75f);
             }
         }
     };
 
-    void Renderer::Submit(const Shared<Mesh> &mesh, glm::mat4 &transform)
+    void Renderer::Submit(const Shared<Mesh> &mesh, const glm::mat4 &transform)
     {
         PROFILE_FUNCTION();
 
@@ -197,17 +190,22 @@ namespace Engine
         s_LineData.LineVertexCount += 2;
     }
 
-    void Renderer::SubmitModel(const Shared<Model> &model, const glm::mat4 &transform)
+    void Renderer::SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform)
     {
-        PROFILE_FUNCTION();
+        uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(mesh.get());
 
-        for (auto& mesh : model->GetMeshes())
+        if (currentMaterialKey != s_SceneData.s_LastBoundMaterial)
         {
-            // Batching or Material sorting can happen here
-            if (IsAABBInFrustum(s_SceneData.cameraFrustum, mesh->GetAABB(), transform))
-                s_Data.renderQueue.emplace_back(mesh, transform);
+            // This is where your heavy OpenGL calls happen 
+            // (e.g., binding Albedo, Normal, Metallic to Texture Units)
+            SetTexture(mesh->GetTextureLayout()); 
+            
+            s_SceneData.s_LastBoundMaterial = currentMaterialKey;
+            s_Data.statistics.MaterialSwitches++;
         }
-    };
+
+        Submit(mesh, transform);
+    }
 
     void Renderer::ToggleWireframe()
     {

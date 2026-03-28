@@ -16,60 +16,64 @@ namespace Engine {
 
     void SceneRenderer::RenderRuntime()
     {
-        // 1. Find the primary runtime camera in the ECS
-        glm::mat4 viewProj = glm::mat4(1.0f);
-        glm::vec3 cameraPos = glm::vec3(0.0f);
-        bool hasCamera = false;
-
         auto view = m_Scene->GetRegistry().view<TransformComponent, SceneCameraComponent>();
         for (auto entity : view) 
         {
             auto [transform, camera] = view.get<TransformComponent, SceneCameraComponent>(entity);
             if (camera.primary) 
             {
-                // Calculate ViewProjection from the entity's transform
-                viewProj = camera.sceneCamera->GetProjection() * glm::inverse(transform.GetTransform());
-                cameraPos = transform.translation;
-                hasCamera = true;
-                break; // Only use the first primary camera we find
+		glm::mat4 viewProj = camera.sceneCamera->GetProjection() * glm::inverse(transform.GetTransform());
+		glm::vec3 cameraPos = transform.translation;
+		FlushDrawCalls(viewProj, cameraPos);
+		break;
             }
-        }
-
-        // 2. Render the scene if a camera exists
-        if (hasCamera) {
-            FlushDrawCalls(viewProj, cameraPos);
         }
     }
 
     void SceneRenderer::FlushDrawCalls(const glm::mat4& viewProjection, const glm::vec3& cameraPos)
     {
-        // --- 1. GLOBAL RENDER SETUP ---
-        // Bind PBR Shaders, push light uniforms, set camera position, etc.
-        // e.g., Renderer::BeginScene(viewProjection, cameraPos);
+	m_OpaqueDrawList.clear();
 	
 	CameraData cameraData;
 	cameraData.ViewProjection = viewProjection;
 	cameraData.Position = cameraPos;
 	Renderer::BeginScene(cameraData);
 
-        // --- 2. GENERATE FRUSTUM ---
         Frustum cameraFrustum = CreateFrustumFromMatrix(viewProjection);
 
-        // --- 3. ECS ITERATION & CULLING ---
 	auto view = m_Scene->GetRegistry().view<TransformComponent, ModelComponent>();
-        for (auto& e : view)
+	for (auto& e : view)
         {
 		auto [transform, modelComp] = view.get<TransformComponent, ModelComponent>(e);
 		if (!modelComp.model) continue;
-		Renderer::SubmitModel(modelComp.model, transform.GetTransform());
+
+		for (auto& mesh : modelComp.model->GetMeshes()) 
+		{
+			if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform.GetTransform())) continue;
+			DrawCommand cmd;
+			cmd.TargetMesh = mesh;
+			cmd.Transform = transform.GetTransform();
+		    
+			// The SortKey: Group by the Mesh's memory address. 
+			// Identical meshes (with identical materials) will have the same exact key!
+			cmd.SortKey = reinterpret_cast<uintptr_t>(mesh.get()); 
+		    
+			m_OpaqueDrawList.push_back(cmd);
+		}
+        }
+
+	std::sort(m_OpaqueDrawList.begin(), m_OpaqueDrawList.end(), [](const DrawCommand& a, const DrawCommand& b) {
+            return a.SortKey < b.SortKey;
+        });
+
+	for (const auto& cmd : m_OpaqueDrawList) 
+        {
+            Renderer::SubmitMesh(cmd.TargetMesh, cmd.Transform); 
         }
 
 	m_Scene->m_Physicsworld.RenderDebug(viewProjection);
 
 	Renderer::EndScene();
-
-        // --- 4. END SCENE ---
-        // e.g., Renderer::EndScene();
     }
 
 }

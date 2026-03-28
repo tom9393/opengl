@@ -2,7 +2,6 @@
 
 #include "../Buffer.h"
 #include "MathTools.h"
-#include "Model.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
 #include "Shader.h"
@@ -15,16 +14,9 @@ namespace Engine
     struct Statistics
     {
         unsigned int DrawCalls = 0;
+        unsigned int MaterialSwitches = 0;
         unsigned int VerticeCount = 0;
         unsigned int IndicesCount = 0;
-    };
-
-    struct RenderCall
-    {
-        Shared<Mesh> mesh;
-        glm::mat4 transform;
-        
-        RenderCall(const Shared<Mesh> &mesh, const glm::mat4 &transform) : mesh(mesh), transform(transform) {};
     };
 
     struct RenderStorage
@@ -33,7 +25,6 @@ namespace Engine
         Shared<SSBOBuffer> matrixBuffer;
         Shared<UniformBuffer> uniformBuffer;
         Statistics statistics;
-        std::vector<RenderCall> renderQueue;
     };
 
     struct LineVertex {
@@ -74,8 +65,8 @@ namespace Engine
         static void EndScene();
 
         static void SetTexture(TextureLayout &textureLayout);
-        static void Submit(const Shared<Mesh> &mesh, glm::mat4 &transform);
-        static void SubmitModel(const Shared<Model> &model, const glm::mat4 &transform);
+        static void Submit(const Shared<Mesh> &mesh, const glm::mat4 &transform);
+        static void SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform);
 
         static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
 
@@ -95,6 +86,7 @@ namespace Engine
         {
             glm::mat4 ViewProjectionMatrix;
             Frustum cameraFrustum;
+            uintptr_t s_LastBoundMaterial;
         };
 
         static SceneData s_SceneData;
