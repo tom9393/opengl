@@ -4,6 +4,26 @@
 namespace Engine
 {
 
+    static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
+	{
+		switch (type)
+		{
+			case ShaderDataType::Float:    return GL_FLOAT;
+			case ShaderDataType::Float2:   return GL_FLOAT;
+			case ShaderDataType::Float3:   return GL_FLOAT;
+			case ShaderDataType::Float4:   return GL_FLOAT;
+			case ShaderDataType::Mat3:     return GL_FLOAT;
+			case ShaderDataType::Mat4:     return GL_FLOAT;
+			case ShaderDataType::Int:      return GL_INT;
+			case ShaderDataType::Int2:     return GL_INT;
+			case ShaderDataType::Int3:     return GL_INT;
+			case ShaderDataType::Int4:     return GL_INT;
+			case ShaderDataType::Bool:     return GL_BOOL;
+		}
+
+		return 0;
+	}
+
     OpenGLVertexBuffer::OpenGLVertexBuffer(unsigned int size)
     {
         glGenBuffers(1, &m_RendererID);
@@ -90,30 +110,65 @@ namespace Engine
         vertexBuffer->Bind();
 
         const auto &layout = vertexBuffer->GetLayout();
-        unsigned int index = 0;
 
         for (const auto& element : layout)
-        {
-            glEnableVertexAttribArray(index);
-
-            switch (element.Type)
-            {
-                case ShaderDataType::Int:
-                case ShaderDataType::Int2:
-                case ShaderDataType::Int3:
-                case ShaderDataType::Int4:
-                case ShaderDataType::Bool:
-                    glVertexAttribIPointer(index, element.GetComponentCount(), GL_INT, layout.GetStride(), (const void*)(intptr_t)element.Offset);
+		{
+			switch (element.Type)
+			{
+				case ShaderDataType::Float:
+				case ShaderDataType::Float2:
+				case ShaderDataType::Float3:
+				case ShaderDataType::Float4:
+				{
+					glEnableVertexAttribArray(m_VertexBufferIndex);
+					glVertexAttribPointer(m_VertexBufferIndex,
+						element.GetComponentCount(),
+						ShaderDataTypeToOpenGLBaseType(element.Type),
+						element.Normalized ? GL_TRUE : GL_FALSE,
+						layout.GetStride(),
+						(const void*)element.Offset);
+					m_VertexBufferIndex++;
+					break;
+				}
+				case ShaderDataType::Int:
+				case ShaderDataType::Int2:
+				case ShaderDataType::Int3:
+				case ShaderDataType::Int4:
+				case ShaderDataType::Bool:
+				{
+					glEnableVertexAttribArray(m_VertexBufferIndex);
+					glVertexAttribIPointer(m_VertexBufferIndex,
+						element.GetComponentCount(),
+						ShaderDataTypeToOpenGLBaseType(element.Type),
+						layout.GetStride(),
+						(const void*)element.Offset);
+					m_VertexBufferIndex++;
+					break;
+				}
+				case ShaderDataType::Mat3:
+				case ShaderDataType::Mat4:
+				{
+                    // A mat4 has 4 rows (vec4s), a mat3 has 3 rows (vec3s)
+                    uint8_t rowCount = (element.Type == ShaderDataType::Mat4) ? 4 : 3; 
+                    
+                    for (uint8_t i = 0; i < rowCount; i++)
+                    {
+                        glEnableVertexAttribArray(m_VertexBufferIndex);
+                        glVertexAttribPointer(m_VertexBufferIndex,
+                            rowCount, // 4 floats per row
+                            ShaderDataTypeToOpenGLBaseType(element.Type),
+                            element.Normalized ? GL_TRUE : GL_FALSE,
+                            layout.GetStride(), // This stride will now just be sizeof(mat4)
+                            (const void*)(element.Offset + sizeof(float) * rowCount * i)); // Offset by 16 bytes per row
+                        
+                        // This makes it per-instance!
+                        glVertexAttribDivisor(m_VertexBufferIndex, 1); 
+                        m_VertexBufferIndex++;
+                    }
                     break;
-                case ShaderDataType::Float:
-                case ShaderDataType::Float2:
-                case ShaderDataType::Float3:
-                case ShaderDataType::Float4:
-                    glVertexAttribPointer(index, element.GetComponentCount(), GL_FLOAT, GL_FALSE, layout.GetStride(), (const void*)(intptr_t)element.Offset);
-                    break;
-            };
-            index++;
-        }
+				}
+			}
+		}
         m_VertexBuffers.push_back(vertexBuffer);
     };
 

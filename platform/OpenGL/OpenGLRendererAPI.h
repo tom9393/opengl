@@ -21,7 +21,6 @@ namespace Engine
 
         private:
         bool m_Wireframe = false;
-        unsigned int m_DynamicVBO;
     };
 
 };

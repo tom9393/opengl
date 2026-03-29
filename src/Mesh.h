@@ -31,12 +31,23 @@ namespace Engine
 
         void Prepare()
         {
+
             m_VAO = VertexArray::Create();
             m_VAO->Bind();
             m_VBO = VertexBuffer::Create(&m_Vertices[0], m_Vertices.size() * sizeof(float));
             m_EBO = IndexBuffer::Create(&m_Indices[0], m_Indices.size());
             m_VBO->SetLayout(m_BufferLayout);
             m_VAO->AddVertexBuffer(m_VBO);
+
+            // Temp hack
+            BufferLayout instanceLayout = {
+            { ShaderDataType::Mat4, "a_InstanceTransform" },
+            };
+
+            auto instanceVBO = VertexBuffer::Create(1000 * sizeof(glm::mat4));
+            instanceVBO->SetLayout(instanceLayout);
+            m_VAO->AddVertexBuffer(instanceVBO);
+
             m_VAO->SetIndexBuffer(m_EBO);
             m_VAO->Unbind();
         }

@@ -23,7 +23,7 @@ namespace Engine
         Tangent,
         Bitangent,
         Color,
-        ID
+        Instance
     };
 
     static unsigned int ShaderDataTypeSize(ShaderDataType type)

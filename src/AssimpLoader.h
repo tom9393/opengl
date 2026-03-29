@@ -82,15 +82,15 @@ namespace Engine
             glm::vec3 minExtents(std::numeric_limits<float>::max());
             glm::vec3 maxExtents(std::numeric_limits<float>::lowest());
 
-            VertexLayout vertexLayout;
             std::vector<float> &vertices = mesh->GetVertices();
 
-            // 1. FORCE A STRICT LAYOUT (No more `if (hasUVs)` here!)
-            vertexLayout.AddVertexAttrib(VertexAttribute::Vertex, ShaderDataType::Float3, "a_Position");
-            vertexLayout.AddVertexAttrib(VertexAttribute::Normal, ShaderDataType::Float3, "a_Normal");
-            vertexLayout.AddVertexAttrib(VertexAttribute::Texture, ShaderDataType::Float2, "a_TexCoord");
-            vertexLayout.AddVertexAttrib(VertexAttribute::Tangent, ShaderDataType::Float3, "a_Tangent");
-            vertexLayout.AddVertexAttrib(VertexAttribute::Bitangent, ShaderDataType::Float3, "a_Bitangent");
+            BufferLayout meshLayout = {
+            { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float3, "a_Normal" },
+            { ShaderDataType::Float2, "a_TexCoord" },
+            { ShaderDataType::Float3, "a_Tangent" },
+            { ShaderDataType::Float3, "a_Bitangent" }
+            };
 
             // A standard PBR vertex is exactly 14 floats
             const size_t floatsPerVertex = 14; 
@@ -146,8 +146,9 @@ namespace Engine
                     vertices.emplace_back(0.0f); vertices.emplace_back(0.0f); vertices.emplace_back(1.0f); // Bitangent
                 }
             }
+
             AABB aabb{ minExtents, maxExtents };
-            BufferLayout bufferLayout(vertexLayout.GetElements());
+            BufferLayout bufferLayout(meshLayout);
             mesh->SetLayout(bufferLayout);
             mesh->SetAABB(aabb);
         }

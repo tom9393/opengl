@@ -62,6 +62,7 @@ namespace Engine
         std::vector<Shared<VertexBuffer>> m_VertexBuffers;
         Shared<IndexBuffer> m_IndexBuffer;
         unsigned int m_RendererID;
+        unsigned int m_VertexBufferIndex = 0; // For now use this
     };
 
     class OpenGLUniformBuffer : public UniformBuffer
