@@ -1,4 +1,4 @@
-#include "Render/Renderer.h"
+#include "Renderer.h"
 #include "../platform/OpenGL/OpenGLShader.h"
 #include "Buffer.h"
 #include "MathTools.h"
@@ -32,9 +32,6 @@ namespace Engine
 
         RenderCommand::Init();
 
-        // Generic setup: Create the shader library and uniform buffer.
-        // Note: Buffer::Create methods usually handle API-specific implementation internally.
-        // Main program
         s_Data.shaderLibrary = new ShaderLibrary();
 
         Shared<Shader> textureShader = Shader::Create("Texture");
@@ -94,26 +91,12 @@ namespace Engine
 
             case RendererAPI::API::OpenGL:
             {
-                Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
-                auto openglShader = std::dynamic_pointer_cast<OpenGLShader>(shader);
-                
-                if (openglShader)
-                {
-                    openglShader->Bind();
-                    unsigned int viewprojectionIndex = glGetUniformBlockIndex(openglShader->GetProgram(), "Camera");
-                    glUniformBlockBinding(openglShader->GetProgram(), viewprojectionIndex, 0);
-                }
                 break;
             }
-
-            /* case RendererAPI::API::Vulkan:
+            case RendererAPI::API::Vulkan:
             {
-                // Add Vulkan-specific initialization here
-                // e.g., descriptor set layout creation, pipeline state setup, etc.
                 break;
             }
-            */
-
             default:
                 break;
         }

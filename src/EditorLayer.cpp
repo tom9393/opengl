@@ -118,9 +118,9 @@ namespace Engine
 
         // 3. Iterate all entities with a Mesh
         auto view = m_EditingScene->GetRegistry().view<TransformComponent, ModelComponent>();
-        for (auto entity : view)
+        for (auto& e : view)
         {
-            auto [transformComponent, modelComponent] = view.get<TransformComponent, ModelComponent>(entity);
+            auto [transformComponent, modelComponent] = view.get<TransformComponent, ModelComponent>(e);
 
             for (auto& mesh : modelComponent.model->GetMeshes())
             {
@@ -133,7 +133,7 @@ namespace Engine
                     if (hitDistance < closestDistance)
                     {
                         closestDistance = hitDistance;
-                        selectedEntity = entity;
+                        selectedEntity = e;
                     }
                 }
             }
