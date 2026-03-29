@@ -15,7 +15,8 @@ namespace Engine
     Application::Application()
     {
         s_Instance = this;
-        m_Window = std::unique_ptr<Window>(Window::Create());
+        m_Window = Window::Create();
+        m_LayerStack = new LayerStack();
         m_ThreadPool = new ThreadPool(std::thread::hardware_concurrency());
         m_Window->SetEventCallback(
             [](Engine::Event& e)
@@ -39,13 +40,9 @@ namespace Engine
     {
         EventBroker::Get().UnsubscribeAll(this);
 
-        for (Layer* layer: m_LayerStack)
-        {
-            delete layer;
-        }
-
-        delete m_ImGuiLayer;
         delete m_ThreadPool;
+        delete m_LayerStack;
+        delete m_Window;
     };
 
     void Application::Run()
@@ -59,14 +56,14 @@ namespace Engine
 
             if (!m_Minimized)
             {
-                for (Layer* layer: m_LayerStack)
+                for (Layer* layer: *m_LayerStack)
                 {
                     layer->OnUpdate(ts);
                 }
             }
 
             m_ImGuiLayer->Begin();
-            for (Layer* layer: m_LayerStack)
+            for (Layer* layer: *m_LayerStack)
             {
                 layer->OnImGuiRender();
             }
@@ -78,12 +75,12 @@ namespace Engine
 
     void Application::PushLayer(Layer* layer)
     {
-        m_LayerStack.PushLayer(layer);
+        m_LayerStack->PushLayer(layer);
         layer->OnAttach();
     };
     void Application::PushOverlayer(Layer* layer)
     {
-        m_LayerStack.PushOverlay(layer);
+        m_LayerStack->PushOverlay(layer);
         layer->OnAttach();
     };
 

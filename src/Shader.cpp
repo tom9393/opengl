@@ -33,9 +33,17 @@ namespace Engine
         }
     };
 
+    ShaderLibrary::ShaderLibrary()
+    {
+    }
+
     void ShaderLibrary::AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths)
     {
         m_Shaders[shader]->AddShaders(paths);
     };
+
+    ShaderLibrary::~ShaderLibrary()
+    {
+    }
 
 };

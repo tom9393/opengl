@@ -32,9 +32,9 @@ namespace Engine
 
         private:
         static Application* s_Instance;
+        Window* m_Window;
+        LayerStack* m_LayerStack;
         ImGuiLayer* m_ImGuiLayer;
-        std::unique_ptr<Window> m_Window;
-        LayerStack m_LayerStack;
         ThreadPool* m_ThreadPool;
         bool m_Running = true;
         bool m_Minimized = false;

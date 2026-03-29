@@ -27,6 +27,7 @@ namespace Engine
 
     LinuxWindow::~LinuxWindow()
     {
+        Shutdown();
     };
 
     void LinuxWindow::Init(const WindowProps &props)

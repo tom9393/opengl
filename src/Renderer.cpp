@@ -17,7 +17,7 @@ namespace Engine
 
         s_Data.uniformBuffer->Update(0, sizeof(CameraData), &cameraData);
         s_SceneData.ViewProjectionMatrix = cameraData.ViewProjection;
-	s_SceneData.cameraFrustum = CreateFrustumFromMatrix(cameraData.ViewProjection);
+	    s_SceneData.cameraFrustum = CreateFrustumFromMatrix(cameraData.ViewProjection);
         s_SceneData.s_LastBoundMaterial = 0;
     };
 
@@ -35,11 +35,13 @@ namespace Engine
         // Generic setup: Create the shader library and uniform buffer.
         // Note: Buffer::Create methods usually handle API-specific implementation internally.
         // Main program
-        s_Data.shaderLibrary = new ShaderLibrary({"Texture"});
-        
+        s_Data.shaderLibrary = new ShaderLibrary();
+
+        Shared<Shader> textureShader = Shader::Create("Texture");
         const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
         const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
-        s_Data.shaderLibrary->AddToShader("Texture", {vert, frag});
+        textureShader->AddShaders({vert, frag});
+        s_Data.shaderLibrary->Add(textureShader);
 
         glm::vec3 lightPositions[] = {
             glm::vec3(-10.0f,  10.0f, 10.0f),
@@ -55,13 +57,12 @@ namespace Engine
             glm::vec3(intensity, intensity, intensity)
         };
 
-        Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
-        shader->Bind();
+        textureShader->Bind();
 
         // Assuming you have a way to set arrays in your shader class:
         for (unsigned int i = 0; i < 4; ++i) {
-            shader->setVec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
-            shader->setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+            textureShader->SetVec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
+            textureShader->SetVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
         }
 
         s_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
@@ -76,14 +77,15 @@ namespace Engine
             { ShaderDataType::Float4, "a_Color"    }
         });
         s_LineData.LineVertexArray->AddVertexBuffer(s_LineData.LineVertexBuffer);
-	s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
+	    s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
         s_LineData.LineVertexCount = 0;
         s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase;
 
         const std::string vert_line = "/home/tom/Coding/c++/opengl/shaders/line.vert";
         const std::string frag_line = "/home/tom/Coding/c++/opengl/shaders/line.frag";
-        s_LineData.LineShader = Shader::Create("LineShader");
-        s_LineData.LineShader->AddShaders({vert_line, frag_line});
+        Shared<Shader> lineShader = Shader::Create("LineShader");
+        lineShader->AddShaders({vert_line, frag_line});
+        s_Data.shaderLibrary->Add(lineShader);
 
         switch (Renderer::Get())
         {
@@ -117,6 +119,11 @@ namespace Engine
         }
     }
 
+    void Renderer::Shutdown()
+    {
+        delete s_Data.shaderLibrary;
+    }
+
     void Renderer::OnWindowResize(unsigned int width, unsigned int height)
     {
         RenderCommand::SetViewport(0, 0, width, height);
@@ -135,7 +142,7 @@ namespace Engine
             for (auto &texture : textures)
             {
                 texture->Bind(idx);
-                shader->setInt(layout.GetStringByType(type), idx++);
+                shader->SetInt(layout.GetStringByType(type), idx++);
             }
         }
     };
@@ -147,8 +154,10 @@ namespace Engine
         uint32_t dataSize = (uint32_t)((uint8_t*)s_LineData.LineVertexBufferPtr - (uint8_t*)s_LineData.LineVertexBufferBase);
         s_LineData.LineVertexBuffer->SetData(s_LineData.LineVertexBufferBase, dataSize);
 
-        s_LineData.LineShader->Bind();
-        s_LineData.LineShader->setMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
+        Shared<Shader> shader = s_Data.shaderLibrary->Get("LineShader");
+
+        shader->Bind();
+        shader->SetMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
 
         glLineWidth(1.0f); 
         RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.LineVertexCount);
@@ -185,7 +194,7 @@ namespace Engine
             s_Data.statistics.MaterialSwitches++;
         }
 
-        s_Data.shaderLibrary->Get("Texture")->setMat4("u_Transform", transform);
+        s_Data.shaderLibrary->Get("Texture")->SetMat4("u_Transform", transform);
 
         Shared<VertexArray> VAO = mesh->GetVAO();
         VAO->Bind();

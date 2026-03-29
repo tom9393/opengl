@@ -25,15 +25,15 @@ namespace Engine
         GLuint GetProgram() const { return id; }
 
         // utility uniform functions
-        void setBool(const std::string &name, bool value) const override;
-        void setInt(const std::string &name, int value) const override;
-        void setFloat(const std::string &name, float value) const override;
-        void setVec2(const std::string &name, const glm::vec2 &transform) const override;
-        void setVec3(const std::string &name, const glm::vec3 &transform) const override;
-        void setVec4(const std::string &name, const glm::vec4 &transform) const override;
-        void setMat2(const std::string &name, const glm::mat2 &transform) const override;
-        void setMat3(const std::string &name, const glm::mat3 &transform) const override;
-        void setMat4(const std::string &name, const glm::mat4 &transform) const override;
+        void SetBool(const std::string &name, bool value) const override;
+        void SetInt(const std::string &name, int value) const override;
+        void SetFloat(const std::string &name, float value) const override;
+        void SetVec2(const std::string &name, const glm::vec2 &transform) const override;
+        void SetVec3(const std::string &name, const glm::vec3 &transform) const override;
+        void SetVec4(const std::string &name, const glm::vec4 &transform) const override;
+        void SetMat2(const std::string &name, const glm::mat2 &transform) const override;
+        void SetMat3(const std::string &name, const glm::mat3 &transform) const override;
+        void SetMat4(const std::string &name, const glm::mat4 &transform) const override;
 
     protected:
 

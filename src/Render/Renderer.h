@@ -38,7 +38,6 @@ namespace Engine
 
         Shared<VertexArray> LineVertexArray;
         Shared<VertexBuffer> LineVertexBuffer;
-        Shared<Shader> LineShader;
 
         uint32_t LineVertexCount = 0;
         LineVertex* LineVertexBufferBase = nullptr;
@@ -56,6 +55,7 @@ namespace Engine
         public:
 
         static void Init();
+        static void Shutdown();
         static void OnWindowResize(unsigned int width, unsigned int height);
 
         static void ToggleWireframe();
