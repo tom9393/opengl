@@ -9,7 +9,6 @@ namespace Engine
 
     ImGuiLayer::~ImGuiLayer()
     {
-        EventBroker::Get().UnsubscribeAll(this);
     };
 
     void ImGuiLayer::OnAttach()

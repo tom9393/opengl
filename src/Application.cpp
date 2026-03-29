@@ -38,6 +38,14 @@ namespace Engine
     Application::~Application()
     {
         EventBroker::Get().UnsubscribeAll(this);
+
+        for (Layer* layer: m_LayerStack)
+        {
+            delete layer;
+        }
+
+        delete m_ImGuiLayer;
+        delete m_ThreadPool;
     };
 
     void Application::Run()
