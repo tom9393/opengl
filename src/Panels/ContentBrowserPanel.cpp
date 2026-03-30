@@ -61,6 +61,8 @@ namespace Engine
 					ImGui::SetDragDropPayload("SCENE", itemPath, strlen(itemPath) + 1);
 				} else if (itemExtension == ".assbin" || itemExtension == ".obj") {
 					ImGui::SetDragDropPayload("MODEL", itemPath, strlen(itemPath) + 1);
+				} else if (itemExtension == ".lua") {
+					ImGui::SetDragDropPayload("LUASCRIPT", itemPath, strlen(itemPath) + 1);
 				} else {
 					ImGui::SetDragDropPayload("UNKNOWN_ITEM", itemPath, strlen(itemPath) + 1);
 				}

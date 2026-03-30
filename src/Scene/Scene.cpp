@@ -6,6 +6,9 @@
 #include "Entity.h"
 #include "Model.h"
 #include "RigidBody.h"
+#include "Scripting/ScriptEngine.h"
+#include "../Events/MouseEvent.h"
+#include "../Events/EventBroker.h"
 
 namespace Engine
 {
@@ -50,6 +53,7 @@ namespace Engine
 		CopyComponent<SceneCameraComponent>(destination, source, map);
 		CopyComponent<RigidBodyComponent>(destination, source, map);
 		CopyComponent<NativeScriptComponent>(destination, source, map);
+		CopyComponent<LuaScriptComponent>(destination, source, map);
 
 		return newScene;
 	};
@@ -76,6 +80,19 @@ namespace Engine
 			if (nsc.instance)
 				nsc.instance->OnUpdate(ts);
 		}
+
+		auto luaScripts = m_Registry.view<LuaScriptComponent>();
+		for (auto entity : luaScripts)
+		{
+			auto& script = luaScripts.get<LuaScriptComponent>(entity);
+			
+			sol::function onUpdate = script.Environment["OnUpdate"];
+			if (onUpdate.valid()) {
+				onUpdate(ts.GetSeconds()); // Pass delta time to Lua
+			} else {
+				std::cout << "Something went wrong" << std::endl;
+			}
+		}
 	};
 
 	void Scene::OnViewportResize(unsigned int width, unsigned int height)
@@ -92,6 +109,7 @@ namespace Engine
 
 	void Scene::OnRuntimeStart()
 	{	
+        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMousePress), this);
 		auto view = m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto& e : view)
 		{
@@ -129,6 +147,35 @@ namespace Engine
 			nsc.instance->m_Entity = e;
 			nsc.instance->m_Scene = this;
 			nsc.instance->OnCreate();
+		}
+
+		ScriptEngine::Init();
+
+		auto luaScripts = m_Registry.view<LuaScriptComponent>();
+
+		for (auto entity : luaScripts) {
+			auto& script = luaScripts.get<LuaScriptComponent>(entity);
+			
+			if (!script.Environment.valid()) {
+				auto& lua = ScriptEngine::GetState();
+				
+				// Create a unique environment for this entity
+				script.Environment = sol::environment(lua, sol::create, lua.globals());
+				
+				// Pass the entity's components into the Lua environment
+				// (This allows Lua to say: `Transform.Translation.x = 5`)
+				script.Environment["Transform"] = &m_Registry.get<TransformComponent>(entity);
+				
+				// Load the script file into this specific environment
+				lua.script_file(script.FilePath, script.Environment);
+				
+				// Call OnCreate if it exists
+				sol::function onCreate = script.Environment["OnCreate"];
+				sol::function onClick = script.Environment["OnClick"];
+				if (onCreate.valid()) {
+					onCreate();
+				}
+			}
 		}
 
 		m_Physicsworld.SetScene(this);
@@ -183,7 +230,46 @@ namespace Engine
 			nsc.instance->OnDestroyed();
 			nsc.DestroyScript(&nsc);
 		}
+
+		auto luaScripts = m_Registry.view<LuaScriptComponent>();
+		for (auto& e : luaScripts) {
+			auto& script = luaScripts.get<LuaScriptComponent>(e);
+			script.Environment = sol::environment(); 
+		}
+
+		ScriptEngine::Shutdown();
+
+		EventBroker::Get().UnsubscribeAll(this);
 		m_Physicsworld.RegisterCollisionCallback(nullptr);
+	}
+
+	void Scene::ReloadScripts()
+	{
+		auto& lua = ScriptEngine::GetState();
+		auto view = m_Registry.view<LuaScriptComponent>();
+
+		for (auto entity : view) {
+			auto& script = view.get<LuaScriptComponent>(entity);
+
+			if (script.Environment.valid() && !script.FilePath.empty()) {
+				// 1. Re-run the file into the EXISTING environment
+				auto result = lua.script_file(script.FilePath, script.Environment);
+				
+				if (result.valid()) {
+					std::cout << "Reloaded: " << script.FilePath << std::endl;
+					
+					// 2. Optionally re-call OnCreate to reset state
+					sol::protected_function onCreate = script.Environment["OnCreate"];
+					if (onCreate.valid()) {
+						sol::set_environment(script.Environment, onCreate);
+						onCreate();
+					}
+				} else {
+					sol::error err = result;
+					std::cerr << "Reload Error: " << err.what() << std::endl;
+				}
+			}
+		}
 	}
 
 	Entity Scene::CreateEntity(const std::string &name)
@@ -202,5 +288,22 @@ namespace Engine
 	void Scene::DestroyEntity(Entity entity)
 	{
 		m_Registry.destroy(entity);
+	};
+
+	void Scene::OnMousePress(MouseButtonPressedEvent &e)
+	{
+		auto view = m_Registry.view<LuaScriptComponent>();
+		for (auto entity : view) {
+			auto& script = view.get<LuaScriptComponent>(entity);
+
+			std::cout << "In the native" << std::endl;
+			
+			sol::protected_function luaOnClick = script.Environment["OnClick"];
+			if (luaOnClick.valid()) {
+				luaOnClick();
+			} else {
+				std::cout << "Invalid" << std::endl;
+			}
+		}
 	};
 };

@@ -319,6 +319,12 @@ namespace Engine
             case KEY_D:
                 m_GizmoType = ImGuizmo::OPERATION::SCALE;
                 break;
+            case KEY_F1:
+                if (m_SceneState == SceneState::Edit) OnScenePlay();
+                else OnSceneStop();
+            case KEY_F5:
+                m_EditingScene->ReloadScripts();
+                if (m_RuntimeScene) m_RuntimeScene->ReloadScripts();
             default:
                 m_GizmoType = -1;
         }
@@ -367,6 +373,9 @@ namespace Engine
         m_SceneState = SceneState::Play;
         m_RuntimeScene = Scene::Copy(m_EditingScene);
         m_SceneRenderer->SetScene(m_RuntimeScene.get());
+
+        auto window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         m_RuntimeScene->OnRuntimeStart();
     }
 
@@ -376,6 +385,8 @@ namespace Engine
         m_RuntimeScene->OnRuntimeStop();
         m_SceneRenderer->SetScene(m_EditingScene.get());
         m_RuntimeScene = nullptr;
+        auto window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
 };

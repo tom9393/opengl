@@ -5,6 +5,7 @@
 #include "SceneSerializer.h"
 #include "../PhysicsWorld.h"
 #include "../UUID.h"
+#include "../Events/MouseEvent.h"
 
 namespace Engine
 {
@@ -30,8 +31,10 @@ namespace Engine
         entt::registry& GetRegistry() { return m_Registry; }
         PhysicsWorld& GetPhysicsWorld() { return m_Physicsworld; }
 
+        void ReloadScripts();
+
         private:
-        void RenderScene(CameraData &cameraData);
+        void OnMousePress(MouseButtonPressedEvent &e);
 
         private:
         unsigned int m_ViewportWidth = 0;

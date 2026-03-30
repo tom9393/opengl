@@ -2,9 +2,7 @@
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
 #include "CollisionBaker.h"
-#include "PlayerScript.h"
-#include "ShootScript.h"
-#include "TestScript.h"
+#include "../Scripting/PlayerScript.h"
 #include "imgui.h"
 
 namespace Engine
@@ -276,18 +274,6 @@ namespace Engine
 
 			if (ImGui::BeginMenu("NativeScript"))
 			{
-				if (ImGui::MenuItem("TestScript"))
-				{
-					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
-					nsc.Bind<TestScript>();
-					ImGui::CloseCurrentPopup();
-				}
-				if (ImGui::MenuItem("ShootScript"))
-				{
-					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
-					nsc.Bind<ShootScript>();
-					ImGui::CloseCurrentPopup();
-				}
 				if (ImGui::MenuItem("PlayerScript"))
 				{
 					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
@@ -297,9 +283,14 @@ namespace Engine
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::MenuItem("LuaScript"))
+			{
+				m_SelectionContext.AddComponent<LuaScriptComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
 			if (ImGui::MenuItem("RigidBody"))
 			{
-				// Fix this
 				m_SelectionContext.AddComponent<RigidBodyComponent>();
 				ImGui::CloseCurrentPopup();
 			}
@@ -316,10 +307,10 @@ namespace Engine
 			{
 			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
 			    {
-				const char* p = (char*)payload->Data;
-				std::string path = std::string(p);
-				std::cout << p << std::endl;
-				component.path = path;
+					const char* p = (char*)payload->Data;
+					std::string path = std::string(p);
+					std::cout << p << std::endl;
+					component.path = path;
 			    }
 			    ImGui::EndDragDropTarget();
 			}
@@ -405,6 +396,21 @@ namespace Engine
 		});
 		DrawComponent<NativeScriptComponent>("NativeScript", entity, [](auto &component)
 		{
+
+		});
+		DrawComponent<LuaScriptComponent>("LuaScript", entity, [](auto &component)
+		{
+			if (ImGui::BeginDragDropTarget())
+			{
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("LUASCRIPT"))
+			    {
+					const char* p = (char*)payload->Data;
+					std::string path = std::string(p);
+					std::cout << p << std::endl;
+					component.FilePath = path;
+			    }
+			    ImGui::EndDragDropTarget();
+			}
 
 		});
 		DrawComponent<RigidBodyComponent>("RigidBody", entity, [&entity](auto &component)

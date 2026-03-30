@@ -3,13 +3,14 @@
 #include "../../pch.h"
 #include "../Preprocessor.h"
 #include "Model.h"
-#include "NativeScript.h"
+#include "../Scripting/NativeScript.h"
 #include "SceneCamera.h"
 #include "../MathTools.h"
 #include "UUID.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+#include <sol2/sol.hpp>
 
 namespace Engine
 {
@@ -124,5 +125,14 @@ namespace Engine
                 nsc->instance = nullptr; 
             };
         }
+    };
+
+    struct LuaScriptComponent
+    {
+        std::string FilePath;
+        sol::environment Environment; // Holds the specific state for THIS entity
+
+        LuaScriptComponent() = default;
+        LuaScriptComponent(const std::string& path) : FilePath(path) {}
     };
 };
