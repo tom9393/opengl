@@ -36,7 +36,7 @@ namespace Engine {
         void RegisterCollisionCallback(Callback cb) { m_Callback = cb; }
         void CheckCollisions();
 
-        btDiscreteDynamicsWorld* getWorld() { return world.get(); }
+        btDiscreteDynamicsWorld* getWorld() { return m_World.get(); }
 
         void RenderDebug(const glm::mat4 &viewProjection);
 
@@ -48,17 +48,17 @@ namespace Engine {
 
     private:
         // Bullet core objects
-        std::unique_ptr<btDefaultCollisionConfiguration> collisionConfig;
-        std::unique_ptr<btCollisionDispatcher> dispatcher;
-        std::unique_ptr<btDbvtBroadphase> broadphase;
-        std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
-        std::unique_ptr<btDiscreteDynamicsWorld> world;
-        std::unique_ptr<PhysicsDebugDrawer> debug;
+        std::unique_ptr<btDefaultCollisionConfiguration> m_CollisionConfig;
+        std::unique_ptr<btCollisionDispatcher> m_Dispatcher;
+        std::unique_ptr<btDbvtBroadphase> m_Broadphase;
+        std::unique_ptr<btSequentialImpulseConstraintSolver> m_Solver;
+        std::unique_ptr<btDiscreteDynamicsWorld> m_World;
+        std::unique_ptr<PhysicsDebugDrawer> m_Debug;
 
         // Keep ownership of created shapes and motion states so they live as long as the rigid bodies
-        std::vector<std::unique_ptr<btCollisionShape>> collisionShapes;
-        std::vector<std::unique_ptr<btCompoundShape>> compoundShapes;
-        std::vector<std::unique_ptr<btDefaultMotionState>> motionStates;
+        std::vector<std::unique_ptr<btCollisionShape>> m_CollisionShapes;
+        std::vector<std::unique_ptr<btCompoundShape>> m_CompoundShapes;
+        std::vector<std::unique_ptr<btDefaultMotionState>> m_MotionStates;
 
         Callback m_Callback;
         Scene* m_Scene;

@@ -2,7 +2,9 @@
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "RigidBody.h"
+#include "Application.h"
 #include "Scene/Entity.h"
+#include "Utils/ThreadPool.h"
 
 namespace Engine {
 
@@ -18,15 +20,14 @@ namespace Engine {
 
     PhysicsWorld::PhysicsWorld(const btVector3& gravity)
     {
-        collisionConfig = std::make_unique<btDefaultCollisionConfiguration>();
-        dispatcher = std::make_unique<btCollisionDispatcher>(collisionConfig.get());
-        broadphase = std::make_unique<btDbvtBroadphase>();
-        solver = std::make_unique<btSequentialImpulseConstraintSolver>();
-        world = std::make_unique<btDiscreteDynamicsWorld>(dispatcher.get(), broadphase.get(), solver.get(), collisionConfig.get());
-        debug = std::make_unique<PhysicsDebugDrawer>();
-        world->setGravity(gravity);
-        world->setDebugDrawer(debug.get());
-        // Optional: tune other parameters here (solver iterations, etc.)
+        m_CollisionConfig = std::make_unique<btDefaultCollisionConfiguration>();
+        m_Dispatcher = std::make_unique<btCollisionDispatcher>(m_CollisionConfig.get());
+        m_Broadphase = std::make_unique<btDbvtBroadphase>();
+        m_Solver = std::make_unique<btSequentialImpulseConstraintSolver>();
+        m_World = std::make_unique<btDiscreteDynamicsWorld>(m_Dispatcher.get(), m_Broadphase.get(), m_Solver.get(), m_CollisionConfig.get());
+        m_Debug = std::make_unique<PhysicsDebugDrawer>();
+        m_World->setGravity(gravity);
+        m_World->setDebugDrawer(m_Debug.get());
     }
 
     PhysicsWorld::PhysicsWorld(float x, float y, float z) : PhysicsWorld(btVector3(x, y, z)) {}
@@ -34,15 +35,15 @@ namespace Engine {
     PhysicsWorld::~PhysicsWorld()
     {
         // Remove rigid bodies from world and delete them (world does not free motion states or collision shapes)
-        if (world) {
-            int numObjects = world->getNumCollisionObjects();
+        if (m_World) {
+            int numObjects = m_World->getNumCollisionObjects();
             for (int i = numObjects - 1; i >= 0; --i) {
-                btCollisionObject* obj = world->getCollisionObjectArray()[i];
+                btCollisionObject* obj = m_World->getCollisionObjectArray()[i];
                 btRigidBody* body = btRigidBody::upcast(obj);
                 if (body && body->getMotionState()) {
                     // motion states we created are stored in motionStates vector and will be freed automatically
                 }
-                world->removeCollisionObject(obj);
+                m_World->removeCollisionObject(obj);
                 delete obj; // Note: if you added motion state and shape ownership elsewhere, be careful. Here we take simple approach.
             }
         }
@@ -51,26 +52,26 @@ namespace Engine {
 
     void PhysicsWorld::StepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep)
     {
-        if (!world) return;
-        world->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
+        if (!m_World) return;
+        m_World->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
     }
 
     void PhysicsWorld::RenderDebug(const glm::mat4 &viewProjection)
     {
-        if (world && world->getDebugDrawer())
+        if (m_World && m_World->getDebugDrawer())
         {
-            world->debugDrawWorld();
+            m_World->debugDrawWorld();
         }
     }
 
     void PhysicsWorld::CheckCollisions()
     {
-        int numManifolds = dispatcher->getNumManifolds();
+        int numManifolds = m_Dispatcher->getNumManifolds();
         for (int i = 0; i < numManifolds; i++) {
             // Manifold -> which two objects are touching, may have 1 (sphere) or 4 (cube) points of touch
             // Point -> simple geometrical point in space where two manifolds are intersecting
 
-            btPersistentManifold* contactManifold = dispatcher->getManifoldByIndexInternal(i);
+            btPersistentManifold* contactManifold = m_Dispatcher->getManifoldByIndexInternal(i);
 
             // Make sure they are actually touching
             if (contactManifold->getNumContacts() == 0) continue;
@@ -101,13 +102,13 @@ namespace Engine {
     void PhysicsWorld::AddRigidBody(RigidBody* body)
     {
         if (!body) return;
-        world->addRigidBody(body->GetBody().get());
+        m_World->addRigidBody(body->GetBody().get());
     }
 
     void PhysicsWorld::RemoveRigidBody(RigidBody* body)
     {
         if (!body) return;
-        world->removeRigidBody(body->GetBody().get());
+        m_World->removeRigidBody(body->GetBody().get());
         // Note: associated motion state and collision shape are kept in vectors; if you want to free them here,
         // you'd need to track mapping from body -> indices and erase from vectors too.
     }
