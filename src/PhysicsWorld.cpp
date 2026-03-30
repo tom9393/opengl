@@ -2,6 +2,7 @@
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "RigidBody.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 
@@ -48,9 +49,10 @@ namespace Engine {
         // collisionShapes and motionStates are unique_ptrs and will be freed automatically
     }
 
-    void PhysicsWorld::stepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep)
+    void PhysicsWorld::StepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep)
     {
-        if (world) world->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
+        if (!world) return;
+        world->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
     }
 
     void PhysicsWorld::RenderDebug(const glm::mat4 &viewProjection)
@@ -111,10 +113,3 @@ namespace Engine {
     }
 
 }
-
-// Sample for getting X, Y and Z of some object
-// btTransform mytrans = objB->getWorldTransform();
-// btVector3 pos = mytrans.getOrigin();
-// Info(pos.getX());
-// Info(pos.getY());
-// Info(pos.getZ());

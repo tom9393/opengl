@@ -28,7 +28,7 @@ namespace Engine {
         PhysicsWorld(float x, float y, float z);
         ~PhysicsWorld();
 
-        void stepSimulation(float deltaTime, int maxSubSteps = 10, float fixedTimeStep = 1.0f / 60.0f);
+        void StepSimulation(float deltaTime, int maxSubSteps = 10, float fixedTimeStep = 1.0f / 60.0f);
 
         void AddRigidBody(RigidBody* body);
         void RemoveRigidBody(RigidBody* body);

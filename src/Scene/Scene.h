@@ -30,8 +30,6 @@ namespace Engine
         entt::registry& GetRegistry() { return m_Registry; }
         PhysicsWorld& GetPhysicsWorld() { return m_Physicsworld; }
 
-        void SyncPhysicsTransforms();
-
         private:
         void RenderScene(CameraData &cameraData);
 

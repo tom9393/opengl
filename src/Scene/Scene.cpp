@@ -56,9 +56,17 @@ namespace Engine
 
 	void Scene::OnUpdate(TimeStep ts)
 	{
-		m_Physicsworld.stepSimulation(ts);
+		m_Physicsworld.StepSimulation(ts);
 		m_Physicsworld.CheckCollisions();
-		SyncPhysicsTransforms();
+
+		auto physics = m_Registry.view<RigidBodyComponent, TransformComponent>();
+		for (auto& e : physics)
+		{
+
+			auto [rb, transform] = physics.get<RigidBodyComponent, TransformComponent>(e);
+			if (auto* body = static_cast<RigidBody*>(rb.runtimeBody))
+				body->GetTransform(transform.translation, transform.rotation);
+		}
 
 		auto scripts = m_Registry.view<NativeScriptComponent>();
 		for (auto& e : scripts)
@@ -81,18 +89,6 @@ namespace Engine
 			if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
 		}
 	};
-
-	void Scene::SyncPhysicsTransforms()
-	{
-		auto view = m_Registry.view<RigidBodyComponent, TransformComponent>();
-		for (auto& e : view)
-		{
-			auto [rb, transform] = view.get<RigidBodyComponent, TransformComponent>(e);
-
-			if (auto* body = static_cast<RigidBody*>(rb.runtimeBody))
-				body->GetTransform(transform.translation, transform.rotation);
-		}
-	}
 
 	void Scene::OnRuntimeStart()
 	{	
@@ -135,29 +131,31 @@ namespace Engine
 			nsc.instance->OnCreate();
 		}
 
+		m_Physicsworld.SetScene(this);
+
 		m_Physicsworld.RegisterCollisionCallback([this](void* ptrA, void* ptrB, glm::vec3 &hitPos, glm::vec3 &normal){
                 entt::entity a = (entt::entity)(uintptr_t)ptrA;
                 entt::entity b = (entt::entity)(uintptr_t)ptrB;
 
-		Entity collider = Entity { a, this };
+				Entity collider = Entity { a, this };
 
-		if (collider.HasComponent<NativeScriptComponent>())
-		{
-			auto& nsc = collider.GetComponent<NativeScriptComponent>();
-			if (nsc.instance)
-			{
-				Entity other = { b, this };
+				if (collider.HasComponent<NativeScriptComponent>())
+				{
+					auto& nsc = collider.GetComponent<NativeScriptComponent>();
+					if (nsc.instance)
+					{
+						Entity other = { b, this };
 
-				CollisionData data;
-				data.OtherPointer = ptrB;
-				data.HitPoint = hitPos;
-				data.Normal = normal;
-				data.Impulse = 20.0f;
+						CollisionData data;
+						data.OtherPointer = ptrB;
+						data.HitPoint = hitPos;
+						data.Normal = normal;
+						data.Impulse = 20.0f;
 
-				nsc.instance->OnCollision(data); 
-			}
-		}
-		});
+						nsc.instance->OnCollision(data); 
+					}
+				}
+				});
 	}
 
 	void Scene::OnRuntimeStop()
