@@ -1,9 +1,9 @@
 #include "SceneSerializer.h"
-#include "AssetManager.h"
-#include "AssimpLoader.h"
+#include "../Asset/AssetManager.h"
+#include "../Asset/AssimpLoader.h"
 #include "Entity.h"
 #include "Components.h"
-#include "ModelLibrary.h"
+#include "../Asset/ModelLibrary.h"
 #include <fstream>
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>

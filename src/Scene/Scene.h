@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../../lib/entt/single_include/entt/entt.hpp"
-#include "../TimeStep.h"
+#include "../Core/TimeStep.h"
 #include "SceneSerializer.h"
-#include "../PhysicsWorld.h"
-#include "../UUID.h"
+#include "../Physics/PhysicsWorld.h"
+#include "../Core/UUID.h"
 #include "../Events/MouseEvent.h"
 
 namespace Engine

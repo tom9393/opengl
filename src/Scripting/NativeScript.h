@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Scene.h"
-#include "TimeStep.h"
+#include "../Scene/Scene.h"
+#include "../Core/TimeStep.h"
 
 namespace Engine {
 

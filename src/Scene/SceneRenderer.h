@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Scene/Scene.h"
-#include "MathTools.h"
+#include "Scene.h"
+#include "../Utils/MathTools.h"
 #include <glm/glm.hpp>
 
 namespace Engine {

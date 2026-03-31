@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "../Buffer.h"       // FramebufferSpecification, FramebufferTextureFormat
+#include "Buffer.h"
 
 namespace Engine
 {

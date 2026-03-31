@@ -2,10 +2,10 @@
 
 #include "../pch.h"
 
-#include "MathTools.h"
-#include "Preprocessor.h"
-#include "BufferLayout.h"
-#include "Buffer.h"
+#include "../Utils/MathTools.h"
+#include "../Core/Preprocessor.h"
+#include "../Render/BufferLayout.h"
+#include "../Render/Buffer.h"
 
 namespace Engine
 {

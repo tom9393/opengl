@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../pch.h"
-#include "Application.h"
+#include "../Core/Application.h"
 #include "Model.h"
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
@@ -9,7 +9,7 @@
 #include <assimp/postprocess.h>
 #include "AssetManager.h"
 #include "Mesh.h"
-#include "BufferLayout.h"
+#include "../Render/BufferLayout.h"
 #include "Texture.h"
 
 namespace Engine

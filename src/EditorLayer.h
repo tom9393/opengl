@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Application.h"
-#include "EditorCamera.h"
+#include "Core/Application.h"
+#include "Render/EditorCamera.h"
 #include "Events/KeyboardEvent.h"
-#include "Layer.h"
+#include "Core/Layer.h"
 #include "Render/RenderGraph.h"
 #include "Scene/Scene.h"
 #include "SceneRenderer.h"
-#include "TimeStep.h"
+#include "Core/TimeStep.h"
 #include "Events/MouseEvent.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"

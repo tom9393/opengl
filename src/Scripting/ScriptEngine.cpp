@@ -1,5 +1,5 @@
 #include "ScriptEngine.h"
-#include "../Input.h"
+#include "../Core/Input.h"
 #include "../Scene/Components.h"
 
 namespace Engine {

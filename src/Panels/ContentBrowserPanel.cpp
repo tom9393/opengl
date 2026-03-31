@@ -1,5 +1,5 @@
 #include "ContentBrowserPanel.h"
-#include "AssetManager.h"
+#include "../Asset/AssetManager.h"
 #include "Renderer.h"
 
 namespace Engine

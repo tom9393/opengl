@@ -8,7 +8,7 @@
 #include "BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "LinearMath/btDefaultMotionState.h"
-#include "Mesh.h"
+#include "../Asset/Mesh.h"
 #include "src/entt/entity/fwd.hpp"
 
 namespace Engine {

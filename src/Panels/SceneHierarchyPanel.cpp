@@ -1,7 +1,7 @@
 #include "SceneHierarchyPanel.h"
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
-#include "CollisionBaker.h"
+#include "../Asset/CollisionBaker.h"
 #include "../Scripting/PlayerScript.h"
 #include "imgui.h"
 

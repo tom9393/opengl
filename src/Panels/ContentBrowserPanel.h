@@ -1,7 +1,7 @@
 #pragma once
 #include "../../pch.h"
-#include "../Texture.h"
-#include "../Preprocessor.h"
+#include "../Asset/Texture.h"
+#include "../Core/Preprocessor.h"
 
 namespace Engine
 {

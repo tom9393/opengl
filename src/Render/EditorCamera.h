@@ -1,8 +1,8 @@
 #pragma once
 
-#include "TimeStep.h"
-#include "Input.h"
-#include "KeyCodes.h"
+#include "../Core/TimeStep.h"
+#include "../Core/Input.h"
+#include "../Core/KeyCodes.h"
 #include "Camera.h"
 #include "Events/MouseEvent.h"
 #include "../pch.h"

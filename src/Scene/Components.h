@@ -1,12 +1,12 @@
 #pragma once
 
 #include "../../pch.h"
-#include "../Preprocessor.h"
-#include "Model.h"
+#include "../Core/Preprocessor.h"
+#include "../Asset/Model.h"
 #include "../Scripting/NativeScript.h"
-#include "SceneCamera.h"
-#include "../MathTools.h"
-#include "UUID.h"
+#include "../Render/SceneCamera.h"
+#include "../Utils/MathTools.h"
+#include "../Core/UUID.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>

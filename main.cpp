@@ -1,4 +1,4 @@
-#include "src/Application.h"
+#include "src/Core/Application.h"
 
 const bool editor = true;
 

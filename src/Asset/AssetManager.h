@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Asset.h"
-#include "UUID.h"
+#include "../Core/UUID.h"
 
 namespace Engine {
 

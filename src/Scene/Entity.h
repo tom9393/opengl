@@ -3,7 +3,7 @@
 #include "../../lib/entt/single_include/entt/entt.hpp"
 #include "Components.h"
 #include "Scene.h"
-#include "UUID.h"
+#include "../Core/UUID.h"
 
 namespace Engine
 {

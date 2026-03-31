@@ -2,9 +2,9 @@
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "RigidBody.h"
-#include "Application.h"
-#include "Scene/Entity.h"
-#include "Utils/ThreadPool.h"
+#include "../Core/Application.h"
+#include "../Scene/Entity.h"
+#include "../Utils/ThreadPool.h"
 
 namespace Engine {
 

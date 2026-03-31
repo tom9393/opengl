@@ -1,9 +1,9 @@
 #include "../pch.h"
-#include "MouseButtonCodes.h"
+#include "../Core/MouseButtonCodes.h"
 #include "TestLayer.h"
 #include "Render/Renderer.h"
-#include "Input.h"
-#include "AssimpLoader.h"
+#include "Core/Input.h"
+#include "Asset/AssimpLoader.h"
 #include "Events/EventBroker.h"
 
 namespace Engine

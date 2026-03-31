@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
-#include "../Buffer.h"
+#include "Buffer.h"
 
 namespace Engine
 {

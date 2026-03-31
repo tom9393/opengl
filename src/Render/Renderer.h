@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Buffer.h"
-#include "MathTools.h"
+#include "Buffer.h"
+#include "../Utils/MathTools.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
 #include "Shader.h"
-#include "../Mesh.h"
+#include "../Asset/Mesh.h"
 #include "../../platform/OpenGL/OpenGLTexture.h"
 
 namespace Engine

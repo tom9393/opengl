@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Buffer.h"
-#include "Layer.h"
-#include "Texture.h"
-#include "TimeStep.h"
+#include "Core/Layer.h"
+#include "Asset/Texture.h"
+#include "Core/TimeStep.h"
 #include "Events/MouseEvent.h"
-#include "Model.h"
-#include "Camera.h"
+#include "Asset/Model.h"
+#include "Render/Camera.h"
 
 namespace Engine
 {
