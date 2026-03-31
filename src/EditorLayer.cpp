@@ -12,6 +12,7 @@
 #include "Utils/ScopedImGuiStyle.h"
 #include "Scene/Components.h"
 #include "Events/EventBroker.h"
+#include "Scripting/ScriptEngine.h"
 
 namespace Engine
 {
@@ -28,7 +29,7 @@ namespace Engine
         m_EditorCamera = MakeShared<EditorCamera>(90.0f, 2.0f, 0.1f, 1000.0f);
         m_EditingScene = MakeShared<Scene>();
         m_SceneRenderer = MakeShared<SceneRenderer>(m_EditingScene.get());
-        m_EditingScene->OnViewportResize(500, 500);
+        m_SceneRenderer->OnViewportResize(500, 500);
         m_SceneHierarchyPanel.SetContext(m_EditingScene);
 
         auto& pass = m_RenderGraph.AddPass("ScenePass");
@@ -215,7 +216,7 @@ namespace Engine
         {
             m_RenderGraph.Resize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
             m_EditorCamera->SetViewportSize(m_Viewport.Size.x, m_Viewport.Size.y);
-            m_EditingScene->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
+            m_SceneRenderer->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
         }
 
         unsigned int texID = m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
@@ -322,9 +323,10 @@ namespace Engine
             case KEY_F1:
                 if (m_SceneState == SceneState::Edit) OnScenePlay();
                 else OnSceneStop();
+                break;
             case KEY_F5:
-                m_EditingScene->ReloadScripts();
-                if (m_RuntimeScene) m_RuntimeScene->ReloadScripts();
+                ScriptEngine::ReloadScripts();
+                break;
             default:
                 m_GizmoType = -1;
         }
@@ -337,7 +339,6 @@ namespace Engine
         if (!filepath.empty())
         {
             m_EditingScene = MakeShared<Scene>();
-            m_EditingScene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
             m_SceneHierarchyPanel.SetContext(m_EditingScene);
             SceneSerializer serializer(m_EditingScene);
             serializer.Deserialize(filepath);
@@ -351,7 +352,6 @@ namespace Engine
         if (path != nullptr)
         {
             m_EditingScene = std::static_pointer_cast<Scene>(AssetManager::LoadAsset(path));
-            m_EditingScene->OnViewportResize(m_Viewport.Size.x, m_Viewport.Size.y);
             m_SceneHierarchyPanel.SetContext(m_EditingScene);
 
             m_SceneRenderer->SetScene(m_EditingScene.get());

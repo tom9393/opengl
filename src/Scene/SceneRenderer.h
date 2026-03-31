@@ -23,12 +23,16 @@ namespace Engine {
         void RenderEditor(const glm::mat4& viewProjection, const glm::vec3& cameraPosition);
         void RenderRuntime();
 
+        void OnViewportResize(unsigned int width, unsigned int height);
+
     private:
         void FlushDrawCalls(const glm::mat4& viewProjection, const glm::vec3& cameraPos);
 
     private:
         Scene* m_Scene;
         std::vector<DrawCommand> m_OpaqueDrawList;
+        unsigned int m_ViewportWidth;
+        unsigned int m_ViewportHeight;
     };
 
 }

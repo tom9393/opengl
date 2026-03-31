@@ -101,7 +101,7 @@ namespace Engine {
 
                 rigidbodyComponent.runtimeBody = body;
 
-                m_Scene->GetPhysicsWorld().AddRigidBody(body);
+                PhysicsEngine::AddRigidBody(body);
                 body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
                 body->SetTransform(transformComponent.translation, transformComponent.rotation);
 

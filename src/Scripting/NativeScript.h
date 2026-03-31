@@ -28,6 +28,7 @@ namespace Engine {
 
         friend class Entity;
         friend class Scene;
+        friend class ScriptEngine;
     };
 
 }
