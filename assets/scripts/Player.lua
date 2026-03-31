@@ -9,7 +9,7 @@ function OnCreate()
 end
 
 function OnUpdate(ts)
-    local mouseX, mouseY = GetMousePosition()
+    local mouseX, mouseY = Input.GetMousePosition()
 
     if firstMouse then
         lastMouseX = mouseX
@@ -30,7 +30,8 @@ function OnUpdate(ts)
     Transform.Rotation.x = Transform.Rotation.x - offsetY
     Transform.Rotation.y = Transform.Rotation.y - offsetX
 
-    local limit = radians(89.0)
+
+    local limit = Input.radians(89.0)
     if Transform.Rotation.x > limit then Transform.Rotation.x = limit end
     if Transform.Rotation.x < -limit then Transform.Rotation.x = -limit end
 
@@ -40,20 +41,19 @@ function OnUpdate(ts)
     local forward = Transform:GetForward()
     local right = Transform:GetRight()
 
-    if IsKeyPressed(87) then
+    if Input.IsKeyPressed(87) then
         Transform.Translation = Transform.Translation + (forward * distance)
     end
-    if IsKeyPressed(83) then
+    if Input.IsKeyPressed(83) then
         Transform.Translation = Transform.Translation - (forward * distance)
     end
-    if IsKeyPressed(65) then
+    if Input.IsKeyPressed(65) then
         Transform.Translation = Transform.Translation - (right * distance)
     end
-    if IsKeyPressed(68) then
+    if Input.IsKeyPressed(68) then
         Transform.Translation = Transform.Translation + (right * distance)
     end
 end
 
 function OnClick()
-    print("You done clicked")
 end
