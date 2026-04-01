@@ -184,6 +184,10 @@ namespace Engine
 			out << YAML::Key << "Inertia"  << YAML::Value << rb.inertia;
 		});
 
+		SerializeComponent<LuaScriptComponent>(out, e, "LuaScriptComponent", [](auto& out, auto& lsc) {
+			out << YAML::Key << "Path" << YAML::Value << lsc.FilePath;
+		});
+
 		out << YAML::EndMap;
 	};
 
@@ -275,6 +279,15 @@ namespace Engine
 		}
 	}
 
+	template <>
+	void DeserializeComponent<LuaScriptComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
+		if (node)
+		{
+			auto& lsc = entity.AddComponent<LuaScriptComponent>();
+			lsc.FilePath = node["Path"].as<std::string>();
+		}
+	}
+
 	void DeserializeEntity(Shared<Scene> &scene, YAML::Node& node) {
 		uint64_t uuid = node["Entity"].as<uint64_t>();
 		std::string tag = node["TagComponent"]["Tag"].as<std::string>("");
@@ -285,6 +298,7 @@ namespace Engine
 		DeserializeComponent<SceneCameraComponent>(entity, scene, node["CameraComponent"]);
 		DeserializeComponent<ModelComponent>(entity, scene, node["ModelComponent"]);
 		DeserializeComponent<RigidBodyComponent>(entity, scene, node["RigidBodyComponent"]);
+		DeserializeComponent<LuaScriptComponent>(entity, scene, node["LuaScriptComponent"]);
 	}
 
 	bool SceneSerializer::Deserialize(const std::string& path) {

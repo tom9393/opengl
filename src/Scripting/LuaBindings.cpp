@@ -1,4 +1,5 @@
 #include "LuaBindings.h"
+#include "ScriptEngine.h"
 #include "../Core/Input.h"
 #include "../Core/KeyCodes.h"
 #include "../Scene/Components.h"
@@ -60,8 +61,8 @@ namespace Engine {
         );
     }
 
-    void LuaBindings::RegisterComponents(sol::state& state) {
-        // 1. Transform Component
+    void LuaBindings::RegisterComponents(sol::state& state)
+    {
         state.new_usertype<TransformComponent>("TransformComponent",
             "Translation", &TransformComponent::translation,
             "Rotation", &TransformComponent::rotation,
@@ -70,8 +71,10 @@ namespace Engine {
             "GetRight", &TransformComponent::GetRight
         );
 
-        // 2. RigidBody Component (Assuming you want to apply forces via script)
-        // Adjust the function pointers based on your actual RigidBody.h implementation
+        state.new_usertype<TagComponent>("TagComponent",
+            "Tag", &TagComponent::tag
+        );
+
         state.new_usertype<RigidBody>("RigidBody",
             // --- Transformation ---
             "SetTransform", &RigidBody::SetTransform,
@@ -101,11 +104,110 @@ namespace Engine {
             "SetKinematic", &RigidBody::SetKinematic
         );
 
-        // 3. Camera Component
         state.new_usertype<SceneCameraComponent>("CameraComponent",
             "Primary", &SceneCameraComponent::primary,
             "FixedAspectRatio", &SceneCameraComponent::fixedAspectRatio
         );
+    }
+
+    void LuaBindings::ReloadScripts(Scene* scene)
+    {
+		auto& lua = ScriptEngine::GetState();
+		auto view = scene->m_Registry.view<LuaScriptComponent>();
+
+		for (auto entity : view) {
+			auto& script = view.get<LuaScriptComponent>(entity);
+
+			if (script.Environment.valid() && !script.FilePath.empty()) {
+				// 1. Re-run the file into the EXISTING environment
+				auto result = lua.script_file(script.FilePath, script.Environment);
+				
+				if (result.valid()) {
+					std::cout << "Reloaded: " << script.FilePath << std::endl;
+					
+					// 2. Optionally re-call OnCreate to reset state
+					sol::protected_function onCreate = script.Environment["OnCreate"];
+					if (onCreate.valid()) {
+						sol::set_environment(script.Environment, onCreate);
+						onCreate();
+					}
+				} else {
+					sol::error err = result;
+					std::cerr << "Reload Error: " << err.what() << std::endl;
+				}
+			}
+		}
+    }
+
+    template <>
+    void LuaBindings::BindComponent<TagComponent>(Entity &e)
+    {
+        if (!e.HasComponent<TagComponent>()) return;
+        e.GetComponent<LuaScriptComponent>().Environment["Tag"] = &e.GetComponent<TagComponent>().tag;
+    }
+
+    template <>
+    void LuaBindings::BindComponent<TransformComponent>(Entity &e)
+    {
+        if (!e.HasComponent<TransformComponent>()) return;
+        e.GetComponent<LuaScriptComponent>().Environment["Transform"] = &e.GetComponent<TransformComponent>();
+    }
+
+    template <>
+    void LuaBindings::BindComponent<SceneCameraComponent>(Entity &e)
+    {
+        if (!e.HasComponent<SceneCameraComponent>()) return;
+        e.GetComponent<LuaScriptComponent>().Environment["Camera"] = &e.GetComponent<SceneCameraComponent>();
+    }
+
+    template <>
+    void LuaBindings::BindComponent<RigidBodyComponent>(Entity &e)
+    {
+        if (!e.HasComponent<RigidBodyComponent>()) return;
+        // 1. Cast the void* to the actual type you registered (RigidBody)
+        auto& rbComponent = e.GetComponent<RigidBodyComponent>();
+        RigidBody* body = static_cast<RigidBody*>(rbComponent.runtimeBody);
+
+        e.GetComponent<LuaScriptComponent>().Environment["RigidBody"] = body;
+    }
+
+    void LuaBindings::BindComponents(Scene* scene)
+    {
+		auto luaScripts = scene->m_Registry.view<LuaScriptComponent>();
+        for (auto &e : luaScripts)
+        {
+            auto& lua = ScriptEngine::GetState();
+            Entity entity = { e, scene };
+
+            auto& script = entity.GetComponent<LuaScriptComponent>();
+            
+            // Create a unique environment for this entity
+            script.Environment = sol::environment(lua, sol::create, lua.globals());
+
+            BindComponent<TagComponent>(entity);
+            BindComponent<TransformComponent>(entity);
+            BindComponent<SceneCameraComponent>(entity);
+            BindComponent<RigidBodyComponent>(entity);
+
+            // Load the script file into this specific environment
+            lua.script_file(script.FilePath, script.Environment);
+
+            // Call OnCreate if it exists
+            sol::function onCreate = script.Environment["OnCreate"];
+            if (onCreate.valid()) {
+                onCreate();
+            }
+        }
+    }
+
+    void LuaBindings::UnbindComponents(Scene* scene)
+    {
+		auto luaScripts = scene->m_Registry.view<LuaScriptComponent>();
+		for (auto& e : luaScripts)
+        {
+			auto& script = luaScripts.get<LuaScriptComponent>(e);
+			script.Environment = sol::lua_nil;
+		}
     }
 
 }

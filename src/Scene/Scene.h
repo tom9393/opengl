@@ -41,6 +41,7 @@ namespace Engine
         friend class NativeScript;
         friend class PhysicsEngine;
         friend class ScriptEngine;
+        friend class LuaBindings;
     };
 
 };

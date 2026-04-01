@@ -21,6 +21,7 @@ namespace Engine {
 
         static void SetScene(Scene* scene) { s_Scene = scene; }
         static Scene* GetScene() { return s_Scene; }
+        static sol::state& GetState() { return *s_LuaState.get(); }
 
     private:
         static std::unique_ptr<sol::state> s_LuaState;

@@ -38,43 +38,7 @@ namespace Engine {
 			nsc.instance->OnCreate();
 		}
 
-		auto luaScripts = s_Scene->m_Registry.view<LuaScriptComponent>();
-
-		for (auto e : luaScripts) {
-			auto& script = luaScripts.get<LuaScriptComponent>(e);
-
-			Entity entity = { e, s_Scene };
-			
-            auto& lua = *s_LuaState.get();
-            
-            // Create a unique environment for this entity
-            script.Environment = sol::environment(lua, sol::create, lua.globals());
-            
-            // Pass the entity's components into the Lua environment
-            // (This allows Lua to say: `Transform.Translation.x = 5`)
-            script.Environment["Transform"] = &s_Scene->m_Registry.get<TransformComponent>(e);
-
-
-			if (entity.HasComponent<RigidBodyComponent>())
-			{
-				// 1. Cast the void* to the actual type you registered (RigidBody)
-				auto& rbComponent = entity.GetComponent<RigidBodyComponent>();
-				RigidBody* body = static_cast<RigidBody*>(rbComponent.runtimeBody);
-
-				// 2. Assign the pointer directly. 
-				// Do NOT use &body or &rbComponent.runtimeBody
-				script.Environment["self_rb"] = body; 
-			}
-            
-            // Load the script file into this specific environment
-            lua.script_file(script.FilePath, script.Environment);
-            
-            // Call OnCreate if it exists
-            sol::function onCreate = script.Environment["OnCreate"];
-            if (onCreate.valid()) {
-                onCreate();
-            }
-		}
+		LuaBindings::BindComponents(s_Scene);
     }
 
     void ScriptEngine::RuntimeStop()
@@ -88,43 +52,14 @@ namespace Engine {
 			nsc.DestroyScript(&nsc);
 		}
 
-		auto luaScripts = s_Scene->m_Registry.view<LuaScriptComponent>();
-		for (auto& e : luaScripts)
-        {
-			auto& script = luaScripts.get<LuaScriptComponent>(e);
-			script.Environment = sol::lua_nil;
-		}
+		LuaBindings::UnbindComponents(s_Scene);
 
         Shutdown();
     }
 
     void ScriptEngine::ReloadScripts()
     {
-		auto& lua = *s_LuaState.get();
-		auto view = s_Scene->m_Registry.view<LuaScriptComponent>();
-
-		for (auto entity : view) {
-			auto& script = view.get<LuaScriptComponent>(entity);
-
-			if (script.Environment.valid() && !script.FilePath.empty()) {
-				// 1. Re-run the file into the EXISTING environment
-				auto result = lua.script_file(script.FilePath, script.Environment);
-				
-				if (result.valid()) {
-					std::cout << "Reloaded: " << script.FilePath << std::endl;
-					
-					// 2. Optionally re-call OnCreate to reset state
-					sol::protected_function onCreate = script.Environment["OnCreate"];
-					if (onCreate.valid()) {
-						sol::set_environment(script.Environment, onCreate);
-						onCreate();
-					}
-				} else {
-					sol::error err = result;
-					std::cerr << "Reload Error: " << err.what() << std::endl;
-				}
-			}
-		}
+		LuaBindings::ReloadScripts(s_Scene);
     }
 
     void ScriptEngine::OnUpdate(TimeStep ts)
@@ -145,7 +80,7 @@ namespace Engine {
 			
 			sol::function onUpdate = script.Environment["OnUpdate"];
 			if (onUpdate.valid()) {
-				onUpdate(ts.GetSeconds()); // Pass delta time to Lua
+				onUpdate(ts.GetSeconds());
 			}
 		}
     }
