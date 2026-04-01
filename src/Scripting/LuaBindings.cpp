@@ -24,7 +24,14 @@ namespace Engine {
             // Meta-functions allow Lua to use standard math operators (+, -, *, /)
             sol::meta_function::addition, [](const glm::vec3& a, const glm::vec3& b) { return a + b; },
             sol::meta_function::subtraction, [](const glm::vec3& a, const glm::vec3& b) { return a - b; },
-            sol::meta_function::multiplication, [](const glm::vec3& a, float b) { return a * b; }
+
+            // Overload to allow scalar multiplication
+            sol::meta_function::multiplication, sol::overload(
+            [](const glm::vec3& a, float b) { return a * b; },
+            [](float a, const glm::vec3& b) { return a * b; }
+            ),
+
+            sol::meta_function::unary_minus, [](const glm::vec3& v) { return -v; }
         );
     }
 
