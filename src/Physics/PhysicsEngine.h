@@ -38,6 +38,14 @@ namespace Engine {
     };
 
     class Scene;
+    class Entity;
+
+    struct RaycastResult {
+        bool Hit;
+        Entity* HitEntity;
+        glm::vec3 Position;
+        glm::vec3 Normal;
+    };
 
     using Callback = std::function<void(void*, void*, glm::vec3&, glm::vec3&)>;
 
@@ -61,6 +69,7 @@ namespace Engine {
         btDiscreteDynamicsWorld* getWorld() { return s_PhysicsWorldConfiguration->World.get(); }
 
         static void RenderDebug(const glm::mat4 &viewProjection);
+        static RaycastResult Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float distance);
 
         static Scene* GetScene() { return s_Scene; }
         static void SetScene(Scene* scene) { s_Scene = scene; }

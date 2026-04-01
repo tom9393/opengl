@@ -56,4 +56,13 @@ function OnUpdate(ts)
 end
 
 function OnClick()
+    local origin = Transform.Translation
+    local direction = Transform:GetForward()
+    local result = Scene:Raycast(origin, direction, 100.0)
+
+    if result.Hit and result.Entity then
+        -- If you bound GetComponent to the Entity class:
+        -- local transform = result.Entity:GetTransform()
+        print("Hit at: " .. result.Position.x .. ", " .. result.Position.y)
+    end
 end

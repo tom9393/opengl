@@ -70,6 +70,21 @@ namespace Engine {
 
     void LuaBindings::RegisterComponents(sol::state& state)
     {
+
+        // 1. Register the RaycastResult struct
+        state.new_usertype<RaycastResult>("RaycastResult",
+            "Hit",      &RaycastResult::Hit,
+            "Entity",   &RaycastResult::HitEntity, // Sol2 handles the Entity* automatically
+            "Position", &RaycastResult::Position,
+            "Normal",   &RaycastResult::Normal
+        );
+
+        state.new_usertype<Entity>("Entity",
+            "Destroy", [](Entity& e) { e.GetScene()->DestroyEntity(e); },
+            "GetTransform", [](Entity& e) { return &e.GetComponent<TransformComponent>(); },
+            "GetTag", [](Entity& e) { return &e.GetComponent<TagComponent>().tag; }
+        );
+
         state.new_usertype<TransformComponent>("TransformComponent",
             "Translation", &TransformComponent::translation,
             "Rotation", &TransformComponent::rotation,
@@ -77,6 +92,12 @@ namespace Engine {
             "GetForward", &TransformComponent::GetForward,
             "GetRight", &TransformComponent::GetRight
         );
+
+        state.new_usertype<Scene>("Scene",
+        "CreateEntity", &Scene::CreateEntity,
+        "Raycast", [](Scene& scene, const glm::vec3 origin, const glm::vec3 dir, float dist) {
+            return PhysicsEngine::Raycast(origin, dir, dist);
+        });
 
         state.new_usertype<TagComponent>("TagComponent",
             "Tag", &TagComponent::tag
@@ -190,6 +211,9 @@ namespace Engine {
             
             // Create a unique environment for this entity
             script.Environment = sol::environment(lua, sol::create, lua.globals());
+
+            script.Environment["Self"] = entity;
+            script.Environment["Scene"] = scene;
 
             BindComponent<TagComponent>(entity);
             BindComponent<TransformComponent>(entity);

@@ -117,7 +117,6 @@ namespace Engine {
 		auto view = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
 		for (auto& e : view)
 		{
-
 			Entity entity = { e, s_Scene };
 			auto& transformComponent = entity.GetComponent<TransformComponent>();
 			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
@@ -185,11 +184,31 @@ namespace Engine {
 		auto physics = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent>();
 		for (auto& e : physics)
 		{
-
 			auto [rb, transform] = physics.get<RigidBodyComponent, TransformComponent>(e);
 			if (auto* body = static_cast<RigidBody*>(rb.runtimeBody))
 				body->GetTransform(transform.translation, transform.rotation);
 		}
+    }
+
+    RaycastResult PhysicsEngine::Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float distance)
+    {
+        btVector3 rayFrom = GlmToBullet(origin);
+        btVector3 rayTo = GlmToBullet(origin + direction * distance);
+
+        btCollisionWorld::ClosestRayResultCallback callback(rayFrom, rayTo);
+        
+        // Optional: Set collision masks to ignore triggers or the player
+        // callback.m_collisionFilterMask = ... 
+
+        s_PhysicsWorldConfiguration->World->rayTest(rayFrom, rayTo, callback);
+
+        if (callback.hasHit()) {
+            // Retrieve the Entity pointer stored in the Bullet UserPointer
+            Entity* entity = static_cast<Entity*>(callback.m_collisionObject->getUserPointer());
+            return { true, entity, BulletToGlm(callback.m_hitPointWorld), BulletToGlm(callback.m_hitNormalWorld) };
+        }
+
+        return { false, nullptr, glm::vec3(0.0f), glm::vec3(0.0f) };
     }
 
 }

@@ -71,9 +71,6 @@ namespace Engine {
                 if (Input::IsKeyPressed(KEY_D))
                     tc.translation += right * distance;
             }
-            void OnCollision(CollisionData &data) override
-            {
-            }
             void OnClick(MouseButtonEvent &e)
             {
                 Entity entity = m_Scene->CreateEntity("New Kawasaki");
