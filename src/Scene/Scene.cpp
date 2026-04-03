@@ -126,8 +126,6 @@ namespace Engine
 		for (auto entity : view) {
 			auto& script = view.get<LuaScriptComponent>(entity);
 
-			std::cout << "In the native" << std::endl;
-			
 			sol::protected_function luaOnClick = script.Environment["OnClick"];
 			if (luaOnClick.valid()) {
 				luaOnClick();

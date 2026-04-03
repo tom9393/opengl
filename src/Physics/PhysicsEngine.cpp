@@ -24,6 +24,7 @@ namespace Engine {
     std::unique_ptr<PhysicsWorldObjects> PhysicsEngine::s_PhysicsWorldObjects;
     Scene* PhysicsEngine::s_Scene;
     Callback s_Callback;
+    PhysicsSettings PhysicsEngine::s_Settings = {true, false};
 
     void PhysicsEngine::Init()
     {
@@ -54,7 +55,7 @@ namespace Engine {
 
     void PhysicsEngine::RenderDebug(const glm::mat4 &viewProjection)
     {
-        if (s_PhysicsWorldConfiguration->World && s_PhysicsWorldConfiguration->World->getDebugDrawer())
+        if (s_Settings.Debug && s_PhysicsWorldConfiguration && s_PhysicsWorldConfiguration->World && s_PhysicsWorldConfiguration->World->getDebugDrawer())
         {
             s_PhysicsWorldConfiguration->World->debugDrawWorld();
         }
@@ -125,10 +126,7 @@ namespace Engine {
 			modelComponent.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
 
 			// 1. Ensure a bake exists (or bake it now if missing)
-			std::string bakePath = modelComponent.path + ".pmcol";
-			if (!std::filesystem::exists(bakePath)) {
-			    CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
-			}
+			CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
 
 			RBComplexShape* shape = new RBComplexShape(modelComponent.path);
 			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
@@ -204,7 +202,8 @@ namespace Engine {
 
         if (callback.hasHit()) {
             // Retrieve the Entity pointer stored in the Bullet UserPointer
-            Entity* entity = static_cast<Entity*>(callback.m_collisionObject->getUserPointer());
+            entt::entity handle = (entt::entity)(uintptr_t)callback.m_collisionObject->getUserPointer();
+            Entity* entity = new Entity(handle, s_Scene);
             return { true, entity, BulletToGlm(callback.m_hitPointWorld), BulletToGlm(callback.m_hitNormalWorld) };
         }
 

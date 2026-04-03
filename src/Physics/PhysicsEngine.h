@@ -37,6 +37,12 @@ namespace Engine {
 
     };
 
+    struct PhysicsSettings
+    {
+        bool Active;
+        bool Debug;
+    };
+
     class Scene;
     class Entity;
 
@@ -74,6 +80,8 @@ namespace Engine {
         static Scene* GetScene() { return s_Scene; }
         static void SetScene(Scene* scene) { s_Scene = scene; }
 
+        static void ToggleDebug() { s_Settings.Debug = !s_Settings.Debug; }
+
     private:
         static void StepSimulation(float deltaTime, int maxSubSteps = 10, float fixedTimeStep = 1.0f / 60.0f);
 
@@ -82,10 +90,9 @@ namespace Engine {
         static std::unique_ptr<PhysicsWorldConfiguration> s_PhysicsWorldConfiguration;
         static std::unique_ptr<PhysicsWorldObjects> s_PhysicsWorldObjects;
         static Scene* s_Scene;
+        static PhysicsSettings s_Settings;
 
         inline static Callback s_Callback;
-
-        bool m_Active = false;
     };
 
 }

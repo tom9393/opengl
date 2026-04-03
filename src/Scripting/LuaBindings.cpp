@@ -82,7 +82,24 @@ namespace Engine {
         state.new_usertype<Entity>("Entity",
             "Destroy", [](Entity& e) { e.GetScene()->DestroyEntity(e); },
             "GetTransform", [](Entity& e) { return &e.GetComponent<TransformComponent>(); },
-            "GetTag", [](Entity& e) { return &e.GetComponent<TagComponent>().tag; }
+            "GetRigidBody", [](Entity& e) {
+                RigidBody* body = static_cast<RigidBody*>(e.GetComponent<RigidBodyComponent>().runtimeBody);
+                return body;
+            },
+            "GetTag", [](Entity& e) { return &e.GetComponent<TagComponent>().tag; },
+            // 2. Fetch the environment
+            "GetLuaEnvironment", [](Entity& e) -> sol::object {
+                if (e.HasComponent<LuaScriptComponent>()) {
+                    auto& script = e.GetComponent<LuaScriptComponent>();
+                    
+                    if (script.Environment.valid()) {
+                        // Return the environment. sol2 automatically exposes this as a Lua table!
+                        return script.Environment; 
+                    }
+                }
+                // If no script exists, safely return Lua nil
+                return sol::nil;
+            }
         );
 
         state.new_usertype<TransformComponent>("TransformComponent",

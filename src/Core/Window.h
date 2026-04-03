@@ -29,7 +29,11 @@ namespace Engine
         virtual void SetVsync(bool enabled) = 0;
         virtual bool IsVsync() = 0;
 
-        virtual void ToggleCursor() = 0;
+        virtual void UpdateFrameTime() = 0;
+        virtual float GetFrameTime() = 0;
+
+        virtual void EnableCursor() = 0;
+        virtual void DisableCursor() = 0;
         virtual bool IsCursor() = 0;
 
         virtual void* GetNativeWindow() = 0;

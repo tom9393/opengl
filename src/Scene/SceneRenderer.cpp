@@ -106,7 +106,7 @@ namespace Engine {
             i += batchSize;
         }
 
-        //m_Scene->m_Physicsworld.RenderDebug(viewProjection);
+        PhysicsEngine::RenderDebug(viewProjection);
 
         Renderer::EndScene();
     }

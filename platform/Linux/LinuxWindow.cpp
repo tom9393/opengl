@@ -163,23 +163,35 @@ namespace Engine
         return m_Data.VSync;
     };
 
+    void LinuxWindow::UpdateFrameTime()
+    {
+        float current = (float) glfwGetTime();
+        m_CurrentFrame = current - m_PreviousFrame;
+        m_PreviousFrame = current;
+    }
+
+    float LinuxWindow::GetFrameTime()
+    {
+        return m_CurrentFrame;
+    }
+
     void* LinuxWindow::GetNativeWindow()
     {
         return m_Window;
     };
 
-    void LinuxWindow::ToggleCursor()
+    void LinuxWindow::EnableCursor()
     {
-        if (m_Data.cursor)
-        {
-            glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        } else
-        {
-            glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        m_Data.cursor = !m_Data.cursor;
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        m_Data.cursor = true;
+    }
 
-    };
+    void LinuxWindow::DisableCursor()
+    {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        m_Data.cursor = false;
+    }
+
     bool LinuxWindow::IsCursor()
     {
         return m_Data.cursor;

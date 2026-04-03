@@ -11,6 +11,8 @@ namespace Engine {
     // Generates a simplified hull and saves it to disk
         static void Bake(const std::string& modelPath, const std::vector<Shared<Mesh>>& meshes) {
             std::string outputPath = modelPath + ".pmcol";
+
+            if (std::filesystem::exists(outputPath)) return;
             std::ofstream out(outputPath, std::ios::binary);
 
             uint32_t meshCount = (uint32_t)meshes.size();

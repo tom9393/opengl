@@ -13,6 +13,7 @@
 #include "Scene/Components.h"
 #include "Events/EventBroker.h"
 #include "Scripting/ScriptEngine.h"
+#include "Utils/GizmoManager.h"
 
 namespace Engine
 {
@@ -37,7 +38,6 @@ namespace Engine
         pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
         pass.SetClearInt(1, -1);
 
-        // Callback will be called each frame (with the frame's TimeStep)
         pass.SetCallback([this](TimeStep ts)
         {
             switch (m_SceneState) {
@@ -157,48 +157,21 @@ namespace Engine
         if (!selectedEntity || !selectedEntity.HasComponent<TransformComponent>())
             return;
 
-        SetupGizmo();
-        UseGizmo(selectedEntity);
-    };
-
-    void EditorLayer::SetupGizmo()
-    {
-        ImGuizmo::SetOrthographic(false);
-        ImGuizmo::SetDrawlist();
-
-        const auto& min = m_Viewport.Min;
-        const auto& max = m_Viewport.Max;
-
-        ImGuizmo::SetRect(min.x, min.y, max.x - min.x, max.y - min.y);
-    };
-
-    void EditorLayer::UseGizmo(Entity entity)
-    {
-        auto& tc = entity.GetComponent<TransformComponent>();
+        auto& tc = selectedEntity.GetComponent<TransformComponent>();
         glm::mat4 transform = tc.GetTransform();
 
-        const glm::mat4 cameraProjection = m_EditorCamera->GetProjection();
-        const glm::mat4 cameraView = m_EditorCamera->GetViewMatrix();
+        // 1. Prepare
+        GizmoManager::BeginFrame();
+        GizmoManager::SetViewport(m_Viewport.Min, m_Viewport.Max - m_Viewport.Min);
 
+        // 2. Execute
         bool snap = Input::IsKeyPressed(KEY_LEFT_SHIFT);
-        float snapValue = 0.5f;
-        if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-            snapValue = 45.0f;
+        auto result = GizmoManager::Manipulate(*m_EditorCamera, transform, m_GizmoType, snap);
 
-        float snapValues[3] = { snapValue, snapValue, snapValue };
-
-        ImGuizmo::Manipulate(
-            glm::value_ptr(cameraView),
-            glm::value_ptr(cameraProjection),
-            (ImGuizmo::OPERATION)m_GizmoType,
-            ImGuizmo::LOCAL,
-            glm::value_ptr(transform),
-            nullptr,
-            snap ? snapValues : nullptr
-        );
-
-        if (ImGuizmo::IsUsing())
-            tc.ApplyMatrix(transform);
+        // 3. Apply
+        if (result.IsUsing) {
+            tc.ApplyMatrix(result.Transform);
+        }
     };
 
     void EditorLayer::DrawViewport()
@@ -215,7 +188,7 @@ namespace Engine
         if (m_Viewport.Updated)
         {
             m_RenderGraph.Resize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
-            m_EditorCamera->SetViewportSize(m_Viewport.Size.x, m_Viewport.Size.y);
+            m_EditorCamera->SetViewportSize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
             m_SceneRenderer->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
         }
 
@@ -256,7 +229,6 @@ namespace Engine
         }
 
         ImGui::End();
-        
     }
 
     void EditorLayer::DrawMenuBar()
@@ -283,19 +255,20 @@ namespace Engine
 
     void EditorLayer::DrawStats()
     {
-        float current = (float) glfwGetTime();
-        float delta = current - m_Previous;
-        m_Previous = current;
         ImGui::Begin("Stats");
+
         unsigned int DrawCalls = Renderer::GetStatistics().DrawCalls;
         unsigned int MaterialSwitches = Renderer::GetStatistics().MaterialSwitches;
         unsigned int VerticeCount = Renderer::GetStatistics().VerticeCount;
         unsigned int IndicesCount = Renderer::GetStatistics().IndicesCount;
+        float delta = Application::Get().GetWindow().GetFrameTime();
+
         ImGui::Text("FPS count: %f", 1.f / delta);
         ImGui::Text("Drawcalls: %d", DrawCalls);
         ImGui::Text("Material switches: %d", MaterialSwitches);
         ImGui::Text("Vertices count: %d", VerticeCount);
         ImGui::Text("Indices count: %d", IndicesCount);
+
         ImGui::End();
     };
 
@@ -371,22 +344,21 @@ namespace Engine
     void EditorLayer::OnScenePlay()
     {
         m_SceneState = SceneState::Play;
+
         m_RuntimeScene = Scene::Copy(m_EditingScene);
         m_SceneRenderer->SetScene(m_RuntimeScene.get());
-
-        auto window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         m_RuntimeScene->OnRuntimeStart();
+        Application::Get().GetWindow().DisableCursor();
     }
 
     void EditorLayer::OnSceneStop()
     {
         m_SceneState = SceneState::Edit;
+
         m_RuntimeScene->OnRuntimeStop();
         m_SceneRenderer->SetScene(m_EditingScene.get());
         m_RuntimeScene = nullptr;
-        auto window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        Application::Get().GetWindow().EnableCursor();
     }
 
 };

@@ -23,7 +23,11 @@ namespace Engine
         virtual void SetVsync(bool enabled) override;
         virtual bool IsVsync() override;
 
-        virtual void ToggleCursor() override;
+        virtual void UpdateFrameTime() override;
+        virtual float GetFrameTime() override;
+
+        virtual void EnableCursor() override;
+        virtual void DisableCursor() override;
         virtual bool IsCursor() override;
 
     private:
@@ -33,6 +37,9 @@ namespace Engine
 
         GLFWwindow* m_Window;
         Context* m_Context;
+
+        float m_PreviousFrame = 0;
+        float m_CurrentFrame = 0;
 
         struct WindowData {
             std::string title;

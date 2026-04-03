@@ -62,7 +62,10 @@ function OnClick()
 
     if result.Hit and result.Entity then
         -- If you bound GetComponent to the Entity class:
-        -- local transform = result.Entity:GetTransform()
-        print("Hit at: " .. result.Position.x .. ", " .. result.Position.y)
+        result.Entity:GetRigidBody():ApplyImpulse(direction * 100, vec3.new(0, 0, 0))
+        local enemyScript = result.Entity:GetLuaEnvironment()
+        if type(enemyScript.IncreaseSpeed) == "function" then
+            enemyScript.IncreaseSpeed()
+        end
     end
 end

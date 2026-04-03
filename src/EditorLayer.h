@@ -88,9 +88,6 @@ namespace Engine
         void UpdateSelectedEntity();
         void UpdateHoveredEntity();
 
-        void SetupGizmo();
-        void UseGizmo(Entity entity);
-
         void OpenScene();
         void OpenScene(const char* path);
         void SaveScene();

@@ -38,7 +38,6 @@ namespace Engine
         ThreadPool* m_ThreadPool;
         bool m_Running = true;
         bool m_Minimized = false;
-        float m_LastTime = 0.0f;
 
         bool OnWindowClose(WindowCloseEvent &e);
         bool OnWindowResize(WindowResizeEvent &e);
