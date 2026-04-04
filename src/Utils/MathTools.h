@@ -121,10 +121,7 @@ namespace Engine
         return true; // AABB is inside or intersecting the frustum
     }
 
-    inline glm::vec3 ScreenPosToWorldRay(
-        float mouseX, float mouseY, 
-        float viewportWidth, float viewportHeight, 
-        const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) 
+    inline glm::vec3 ScreenPosToWorldRay(float mouseX, float mouseY, float viewportWidth, float viewportHeight, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) 
     {
         // 1. Convert Screen coordinates to Normalized Device Coordinates (NDC) [-1 to 1]
         float x = (2.0f * mouseX) / viewportWidth - 1.0f;
@@ -143,10 +140,7 @@ namespace Engine
         return glm::normalize(rayWorld);
     }
 
-    inline bool RayIntersectsAABB(
-        const glm::vec3& rayOrigin, const glm::vec3& rayDir, 
-        const AABB& aabb, const glm::mat4& entityTransform, 
-        float& outIntersectionDistance) 
+    inline bool RayIntersectsAABB(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const AABB& aabb, const glm::mat4& entityTransform, float& outIntersectionDistance) 
     {
         // 1. Transform the Ray into the Entity's Local Space
         glm::mat4 inverseTransform = glm::inverse(entityTransform);
@@ -174,6 +168,20 @@ namespace Engine
 
         outIntersectionDistance = tNear;
         return true;
+    }
+
+    static glm::vec3 RotateTowards(const glm::vec3& from, const glm::vec3 &target)
+    {
+        glm::vec3 direction = glm::normalize(target - from);
+
+        // Compute yaw (rotation around Y axis)
+        float yaw = std::atan2(direction.x, direction.z);
+
+        // Compute pitch (rotation around X axis)
+        float horizontalDistance = std::sqrt(direction.x * direction.x + direction.z * direction.z);
+        float pitch = std::atan2(-direction.y, horizontalDistance); // negative to look "up" when Y increases
+
+        return glm::vec3(pitch, yaw, 0.0f);
     }
 
 };

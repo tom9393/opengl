@@ -116,6 +116,68 @@ namespace Engine {
 
         std::unique_ptr<btRigidBody> &GetBody() { return m_Body; };
 
+        glm::vec3 GetForward() const {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            // The third column of the rotation matrix is the forward vector (Z-axis)
+            btVector3 forward = trans.getBasis() * btVector3(0, 0, 1);
+            return BulletToGlm(forward);
+        }
+
+        glm::vec3 GetUp() const {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            btVector3 up = trans.getBasis() * btVector3(0, 1, 0);
+            return BulletToGlm(up);
+        }
+
+        glm::vec3 GetRight() const {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            btVector3 right = trans.getBasis() * btVector3(1, 0, 0);
+            return BulletToGlm(right);
+        }
+
+        void LookAt(const glm::vec3& target) {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            btVector3 origin = trans.getOrigin();
+            btVector3 targetBt = GlmToBullet(target);
+            
+            if (targetBt == origin) return;
+
+            btVector3 forward = (targetBt - origin).normalized();
+            btVector3 up(0, 1, 0); // Default world up
+            
+            // Calculate right and true up to create an orthonormal basis
+            btVector3 right = up.cross(forward).normalized();
+            up = forward.cross(right).normalized();
+
+            btMatrix3x3 basis(
+                right.x(), up.x(), forward.x(),
+                right.y(), up.y(), forward.y(),
+                right.z(), up.z(), forward.z()
+            );
+
+            trans.setBasis(basis);
+            m_Body->setWorldTransform(trans);
+            m_Body->getMotionState()->setWorldTransform(trans);
+            m_Body->activate(true);
+        }
+
+        float GetDistanceTo(const glm::vec3& target) const {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            return (BulletToGlm(trans.getOrigin()) - target).length();
+        }
+
+        void GetAABB(glm::vec3& min, glm::vec3& max) const {
+            btVector3 aabbMin, aabbMax;
+            m_Body->getAabb(aabbMin, aabbMax);
+            min = BulletToGlm(aabbMin);
+            max = BulletToGlm(aabbMax);
+        }
+
         void SetTransform(const glm::vec3 &translation, const glm::vec3 &rotation)
         {
             btTransform btTransform;
@@ -162,6 +224,20 @@ namespace Engine {
             m_Body->setAngularVelocity(btVector3(0, 0, 0));
 
             m_Body->activate(true);
+        }
+
+        void MoveForward(float speed) {
+            glm::vec3 velocity = GetForward() * speed;
+            SetLinearVelocity(velocity);
+        }
+
+        void ApplyRelativeImpulse(const glm::vec3& localImpulse) {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            // Convert local direction to world direction
+            btVector3 worldImpulse = trans.getBasis() * GlmToBullet(localImpulse);
+            m_Body->activate(true);
+            m_Body->applyCentralImpulse(worldImpulse);
         }
 
         // Applies a continuous force (e.g., wind, a thruster)

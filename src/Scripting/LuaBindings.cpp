@@ -71,33 +71,23 @@ namespace Engine {
     void LuaBindings::RegisterComponents(sol::state& state)
     {
 
-        // 1. Register the RaycastResult struct
         state.new_usertype<RaycastResult>("RaycastResult",
             "Hit",      &RaycastResult::Hit,
-            "Entity",   &RaycastResult::HitEntity, // Sol2 handles the Entity* automatically
+            "Entity",   &RaycastResult::HitEntity,
             "Position", &RaycastResult::Position,
             "Normal",   &RaycastResult::Normal
         );
 
         state.new_usertype<Entity>("Entity",
             "Destroy", [](Entity& e) { e.GetScene()->DestroyEntity(e); },
-            "GetTransform", [](Entity& e) { return &e.GetComponent<TransformComponent>(); },
-            "GetRigidBody", [](Entity& e) {
-                RigidBody* body = static_cast<RigidBody*>(e.GetComponent<RigidBodyComponent>().runtimeBody);
-                return body;
-            },
-            "GetTag", [](Entity& e) { return &e.GetComponent<TagComponent>().tag; },
-            // 2. Fetch the environment
             "GetLuaEnvironment", [](Entity& e) -> sol::object {
                 if (e.HasComponent<LuaScriptComponent>()) {
                     auto& script = e.GetComponent<LuaScriptComponent>();
                     
                     if (script.Environment.valid()) {
-                        // Return the environment. sol2 automatically exposes this as a Lua table!
                         return script.Environment; 
                     }
                 }
-                // If no script exists, safely return Lua nil
                 return sol::nil;
             }
         );
@@ -107,7 +97,10 @@ namespace Engine {
             "Rotation", &TransformComponent::rotation,
             "Scale", &TransformComponent::scale,
             "GetForward", &TransformComponent::GetForward,
-            "GetRight", &TransformComponent::GetRight
+            "GetRight", &TransformComponent::GetRight,
+            "RotateTowards", [](TransformComponent &transformComponent, const glm::vec3 &from, const glm::vec3 &to) {
+                return RotateTowards(from, to);
+            }
         );
 
         state.new_usertype<Scene>("Scene",
@@ -121,29 +114,32 @@ namespace Engine {
         );
 
         state.new_usertype<RigidBody>("RigidBody",
-            // --- Transformation ---
             "SetTransform", &RigidBody::SetTransform,
             "GetTransform", &RigidBody::GetTransform,
+
+            "GetForward", &RigidBody::GetForward,
+            "GetUp", &RigidBody::GetUp,
+            "GetRight", &RigidBody::GetRight,
+
+            "LookAt", &RigidBody::LookAt,
+            "MoveForward", &RigidBody::MoveForward,
+            "ApplyRelativeImpulse", &RigidBody::ApplyRelativeImpulse,
             
-            // --- Forces & Impulses ---
             "ApplyForce", &RigidBody::ApplyForce,
             "ApplyImpulse", &RigidBody::ApplyImpulse,
             "ApplyTorque", &RigidBody::ApplyTorque,
             "ClearForces", &RigidBody::ClearForces,
             
-            // --- Velocity ---
             "SetLinearVelocity", &RigidBody::SetLinearVelocity,
             "GetLinearVelocity", &RigidBody::GetLinearVelocity,
             "SetAngularVelocity", &RigidBody::SetAngularVelocity,
-            
-            // --- Physical Properties ---
+
             "SetMass", &RigidBody::SetMass,
             "SetDamping", &RigidBody::SetDamping,
             "SetRestitution", &RigidBody::SetRestitution,
             "SetFriction", &RigidBody::SetFriction,
             "SetGravity", &RigidBody::SetGravity,
             
-            // --- Constraints & Modes ---
             "SetLinearFactor", &RigidBody::SetLinearFactor,
             "SetAngularFactor", &RigidBody::SetAngularFactor,
             "SetKinematic", &RigidBody::SetKinematic

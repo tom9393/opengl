@@ -5,8 +5,8 @@ function OnCreate()
 end
 
 -- Configuration
-local radius = 10.0
-local speed = 2.0
+local radius = 20.0
+local speed = 1.0
 local center = { x = 0, y = 2, z = 0 } -- Height of 5 units
 
 -- Internal state
@@ -30,9 +30,11 @@ function OnUpdate(ts)
 
         -- OPTION B: For Dynamic Bodies (Physics-based)
         -- If you want it to push things out of the way, use velocity instead:
-        local currentPos = Self:GetTransform().Translation
+        --local currentPos = Self:GetTransform().Translation
+        local currentPos = Transform.Translation
         local velocity = (targetPos - currentPos) * (1.0 / ts)
         rb:SetLinearVelocity(velocity)
+        rb:LookAt(vec3.new(0, 0, 0))
     end
 end
 
