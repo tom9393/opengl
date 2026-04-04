@@ -1,5 +1,5 @@
 #include "Application.h"
-#include "TestLayer.h"
+//#include "TestLayer.h"
 #include "EditorLayer.h"
 #include "TimeStep.h"
 #include "Render/Renderer.h"
@@ -119,7 +119,7 @@ namespace Engine
 
     Runtime::Runtime() : Application()
     {
-        PushLayer(new Testlayer());
+        //PushLayer(new Testlayer());
     };
 
     Editor::Editor() : Application()

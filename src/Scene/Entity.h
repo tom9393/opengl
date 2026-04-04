@@ -60,6 +60,11 @@ namespace Engine
 
         Scene* GetScene() { return m_Scene; }
 
+        void SetParent(Entity& parent);
+        entt::entity GetParent();
+        std::vector<entt::entity> GetChildren();
+        bool HasParent();
+
         private:
         entt::entity m_Handle { entt::null };
         Scene* m_Scene = nullptr;

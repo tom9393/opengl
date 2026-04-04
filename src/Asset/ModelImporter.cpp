@@ -3,9 +3,8 @@
 
 namespace Engine {
 
-    Shared<Model> ModelImporter::LoadModel(const std::filesystem::path &path)
+    Shared<Scene> ModelImporter::LoadModel(const std::filesystem::path &path)
     {
-        AssimpLoader loader; // Temp
-        return loader.Load(path.c_str());
+        return AssimpLoader::Load(path);
     }
 }

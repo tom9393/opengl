@@ -11,6 +11,8 @@
 #include "Mesh.h"
 #include "../Render/BufferLayout.h"
 #include "Texture.h"
+#include "../Scene/Scene.h"
+#include "../Scene/Entity.h"
 
 namespace Engine
 {
@@ -18,69 +20,48 @@ namespace Engine
     class AssimpLoader
     {
         public:
-        Shared<Model> Load(const std::filesystem::path &path)
+        static Shared<Scene> Load(const std::filesystem::path &path)
         {
-            m_Meshes.clear();
-            m_Path = std::string(path);
+            s_Path = std::string(path);
             stbi_set_flip_vertically_on_load(true);
             Assimp::Importer importer;
-            const aiScene* scene = importer.ReadFile(m_Path, aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality);
+            const aiScene* assimpScene = importer.ReadFile(s_Path, aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality);
 
-            if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+            if(!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return nullptr;
             }
 
-            m_Directory = m_Path.substr(0, m_Path.find_last_of('/'));
+            s_Directory = s_Path.substr(0, s_Path.find_last_of('/'));
             std::vector<aiMesh*> flatMeshes;
-            CollectMeshes(scene->mRootNode, scene, flatMeshes);
-            m_Meshes.resize(flatMeshes.size());
+            CollectMeshes(assimpScene->mRootNode, assimpScene, flatMeshes);
 
-            std::vector<std::future<void>> results;
-            ThreadPool& tp = Application::Get().GetThreadPool();
+            Shared<Scene> scene = MakeShared<Scene>();
 
             // Cpu only
             for (size_t i = 0; i < flatMeshes.size(); i++)
             {
                 aiMesh* aiMesh = flatMeshes[i];
-                m_Meshes[i] = MakeShared<Mesh>();
+
+                Entity entity = scene->CreateEntity();
                 
-                results.push_back(tp.Enqueue([this, aiMesh, scene, i]() {
-                    auto& mesh = m_Meshes[i];
-                    // This is the heavy math/parsing part, safe for threads
-                    LoadVertices(mesh, aiMesh, scene);
-                    LoadIndices(mesh, aiMesh);
+                LoadMesh(entity, aiMesh, assimpScene);
+                LoadMaterialTextures(entity, assimpScene->mMaterials[aiMesh->mMaterialIndex]);
 
-                    TextureLayout emptyTextureLayout;
-                    mesh->SetTextureLayout(emptyTextureLayout);
-
-                    m_Meshes[i] = mesh;
-                }));
+                // TextureLayout emptyTextureLayout;
+                // mesh->SetTextureLayout(emptyTextureLayout);
             }
-
-            for (auto& res : results) {
-                res.wait();
-            }
-
-            // OpenGL calls & gpu uploads
-            for (size_t i = 0; i < flatMeshes.size(); i++)
-            {
-                aiMesh* mesh = flatMeshes[i];
-                
-                // 1. Load Textures (This calls glGenTextures)
-                LoadMaterialTextures(scene->mMaterials[mesh->mMaterialIndex], m_Meshes[i]->GetTextureLayout());
-                
-                // 2. Upload Mesh to GPU (This calls glGenVertexArrays/Buffers)
-                m_Meshes[i]->Prepare();
-            }
-            return MakeShared<Model>(m_Meshes, m_Path);
+            std::cout << "DD" << std::endl;
+            return scene;
         }
 
-        void LoadVertices(Shared<Mesh> &mesh, aiMesh* aiMesh, const aiScene* scene)
+        static void LoadMesh(Entity &entity, aiMesh* aiMesh, const aiScene* scene)
         {
             aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
             glm::vec3 minExtents(std::numeric_limits<float>::max());
             glm::vec3 maxExtents(std::numeric_limits<float>::lowest());
+
+            Shared<Mesh> mesh = MakeShared<Mesh>();
 
             std::vector<float> &vertices = mesh->GetVertices();
 
@@ -147,14 +128,6 @@ namespace Engine
                 }
             }
 
-            AABB aabb{ minExtents, maxExtents };
-            BufferLayout bufferLayout(meshLayout);
-            mesh->SetLayout(bufferLayout);
-            mesh->SetAABB(aabb);
-        }
-
-        void LoadIndices(Shared<Mesh> &mesh, aiMesh* aiMesh)
-        {
             std::vector<unsigned int> &indices = mesh->GetIndices();
             indices.reserve(aiMesh->mNumFaces * 3);
             for(unsigned int i = 0; i < aiMesh->mNumFaces; i++)
@@ -163,9 +136,14 @@ namespace Engine
                 for(unsigned int j = 0; j < face.mNumIndices; j++)
                     indices.emplace_back(face.mIndices[j]);        
             }
+
+            AABB aabb{ minExtents, maxExtents };
+            BufferLayout bufferLayout(meshLayout);
+            mesh->SetLayout(bufferLayout);
+            mesh->SetAABB(aabb);
         }
 
-        TextureType AssimpToTextureType(aiTextureType type)
+        static TextureType AssimpToTextureType(aiTextureType type)
         {
             if (type == aiTextureType_DIFFUSE || type == aiTextureType_BASE_COLOR) return TextureType::Diffuse;
             if (type == aiTextureType_SPECULAR) return TextureType::Specular;
@@ -176,7 +154,7 @@ namespace Engine
             return TextureType::None;
         }
 
-        aiTextureType TypeToAssimpType(TextureType type)
+        static aiTextureType TypeToAssimpType(TextureType type)
         {
             if (type == TextureType::Diffuse) return aiTextureType_DIFFUSE;
             if (type == TextureType::Specular) return aiTextureType_SPECULAR;
@@ -187,7 +165,7 @@ namespace Engine
             return aiTextureType_NONE;
         }
 
-        void LoadMaterialTextures(aiMaterial *mat, TextureLayout &layout)
+        static void LoadMaterialTextures(Entity &entity, aiMaterial *mat)
         {
             std::vector<aiTextureType> textureTypes = { 
                 aiTextureType_DIFFUSE,          // 1  Often used as Albedo in legacy files
@@ -208,33 +186,35 @@ namespace Engine
                     mat->GetTexture(type, i, &str);
 
                     std::string filename = std::string(str.C_Str());
-                    filename = m_Directory + "/" + filename;
+                    filename = s_Directory + "/" + filename;
 
                     size_t lastindex = filename.find_last_of("."); 
 
                     std::string ktxExtensionPath = filename.substr(0, lastindex).append(".ktx");
                     std::string ktxExtensionPath2 = filename.substr(0, lastindex).append(".ktx2");
 
+                    std::cout << type << std::endl;
+
                     if (std::filesystem::exists(ktxExtensionPath))
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath));
-                        layout.AddTexture(AssimpToTextureType(type), texture);
+                        //layout.AddTexture(AssimpToTextureType(type), texture);
                     }
                     else if (std::filesystem::exists(ktxExtensionPath2))
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath2));
-                        layout.AddTexture(AssimpToTextureType(type), texture);
+                        //layout.AddTexture(AssimpToTextureType(type), texture);
                     }
                     else
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
-                        layout.AddTexture(AssimpToTextureType(type), texture);
+                        //layout.AddTexture(AssimpToTextureType(type), texture);
                     };
                 }
             }
         }
 
-        void CollectMeshes(aiNode* node, const aiScene* scene, std::vector<aiMesh*>& outMeshes)
+        static void CollectMeshes(aiNode* node, const aiScene* scene, std::vector<aiMesh*>& outMeshes)
         {
             for(unsigned int i = 0; i < node->mNumMeshes; i++) {
                 outMeshes.push_back(scene->mMeshes[node->mMeshes[i]]);
@@ -245,8 +225,7 @@ namespace Engine
         }
 
         private:
-        std::vector<Shared<Mesh>> m_Meshes;
-        std::string m_Directory;
-        std::string m_Path;
+        inline static std::string s_Directory;
+        inline static std::string s_Path;
     };
 };

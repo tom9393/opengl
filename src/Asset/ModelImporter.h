@@ -4,9 +4,11 @@
 
 namespace Engine {
 
+    class Scene;
+
     class ModelImporter
     {
         public:
-        static Shared<Model> LoadModel(const std::filesystem::path &path);
+        static Shared<Scene> LoadModel(const std::filesystem::path &path);
     };
 }

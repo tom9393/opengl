@@ -10,19 +10,18 @@ namespace Engine
     {
         public:
 
-        ModelLibrary(ModelImporter* loader) : m_Loader(loader) {};
+        ModelLibrary(ModelImporter* loader) {};
 
         Shared<Model> GetModelByPath(std::string &str) {
             if (!m_Models[str])
             {
-                m_Models[str] = m_Loader->LoadModel(str.c_str());
+                Shared<Scene> scene = ModelImporter::LoadModel(str.c_str());
             }
             return m_Models[str];
         };
 
         private:
         std::unordered_map<std::string, Shared<Model>> m_Models;
-        ModelImporter* m_Loader;
     };
 
 };

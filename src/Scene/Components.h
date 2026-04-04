@@ -63,6 +63,22 @@ namespace Engine
         }
     };
 
+    struct RelationshipComponent
+    {
+        entt::entity Parent = entt::null;
+        std::vector<entt::entity> Children;
+
+        RelationshipComponent() = default;
+        RelationshipComponent(const RelationshipComponent&) = default;
+    };
+
+    struct MeshComponent {
+        Shared<Mesh> MeshGeometry;
+        
+        MeshComponent() = default;
+        MeshComponent(std::shared_ptr<Mesh> mesh) : MeshGeometry(mesh) {}
+    };
+
     struct ModelComponent
     {
         std::string path = "";
@@ -80,6 +96,24 @@ namespace Engine
         TextureComponent() = default;
         TextureComponent(const TextureComponent&) = default;
         TextureComponent(const std::string &path) : path(path) {}
+    };
+
+    struct MaterialComponent {
+        // Texture Maps
+        Shared<Texture2D> AlbedoMap = nullptr;
+        Shared<Texture2D> NormalMap = nullptr;
+        Shared<Texture2D> MetallicMap = nullptr;
+        Shared<Texture2D> RoughnessMap = nullptr;
+        Shared<Texture2D> AOMap = nullptr;
+
+        // Scalar multipliers / fallback colors
+        glm::vec4 AlbedoTint = glm::vec4(1.0f);
+        float MetallicMultiplier = 1.0f;
+        float RoughnessMultiplier = 1.0f;
+        float Emission = 0.0f;
+
+        MaterialComponent() = default;
+        MaterialComponent(const MaterialComponent&) = default;
     };
 
     struct SceneCameraComponent
