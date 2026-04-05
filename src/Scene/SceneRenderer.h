@@ -9,6 +9,7 @@ namespace Engine {
     struct DrawCommand
     {
         Shared<Mesh> TargetMesh;
+        Shared<Material> TargetMaterial;
         glm::mat4 Transform;
         uintptr_t SortKey;
     };
@@ -27,6 +28,8 @@ namespace Engine {
 
     private:
         void FlushDrawCalls(const glm::mat4& viewProjection, const glm::vec3& cameraPos);
+
+        glm::mat4 GetWorldTransform(entt::entity entity);
 
     private:
         Scene* m_Scene;

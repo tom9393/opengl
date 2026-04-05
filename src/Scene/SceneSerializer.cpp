@@ -3,7 +3,6 @@
 #include "../Asset/AssimpLoader.h"
 #include "Entity.h"
 #include "Components.h"
-#include "../Asset/ModelLibrary.h"
 #include <fstream>
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
@@ -126,13 +125,13 @@ namespace Engine
 	{
 	    if (e.HasComponent<T>())
 	    {
-		out << YAML::Key << name;
-		out << YAML::BeginMap;
+			out << YAML::Key << name;
+			out << YAML::BeginMap;
 
-		auto& component = e.GetComponent<T>();
-		func(out, component);
+			auto& component = e.GetComponent<T>();
+			func(out, component);
 
-		out << YAML::EndMap;
+			out << YAML::EndMap;
 	    }
 	}
 
@@ -187,6 +186,19 @@ namespace Engine
 		SerializeComponent<LuaScriptComponent>(out, e, "LuaScriptComponent", [](auto& out, auto& lsc) {
 			out << YAML::Key << "Path" << YAML::Value << lsc.FilePath;
 		});
+
+		if (e.HasComponent<RelationshipComponent>())
+        {
+            auto& rc = e.GetComponent<RelationshipComponent>();
+            if (rc.Parent != entt::null)
+            {
+                Entity parent{ rc.Parent, e.GetScene() };
+                out << YAML::Key << "RelationshipComponent";
+                out << YAML::BeginMap;
+                out << YAML::Key << "Parent" << YAML::Value << parent.GetUUID();
+                out << YAML::EndMap;
+            }
+        }
 
 		out << YAML::EndMap;
 	};
@@ -263,7 +275,8 @@ namespace Engine
 		{
 			auto& mc = entity.AddComponent<ModelComponent>();
 			mc.path = node["Model"].as<std::string>();
-			mc.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(mc.path));
+			//mc.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(mc.path));
+			AssimpLoader::Load(mc.path);
 		}
 	}
 
@@ -288,7 +301,7 @@ namespace Engine
 		}
 	}
 
-	void DeserializeEntity(Shared<Scene> &scene, YAML::Node& node) {
+	Entity DeserializeEntity(Shared<Scene> &scene, YAML::Node& node) {
 		uint64_t uuid = node["Entity"].as<uint64_t>();
 		std::string tag = node["TagComponent"]["Tag"].as<std::string>("");
 
@@ -299,18 +312,48 @@ namespace Engine
 		DeserializeComponent<ModelComponent>(entity, scene, node["ModelComponent"]);
 		DeserializeComponent<RigidBodyComponent>(entity, scene, node["RigidBodyComponent"]);
 		DeserializeComponent<LuaScriptComponent>(entity, scene, node["LuaScriptComponent"]);
+
+		return entity;
 	}
 
 	bool SceneSerializer::Deserialize(const std::string& path) {
 		YAML::Node data = YAML::LoadFile(path);
-		if (!data["Scene"]) return false;
+        if (!data["Scene"]) return false;
 
-		YAML::Node entities = data["Entities"];
-		if (entities) {
-			for (YAML::Node entityNode : entities) {
-				DeserializeEntity(m_Scene, entityNode);
-			}
-		}
-		return true;
+        YAML::Node entities = data["Entities"];
+        if (entities) 
+        {
+            // --- NEW: Two-Pass Deserialization ---
+            std::unordered_map<uint64_t, Entity> loadedEntities;
+
+            // Pass 1: Create all entities and base components
+            for (YAML::Node entityNode : entities) 
+            {
+                Entity e = DeserializeEntity(m_Scene, entityNode);
+                loadedEntities[e.GetUUID()] = e;
+            }
+
+            // Pass 2: Reconstruct Hierarchy
+            for (YAML::Node entityNode : entities) 
+            {
+                auto relNode = entityNode["RelationshipComponent"];
+                if (relNode && relNode["Parent"]) 
+                {
+                    uint64_t childUUID = entityNode["Entity"].as<uint64_t>();
+                    uint64_t parentUUID = relNode["Parent"].as<uint64_t>();
+
+                    Entity child = loadedEntities[childUUID];
+                    Entity parent = loadedEntities[parentUUID];
+
+                    if (child && parent) 
+                    {
+                        // SetParent should handle updating both the child's Parent handle 
+                        // and adding the child to the parent's Children vector
+                        child.SetParent(parent); 
+                    }
+                }
+            }
+        }
+        return true;
 	}
 };

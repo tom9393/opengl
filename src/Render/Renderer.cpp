@@ -130,6 +130,75 @@ namespace Engine
         }
     };
 
+    void Renderer::SetMaterial(Shared<Material> &material)
+    {
+        PROFILE_FUNCTION();
+
+        if (!material) return;
+
+        // Fetch your PBR/Texture shader
+        Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture"); 
+
+        unsigned int idx = 0;
+
+        // --- 1. BIND TEXTURE MAPS ---
+        
+        if (material->AlbedoMap)
+        {
+            material->AlbedoMap->Bind(idx);
+            shader->SetInt("pbr.albedoMap", idx);
+            shader->SetBool("pbr.useAlbedoMap", true); // Highly recommended for your shader
+            idx++;
+        }
+        else { shader->SetBool("pbr.useAlbedoMap", false); }
+
+        if (material->NormalMap)
+        {
+            material->NormalMap->Bind(idx);
+            shader->SetInt("pbr.normalMap", idx);
+            shader->SetBool("pbr.useNormalMap", true);
+            idx++;
+        }
+        else { shader->SetBool("pbr.useNormalMap", false); }
+
+        if (material->MetallicMap)
+        {
+            material->MetallicMap->Bind(idx);
+            shader->SetInt("pbr.metallicMap", idx);
+            shader->SetBool("pbr.useMetallicMap", true);
+            idx++;
+        }
+        else { shader->SetBool("pbr.useMetallicMap", false); }
+
+        if (material->RoughnessMap)
+        {
+            material->RoughnessMap->Bind(idx);
+            shader->SetInt("pbr.roughnessMap", idx);
+            shader->SetBool("pbr.useRoughnessMap", true);
+            idx++;
+        }
+        else { shader->SetBool("pbr.useRoughnessMap", false); }
+
+        if (material->AOMap)
+        {
+            material->AOMap->Bind(idx);
+            shader->SetInt("pbr.aoMap", idx);
+            shader->SetBool("pbr.useAOMap", true);
+            idx++;
+        }
+        else { shader->SetBool("pbr.useAOMap", false); }
+
+
+        // --- 2. SET SCALAR / FALLBACK VALUES ---
+        // Note: Make sure the function names (SetFloat4, SetFloat) match your Shader API
+        
+        shader->SetVec4("pbr.albedoTint", material->AlbedoTint);
+        shader->SetFloat("pbr.metallicMultiplier", material->MetallicMultiplier);
+        shader->SetFloat("pbr.roughnessMultiplier", material->RoughnessMultiplier);
+        shader->SetFloat("pbr.emission", material->Emission);
+
+    }
+
     void Renderer::FlushLines()
     {
         if (s_LineData.LineVertexCount == 0) return;
@@ -187,7 +256,7 @@ namespace Engine
         s_Data.statistics.IndicesCount += mesh->m_Indices.size();
     }
 
-    void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const std::vector<glm::mat4> &transforms)
+    void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms)
     {
         if (transforms.empty()) return;
 

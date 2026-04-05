@@ -54,25 +54,29 @@ namespace Engine {
 
         Frustum cameraFrustum = CreateFrustumFromMatrix(viewProjection);
 
-        auto view = m_Scene->GetRegistry().view<TransformComponent, ModelComponent>();
+        auto view = m_Scene->GetRegistry().view<TransformComponent, MeshComponent>();
         for (auto& e : view)
         {
-            auto [transform, modelComp] = view.get<TransformComponent, ModelComponent>(e);
-            if (!modelComp.model) continue;
+            auto [transform, meshComp] = view.get<TransformComponent, MeshComponent>(e);
+            if (!meshComp.MeshGeometry) continue;
 
-            for (auto& mesh : modelComp.model->GetMeshes()) 
+            if (!IsAABBInFrustum(cameraFrustum, meshComp.MeshGeometry->GetAABB(), transform.GetTransform())) continue;
+            DrawCommand cmd;
+            cmd.TargetMesh = meshComp.MeshGeometry;
+            cmd.Transform = GetWorldTransform(e);
+            cmd.TargetMaterial = nullptr;
+            if (m_Scene->GetRegistry().all_of<MaterialComponent>(e))
             {
-                if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform.GetTransform())) continue;
-                DrawCommand cmd;
-                cmd.TargetMesh = mesh;
-                cmd.Transform = transform.GetTransform();
-                
-                // The SortKey: Group by the Mesh's memory address. 
-                // Identical meshes (with identical materials) will have the same exact key!
-                cmd.SortKey = reinterpret_cast<uintptr_t>(mesh.get()); 
-                
-                m_OpaqueDrawList.push_back(cmd);
+                cmd.TargetMaterial = m_Scene->GetRegistry().get<MaterialComponent>(e).MeshMaterial;
             }
+            
+            // The SortKey: Group by Mesh AND Material for proper instancing
+            // A simple hash combining both pointers
+            uintptr_t meshPtr = reinterpret_cast<uintptr_t>(meshComp.MeshGeometry.get());
+            uintptr_t matPtr = reinterpret_cast<uintptr_t>(cmd.TargetMaterial.get());
+            cmd.SortKey = meshPtr ^ (matPtr + 0x9e3779b9 + (meshPtr << 6) + (meshPtr >> 2));
+            
+            m_OpaqueDrawList.push_back(cmd);
         }
 
         std::sort(m_OpaqueDrawList.begin(), m_OpaqueDrawList.end(), [](const DrawCommand& a, const DrawCommand& b) {
@@ -84,6 +88,7 @@ namespace Engine {
         {
             uintptr_t currentKey = m_OpaqueDrawList[i].SortKey;
             Shared<Mesh> currentMesh = m_OpaqueDrawList[i].TargetMesh;
+            Shared<Material> currentMaterial = m_OpaqueDrawList[i].TargetMaterial;
 
             // 1. Count how many consecutive instances have the EXACT same mesh
             size_t batchSize = 0;
@@ -100,7 +105,7 @@ namespace Engine {
             }
 
             // 3. Send the entire batch to the GPU at once
-            Renderer::SubmitInstancedMesh(currentMesh, transforms);
+            Renderer::SubmitInstancedMesh(currentMesh, currentMaterial, transforms);
 
             // 4. Jump forward to the next entirely different mesh
             i += batchSize;
@@ -109,6 +114,34 @@ namespace Engine {
         PhysicsEngine::RenderDebug(viewProjection);
 
         Renderer::EndScene();
+    }
+
+    glm::mat4 SceneRenderer::GetWorldTransform(entt::entity entity)
+    {
+        glm::mat4 worldTransform(1.0f);
+        entt::entity current = entity;
+        
+        // Walk up the parent chain
+        while (current != entt::null)
+        {
+            if (m_Scene->GetRegistry().all_of<TransformComponent>(current))
+            {
+                const auto& localTransform = m_Scene->GetRegistry().get<TransformComponent>(current).GetTransform();
+                // GLM matrix multiplication is right-to-left. We prepend the parent's matrix.
+                worldTransform = localTransform * worldTransform; 
+            }
+            
+            if (m_Scene->GetRegistry().all_of<RelationshipComponent>(current))
+            {
+                current = m_Scene->GetRegistry().get<RelationshipComponent>(current).Parent;
+            }
+            else
+            {
+                current = entt::null;
+            }
+        }
+        
+        return worldTransform;
     }
 
 }

@@ -1,4 +1,5 @@
 #include "SceneImporter.h"
+#include "../Asset/AssimpLoader.h"
 
 namespace Engine {
 

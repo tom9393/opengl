@@ -153,77 +153,142 @@ namespace Engine
 	};
 
 	void SceneHierarchyPanel::OnImGuiRender()
-	{
-		ImGui::Begin("Scene hierarchy");
+    {
+        ImGui::Begin("Scene hierarchy");
 
-		m_Context->m_Registry.view<entt::entity>().each([this](entt::entity entity)
-		{
-			Entity e { entity, m_Context.get() };
-			DrawEntityNode(e);
-		});
+        // --- NEW: Provide a drop target on the empty window space to un-parent entities ---
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
+            {
+                entt::entity payloadEntity = *(const entt::entity*)payload->Data;
+                Entity child{ payloadEntity, m_Context.get() };
+                
+                // An empty entity implies "remove parent" in a robust SetParent implementation
+                Entity nullParent{}; 
+                child.SetParent(nullParent); 
+            }
+            ImGui::EndDragDropTarget();
+        }
 
-		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
-		{
-			m_SelectionContext = {};
-		}
+        m_Context->m_Registry.view<entt::entity>().each([this](entt::entity entity)
+        {
+            Entity e { entity, m_Context.get() };
+            
+            // --- NEW: Only draw ROOT entities in the main loop ---
+            if (!e.HasParent())
+            {
+                DrawEntityNode(e);
+            }
+        });
 
-		if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_NoOpenOverItems))
-		{
-			if (ImGui::MenuItem("Create entity"))
-			{
-				m_Context->CreateEntity("Empty entity");
-			}
-			ImGui::EndPopup();
-		}
+        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+        {
+            m_SelectionContext = {};
+        }
 
-		ImGui::End();
+        if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight))
+        {
+            if (ImGui::MenuItem("Create empty entity"))
+            {
+                m_Context->CreateEntity("Empty entity");
+            }
+            ImGui::EndPopup();
+        }
 
-		ImGui::Begin("Properties");
+        ImGui::End();
 
-		if (m_SelectionContext)
-		{
-			DrawComponents(m_SelectionContext);
-		}
-
-		ImGui::End();
-	};
+        ImGui::Begin("Properties");
+        if (m_SelectionContext)
+        {
+            DrawComponents(m_SelectionContext);
+        }
+        ImGui::End();
+    };
 
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
-	{
-		auto& tag = m_Context->m_Registry.get<TagComponent>(entity.GetHandle());
-		unsigned int selected = m_SelectionContext == entity ? ImGuiTreeNodeFlags_Selected : 0;
-		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | selected;
+    {
+        auto& tag = m_Context->m_Registry.get<TagComponent>(entity.GetHandle());
+        
+        // Check if we have children to determine if we should render as a Leaf or a Tree Node
+        bool hasChildren = entity.HasComponent<RelationshipComponent>() && 
+                           !entity.GetComponent<RelationshipComponent>().Children.empty();
 
-		bool opened = ImGui::TreeNodeEx((void*) entity.GetHandle(), flags, tag.tag.c_str());
-		if (ImGui::IsItemClicked())
-		{
-			m_SelectionContext = entity;
-		}
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (m_SelectionContext == entity) flags |= ImGuiTreeNodeFlags_Selected;
+        if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
 
-		bool entityDeleted = false;
-		if (ImGui::BeginPopupContextItem())
-		{
-			if (ImGui::MenuItem("Delete entity"))
-			{
-				entityDeleted = true;
-			}
-			ImGui::EndPopup();
-		}
+        bool opened = ImGui::TreeNodeEx((void*) entity.GetHandle(), flags, tag.tag.c_str());
+        
+        if (ImGui::IsItemClicked())
+        {
+            m_SelectionContext = entity;
+        }
 
-		if (opened)
-		{
-			ImGui::TreePop();
-		}
+        // --- NEW: Drag and Drop Implementation ---
+        if (ImGui::BeginDragDropSource())
+        {
+            entt::entity entityHandle = entity.GetHandle();
+            ImGui::SetDragDropPayload("ENTITY", &entityHandle, sizeof(entt::entity));
+            ImGui::Text("Move %s", tag.tag.c_str());
+            ImGui::EndDragDropSource();
+        }
 
-		if (entityDeleted)
-		{
-			m_Context->DestroyEntity(entity);
-			if (m_SelectionContext == entity)
-			{
-				m_SelectionContext = {};
-			}
-		}
-	};
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
+            {
+                entt::entity payloadEntity = *(const entt::entity*)payload->Data;
+                Entity child{ payloadEntity, m_Context.get() };
+                
+                // Prevent parenting to yourself or your own children (prevents infinite loops!)
+                if (child != entity) 
+                {
+                    child.SetParent(entity);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        bool entityDeleted = false;
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Create child entity"))
+            {
+                Entity child = m_Context->CreateEntity("Empty entity");
+                child.SetParent(entity);
+            }
+            if (ImGui::MenuItem("Delete entity"))
+            {
+                entityDeleted = true;
+            }
+            ImGui::EndPopup();
+        }
+
+        // --- NEW: Recursive drawing of children ---
+        if (opened)
+        {
+            if (hasChildren)
+            {
+                auto& children = entity.GetComponent<RelationshipComponent>().Children;
+                for (auto childID : children)
+                {
+                    Entity child{ childID, m_Context.get() };
+                    DrawEntityNode(child);
+                }
+            }
+            ImGui::TreePop();
+        }
+
+        if (entityDeleted)
+        {
+            m_Context->DestroyEntity(entity); // Make sure your DestroyEntity also handles unparenting children!
+            if (m_SelectionContext == entity)
+            {
+                m_SelectionContext = {};
+            }
+        }
+    };
 
 	void SceneHierarchyPanel::DrawComponents(Entity entity)
 	{

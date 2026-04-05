@@ -55,6 +55,7 @@ namespace Engine
         UUID GetUUID() { return GetComponent<IDComponent>().id; };
 
         bool operator==(const Entity &other) const { return m_Handle == other.GetHandle() && m_Scene == other.m_Scene; };
+        bool operator!=(const Entity &other) const { return !operator==(other); };
         operator bool() const { return m_Handle != entt::null; }
         operator entt::entity() const { return m_Handle; }
 

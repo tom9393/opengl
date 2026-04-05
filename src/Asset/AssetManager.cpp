@@ -15,7 +15,8 @@ namespace Engine {
             { ".ktx", AssetType::Texture2D },
             { ".ktx2", AssetType::Texture2D },
             { ".assbin", AssetType::Model },
-            { ".obj", AssetType::Model }
+            { ".obj", AssetType::Model },
+            { ".fbx", AssetType::Model }
     };
 
     static AssetType AssetTypeFromFilepath(const std::filesystem::path& path)
@@ -30,6 +31,7 @@ namespace Engine {
         if (ext == ".ktx2")    return AssetType::Texture2D;
         if (ext == ".assbin")  return AssetType::Model;
         if (ext == ".obj")     return AssetType::Model;
+        if (ext == ".fbx")     return AssetType::Model;
 
         return AssetType::None;
     }
@@ -79,8 +81,26 @@ namespace Engine {
         switch (AssetTypeFromFilepath(path)) {
             case AssetType::Scene: return SceneImporter::LoadScene(path);
             case AssetType::Texture2D: return TextureImporter::LoadTexture2D(path);
-            case AssetType::Model: return ModelImporter::LoadModel(path);
             default: return nullptr;
         }
+    }
+
+    Shared<Mesh> AssetManager::GetSubMesh(const std::filesystem::path &path, int subMeshIndex)
+    {
+        // 1. Ask the AssetManager for the overarching Model asset.
+        // If it's already loaded, this is instant. If not, it loads the file.
+        Shared<Model> model = GetAsset<Model>(path);
+        
+        if (model)
+        {
+            const auto& meshes = model->GetMeshes();
+            if (subMeshIndex >= 0 && subMeshIndex < meshes.size())
+            {
+                return meshes[subMeshIndex]; // Return the specific sub-mesh!
+            }
+        }
+        
+        std::cout << "[AssetManager] Failed to fetch sub-mesh " << subMeshIndex << " from " << path << std::endl;
+        return nullptr;
     }
 }

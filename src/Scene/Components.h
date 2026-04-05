@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../../pch.h"
+#include "../../lib/entt/single_include/entt/entt.hpp"
 #include "../Core/Preprocessor.h"
 #include "../Asset/Model.h"
+#include "../Asset/Material.h"
 #include "../Scripting/NativeScript.h"
 #include "../Render/SceneCamera.h"
 #include "../Utils/MathTools.h"
@@ -33,13 +35,13 @@ namespace Engine
 
     struct TransformComponent
     {
-        glm::vec3 translation;
-        glm::vec3 rotation;
-        glm::vec3 scale;
+        glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent&) = default;
-        TransformComponent(const glm::vec3 &translation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &rotation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &scale = glm::vec3(1.0f, 1.0f, 1.0f)) : translation(translation), rotation(rotation), scale(scale) {}
+        TransformComponent(const glm::vec3 &translation, const glm::vec3 &rotation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &scale = glm::vec3(1.0f, 1.0f, 1.0f)) : translation(translation), rotation(rotation), scale(scale) {}
 
         glm::vec3 GetForward() const
         {
@@ -99,18 +101,7 @@ namespace Engine
     };
 
     struct MaterialComponent {
-        // Texture Maps
-        Shared<Texture2D> AlbedoMap = nullptr;
-        Shared<Texture2D> NormalMap = nullptr;
-        Shared<Texture2D> MetallicMap = nullptr;
-        Shared<Texture2D> RoughnessMap = nullptr;
-        Shared<Texture2D> AOMap = nullptr;
-
-        // Scalar multipliers / fallback colors
-        glm::vec4 AlbedoTint = glm::vec4(1.0f);
-        float MetallicMultiplier = 1.0f;
-        float RoughnessMultiplier = 1.0f;
-        float Emission = 0.0f;
+        Shared<Material> MeshMaterial;
 
         MaterialComponent() = default;
         MaterialComponent(const MaterialComponent&) = default;

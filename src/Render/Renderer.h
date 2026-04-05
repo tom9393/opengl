@@ -7,6 +7,7 @@
 #include "Shader.h"
 #include "../Asset/Mesh.h"
 #include "../../platform/OpenGL/OpenGLTexture.h"
+#include "../Scene/Components.h"
 
 namespace Engine
 {
@@ -65,8 +66,9 @@ namespace Engine
         static void EndScene();
 
         static void SetTexture(TextureLayout &textureLayout);
+        static void SetMaterial(Shared<Material> &material);
         static void SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform);
-        static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const std::vector<glm::mat4> &transforms);
+        static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms);
 
         static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
 

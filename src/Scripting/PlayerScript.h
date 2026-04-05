@@ -28,86 +28,86 @@ namespace Engine {
             }
             void OnUpdate(TimeStep ts) override
             {
-                auto& tc = GetComponent<TransformComponent>();
-                auto [mouseX, mouseY] = Input::GetMousePosition();
+                // auto& tc = GetComponent<TransformComponent>();
+                // auto [mouseX, mouseY] = Input::GetMousePosition();
 
-                if (firstMouse) {
-                    lastMouseX = mouseX;
-                    lastMouseY = mouseY;
-                    firstMouse = false;
-                }
+                // if (firstMouse) {
+                //     lastMouseX = mouseX;
+                //     lastMouseY = mouseY;
+                //     firstMouse = false;
+                // }
 
-                float offsetX = mouseX - lastMouseX;
-                float offsetY = mouseY - lastMouseY; // Reverted for Y-axis
+                // float offsetX = mouseX - lastMouseX;
+                // float offsetY = mouseY - lastMouseY; // Reverted for Y-axis
 
-                lastMouseX = mouseX;
-                lastMouseY = mouseY;
+                // lastMouseX = mouseX;
+                // lastMouseY = mouseY;
 
-                float sensitivity = 0.0015f;
-                offsetX *= sensitivity;
-                offsetY *= sensitivity;
+                // float sensitivity = 0.0015f;
+                // offsetX *= sensitivity;
+                // offsetY *= sensitivity;
 
-                tc.rotation.x -= offsetY; // Mouse Y moves us around X
-                tc.rotation.y -= offsetX; // Mouse X moves us around Y
+                // tc.rotation.x -= offsetY; // Mouse Y moves us around X
+                // tc.rotation.y -= offsetX; // Mouse X moves us around Y
 
-                if (tc.rotation.x > glm::radians(89.0f)) tc.rotation.x = glm::radians(89.0f);
-                if (tc.rotation.x < glm::radians(-89.0f)) tc.rotation.x = glm::radians(-89.0f);
+                // if (tc.rotation.x > glm::radians(89.0f)) tc.rotation.x = glm::radians(89.0f);
+                // if (tc.rotation.x < glm::radians(-89.0f)) tc.rotation.x = glm::radians(-89.0f);
                 
-                float speed = 30.0f; // Units per second
-                float distance = speed * ts;
+                // float speed = 30.0f; // Units per second
+                // float distance = speed * ts;
 
-                glm::vec3 forward = tc.GetForward();
-                glm::vec3 right   = tc.GetRight();
+                // glm::vec3 forward = tc.GetForward();
+                // glm::vec3 right   = tc.GetRight();
 
-                // W / S: Forward and Backward
-                if (Input::IsKeyPressed(KEY_W))
-                    tc.translation += forward * distance;
-                if (Input::IsKeyPressed(KEY_S))
-                    tc.translation -= forward * distance;
+                // // W / S: Forward and Backward
+                // if (Input::IsKeyPressed(KEY_W))
+                //     tc.translation += forward * distance;
+                // if (Input::IsKeyPressed(KEY_S))
+                //     tc.translation -= forward * distance;
 
-                // A / D: Left and Right (Strafe)
-                if (Input::IsKeyPressed(KEY_A))
-                    tc.translation -= right * distance;
-                if (Input::IsKeyPressed(KEY_D))
-                    tc.translation += right * distance;
+                // // A / D: Left and Right (Strafe)
+                // if (Input::IsKeyPressed(KEY_A))
+                //     tc.translation -= right * distance;
+                // if (Input::IsKeyPressed(KEY_D))
+                //     tc.translation += right * distance;
             }
             void OnClick(MouseButtonEvent &e)
             {
-                Entity entity = m_Scene->CreateEntity("New Kawasaki");
+                // Entity entity = m_Scene->CreateEntity("New Kawasaki");
 
-                glm::vec3 thistrans = GetComponent<TransformComponent>().translation;
+                // glm::vec3 thistrans = GetComponent<TransformComponent>().translation;
 
-                auto& transformComponent = entity.AddComponent<TransformComponent>(thistrans);
-                auto& rigidbodyComponent = entity.AddComponent<RigidBodyComponent>();
-                auto& modelComponent = entity.AddComponent<ModelComponent>();
+                // auto& transformComponent = entity.AddComponent<TransformComponent>(thistrans);
+                // auto& rigidbodyComponent = entity.AddComponent<RigidBodyComponent>();
+                // auto& modelComponent = entity.AddComponent<ModelComponent>();
 
-                modelComponent.path = "../assets/kawasaki/kawasaki.obj";
-                modelComponent.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
-                rigidbodyComponent.type = RigidBodyComponent::BodyType::Dynamic;
-                rigidbodyComponent.mass = 20;
+                // modelComponent.path = "../assets/kawasaki/kawasaki.obj";
+                // modelComponent.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
+                // rigidbodyComponent.type = RigidBodyComponent::BodyType::Dynamic;
+                // rigidbodyComponent.mass = 20;
 
-                // 1. Ensure a bake exists (or bake it now if missing)
-                std::string bakePath = modelComponent.path + ".pmcol";
-                if (!std::filesystem::exists(bakePath)) {
-                    CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
-                }
+                // // 1. Ensure a bake exists (or bake it now if missing)
+                // std::string bakePath = modelComponent.path + ".pmcol";
+                // if (!std::filesystem::exists(bakePath)) {
+                //     CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
+                // }
 
-                RBComplexShape* shape = new RBComplexShape(modelComponent.path);
-                RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-                if (!body) return;
+                // RBComplexShape* shape = new RBComplexShape(modelComponent.path);
+                // RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
+                // if (!body) return;
 
-                rigidbodyComponent.runtimeBody = body;
+                // rigidbodyComponent.runtimeBody = body;
 
-                PhysicsEngine::AddRigidBody(body);
-                body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
-                body->SetTransform(transformComponent.translation, transformComponent.rotation);
+                // PhysicsEngine::AddRigidBody(body);
+                // body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
+                // body->SetTransform(transformComponent.translation, transformComponent.rotation);
 
-                glm::vec3 direction = GetComponent<TransformComponent>().GetForward();
-                float force = 100.0f;
+                // glm::vec3 direction = GetComponent<TransformComponent>().GetForward();
+                // float force = 100.0f;
 
-                btVector3 impulse = btVector3(direction.x, direction.y, direction.z) * force;
-                body->GetBody()->setLinearVelocity(impulse);
-                body->GetBody()->activate(true);
+                // btVector3 impulse = btVector3(direction.x, direction.y, direction.z) * force;
+                // body->GetBody()->setLinearVelocity(impulse);
+                // body->GetBody()->activate(true);
             }
 
         bool firstMouse = true;

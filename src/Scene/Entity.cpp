@@ -21,18 +21,54 @@ namespace Engine
 
 	void Entity::SetParent(Entity &parent)
 	{
-		// 1. Ensure both entities have RelationshipComponents
-		if (!HasComponent<RelationshipComponent>()) AddComponent<RelationshipComponent>();
-		if (!parent.HasComponent<RelationshipComponent>()) parent.AddComponent<RelationshipComponent>();
+		// 1. Prevent self-parenting
+		if (*this == parent)
+		{
+			std::cout << "Warning: Cannot parent an entity to itself!" << std::endl;
+			return;
+		}
 
+		// Ensure this entity has a relationship component to store the link
+		if (!HasComponent<RelationshipComponent>()) 
+		{
+			AddComponent<RelationshipComponent>();
+		}
 		auto& myRelationship = GetComponent<RelationshipComponent>();
-		auto& parentRelationship = parent.GetComponent<RelationshipComponent>();
 
-		// 2. Set the parent
-		myRelationship.Parent = parent.m_Handle;
+		// 2. Detach from current parent (if we have one)
+		if (myRelationship.Parent != entt::null)
+		{
+			Entity oldParent{ myRelationship.Parent, m_Scene };
+			if (oldParent && oldParent.HasComponent<RelationshipComponent>())
+			{
+				auto& oldParentRel = oldParent.GetComponent<RelationshipComponent>();
+				
+				// Find and remove ourselves from the old parent's children list
+				auto it = std::find(oldParentRel.Children.begin(), oldParentRel.Children.end(), m_Handle);
+				if (it != oldParentRel.Children.end())
+				{
+					oldParentRel.Children.erase(it);
+				}
+			}
+		}
 
-		// 3. Add ourselves to the parent's children list
-		parentRelationship.Children.push_back(m_Handle);
+		// 3. Attach to new parent
+		if (parent) // Assuming your Entity has an `operator bool()` to check if it's a valid handle
+		{
+			if (!parent.HasComponent<RelationshipComponent>()) 
+			{
+				parent.AddComponent<RelationshipComponent>();
+			}
+			auto& parentRelationship = parent.GetComponent<RelationshipComponent>();
+
+			myRelationship.Parent = parent.m_Handle;
+			parentRelationship.Children.push_back(m_Handle);
+		}
+		else
+		{
+			// If the passed parent is an empty entity, it means we are un-parenting this entity.
+			myRelationship.Parent = entt::null;
+		}
 	}
 
 	bool Entity::HasParent()

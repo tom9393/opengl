@@ -4,10 +4,24 @@ layout (location = 0) out vec4 FragColor;
 
 struct PBR {
     sampler2D albedoMap;
+    bool useAlbedoMap;
+    vec4 albedoTint;
+
     sampler2D normalMap;
+    bool useNormalMap;
+
     sampler2D metallicMap;
+    bool useMetallicMap;
+    float metallicMultiplier;
+
     sampler2D roughnessMap;
+    bool useRoughnessMap;
+    float roughnessMultiplier;
+
     sampler2D aoMap;
+    bool useAOMap;
+    
+    float emission;
 };
 
 struct VertexOutput
@@ -75,65 +89,89 @@ void main()
 {
     vec2 TexCoords = Input.TexCoord;
     mat3 TBN = Input.TBN;
-
-    // Extract map data
-    vec3 albedo     = pow(texture(pbr.albedoMap, TexCoords).rgb, vec3(2.2)); // Convert to linear space
-    float metallic  = texture(pbr.metallicMap, TexCoords).r;
-    float roughness = texture(pbr.roughnessMap, TexCoords).r;
-    float ao        = texture(pbr.aoMap, TexCoords).r;
-
     vec3 WorldPos = Input.FragPos;
-    // Extract and transform normal
-    vec3 normal = texture(pbr.normalMap, TexCoords).rgb;
-    normal = normal * 2.0 - 1.0; // Map from [0,1] to [-1,1]
-    vec3 N = normalize(TBN * normal);
+
+    // --- PROPERTY EXTRACTION WITH FALLBACKS ---
+
+    // 1. Albedo
+    vec3 albedo = pbr.albedoTint.rgb;
+    if (pbr.useAlbedoMap) {
+        vec3 texColor = pow(texture(pbr.albedoMap, TexCoords).rgb, vec3(2.2));
+        albedo *= texColor;
+    }
+
+    // 2. Normal
+    vec3 N;
+    if (pbr.useNormalMap) {
+        vec3 normalMap = texture(pbr.normalMap, TexCoords).rgb;
+        normalMap = normalMap * 2.0 - 1.0; 
+        N = normalize(TBN * normalMap);
+    } else {
+        // If no normal map, use the vertex normal.
+        // TBN[2] represents the Z axis of the matrix, which is the original Normal vector!
+        N = normalize(TBN[2]);
+    }
+
+    // 3. Metallic
+    float metallic = pbr.metallicMultiplier;
+    if (pbr.useMetallicMap) {
+        metallic *= texture(pbr.metallicMap, TexCoords).r;
+    }
+
+    // 4. Roughness
+    float roughness = pbr.roughnessMultiplier;
+    if (pbr.useRoughnessMap) {
+        roughness *= texture(pbr.roughnessMap, TexCoords).r;
+    }
+
+    // 5. Ambient Occlusion
+    float ao = 1.0; // Default to full brightness if no AO map
+    if (pbr.useAOMap) {
+        ao = texture(pbr.aoMap, TexCoords).r;
+    }
+
+    // --- LIGHTING CALCULATIONS ---
 
     vec3 V = normalize(u_CameraPosition - WorldPos);
 
-    // Base reflectivity (F0). 0.04 is a good default for non-metals (dielectrics).
-    // If it's a metal, use the albedo color as the base reflectivity.
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
 
-    // Loop through all lights
     for(int i = 0; i < 4; ++i) 
     {
-        // Calculate per-light radiance
         vec3 L = normalize(lightPositions[i] - WorldPos);
         vec3 H = normalize(V + L);
         float distance = length(lightPositions[i] - WorldPos);
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = lightColors[i] * attenuation;
 
-        // Cook-Torrance BRDF
         float NDF = DistributionGGX(N, H, roughness);   
         float G   = GeometrySmith(N, V, L, roughness);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
-           
+            
         vec3 numerator    = NDF * G * F; 
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; 
         vec3 specular = numerator / denominator;
         
-        // kS is energy of light that gets reflected. kD is light that gets refracted.
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;	  // Metals absorb all refracted light, so they have no diffuse lighting
+        kD *= 1.0 - metallic;    
 
-        // Add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);        
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }   
 
-    // Ambient lighting (Replace this with IBL later!)
     vec3 ambient = vec3(0.03) * albedo * ao;
-    
     vec3 color = ambient + Lo;
+    
+    // Add Emission (scaled by albedo tint or kept pure white based on your preference)
+    color += pbr.albedoTint.rgb * pbr.emission; 
 
     // HDR Tonemapping and Gamma Correction
-    color = color / (color + vec3(1.0)); // Reinhard tone mapping
-    color = pow(color, vec3(1.0/2.2));   // Gamma correction 
+    color = color / (color + vec3(1.0)); 
+    color = pow(color, vec3(1.0/2.2));  
 
     FragColor = vec4(color, 1.0);
 }

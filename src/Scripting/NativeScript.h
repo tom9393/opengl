@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../Scene/Scene.h"
 #include "../Core/TimeStep.h"
+#include "../../lib/entt/single_include/entt/entt.hpp"
 
 namespace Engine {
 
+    class Scene;
     class Entity;
+    struct CollisionData;
 
     class NativeScript
     {
@@ -16,11 +18,6 @@ namespace Engine {
         virtual void OnCollision(CollisionData &data) {}
         
         Scene* GetScene() { return m_Scene; }
-
-        template <typename T>
-        T& GetComponent() {
-            return m_Scene->m_Registry.get<T>(m_Entity);
-        }
 
         protected:
         entt::entity m_Entity;

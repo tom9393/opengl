@@ -25,7 +25,11 @@ namespace Engine
             s_Path = std::string(path);
             stbi_set_flip_vertically_on_load(true);
             Assimp::Importer importer;
-            const aiScene* assimpScene = importer.ReadFile(s_Path, aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality);
+            
+            const aiScene* assimpScene = importer.ReadFile(s_Path, 
+                aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | 
+                aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | 
+                aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality);
 
             if(!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
@@ -33,26 +37,79 @@ namespace Engine
             }
 
             s_Directory = s_Path.substr(0, s_Path.find_last_of('/'));
-            std::vector<aiMesh*> flatMeshes;
-            CollectMeshes(assimpScene->mRootNode, assimpScene, flatMeshes);
-
             Shared<Scene> scene = MakeShared<Scene>();
 
-            // Cpu only
-            for (size_t i = 0; i < flatMeshes.size(); i++)
-            {
-                aiMesh* aiMesh = flatMeshes[i];
+            std::cout << "Loading: " << path << std::endl;
 
-                Entity entity = scene->CreateEntity();
+            // Start the recursive node processing from the root
+            Entity nullParent; // Empty entity evaluates to false in operator bool()
+            ProcessNode(assimpScene->mRootNode, assimpScene, scene, nullParent);
+
+            std::cout << "Done" << std::endl;
+            return scene;
+        }
+
+        private:
+
+        // --- NEW: Assimp Matrix to GLM Matrix Conversion ---
+        static glm::mat4 AssimpToGLMMatrix(const aiMatrix4x4& matrix)
+        {
+            glm::mat4 result;
+            // Assimp is row-major, GLM is column-major. We transpose it here.
+            result[0][0] = matrix.a1; result[1][0] = matrix.a2; result[2][0] = matrix.a3; result[3][0] = matrix.a4;
+            result[0][1] = matrix.b1; result[1][1] = matrix.b2; result[2][1] = matrix.b3; result[3][1] = matrix.b4;
+            result[0][2] = matrix.c1; result[1][2] = matrix.c2; result[2][2] = matrix.c3; result[3][2] = matrix.c4;
+            result[0][3] = matrix.d1; result[1][3] = matrix.d2; result[2][3] = matrix.d3; result[3][3] = matrix.d4;
+            return result;
+        }
+
+        // --- NEW: Recursive Node Traversal ---
+        static void ProcessNode(aiNode* node, const aiScene* assimpScene, Shared<Scene>& scene, Entity parentEntity)
+        {
+            // 1. Create the entity for this node
+            Entity entity = scene->CreateEntity(node->mName.C_Str());
+
+            // 2. Set Hierarchy
+            if (parentEntity)
+            {
+                entity.SetParent(parentEntity);
+            }
+
+            // 3. Apply Local Transform
+            if (!entity.HasComponent<TransformComponent>())
+                entity.AddComponent<TransformComponent>();
                 
+            auto& transform = entity.GetComponent<TransformComponent>();
+            transform.ApplyMatrix(AssimpToGLMMatrix(node->mTransformation));
+
+            // 4. Handle Meshes
+            if (node->mNumMeshes == 1)
+            {
+                // Single mesh: Attach directly to this node's entity
+                aiMesh* aiMesh = assimpScene->mMeshes[node->mMeshes[0]];
                 LoadMesh(entity, aiMesh, assimpScene);
                 LoadMaterialTextures(entity, assimpScene->mMaterials[aiMesh->mMaterialIndex]);
-
-                // TextureLayout emptyTextureLayout;
-                // mesh->SetTextureLayout(emptyTextureLayout);
             }
-            std::cout << "DD" << std::endl;
-            return scene;
+            else if (node->mNumMeshes > 1)
+            {
+                // Multiple meshes: Create sub-entities because our ECS expects 1 mesh per entity
+                for (unsigned int i = 0; i < node->mNumMeshes; i++)
+                {
+                    aiMesh* aiMesh = assimpScene->mMeshes[node->mMeshes[i]];
+                    std::string childName = std::string(node->mName.C_Str()) + "_Mesh" + std::to_string(i);
+                    Entity meshEntity = scene->CreateEntity(childName);
+                    
+                    meshEntity.SetParent(entity);
+                    LoadMesh(meshEntity, aiMesh, assimpScene);
+                    LoadMaterialTextures(meshEntity, assimpScene->mMaterials[aiMesh->mMaterialIndex]);
+                }
+            }
+
+            // 5. Recursively process children
+            for (unsigned int i = 0; i < node->mNumChildren; i++)
+            {
+                ProcessNode(node->mChildren[i], assimpScene, scene, entity);
+            }
         }
 
         static void LoadMesh(Entity &entity, aiMesh* aiMesh, const aiScene* scene)
@@ -141,6 +198,8 @@ namespace Engine
             BufferLayout bufferLayout(meshLayout);
             mesh->SetLayout(bufferLayout);
             mesh->SetAABB(aabb);
+
+            entity.AddComponent<MeshComponent>(mesh);
         }
 
         static TextureType AssimpToTextureType(aiTextureType type)
@@ -178,6 +237,11 @@ namespace Engine
                 aiTextureType_SHININESS          // 7 Shininess
             };
 
+            if (!entity.HasComponent<MaterialComponent>())
+                entity.AddComponent<MaterialComponent>();
+
+            Shared<Material> material = MakeShared<Material>();
+
             for (auto &type : textureTypes)
             {
                 for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -193,35 +257,36 @@ namespace Engine
                     std::string ktxExtensionPath = filename.substr(0, lastindex).append(".ktx");
                     std::string ktxExtensionPath2 = filename.substr(0, lastindex).append(".ktx2");
 
-                    std::cout << type << std::endl;
-
                     if (std::filesystem::exists(ktxExtensionPath))
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath));
-                        //layout.AddTexture(AssimpToTextureType(type), texture);
+                        TextureType texType = AssimpToTextureType(type);
+                        if (texType == TextureType::Diffuse)  material->AlbedoMap = texture;
+                        if (texType == TextureType::Normal)   material->NormalMap = texture;
+                        if (texType == TextureType::Metallic) material->MetallicMap = texture;
+                        if (texType == TextureType::AO)       material->AOMap = texture;
                     }
                     else if (std::filesystem::exists(ktxExtensionPath2))
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(ktxExtensionPath2));
-                        //layout.AddTexture(AssimpToTextureType(type), texture);
+                        TextureType texType = AssimpToTextureType(type);
+                        if (texType == TextureType::Diffuse)  material->AlbedoMap = texture;
+                        if (texType == TextureType::Normal)   material->NormalMap = texture;
+                        if (texType == TextureType::Metallic) material->MetallicMap = texture;
+                        if (texType == TextureType::AO)       material->AOMap = texture;
                     }
                     else
                     {
                         Shared<Texture2D> texture = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset(filename));
-                        //layout.AddTexture(AssimpToTextureType(type), texture);
+                        TextureType texType = AssimpToTextureType(type);
+                        if (texType == TextureType::Diffuse)  material->AlbedoMap = texture;
+                        if (texType == TextureType::Normal)   material->NormalMap = texture;
+                        if (texType == TextureType::Metallic) material->MetallicMap = texture;
+                        if (texType == TextureType::AO)       material->AOMap = texture;
                     };
                 }
             }
-        }
-
-        static void CollectMeshes(aiNode* node, const aiScene* scene, std::vector<aiMesh*>& outMeshes)
-        {
-            for(unsigned int i = 0; i < node->mNumMeshes; i++) {
-                outMeshes.push_back(scene->mMeshes[node->mMeshes[i]]);
-            }
-            for(unsigned int i = 0; i < node->mNumChildren; i++) {
-                CollectMeshes(node->mChildren[i], scene, outMeshes);
-            }
+            auto& materialComp = entity.GetComponent<MaterialComponent>();
         }
 
         private:

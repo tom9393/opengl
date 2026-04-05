@@ -12,6 +12,7 @@ namespace Engine {
 
         private:
         static Shared<Asset> GetByType(const std::filesystem::path &path);
+        static Shared<Mesh> GetSubMesh(const std::filesystem::path &path, int subMeshIndex);
         static bool IsLoaded(const std::string &path);
         //static bool IsLoaded(UUID id);
 
