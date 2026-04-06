@@ -75,36 +75,28 @@ namespace Engine
     };
 
     struct MeshComponent {
-        Shared<Mesh> MeshGeometry;
+        UUID MeshHandle = 0;
         
         MeshComponent() = default;
-        MeshComponent(std::shared_ptr<Mesh> mesh) : MeshGeometry(mesh) {}
-    };
-
-    struct ModelComponent
-    {
-        std::string path = "";
-        Shared<Model> model = nullptr;
-
-        ModelComponent() = default;
-        ModelComponent(const ModelComponent&) = default;
-        ModelComponent(const std::string &path) : path(path) {}
+        MeshComponent(const MeshComponent&) = default;
+        MeshComponent(UUID handle) : MeshHandle(handle) {}
     };
 
     struct TextureComponent
     {
-        std::string path = "";
+        UUID TextureHandle = 0;
 
         TextureComponent() = default;
         TextureComponent(const TextureComponent&) = default;
-        TextureComponent(const std::string &path) : path(path) {}
+        TextureComponent(UUID handle) : TextureHandle(handle) {}
     };
 
     struct MaterialComponent {
-        Shared<Material> MeshMaterial;
+        UUID MaterialHandle = 0;
 
         MaterialComponent() = default;
         MaterialComponent(const MaterialComponent&) = default;
+        MaterialComponent(UUID handle) : MaterialHandle(handle) {}
     };
 
     struct SceneCameraComponent

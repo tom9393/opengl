@@ -1,6 +1,7 @@
 #include "AssetManager.h"
 #include "Asset.h"
 #include "ModelImporter.h"
+#include "AssimpLoader.h"
 #include "SceneImporter.h"
 #include "TextureImporter.h"
 #include <filesystem>
@@ -36,71 +37,89 @@ namespace Engine {
         return AssetType::None;
     }
 
-    bool AssetManager::IsLoaded(const std::string &path)
-    {
-        return m_Loaded.find(path) != m_Loaded.end();
+    void AssetManager::Init() {
+        LoadAssetRegistry();
     }
 
-    Shared<Asset> AssetManager::LoadAsset(const std::filesystem::path &path)
-    {
-        if (!IsLoaded(path))
-        {
-            Shared<Asset> asset = AssetManager::GetByType(path);
-            if (asset)
-            {
-                m_Loaded[path] = asset;
-            } else {
-                std::cout << "Failed to load asset" << std::endl;
+    void AssetManager::Shutdown() {
+        SaveAssetRegistry();
+    }
+
+    UUID AssetManager::ImportAsset(const std::filesystem::path& filepath) {
+        // 1. Check if we already have this file in the registry
+        for (const auto& [handle, metadata] : m_AssetRegistry) {
+            if (metadata.FilePath == filepath.string()) {
+                return handle;
             }
         }
-        return m_Loaded[path];
-    }
 
-    // -- Todo; make the asset system use UUID instead of raw strings --
-    // bool AssetManager::IsLoaded(UUID id)
-    // {
-    //     return m_Paths.find(id) != m_Paths.end();
-    // }
-    //
-    // Shared<Asset> AssetManager::LoadAsset(const std::filesystem::path &path)
-    // {
-    //     Shared<Asset> asset = GetByType(path);
-    //
-    //     if (asset)
-    //     {
-    //         m_Loaded[asset->GetHandle()] = asset;
-    //         m_Paths[asset->GetHandle()] = path;
-    //     } else {
-    //         std::cout << "Failed to load asset" << std::endl;
-    //     }
-    //     return asset;
-    // };
-
-    Shared<Asset> AssetManager::GetByType(const std::filesystem::path &path)
-    {
-        switch (AssetTypeFromFilepath(path)) {
-            case AssetType::Scene: return SceneImporter::LoadScene(path);
-            case AssetType::Texture2D: return TextureImporter::LoadTexture2D(path);
-            default: return nullptr;
-        }
-    }
-
-    Shared<Mesh> AssetManager::GetSubMesh(const std::filesystem::path &path, int subMeshIndex)
-    {
-        // 1. Ask the AssetManager for the overarching Model asset.
-        // If it's already loaded, this is instant. If not, it loads the file.
-        Shared<Model> model = GetAsset<Model>(path);
+        // 2. If not, create new metadata
+        AssetMetadata metadata;
+        metadata.Handle = UUID();
+        metadata.FilePath = filepath.string();
         
-        if (model)
-        {
-            const auto& meshes = model->GetMeshes();
-            if (subMeshIndex >= 0 && subMeshIndex < meshes.size())
-            {
-                return meshes[subMeshIndex]; // Return the specific sub-mesh!
-            }
-        }
+        // Determine type based on extension (simplified)
+        std::string ext = filepath.extension().string();
+        if (ext == ".obj" || ext == ".assbin") metadata.Type = AssetType::Model; // Parse model here, fill metadata with all the stuff
+        else if (ext == ".png" || ext == ".jpg") metadata.Type = AssetType::Texture2D;
+        else metadata.Type = AssetType::None;
+
+        m_AssetRegistry[metadata.Handle] = metadata;
         
-        std::cout << "[AssetManager] Failed to fetch sub-mesh " << subMeshIndex << " from " << path << std::endl;
-        return nullptr;
+        SaveAssetRegistry(); // Optional: Save immediately on import
+        return metadata.Handle;
     }
+
+    Shared<Asset> AssetManager::GetAssetInternal(UUID handle) {
+        if (handle == 0) return nullptr;
+
+        // 1. Is it already loaded in memory?
+        if (IsAssetLoaded(handle)) {
+            return m_LoadedAssets[handle];
+        }
+
+        // 2. Not loaded. Do we know about it in the registry?
+        const AssetMetadata& metadata = GetMetadata(handle);
+        if (!metadata.IsValid()) {
+            // Unregistered asset requested
+            return nullptr; 
+        }
+
+        // 3. Load from disk based on metadata
+        Shared<Asset> newAsset = nullptr;
+        
+        switch (metadata.Type) {
+            case AssetType::Model:
+                newAsset = AssimpLoader::Load(metadata.FilePath); // Then return the correct one here
+                break;
+            case AssetType::Texture2D:
+                // newAsset = MakeShared<Texture>(metadata.FilePath);
+                break;
+            // ... handle other types
+        }
+
+        if (newAsset) {
+            newAsset->Handle = handle;
+            m_LoadedAssets[handle] = newAsset;
+        }
+
+        return newAsset;
+    }
+
+    const AssetMetadata& AssetManager::GetMetadata(UUID handle) {
+        auto it = m_AssetRegistry.find(handle);
+        if (it != m_AssetRegistry.end())
+            return it->second;
+        return s_NullMetadata;
+    }
+
+    void AssetManager::LoadAssetRegistry() {
+        // Use YAML-CPP to load a generic "AssetRegistry.yaml" from your project root
+        // and populate m_AssetRegistry.
+    }
+
+    void AssetManager::SaveAssetRegistry() {
+        // Use YAML-CPP to write m_AssetRegistry to "AssetRegistry.yaml".
+    }
+
 }

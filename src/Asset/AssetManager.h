@@ -5,20 +5,37 @@
 
 namespace Engine {
 
-    class AssetManager
-    {
-        public:
-        static Shared<Asset> LoadAsset(const std::filesystem::path &path);
+    class AssetManager {
+    public:
+        static void Init(); // Loads the AssetRegistry.yaml
+        static void Shutdown(); // Saves the AssetRegistry.yaml
 
-        private:
-        static Shared<Asset> GetByType(const std::filesystem::path &path);
-        static Shared<Mesh> GetSubMesh(const std::filesystem::path &path, int subMeshIndex);
-        static bool IsLoaded(const std::string &path);
-        //static bool IsLoaded(UUID id);
+        // Imports a file, generates a UUID, adds to registry, and returns the UUID
+        static UUID ImportAsset(const std::filesystem::path& filepath);
 
-        private:
-        static inline std::unordered_map<std::string, Shared<Asset>> m_Loaded; // For now, later on make the system use UUIDs
-        // static inline std::unordered_map<UUID, Shared<Asset>> m_Loaded;
-        // static inline std::unordered_map<UUID, std::string> m_Paths;
+        // Core function: gets a loaded asset, or loads it if it isn't in memory
+        template<typename T>
+        static Shared<T> GetAsset(UUID handle) {
+            Shared<Asset> asset = GetAssetInternal(handle);
+            return std::static_pointer_cast<T>(asset);
+        }
+
+        static bool IsAssetLoaded(UUID handle) { return m_LoadedAssets.find(handle) != m_LoadedAssets.end(); }
+        static const AssetMetadata& GetMetadata(UUID handle);
+
+    private:
+        static Shared<Asset> GetAssetInternal(UUID handle);
+        static void LoadAssetRegistry();
+        static void SaveAssetRegistry();
+
+    private:
+        // Memory storage: UUID -> Actual OpenGL Data
+        static inline std::unordered_map<UUID, Shared<Asset>> m_LoadedAssets;
+        
+        // Metadata storage: UUID -> File Path & Type
+        static inline std::unordered_map<UUID, AssetMetadata> m_AssetRegistry;
+        
+        static inline AssetMetadata s_NullMetadata; // Returned when handle is invalid
     };
+
 }

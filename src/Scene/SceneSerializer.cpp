@@ -173,8 +173,16 @@ namespace Engine
 			out << YAML::EndMap;
 		});
 
-		SerializeComponent<ModelComponent>(out, e, "ModelComponent", [](auto& out, auto& mc) {
-			out << YAML::Key << "Model" << YAML::Value << mc.path;
+		SerializeComponent<MeshComponent>(out, e, "MeshComponent", [](auto& out, auto& mc) {
+			out << YAML::Key << "Mesh" << YAML::Value << mc.MeshHandle;
+		});
+
+		SerializeComponent<MaterialComponent>(out, e, "MaterialComponent", [](auto& out, auto& mc) {
+			out << YAML::Key << "Mesh" << YAML::Value << mc.MaterialHandle;
+		});
+
+		SerializeComponent<MaterialComponent>(out, e, "TextureComponent", [](auto& out, auto& tc) {
+			out << YAML::Key << "Mesh" << YAML::Value << tc.TextureHandle;
 		});
 
 		SerializeComponent<RigidBodyComponent>(out, e, "RigidBodyComponent", [](auto& out, auto& rb) {
@@ -270,13 +278,29 @@ namespace Engine
 	}
 
 	template <>
-	void DeserializeComponent<ModelComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
+	void DeserializeComponent<MeshComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
 		if (node)
 		{
-			auto& mc = entity.AddComponent<ModelComponent>();
-			mc.path = node["Model"].as<std::string>();
-			//mc.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(mc.path));
-			AssimpLoader::Load(mc.path);
+			auto& mc = entity.AddComponent<MeshComponent>();
+			mc.MeshHandle = node["MeshHandle"].as<uint64_t>();
+		}
+	}
+
+	template <>
+	void DeserializeComponent<MaterialComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
+		if (node)
+		{
+			auto& mc = entity.AddComponent<MaterialComponent>();
+			mc.MaterialHandle = node["MaterialHandle"].as<uint64_t>();
+		}
+	}
+
+	template <>
+	void DeserializeComponent<TextureComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
+		if (node)
+		{
+			auto& tc = entity.AddComponent<TextureComponent>();
+			tc.TextureHandle = node["TextureHandle"].as<uint64_t>();
 		}
 	}
 
@@ -309,7 +333,9 @@ namespace Engine
 
 		DeserializeComponent<TransformComponent>(entity, scene, node["TransformComponent"]);
 		DeserializeComponent<SceneCameraComponent>(entity, scene, node["CameraComponent"]);
-		DeserializeComponent<ModelComponent>(entity, scene, node["ModelComponent"]);
+		DeserializeComponent<MeshComponent>(entity, scene, node["MeshComponent"]);
+		DeserializeComponent<MaterialComponent>(entity, scene, node["MaterialComponent"]);
+		DeserializeComponent<TextureComponent>(entity, scene, node["TextureComponent"]);
 		DeserializeComponent<RigidBodyComponent>(entity, scene, node["RigidBodyComponent"]);
 		DeserializeComponent<LuaScriptComponent>(entity, scene, node["LuaScriptComponent"]);
 
