@@ -182,7 +182,7 @@ namespace Engine
 		});
 
 		SerializeComponent<MaterialComponent>(out, e, "TextureComponent", [](auto& out, auto& tc) {
-			out << YAML::Key << "Mesh" << YAML::Value << tc.TextureHandle;
+			out << YAML::Key << "Mesh" << YAML::Value << tc.MaterialHandle;
 		});
 
 		SerializeComponent<RigidBodyComponent>(out, e, "RigidBodyComponent", [](auto& out, auto& rb) {

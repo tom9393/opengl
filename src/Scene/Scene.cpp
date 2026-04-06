@@ -46,11 +46,14 @@ namespace Engine
 		
 		CopyComponent<TagComponent>(destination, source, map);
 		CopyComponent<TransformComponent>(destination, source, map);
-		CopyComponent<ModelComponent>(destination, source, map);
+		CopyComponent<MeshComponent>(destination, source, map);
+		CopyComponent<MaterialComponent>(destination, source, map);
+		CopyComponent<TextureComponent>(destination, source, map);
 		CopyComponent<SceneCameraComponent>(destination, source, map);
 		CopyComponent<RigidBodyComponent>(destination, source, map);
 		CopyComponent<NativeScriptComponent>(destination, source, map);
 		CopyComponent<LuaScriptComponent>(destination, source, map);
+		CopyComponent<RelationshipComponent>(destination, source, map);
 
 		return newScene;
 	};

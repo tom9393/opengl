@@ -66,7 +66,7 @@ namespace Engine
         static void EndScene();
 
         static void SetTexture(TextureLayout &textureLayout);
-        static void SetMaterial(Shared<Material> &material);
+        static void SetMaterial(const Shared<Material> &material);
         static void SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform);
         static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms);
 

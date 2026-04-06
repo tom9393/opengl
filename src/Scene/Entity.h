@@ -52,6 +52,77 @@ namespace Engine
             return m_Scene->m_Registry.all_of<T>(m_Handle);
         }
 
+        template <typename T>
+        Entity GetRootWithComponent()
+        {
+            Entity current = *this;
+            Entity highestWithComponent; // Defaults to a null/invalid entity
+
+            // 1. Check if the starting entity itself has the component
+            if (current.HasComponent<T>())
+            {
+                highestWithComponent = current;
+            }
+
+            // 2. Climb up the tree to the absolute root
+            while (current.HasParent())
+            {
+                current = Entity{ current.GetParent(), m_Scene };
+                
+                // 3. Every time we find the component, overwrite our record 
+                // so we end up with the one highest in the tree.
+                if (current.HasComponent<T>())
+                {
+                    highestWithComponent = current;
+                }
+            }
+
+            return highestWithComponent;
+        }
+
+        template <typename T>
+        Entity GetClosestParentWithComponent()
+        {
+            Entity current = *this;
+
+            if (current.HasComponent<T>()) return current;
+
+            while (current.HasParent())
+            {
+                current = Entity{ current.GetParent(), m_Scene };
+                
+                // Stop and return immediately upon finding the first match
+                if (current.HasComponent<T>())
+                {
+                    return current;
+                }
+            }
+
+            return Entity{}; // Return null entity if none found
+        }
+
+        template <typename T>
+        void GetAllChildrenWithComponent(std::vector<Entity>& outEntities)
+        {
+            // 1. Get the immediate children of this entity
+            std::vector<entt::entity> children = GetChildren();
+
+            for (entt::entity childHandle : children)
+            {
+                // Wrap the raw handle in an Entity object
+                Entity childEntity = { childHandle, m_Scene };
+
+                // 2. Check if this child has the component
+                if (childEntity.HasComponent<T>())
+                {
+                    outEntities.push_back(childEntity);
+                }
+
+                // 3. Recurse: Ask this child to find its children with component T
+                childEntity.GetAllChildrenWithComponent<T>(outEntities);
+            }
+        }
+
         UUID GetUUID() { return GetComponent<IDComponent>().id; };
 
         bool operator==(const Entity &other) const { return m_Handle == other.GetHandle() && m_Scene == other.m_Scene; };

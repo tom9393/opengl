@@ -115,20 +115,30 @@ namespace Engine {
         s_Scene = scene;
         Init();
 
-		auto view = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent, ModelComponent>();
+		auto view = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent>();
 		for (auto& e : view)
 		{
 			Entity entity = { e, s_Scene };
 			auto& transformComponent = entity.GetComponent<TransformComponent>();
 			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
-			auto& modelComponent = entity.GetComponent<ModelComponent>();
+            std::vector<Entity> meshEntities;
+            entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
+            if (meshEntities.empty()) continue;
 
-			modelComponent.model = std::static_pointer_cast<Model>(AssetManager::LoadAsset(modelComponent.path));
+            std::vector<Shared<Mesh>> meshes;
+
+            for (auto& e : meshEntities)
+            {
+                UUID handle = e.GetComponent<MeshComponent>().MeshHandle;
+                meshes.emplace_back(AssetManager::GetAsset<Mesh>(handle));
+            }
+
+            AssetMetadata metadata = AssetManager::GetMetadata(meshEntities[0].GetComponent<MeshComponent>().MeshHandle);
 
 			// 1. Ensure a bake exists (or bake it now if missing)
-			CollisionBaker::Bake(modelComponent.path, modelComponent.model->GetMeshes());
+			CollisionBaker::Bake(metadata.FilePath, meshes);
 
-			RBComplexShape* shape = new RBComplexShape(modelComponent.path);
+			RBComplexShape* shape = new RBComplexShape(metadata.FilePath);
 			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
 			if (!body) return;
 

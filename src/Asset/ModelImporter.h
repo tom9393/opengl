@@ -9,6 +9,6 @@ namespace Engine {
     class ModelImporter
     {
         public:
-        static Shared<Scene> LoadModel(const std::filesystem::path &path);
+        //static Shared<Scene> LoadModel(const std::filesystem::path &path);
     };
 }

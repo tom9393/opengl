@@ -19,8 +19,7 @@ namespace Engine {
         UUID Handle = 0;
         AssetType Type = AssetType::None;
         std::string FilePath;
-        // Optional: Add SubmeshIndex if you want to reference specific meshes inside a larger Assimp model
-        uint32_t SubmeshIndex = 0; 
+        uint32_t Index = 0; 
         
         bool IsValid() const { return Handle != 0; }
     };

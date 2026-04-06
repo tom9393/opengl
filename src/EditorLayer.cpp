@@ -117,24 +117,23 @@ namespace Engine
         float closestDistance = std::numeric_limits<float>::max();
 
         // 3. Iterate all entities with a Mesh
-        auto view = m_EditingScene->GetRegistry().view<TransformComponent, ModelComponent>();
+        auto view = m_EditingScene->GetRegistry().view<TransformComponent, MeshComponent>();
         for (auto& e : view)
         {
-            auto [transformComponent, modelComponent] = view.get<TransformComponent, ModelComponent>(e);
+            auto [transformComponent, meshComponent] = view.get<TransformComponent, MeshComponent>(e);
 
-            for (auto& mesh : modelComponent.model->GetMeshes())
+            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
+
+            float hitDistance;
+            // Test if the ray hits this mesh's AABB
+            if (RayIntersectsAABB(rayOrigin, rayDir, mesh->GetAABB(), transformComponent.GetTransform(), hitDistance))
             {
-                float hitDistance;
-                // Test if the ray hits this mesh's AABB
-                if (RayIntersectsAABB(rayOrigin, rayDir, mesh->GetAABB(), transformComponent.GetTransform(), hitDistance))
+                // If it hits, check if it's the CLOSEST object we've hit so far
+                // (prevents clicking on a wall behind a tank and selecting the wall)
+                if (hitDistance < closestDistance)
                 {
-                    // If it hits, check if it's the CLOSEST object we've hit so far
-                    // (prevents clicking on a wall behind a tank and selecting the wall)
-                    if (hitDistance < closestDistance)
-                    {
-                        closestDistance = hitDistance;
-                        selectedEntity = e;
-                    }
+                    closestDistance = hitDistance;
+                    selectedEntity = e;
                 }
             }
         }
@@ -324,7 +323,7 @@ namespace Engine
     {
         if (path != nullptr)
         {
-            m_EditingScene = std::static_pointer_cast<Scene>(AssetManager::LoadAsset(path));
+            m_EditingScene = AssetManager::GetAsset<Scene>(AssetManager::ImportAsset(path));
             m_SceneHierarchyPanel.SetContext(m_EditingScene);
 
             m_SceneRenderer->SetScene(m_EditingScene.get());

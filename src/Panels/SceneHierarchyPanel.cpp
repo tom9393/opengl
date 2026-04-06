@@ -324,9 +324,9 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
-			if (ImGui::MenuItem("Model"))
+			if (ImGui::MenuItem("Mesh"))
 			{
-				m_SelectionContext.AddComponent<ModelComponent>();
+				m_SelectionContext.AddComponent<MeshComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -365,17 +365,60 @@ namespace Engine
 
 		ImGui::PopItemWidth();
 
-		DrawComponent<ModelComponent>("Model", entity, [entity](auto &component)
+		ImGui::Button("Model");
+		if (ImGui::BeginDragDropTarget())
 		{
-			ImGui::Button("Model", ImVec2(100.0f, 0.0f));
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
+			{
+				const char* p = (char*)payload->Data;
+				std::string path = std::string(p);
+				std::cout << "Importing: " << path << std::endl;
+				
+				// Retrieve the Model blueprint containing our scanned UUIDs
+				UUID handle = AssetManager::ImportAsset(path);
+				Shared<Model> model = AssetManager::GetAsset<Model>(handle);
+
+				if (model && entity) // Ensure we have a valid model and a selected entity
+				{
+					// Iterate through every mesh handle stored in the Model asset
+					for (size_t i = 0; i < model->Meshes.size(); i++)
+					{
+						// Note: Replace `m_Context` with your actual Scene pointer variable 
+						// if it is named differently in your Editor panel.
+						Entity childEntity = m_Context->CreateEntity("MeshPart_" + std::to_string(i));
+						
+						// Set the hierarchy so it appears under the currently selected entity
+						childEntity.SetParent(entity);
+
+						// Add the MeshComponent using the lazy-load UUID
+						childEntity.AddComponent<MeshComponent>(model->Meshes[i]);
+
+						// Attach the Material Component
+						// If you added `std::vector<uint32_t> MeshMaterialIndices` to map them perfectly:
+						if (!model->MeshMaterialIndices.empty()) {
+							uint32_t matIndex = model->MeshMaterialIndices[i];
+							UUID materialHandle = model->Materials[matIndex];
+							childEntity.AddComponent<MaterialComponent>(materialHandle);
+						}
+					}
+				} // Closes if (model && entity)
+			} // Closes if (payload)
+
+			// MOVED HERE: This MUST be called every time BeginDragDropTarget() returns true!
+			ImGui::EndDragDropTarget(); 
+		} // Closes if (BeginDragDropTarget)
+
+		DrawComponent<MeshComponent>("Mesh", entity, [entity](auto &component) // Fix this
+		{
+			ImGui::Button("Mesh", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
-			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL")) // Fix this
 			    {
 					const char* p = (char*)payload->Data;
 					std::string path = std::string(p);
 					std::cout << p << std::endl;
-					component.path = path;
+					//component.path = path;
 			    }
 			    ImGui::EndDragDropTarget();
 			}
@@ -504,12 +547,12 @@ namespace Engine
 			}
 			if (ImGui::Button("Re-Bake Collision Data"))
 			{
-				auto& mc = entity.GetComponent<ModelComponent>();
+				auto& mc = entity.GetComponent<MeshComponent>(); // Fix this
 				// We load the asset and bake it immediately
-				if (mc.model) {
-					CollisionBaker::Bake(mc.path, mc.model->GetMeshes());
-					std::cout << "[Editor] Manual Re-Bake successful for " << mc.path << std::endl;
-				}
+				// if (mc.model) {
+				// 	CollisionBaker::Bake(mc.path, mc.model->GetMeshes());
+				// 	std::cout << "[Editor] Manual Re-Bake successful for " << mc.path << std::endl;
+				// }
 			}
 			// Add a small hint so the user knows what this does
 			if (ImGui::IsItemHovered())

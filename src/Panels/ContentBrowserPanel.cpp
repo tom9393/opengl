@@ -9,8 +9,8 @@ namespace Engine
 
 	ContentBrowserPanel::ContentBrowserPanel() : m_CurrentDirectory(s_AssetPath)
 	{
-		m_DirIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/icons/folderIcon.png"));
-		m_FileIcon = std::static_pointer_cast<Texture2D>(AssetManager::LoadAsset("../assets/icons/documentIcon.png"));
+		m_DirIcon = AssetManager::GetAsset<OpenGLTexture2D>(AssetManager::ImportAsset("../assets/icons/folderIcon.png"));
+		m_FileIcon = AssetManager::GetAsset<OpenGLTexture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
 		std::static_pointer_cast<OpenGLTexture2D>(m_DirIcon)->Initialize();
 		std::static_pointer_cast<OpenGLTexture2D>(m_FileIcon)->Initialize();
 	};

@@ -10,7 +10,7 @@
 namespace Engine
 {
 
-    class Mesh
+    class Mesh : public Asset
     {
         public:
         Mesh(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, const BufferLayout &bufferLayout, const TextureLayout &textureLayout) : m_Vertices(vertices), m_Indices(indices), m_BufferLayout(bufferLayout), m_TextureLayout(textureLayout) {}

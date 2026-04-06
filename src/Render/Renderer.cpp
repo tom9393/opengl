@@ -130,7 +130,7 @@ namespace Engine
         }
     };
 
-    void Renderer::SetMaterial(Shared<Material> &material)
+    void Renderer::SetMaterial(const Shared<Material> &material)
     {
         PROFILE_FUNCTION();
 
@@ -260,9 +260,9 @@ namespace Engine
     {
         if (transforms.empty()) return;
 
-        uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(mesh.get());
+        uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(material.get());
         if (currentMaterialKey != s_SceneData.s_LastBoundMaterial) {
-            SetTexture(mesh->GetTextureLayout()); 
+            SetMaterial(material);
             
             s_SceneData.s_LastBoundMaterial = currentMaterialKey;
             s_Data.statistics.MaterialSwitches++;

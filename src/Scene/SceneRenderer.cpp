@@ -1,6 +1,8 @@
 #include "SceneRenderer.h"
 #include "Render/Renderer.h"
 #include "Scene/Components.h"
+#include "Scene/Entity.h"
+#include "../Asset/AssetManager.h"
 
 namespace Engine {
 
@@ -54,30 +56,48 @@ namespace Engine {
 
         Frustum cameraFrustum = CreateFrustumFromMatrix(viewProjection);
 
-        auto view = m_Scene->GetRegistry().view<TransformComponent, MeshComponent>();
+        auto view = m_Scene->GetRegistry().view<MeshComponent>();
         for (auto& e : view)
         {
-            auto [transform, meshComp] = view.get<TransformComponent, MeshComponent>(e);
-            if (!meshComp.MeshGeometry) continue;
+            auto& meshComp = view.get<MeshComponent>(e);
+            if (meshComp.MeshHandle == 0) continue;
 
-            if (!IsAABBInFrustum(cameraFrustum, meshComp.MeshGeometry->GetAABB(), transform.GetTransform())) continue;
+            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComp.MeshHandle);
+
+            bool hasTransform = m_Scene->GetRegistry().all_of<TransformComponent>(e);
+            glm::mat4 transform;
+
+            if (hasTransform)
+            {
+                transform = m_Scene->GetRegistry().get<TransformComponent>(e).GetTransform();
+            } else
+            {
+                Entity entity {e, m_Scene};
+                Entity topTransform = entity.GetRootWithComponent<TransformComponent>();
+                if (topTransform.GetHandle() == entt::null) continue;
+                transform = topTransform.GetComponent<TransformComponent>().GetTransform();
+            }
+
+
+            if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
             DrawCommand cmd;
-            cmd.TargetMesh = meshComp.MeshGeometry;
-            cmd.Transform = GetWorldTransform(e);
+            cmd.TargetMesh = mesh;
+            cmd.Transform = transform;
             cmd.TargetMaterial = nullptr;
             if (m_Scene->GetRegistry().all_of<MaterialComponent>(e))
             {
-                cmd.TargetMaterial = m_Scene->GetRegistry().get<MaterialComponent>(e).MeshMaterial;
+                cmd.TargetMaterial = AssetManager::GetAsset<Material>(m_Scene->GetRegistry().get<MaterialComponent>(e).MaterialHandle);
             }
             
             // The SortKey: Group by Mesh AND Material for proper instancing
             // A simple hash combining both pointers
-            uintptr_t meshPtr = reinterpret_cast<uintptr_t>(meshComp.MeshGeometry.get());
+            uintptr_t meshPtr = reinterpret_cast<uintptr_t>(mesh.get());
             uintptr_t matPtr = reinterpret_cast<uintptr_t>(cmd.TargetMaterial.get());
             cmd.SortKey = meshPtr ^ (matPtr + 0x9e3779b9 + (meshPtr << 6) + (meshPtr >> 2));
             
             m_OpaqueDrawList.push_back(cmd);
         }
+
 
         std::sort(m_OpaqueDrawList.begin(), m_OpaqueDrawList.end(), [](const DrawCommand& a, const DrawCommand& b) {
                 return a.SortKey < b.SortKey;
