@@ -396,8 +396,9 @@ namespace Engine
 						// Attach the Material Component
 						// If you added `std::vector<uint32_t> MeshMaterialIndices` to map them perfectly:
 						if (!model->MeshMaterialIndices.empty()) {
-							uint32_t matIndex = model->MeshMaterialIndices[i];
-							UUID materialHandle = model->Materials[matIndex];
+							uint32_t meshMaterialIndex = model->MeshMaterialIndices[i];
+							UUID materialHandle = model->Materials[meshMaterialIndex];
+
 							childEntity.AddComponent<MaterialComponent>(materialHandle);
 						}
 					}

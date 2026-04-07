@@ -22,12 +22,14 @@ namespace Engine
         std::vector<AssetMetadata> MaterialHooks;
     };
 
+    static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
+
     static TextureType AssimpToTextureType(aiTextureType type)
     {
         if (type == aiTextureType_DIFFUSE || type == aiTextureType_BASE_COLOR) return TextureType::Diffuse;
         if (type == aiTextureType_SPECULAR) return TextureType::Specular;
         if (type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT) return TextureType::Normal;
-        if (type == aiTextureType_METALNESS) return TextureType::Metallic;
+        if (type == aiTextureType_METALNESS || type == aiTextureType_SHININESS) return TextureType::Metallic;
         if (type == aiTextureType_AMBIENT_OCCLUSION) return TextureType::AO;
 
         return TextureType::None;
@@ -64,7 +66,7 @@ namespace Engine
             Assimp::Importer importer;
             
             // Pass 0 as flags! We only read the structure/headers, NOT the heavy vertex data.
-            const aiScene* scene = importer.ReadFile(path.string(), 0);
+            const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
@@ -110,9 +112,7 @@ namespace Engine
             Assimp::Importer importer;
             
             // We use heavy processing flags here because we actually need the geometry
-            const aiScene* scene = importer.ReadFile(path.string(), 
-                aiProcess_Triangulate | aiProcess_GenSmoothNormals | 
-                aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes);
+            const aiScene* scene = importer.ReadFile(path, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
@@ -132,7 +132,7 @@ namespace Engine
             Assimp::Importer importer;
             
             // Pass 0 as flags! We only need to read the material string names, not geometry.
-            const aiScene* scene = importer.ReadFile(path.string(), 0);
+            const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
@@ -251,14 +251,14 @@ namespace Engine
                     std::string ktxExtensionPath2 = fullPath.substr(0, lastindex) + ".ktx2";
 
                     std::string finalLoadPath = fullPath;
-                    if (std::filesystem::exists(ktxExtensionPath))       finalLoadPath = ktxExtensionPath;
-                    else if (std::filesystem::exists(ktxExtensionPath2)) finalLoadPath = ktxExtensionPath2;
+                    // if (std::filesystem::exists(ktxExtensionPath))       finalLoadPath = ktxExtensionPath;
+                    // else if (std::filesystem::exists(ktxExtensionPath2)) finalLoadPath = ktxExtensionPath2;
 
                     // Load the texture asset. 
                     // Note: If you fully migrated to UUIDs for textures too, this would be:
                     UUID texHandle = AssetManager::ImportAsset(finalLoadPath);
                     Shared<Texture2D> texture = AssetManager::GetAsset<Texture2D>(texHandle);
-                    
+
                     TextureType texType = AssimpToTextureType(type);
                     if (texType == TextureType::Diffuse)  material->AlbedoMap = texture;
                     if (texType == TextureType::Normal)   material->NormalMap = texture;
