@@ -391,7 +391,8 @@ namespace Engine
 						childEntity.SetParent(entity);
 
 						// Add the MeshComponent using the lazy-load UUID
-						childEntity.AddComponent<MeshComponent>(model->Meshes[i]);
+						UUID meshHandle = model->Meshes[i];
+						childEntity.AddComponent<MeshComponent>(meshHandle);
 
 						// Attach the Material Component
 						// If you added `std::vector<uint32_t> MeshMaterialIndices` to map them perfectly:
@@ -402,12 +403,11 @@ namespace Engine
 							childEntity.AddComponent<MaterialComponent>(materialHandle);
 						}
 					}
-				} // Closes if (model && entity)
-			} // Closes if (payload)
+				}
+			}
 
-			// MOVED HERE: This MUST be called every time BeginDragDropTarget() returns true!
 			ImGui::EndDragDropTarget(); 
-		} // Closes if (BeginDragDropTarget)
+		}
 
 		DrawComponent<MeshComponent>("Mesh", entity, [entity](auto &component) // Fix this
 		{

@@ -60,19 +60,19 @@ namespace Engine {
         for (auto& e : view)
         {
             auto& meshComp = view.get<MeshComponent>(e);
-            if (meshComp.MeshHandle == 0) continue;
+            UUID meshHandle = meshComp.MeshHandle;
+            if (meshHandle == 0) continue;
 
-            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComp.MeshHandle);
+            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshHandle);
 
-            bool hasTransform = m_Scene->GetRegistry().all_of<TransformComponent>(e);
+            Entity entity {e, m_Scene};
             glm::mat4 transform;
 
-            if (hasTransform)
+            if (entity.HasComponent<TransformComponent>())
             {
-                transform = m_Scene->GetRegistry().get<TransformComponent>(e).GetTransform();
+                transform = entity.GetComponent<TransformComponent>().GetTransform();
             } else
             {
-                Entity entity {e, m_Scene};
                 Entity topTransform = entity.GetRootWithComponent<TransformComponent>();
                 if (topTransform.GetHandle() == entt::null) continue;
                 transform = topTransform.GetComponent<TransformComponent>().GetTransform();
@@ -84,9 +84,10 @@ namespace Engine {
             cmd.TargetMesh = mesh;
             cmd.Transform = transform;
             cmd.TargetMaterial = nullptr;
-            if (m_Scene->GetRegistry().all_of<MaterialComponent>(e))
+            if (entity.HasComponent<MaterialComponent>())
             {
-                cmd.TargetMaterial = AssetManager::GetAsset<Material>(m_Scene->GetRegistry().get<MaterialComponent>(e).MaterialHandle);
+                UUID materialHandle = entity.GetComponent<MaterialComponent>().MaterialHandle;
+                cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialHandle);
             }
             
             // The SortKey: Group by Mesh AND Material for proper instancing

@@ -83,7 +83,7 @@ namespace Engine
                 meta.Handle = matHandle;
                 meta.Type = AssetType::Material;
                 meta.FilePath = path.string();
-                meta.Index = i; // Reusing this field to store Assimp's Material Index
+                meta.Index = i;
                 
                 resultHooks.MaterialHooks.push_back(meta);
             }

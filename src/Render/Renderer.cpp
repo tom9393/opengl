@@ -196,7 +196,6 @@ namespace Engine
         shader->SetFloat("pbr.metallicMultiplier", material->MetallicMultiplier);
         shader->SetFloat("pbr.roughnessMultiplier", material->RoughnessMultiplier);
         shader->SetFloat("pbr.emission", material->Emission);
-
     }
 
     void Renderer::FlushLines()
