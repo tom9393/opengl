@@ -1,6 +1,6 @@
 # Blender 5.1.0
 # www.blender.org
-mtllib Untitled.mtl
+mtllib kawasaki.mtl
 o PLANE_BODY.034_high_Plane.097
 v -0.161582 0.868347 -0.883487
 v -0.159928 0.885271 -0.858721
