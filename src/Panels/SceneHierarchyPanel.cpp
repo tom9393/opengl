@@ -357,6 +357,12 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
+			if (ImGui::MenuItem("PointLight"))
+			{
+				m_SelectionContext.AddComponent<PointLightComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
 			ImGui::EndPopup();
 		}
 
@@ -572,6 +578,15 @@ namespace Engine
 			{
 				component.mass = mass;
 			}
+		});
+		DrawComponent<PointLightComponent>("PointLight", entity, [](auto &component)
+		{
+			glm::vec3 color = component.Color;
+			float intensity = component.Intensity;
+
+			DrawVec3("Color", color, 0.0f);
+			if(ImGui::DragFloat("Intensity", &intensity))
+				component.Intensity = intensity;
 		});
 	};
 

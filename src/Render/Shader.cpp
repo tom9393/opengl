@@ -35,6 +35,17 @@ namespace Engine
 
     ShaderLibrary::ShaderLibrary()
     {
+        Shared<Shader> textureShader = Shader::Create("Texture");
+        const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
+        const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
+        textureShader->AddShaders({vert, frag});
+        Add(textureShader);
+
+        Shared<Shader> lineShader = Shader::Create("LineShader");
+        const std::string vert_line = "/home/tom/Coding/c++/opengl/shaders/line.vert";
+        const std::string frag_line = "/home/tom/Coding/c++/opengl/shaders/line.frag";
+        lineShader->AddShaders({vert_line, frag_line});
+        Add(lineShader);
     }
 
     void ShaderLibrary::AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths)

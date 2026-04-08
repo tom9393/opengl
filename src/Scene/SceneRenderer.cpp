@@ -23,11 +23,29 @@ namespace Engine {
         });
     }
 
-    void SceneRenderer::PrepareScene(const RenderContext& context) {
+    void SceneRenderer::PrepareScene(const RenderContext& context)
+    {
         m_RenderItems.Opaque.clear();
         Frustum cameraFrustum = CreateFrustumFromMatrix(context.ViewProjection);
 
         m_Scene->UpdateWorldTransforms();
+
+        SceneLightData lightData = {};
+        lightData.LightCount = 1;
+        lightData.Lights[0].Position = glm::vec4(0.0f, 10.0f, 0.0f, 1.0f); // 10 units directly above
+        lightData.Lights[0].Color = glm::vec4(5000.0f, 5000.0f, 5000.0f, 1.0f); // High intensity white light
+
+        auto lightView = m_Scene->GetRegistry().view<PointLightComponent, TransformComponent>();
+        for (auto& e : lightView)
+        {
+            auto [transform, light] = lightView.get<TransformComponent, PointLightComponent>(e);
+        
+            lightData.Lights[lightData.LightCount].Position = glm::vec4(transform.translation, 1.0f);
+            lightData.Lights[lightData.LightCount].Color = glm::vec4(light.Color * light.Intensity, 1.0f);
+            lightData.LightCount++;
+        }
+
+        Renderer::UpdateLightBuffer(lightData);
 
         auto view = m_Scene->GetRegistry().view<MeshComponent, TransformComponent>();
         for (auto& e : view)

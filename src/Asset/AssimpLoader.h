@@ -13,6 +13,7 @@
 #include "Texture.h"
 #include "../Scene/Scene.h"
 #include "../Scene/Entity.h"
+#include "../Render/Renderer.h"
 
 namespace Engine
 {
@@ -357,6 +358,8 @@ namespace Engine
                     if (texType == TextureType::AO)       material->AOMap = texture;
                 }
             }
+
+            material->TargetShader = Renderer::GetShaderLibrary()->Get("Texture");
 
             return material;
         }

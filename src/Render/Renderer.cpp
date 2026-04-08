@@ -12,14 +12,12 @@ namespace Engine
 
     void Renderer::BeginScene(RenderContext &context)
     {
-        Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
-        shader->Bind();
-
         CameraData data;
         data.ViewProjection = context.ViewProjection;
         data.CameraPosition = context.CameraPosition;
 
-        s_Data.uniformBuffer->Update(0, sizeof(data), &data);
+        s_Data.CameraUniformBuffer->Update(0, sizeof(CameraData), &data);
+
         s_SceneData.ViewProjectionMatrix = data.ViewProjection;
 	    s_SceneData.cameraFrustum = CreateFrustumFromMatrix(data.ViewProjection);
         s_SceneData.s_LastBoundMaterial = 0;
@@ -38,36 +36,11 @@ namespace Engine
 
         s_Data.shaderLibrary = new ShaderLibrary();
 
-        Shared<Shader> textureShader = Shader::Create("Texture");
-        const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
-        const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
-        textureShader->AddShaders({vert, frag});
-        s_Data.shaderLibrary->Add(textureShader);
+        s_Data.CameraUniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
+        s_Data.CameraUniformBuffer->Bind(0);
 
-        glm::vec3 lightPositions[] = {
-            glm::vec3(-10.0f,  10.0f, 10.0f),
-            glm::vec3( 10.0f,  10.0f, 10.0f),
-            glm::vec3(-10.0f, -10.0f, 10.0f),
-            glm::vec3( 10.0f, -10.0f, 10.0f),
-        };
-        float intensity = 1000.0f;
-        glm::vec3 lightColors[] = {
-            glm::vec3(intensity, intensity, intensity),
-            glm::vec3(intensity, intensity, intensity),
-            glm::vec3(intensity, intensity, intensity),
-            glm::vec3(intensity, intensity, intensity)
-        };
-
-        textureShader->Bind();
-
-        // Assuming you have a way to set arrays in your shader class:
-        for (unsigned int i = 0; i < 4; ++i) {
-            textureShader->SetVec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
-            textureShader->SetVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
-        }
-
-        s_Data.uniformBuffer = UniformBuffer::Create(nullptr, sizeof(RenderContext));
-        s_Data.uniformBuffer->Bind(0);
+        s_Data.LightUniformBuffer = UniformBuffer::Create(nullptr, sizeof(SceneLightData));
+        s_Data.LightUniformBuffer->Bind(1);
 
         // Mainly for drawing debugging lines
         s_LineData.LineVertexArray = VertexArray::Create();
@@ -81,12 +54,6 @@ namespace Engine
 	    s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
         s_LineData.LineVertexCount = 0;
         s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase;
-
-        const std::string vert_line = "/home/tom/Coding/c++/opengl/shaders/line.vert";
-        const std::string frag_line = "/home/tom/Coding/c++/opengl/shaders/line.frag";
-        Shared<Shader> lineShader = Shader::Create("LineShader");
-        lineShader->AddShaders({vert_line, frag_line});
-        s_Data.shaderLibrary->Add(lineShader);
 
         switch (Renderer::Get())
         {
@@ -116,23 +83,10 @@ namespace Engine
         RenderCommand::SetViewport(0, 0, width, height);
     };
 
-    void Renderer::SetTexture(TextureLayout &layout)
+    void Renderer::UpdateLightBuffer(SceneLightData& lightData)
     {
-        PROFILE_FUNCTION();
-
-        Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture");
-        unsigned int idx = 0;
-        for (auto &textureType : layout)
-        {
-            TextureType type = textureType.first;
-            std::vector<Shared<Texture2D>> textures = textureType.second;
-            for (auto &texture : textures)
-            {
-                texture->Bind(idx);
-                shader->SetInt(layout.GetStringByType(type), idx++);
-            }
-        }
-    };
+        s_Data.LightUniformBuffer->Update(0, sizeof(SceneLightData), &lightData);
+    }
 
     void Renderer::SetMaterial(const Shared<Material> &material)
     {
@@ -141,7 +95,7 @@ namespace Engine
         if (!material) return;
 
         // Fetch your PBR/Texture shader
-        Shared<Shader> shader = s_Data.shaderLibrary->Get("Texture"); 
+        Shared<Shader> shader = material->TargetShader;
 
         unsigned int idx = 0;
 

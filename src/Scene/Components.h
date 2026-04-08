@@ -156,4 +156,13 @@ namespace Engine
         LuaScriptComponent() = default;
         LuaScriptComponent(const std::string& path) : FilePath(path) {}
     };
+
+    struct PointLightComponent
+    {
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1000.0f;
+
+        PointLightComponent() = default;
+        PointLightComponent(const PointLightComponent&) = default;
+    };
 };

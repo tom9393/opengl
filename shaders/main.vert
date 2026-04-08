@@ -7,10 +7,9 @@ layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec3 a_Bitangent;
 layout (location = 5) in mat4 a_InstanceTransform;
 
-layout (std140, binding = 0) uniform Camera
-{
-    mat4 u_ViewProjection;
-    vec3 u_CameraPosition;
+struct PointLight {
+    vec4 Position; 
+    vec4 Color;
 };
 
 struct VertexOutput
@@ -18,6 +17,19 @@ struct VertexOutput
     vec3 FragPos;
     vec2 TexCoord;
     mat3 TBN;
+};
+
+layout (std140, binding = 0) uniform Camera
+{
+    mat4 u_ViewProjection;
+    vec3 u_CameraPosition;
+};
+
+#define MAX_LIGHTS 100
+
+layout(std140, binding = 1) uniform LightData {
+    PointLight Lights[MAX_LIGHTS];
+    int LightCount;
 };
 
 layout (location = 0) out VertexOutput Output;

@@ -1,10 +1,13 @@
 #include "Texture.h"
+#include "Shader.h"
 
 namespace Engine {
 
     class Material : public Asset
     {
         public:
+        Shared<Shader> TargetShader = nullptr;
+
         Shared<Texture2D> AlbedoMap = nullptr;
         Shared<Texture2D> NormalMap = nullptr;
         Shared<Texture2D> MetallicMap = nullptr;

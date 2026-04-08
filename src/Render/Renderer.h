@@ -25,7 +25,8 @@ namespace Engine
     {
         ShaderLibrary* shaderLibrary;
         Shared<SSBOBuffer> matrixBuffer;
-        Shared<UniformBuffer> uniformBuffer;
+        Shared<UniformBuffer> CameraUniformBuffer;
+        Shared<UniformBuffer> LightUniformBuffer;
         Statistics statistics;
     };
 
@@ -53,6 +54,19 @@ namespace Engine
         float padding;
     };
 
+    struct PointLightData 
+    {
+        glm::vec4 Position; // w is ignored
+        glm::vec4 Color;    // rgb = color * intensity, w is ignored
+    };
+
+    struct SceneLightData 
+    {
+        PointLightData Lights[100]; // Max 100 lights for this example
+        int LightCount;
+        int padding[3];           // Padding to align to 16 bytes
+    };
+
     class Renderer
     {
         public:
@@ -66,14 +80,16 @@ namespace Engine
         static void BeginScene(RenderContext& context);
         static void EndScene();
 
-        static void SetTexture(TextureLayout &textureLayout);
         static void SetMaterial(const Shared<Material> &material);
         static void SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform);
         static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms);
 
+        static void UpdateLightBuffer(SceneLightData &data);
+
         static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
 
         static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
+        static ShaderLibrary* GetShaderLibrary() { return s_Data.shaderLibrary; }
 
         static void ResetStatistics()
         {

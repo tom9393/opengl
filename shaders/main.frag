@@ -31,6 +31,11 @@ struct VertexOutput
     mat3 TBN;
 };
 
+struct PointLight {
+    vec4 Position; 
+    vec4 Color;
+};
+
 layout (location = 0) in VertexOutput Input;
 
 layout (std140, binding = 0) uniform Camera
@@ -39,8 +44,12 @@ layout (std140, binding = 0) uniform Camera
     vec3 u_CameraPosition;
 };
 
-uniform vec3 lightPositions[4]; 
-uniform vec3 lightColors[4];
+#define MAX_LIGHTS 100
+
+layout(std140, binding = 1) uniform LightData {
+    PointLight Lights[MAX_LIGHTS];
+    int LightCount;
+};
 
 const float PI = 3.14159265359;
 
@@ -139,13 +148,16 @@ void main()
 
     vec3 Lo = vec3(0.0);
 
-    for(int i = 0; i < 4; ++i) 
+    for(int i = 0; i < LightCount; ++i) 
     {
-        vec3 L = normalize(lightPositions[i] - WorldPos);
+        PointLight light = Lights[i];
+        vec3 lightPosition = light.Position.xyz;
+        vec3 lightColor = light.Color.xyz;
+        vec3 L = normalize(lightPosition - WorldPos);
         vec3 H = normalize(V + L);
-        float distance = length(lightPositions[i] - WorldPos);
+        float distance = length(lightPosition - WorldPos);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColors[i] * attenuation;
+        vec3 radiance = lightColor * attenuation;
 
         float NDF = DistributionGGX(N, H, roughness);   
         float G   = GeometrySmith(N, V, L, roughness);      
