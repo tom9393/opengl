@@ -25,9 +25,10 @@ layout (std140, binding = 0) uniform Camera
     vec3 u_CameraPosition;
 };
 
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 64
 
-layout(std140, binding = 1) uniform LightData {
+layout(std140, binding = 1) uniform LightData
+{
     PointLight Lights[MAX_LIGHTS];
     int LightCount;
 };

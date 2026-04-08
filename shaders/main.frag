@@ -44,9 +44,10 @@ layout (std140, binding = 0) uniform Camera
     vec3 u_CameraPosition;
 };
 
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 64
 
-layout(std140, binding = 1) uniform LightData {
+layout(std140, binding = 1) uniform LightData
+{
     PointLight Lights[MAX_LIGHTS];
     int LightCount;
 };
@@ -148,7 +149,7 @@ void main()
 
     vec3 Lo = vec3(0.0);
 
-    for(int i = 0; i < LightCount; ++i) 
+    for(int i = 0; i < LightCount; i++) 
     {
         PointLight light = Lights[i];
         vec3 lightPosition = light.Position.xyz;

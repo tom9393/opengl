@@ -9,6 +9,7 @@
 #include "../../platform/OpenGL/OpenGLTexture.h"
 #include "../Scene/Components.h"
 #include "SceneRenderer.h"
+#include "Line.h"
 
 namespace Engine
 {
@@ -30,23 +31,6 @@ namespace Engine
         Statistics statistics;
     };
 
-    struct LineVertex {
-        glm::vec3 Position;
-        glm::vec4 Color;
-    };
-
-    struct LineRendererData {
-        static const uint32_t MaxLines = 10000;
-        static const uint32_t MaxVertices = MaxLines * 2;
-
-        Shared<VertexArray> LineVertexArray;
-        Shared<VertexBuffer> LineVertexBuffer;
-
-        uint32_t LineVertexCount = 0;
-        LineVertex* LineVertexBufferBase = nullptr;
-        LineVertex* LineVertexBufferPtr = nullptr;
-    };
-
     struct CameraData
     {
         glm::mat4 ViewProjection;
@@ -62,9 +46,9 @@ namespace Engine
 
     struct SceneLightData 
     {
-        PointLightData Lights[100]; // Max 100 lights for this example
+        PointLightData Lights[64]; // Max 64 lights for this example
         int LightCount;
-        int padding[3];           // Padding to align to 16 bytes
+        int padding[3];           // Padding to align
     };
 
     class Renderer
@@ -110,7 +94,7 @@ namespace Engine
 
         static SceneData s_SceneData;
         static RenderStorage s_Data;
-        static LineRendererData s_LineData;
+        static LineData s_LineData;
 
     };
 

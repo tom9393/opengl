@@ -31,9 +31,7 @@ namespace Engine {
         m_Scene->UpdateWorldTransforms();
 
         SceneLightData lightData = {};
-        lightData.LightCount = 1;
-        lightData.Lights[0].Position = glm::vec4(0.0f, 10.0f, 0.0f, 1.0f); // 10 units directly above
-        lightData.Lights[0].Color = glm::vec4(5000.0f, 5000.0f, 5000.0f, 1.0f); // High intensity white light
+        lightData.LightCount = 0;
 
         auto lightView = m_Scene->GetRegistry().view<PointLightComponent, TransformComponent>();
         for (auto& e : lightView)

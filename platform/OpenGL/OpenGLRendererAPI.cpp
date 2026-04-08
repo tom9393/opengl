@@ -28,7 +28,6 @@ namespace Engine
     void OpenGLRendererAPI::DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, const std::vector<glm::mat4> &transforms)
     {
         vertexArray->GetVertexBuffers()[1]->SetData(transforms.data(), transforms.size() * sizeof(glm::mat4));
-
         glDrawElementsInstanced(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr, transforms.size());
     };
 

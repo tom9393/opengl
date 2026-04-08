@@ -8,7 +8,7 @@ namespace Engine
 
     Renderer::SceneData Renderer::s_SceneData;
     RenderStorage Renderer::s_Data;
-    LineRendererData Renderer::s_LineData;
+    LineData Renderer::s_LineData;
 
     void Renderer::BeginScene(RenderContext &context)
     {
@@ -35,6 +35,7 @@ namespace Engine
         RenderCommand::Init();
 
         s_Data.shaderLibrary = new ShaderLibrary();
+        s_Data.shaderLibrary->Get("Texture")->Bind();
 
         s_Data.CameraUniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
         s_Data.CameraUniformBuffer->Bind(0);
@@ -42,18 +43,7 @@ namespace Engine
         s_Data.LightUniformBuffer = UniformBuffer::Create(nullptr, sizeof(SceneLightData));
         s_Data.LightUniformBuffer->Bind(1);
 
-        // Mainly for drawing debugging lines
-        s_LineData.LineVertexArray = VertexArray::Create();
-        s_LineData.LineVertexBuffer = VertexBuffer::Create(s_LineData.MaxLines * sizeof(LineVertex));
-
-        s_LineData.LineVertexBuffer->SetLayout({
-            { ShaderDataType::Float3, "a_Position" },
-            { ShaderDataType::Float4, "a_Color"    }
-        });
-        s_LineData.LineVertexArray->AddVertexBuffer(s_LineData.LineVertexBuffer);
-	    s_LineData.LineVertexBufferBase = new LineVertex[s_LineData.MaxVertices];
-        s_LineData.LineVertexCount = 0;
-        s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase;
+        s_LineData.Init(s_Data.shaderLibrary);
 
         switch (Renderer::Get())
         {
@@ -75,6 +65,7 @@ namespace Engine
 
     void Renderer::Shutdown()
     {
+        s_LineData.Shutdown();
         delete s_Data.shaderLibrary;
     }
 
@@ -94,18 +85,15 @@ namespace Engine
 
         if (!material) return;
 
-        // Fetch your PBR/Texture shader
         Shared<Shader> shader = material->TargetShader;
 
         unsigned int idx = 0;
 
-        // --- 1. BIND TEXTURE MAPS ---
-        
         if (material->AlbedoMap)
         {
             material->AlbedoMap->Bind(idx);
             shader->SetInt("pbr.albedoMap", idx);
-            shader->SetBool("pbr.useAlbedoMap", true); // Highly recommended for your shader
+            shader->SetBool("pbr.useAlbedoMap", true);
             idx++;
         }
         else { shader->SetBool("pbr.useAlbedoMap", false); }
@@ -146,10 +134,6 @@ namespace Engine
         }
         else { shader->SetBool("pbr.useAOMap", false); }
 
-
-        // --- 2. SET SCALAR / FALLBACK VALUES ---
-        // Note: Make sure the function names (SetFloat4, SetFloat) match your Shader API
-        
         shader->SetVec4("pbr.albedoTint", material->AlbedoTint);
         shader->SetFloat("pbr.metallicMultiplier", material->MetallicMultiplier);
         shader->SetFloat("pbr.roughnessMultiplier", material->RoughnessMultiplier);
@@ -158,38 +142,27 @@ namespace Engine
 
     void Renderer::FlushLines()
     {
-        if (s_LineData.LineVertexCount == 0) return;
+        if (s_LineData.VertexCount == 0) return;
 
-        uint32_t dataSize = (uint32_t)((uint8_t*)s_LineData.LineVertexBufferPtr - (uint8_t*)s_LineData.LineVertexBufferBase);
-        s_LineData.LineVertexBuffer->SetData(s_LineData.LineVertexBufferBase, dataSize);
+        s_LineData.LineVertexBuffer->SetData(s_LineData.VertexBufferBase, s_LineData.GetDataSize());
 
-        Shared<Shader> shader = s_Data.shaderLibrary->Get("LineShader");
+        s_LineData.LineShader->Bind();
+        s_LineData.LineShader->SetMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
 
-        shader->Bind();
-        shader->SetMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
+        RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.VertexCount);
 
-        glLineWidth(1.0f); 
-        RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.LineVertexCount);
-
-        s_LineData.LineVertexCount = 0;
-        s_LineData.LineVertexBufferPtr = s_LineData.LineVertexBufferBase;
+        s_LineData.ResetBatch();
         s_Data.statistics.DrawCalls++;
     }
 
     void Renderer::DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color)
     {
-        if (s_LineData.LineVertexCount + 2 >= s_LineData.MaxVertices)
+        if (s_LineData.IsFull()) {
             FlushLines();
+        }
 
-        s_LineData.LineVertexBufferPtr->Position = p0;
-        s_LineData.LineVertexBufferPtr->Color = color;
-        s_LineData.LineVertexBufferPtr++;
-
-        s_LineData.LineVertexBufferPtr->Position = p1;
-        s_LineData.LineVertexBufferPtr->Color = color;
-        s_LineData.LineVertexBufferPtr++;
-
-        s_LineData.LineVertexCount += 2;
+        s_LineData.AddVertex(p0, color);
+        s_LineData.AddVertex(p1, color);
     }
 
     void Renderer::SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform)
