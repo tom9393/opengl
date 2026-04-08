@@ -7,6 +7,7 @@
 #include "RenderPass.h"
 #include "FramebufferPool.h"
 #include "../Core/TimeStep.h"
+#include "RenderContext.h"
 
 namespace Engine
 {
@@ -24,7 +25,7 @@ namespace Engine
         RenderPass& AddPass(const std::string& name);
 
         // Execute all passes in order for the given timestep
-        void Execute(TimeStep ts);
+        void Execute(RenderContext &context);
 
         // Resize invalidates pool resources where necessary
         void Resize(unsigned int width, unsigned int height);

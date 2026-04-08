@@ -1,7 +1,6 @@
 #pragma once
 
 #include "LinearMath/btVector3.h"
-#include "PhysicsDebugDrawer.h"
 #include "RigidBody.h"
 #include <vector>
 #include <memory>
@@ -18,6 +17,8 @@ namespace Engine {
         glm::vec3 Normal;
         float Impulse;
     };
+
+    class PhysicsDebugDrawer;
 
     struct PhysicsWorldConfiguration
     {

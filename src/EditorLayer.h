@@ -4,7 +4,6 @@
 #include "Render/EditorCamera.h"
 #include "Events/KeyboardEvent.h"
 #include "Core/Layer.h"
-#include "Render/RenderGraph.h"
 #include "Scene/Scene.h"
 #include "SceneRenderer.h"
 #include "Core/TimeStep.h"
@@ -99,7 +98,6 @@ namespace Engine
         bool OnKeyEvent(KeyboardPressEvent &e);
 
         private:
-        float m_Previous = 0;
         Viewport m_Viewport;
 
         Shared<Scene> m_EditingScene;
@@ -108,8 +106,6 @@ namespace Engine
         Shared<EditorCamera> m_EditorCamera;
 
         int m_GizmoType = -1;
-
-        RenderGraph m_RenderGraph;
 
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;

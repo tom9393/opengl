@@ -10,7 +10,6 @@
 #include "Scene/SceneSerializer.h"
 #include "Utils/PlatformUtils.h"
 #include "Utils/ScopedImGuiStyle.h"
-#include "Scene/Components.h"
 #include "Events/EventBroker.h"
 #include "Scripting/ScriptEngine.h"
 #include "Utils/GizmoManager.h"
@@ -19,7 +18,6 @@ namespace Engine
 {
 
     EditorLayer::EditorLayer()
-        : m_RenderGraph(500, 500)
     {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -32,28 +30,6 @@ namespace Engine
         m_SceneRenderer = MakeShared<SceneRenderer>(m_EditingScene.get());
         m_SceneRenderer->OnViewportResize(500, 500);
         m_SceneHierarchyPanel.SetContext(m_EditingScene);
-
-        auto& pass = m_RenderGraph.AddPass("ScenePass");
-        pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth });
-        pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
-        pass.SetClearInt(1, -1);
-
-        pass.SetCallback([this](TimeStep ts)
-        {
-            switch (m_SceneState) {
-                case Engine::SceneState::Edit:
-                {
-                    m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition());
-                    break;
-                }
-                case Engine::SceneState::Play:
-                {
-                    m_RuntimeScene->OnUpdate(ts);
-                    m_SceneRenderer->RenderRuntime();
-                    break;
-                }
-            }
-        });
     };
 
     EditorLayer::~EditorLayer()
@@ -76,8 +52,20 @@ namespace Engine
     {
         PROFILE_FUNCTION();
 
-        m_EditorCamera->OnUpdate(ts);
-        m_RenderGraph.Execute(ts);
+        switch (m_SceneState) {
+            case Engine::SceneState::Edit:
+            {
+                m_EditorCamera->OnUpdate(ts);
+                m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition());
+                break;
+            }
+            case Engine::SceneState::Play:
+            {
+                m_RuntimeScene->OnUpdate(ts);
+                m_SceneRenderer->RenderRuntime();
+                break;
+            }
+        }
     };
 
     void EditorLayer::OnImGuiRender()
@@ -186,12 +174,11 @@ namespace Engine
 
         if (m_Viewport.Updated)
         {
-            m_RenderGraph.Resize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
             m_EditorCamera->SetViewportSize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
             m_SceneRenderer->OnViewportResize((unsigned int)m_Viewport.Size.x, (unsigned int)m_Viewport.Size.y);
         }
 
-        unsigned int texID = m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
+        unsigned int texID = m_SceneRenderer->GetRenderGraph().GetPassColorAttachmentRendererID("ScenePass", 0);
         if (texID != 0)
         {
             ImGui::Image((void*)(intptr_t)texID, ImVec2{m_Viewport.Size.x, m_Viewport.Size.y}, ImVec2{0, 1}, ImVec2{1, 0});

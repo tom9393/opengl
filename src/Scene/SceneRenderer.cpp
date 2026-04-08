@@ -7,13 +7,79 @@
 namespace Engine {
 
     SceneRenderer::SceneRenderer(Scene* scene)
-        : m_Scene(scene)
+        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight)
     {
+        auto& pass = m_RenderGraph.AddPass("ScenePass");
+        pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth });
+        pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
+        pass.SetClearInt(1, -1);
+        pass.SetCallback([this](RenderContext &ctx)
+        {
+            SubmitBatchedMeshes(m_RenderItems.Opaque);
+            
+            // Render Physics debug shapes on top
+            PhysicsEngine::RenderDebug(ctx.ViewProjection);
+        
+        });
     }
 
-    void SceneRenderer::RenderEditor(const glm::mat4& viewProjection, const glm::vec3& cameraPosition)
+    void SceneRenderer::PrepareScene(const RenderContext& context) {
+        m_RenderItems.Opaque.clear();
+        Frustum cameraFrustum = CreateFrustumFromMatrix(context.ViewProjection);
+
+        m_Scene->UpdateWorldTransforms();
+
+        auto view = m_Scene->GetRegistry().view<MeshComponent, TransformComponent>();
+        for (auto& e : view)
+        {
+            auto [meshComponent, transformComponent] = view.get<MeshComponent, TransformComponent>(e);
+            if (meshComponent.MeshHandle == 0) continue;
+
+            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
+            Entity entity {e, m_Scene};
+            
+            glm::mat4 &transform = transformComponent.WorldTransform;
+
+            // Frustum Culling
+            if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
+
+            // Build Command
+            DrawCommand cmd;
+            cmd.TargetMesh = mesh;
+            cmd.Transform = transform;;
+            
+            if (entity.HasComponent<MaterialComponent>())
+                cmd.TargetMaterial = AssetManager::GetAsset<Material>(entity.GetComponent<MaterialComponent>().MaterialHandle);
+            
+            if (!cmd.TargetMaterial) {
+                static Shared<Material> fallbackMaterial = MakeShared<Material>();
+                fallbackMaterial->AlbedoTint = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta
+                fallbackMaterial->MetallicMultiplier = 0.0f;
+                fallbackMaterial->RoughnessMultiplier = 0.5f;
+                cmd.TargetMaterial = fallbackMaterial;
+            }
+            
+            // Instead of submitting, just fill the list
+            m_RenderItems.Opaque.emplace_back(cmd);
+        }
+
+        // Sort once per frame to benefit all passes
+        std::sort(m_RenderItems.Opaque.begin(), m_RenderItems.Opaque.end(), [](const DrawCommand& a, const DrawCommand& b) {
+            if (a.TargetMesh.get() != b.TargetMesh.get())
+                return a.TargetMesh.get() < b.TargetMesh.get();
+        
+            return a.TargetMaterial.get() < b.TargetMaterial.get();
+        });
+    }
+
+    void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos)
     {
-        FlushDrawCalls(viewProjection, cameraPosition);
+        RenderContext ctx{ viewProj, camPos };
+        PrepareScene(ctx);
+        
+        Renderer::BeginScene(ctx);
+        m_RenderGraph.Execute(ctx);
+        Renderer::EndScene();
     }
 
     void SceneRenderer::RenderRuntime()
@@ -24,9 +90,12 @@ namespace Engine {
             auto [transform, camera] = view.get<TransformComponent, SceneCameraComponent>(entity);
             if (camera.primary) 
             {
-                glm::mat4 viewProj = camera.sceneCamera->GetProjection() * glm::inverse(transform.GetTransform());
-                glm::vec3 cameraPos = transform.translation;
-                FlushDrawCalls(viewProj, cameraPos);
+                RenderContext ctx {camera.sceneCamera->GetProjection() * glm::inverse(transform.GetTransform()), transform.translation};
+                PrepareScene(ctx);
+                
+                Renderer::BeginScene(ctx);
+                m_RenderGraph.Execute(ctx);
+                Renderer::EndScene();
                 break;
             }
         }
@@ -36,6 +105,7 @@ namespace Engine {
     {
 		m_ViewportWidth = width;
 		m_ViewportHeight = height;
+        m_RenderGraph.Resize(m_ViewportWidth, m_ViewportHeight);
         if (!m_Scene) return;
 		auto view = m_Scene->m_Registry.view<SceneCameraComponent>();
 		for (auto& e : view)
@@ -45,103 +115,30 @@ namespace Engine {
 		}
     }
 
-    void SceneRenderer::FlushDrawCalls(const glm::mat4& viewProjection, const glm::vec3& cameraPos)
+    void SceneRenderer::SubmitBatchedMeshes(std::vector<DrawCommand>& commands)
     {
-        m_OpaqueDrawList.clear();
-        
-        CameraData cameraData;
-        cameraData.ViewProjection = viewProjection;
-        cameraData.Position = cameraPos;
-        Renderer::BeginScene(cameraData);
-
-        Frustum cameraFrustum = CreateFrustumFromMatrix(viewProjection);
-
-        auto view = m_Scene->GetRegistry().view<MeshComponent>();
-        for (auto& e : view)
-        {
-            auto& meshComp = view.get<MeshComponent>(e);
-            UUID meshHandle = meshComp.MeshHandle;
-            if (meshHandle == 0) continue;
-
-            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshHandle);
-
-            Entity entity {e, m_Scene};
-            glm::mat4 transform;
-
-            if (entity.HasComponent<TransformComponent>())
-            {
-                transform = entity.GetComponent<TransformComponent>().GetTransform();
-            } else
-            {
-                entt::entity topTransform = entity.GetRootWithComponent<TransformComponent>();
-                if (topTransform == entt::null) continue;
-                Entity top = { topTransform, m_Scene};
-                transform = top.GetComponent<TransformComponent>().GetTransform();
-            }
-
-
-            if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
-            DrawCommand cmd;
-            cmd.TargetMesh = mesh;
-            cmd.Transform = transform;
-            cmd.TargetMaterial = nullptr;
-            if (entity.HasComponent<MaterialComponent>())
-            {
-                UUID materialHandle = entity.GetComponent<MaterialComponent>().MaterialHandle;
-                cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialHandle);
-            }
-            if (!cmd.TargetMaterial)
-            {
-                static Shared<Material> fallbackMaterial = MakeShared<Material>();
-                fallbackMaterial->AlbedoTint = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta
-                fallbackMaterial->MetallicMultiplier = 0.0f;
-                fallbackMaterial->RoughnessMultiplier = 0.5f;
-                cmd.TargetMaterial = fallbackMaterial;
-            }
-
-            m_OpaqueDrawList.emplace_back(cmd);
-        }
-
-
-        std::sort(m_OpaqueDrawList.begin(), m_OpaqueDrawList.end(), [](const DrawCommand& a, const DrawCommand& b) {
-                if (a.TargetMesh.get() != b.TargetMesh.get())
-                    return a.TargetMesh.get() < b.TargetMesh.get();
-            
-                return a.TargetMaterial.get() < b.TargetMaterial.get();
-        });
-
         size_t i = 0;
-        while (i < m_OpaqueDrawList.size())
+        while (i < commands.size())
         {
-            Shared<Mesh> currentMesh = m_OpaqueDrawList[i].TargetMesh;
-            Shared<Material> currentMaterial = m_OpaqueDrawList[i].TargetMaterial;
+            auto& base = commands[i];
+            size_t batchSize = 0;
 
-            // 1. Count how many consecutive instances have the EXACT same mesh
-             size_t batchSize = 0;
-
-            // Check if the next commands share the EXACT same mesh and material pointers
-            while (i + batchSize < m_OpaqueDrawList.size() && m_OpaqueDrawList[i + batchSize].TargetMesh.get() == currentMesh.get() && m_OpaqueDrawList[i + batchSize].TargetMaterial.get() == currentMaterial.get()) 
+            // Find how many items share this Mesh + Material
+            while (i + batchSize < commands.size() && 
+                   commands[i + batchSize].TargetMesh == base.TargetMesh && 
+                   commands[i + batchSize].TargetMaterial == base.TargetMaterial) 
             {
                 batchSize++;
             }
 
-            // 2. Extract their transforms into an array
-            std::vector<glm::mat4> transforms(batchSize);
-            for (size_t j = 0; j < batchSize; j++) 
-            {
-                transforms[j] = m_OpaqueDrawList[i + j].Transform;
-            }
+            m_TransformBuffer.reserve(batchSize);
+            for (size_t j = 0; j < batchSize; j++)
+                m_TransformBuffer.emplace_back(commands[i + j].Transform);
 
-            // 3. Send the entire batch to the GPU at once
-            Renderer::SubmitInstancedMesh(currentMesh, currentMaterial, transforms);
-
-            // 4. Jump forward to the next entirely different mesh
+            Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_TransformBuffer);
             i += batchSize;
+            m_TransformBuffer.clear();
         }
-
-        PhysicsEngine::RenderDebug(viewProjection);
-
-        Renderer::EndScene();
     }
 
 }

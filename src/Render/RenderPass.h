@@ -5,6 +5,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include "Buffer.h"
+#include "RenderContext.h"
 
 namespace Engine
 {
@@ -15,7 +16,7 @@ namespace Engine
     class RenderPass
     {
     public:
-        using Callback = std::function<void(TimeStep)>;
+        using Callback = std::function<void(RenderContext&)>;
 
         RenderPass(const std::string& name) : m_Name(name) {}
 

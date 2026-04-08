@@ -7,6 +7,7 @@
 #include "../Utils/ThreadPool.h"
 #include "../Asset/AssetManager.h"
 #include "../Asset/CollisionBaker.h"
+#include "PhysicsDebugDrawer.h"
 
 namespace Engine {
 

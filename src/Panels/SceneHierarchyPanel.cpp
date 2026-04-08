@@ -391,6 +391,9 @@ namespace Engine
 						UUID meshHandle = model->Meshes[i];
 						childEntity.AddComponent<MeshComponent>(meshHandle);
 
+						// By definition mesh must have a transform
+						childEntity.AddComponent<TransformComponent>();
+
 						// Attach the Material Component
 						// If you added `std::vector<uint32_t> MeshMaterialIndices` to map them perfectly:
 						if (!model->MeshMaterialIndices.empty()) {

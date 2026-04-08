@@ -167,6 +167,47 @@ namespace Engine
 		m_Registry.destroy(entity);
 	};
 
+	void Scene::UpdateWorldTransforms()
+	{
+		auto view = m_Registry.view<TransformComponent>();
+		for (auto e : view)
+		{
+			Entity entity{ e, this };
+			
+			// We only want to start the cascade from ROOT entities. 
+			// Children will be updated automatically by their parents.
+			if (!entity.HasParent())
+			{
+				// Root entities have no parent, so their "parent matrix" is just Identity (1.0f)
+				UpdateTransformTree(e, glm::mat4(1.0f));
+			}
+		}
+	}
+
+	void Scene::UpdateTransformTree(entt::entity handle, const glm::mat4 &parentTransform)
+	{
+		Entity entity{ handle, this };
+		if (!entity.HasComponent<TransformComponent>()) return;
+
+		auto& transformComp = entity.GetComponent<TransformComponent>();
+		
+		// 1. Get the local offset (translation, rotation, scale)
+		glm::mat4 localTransform = transformComp.GetTransform();
+		
+		// 2. CACHE THE RESULT: Parent's World Matrix * My Local Matrix = My World Matrix
+		transformComp.WorldTransform = parentTransform * localTransform;
+
+		// 3. Cascade down to children, passing MY new World Matrix as THEIR Parent Matrix
+		if (entity.HasComponent<RelationshipComponent>())
+		{
+			auto& relComp = entity.GetComponent<RelationshipComponent>();
+			for (auto childHandle : relComp.Children)
+			{
+				UpdateTransformTree(childHandle, transformComp.WorldTransform);
+			}
+		}
+	}
+
 	void Scene::OnMousePress(MouseButtonPressedEvent &e)
 	{
 		auto view = m_Registry.view<LuaScriptComponent>();

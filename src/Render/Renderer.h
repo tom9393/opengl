@@ -8,6 +8,7 @@
 #include "../Asset/Mesh.h"
 #include "../../platform/OpenGL/OpenGLTexture.h"
 #include "../Scene/Components.h"
+#include "SceneRenderer.h"
 
 namespace Engine
 {
@@ -45,9 +46,10 @@ namespace Engine
         LineVertex* LineVertexBufferPtr = nullptr;
     };
 
-    struct CameraData {
+    struct CameraData
+    {
         glm::mat4 ViewProjection;
-        glm::vec3 Position;
+        glm::vec3 CameraPosition;
         float padding;
     };
 
@@ -61,8 +63,7 @@ namespace Engine
 
         static void ToggleWireframe();
 
-        static void BeginScene(CameraData& viewProjection);
-        static void BeginScene();
+        static void BeginScene(RenderContext& context);
         static void EndScene();
 
         static void SetTexture(TextureLayout &textureLayout);
