@@ -239,7 +239,7 @@ namespace Engine
         uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(mesh.get());
         if (currentMaterialKey != s_SceneData.s_LastBoundMaterial)
         {
-            SetTexture(mesh->GetTextureLayout()); 
+            //SetTexture(mesh->GetTextureLayout()); 
             
             s_SceneData.s_LastBoundMaterial = currentMaterialKey;
             s_Data.statistics.MaterialSwitches++;
@@ -251,8 +251,8 @@ namespace Engine
         VAO->Bind();
         RenderCommand::DrawIndexed(VAO);
         s_Data.statistics.DrawCalls++;
-        s_Data.statistics.VerticeCount += mesh->m_Vertices.size();
-        s_Data.statistics.IndicesCount += mesh->m_Indices.size();
+        s_Data.statistics.VerticeCount += mesh->GetVertices().size();
+        s_Data.statistics.IndicesCount += mesh->GetIndices().size();
     }
 
     void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms)
@@ -271,8 +271,8 @@ namespace Engine
         VAO->Bind();
         RenderCommand::DrawIndexedInstances(VAO, transforms);
         s_Data.statistics.DrawCalls++;
-        s_Data.statistics.VerticeCount += mesh->m_Vertices.size();
-        s_Data.statistics.IndicesCount += mesh->m_Indices.size();
+        s_Data.statistics.VerticeCount += mesh->GetVertices().size();
+        s_Data.statistics.IndicesCount += mesh->GetIndices().size();
     }
 
     void Renderer::ToggleWireframe()

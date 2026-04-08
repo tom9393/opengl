@@ -47,6 +47,7 @@ namespace Engine {
 			case AssetType::Mesh: return "AssetType::Mesh";
 			case AssetType::Texture2D: return "AssetType::Texture2D";
 			case AssetType::Material: return "AssetType::Material";
+			case AssetType::Model: return "AssetType::Model";
 		}
 
 		return "AssetType::<Invalid>";
@@ -59,6 +60,7 @@ namespace Engine {
 		if (assetType == "AssetType::Mesh") return AssetType::Mesh;
 		if (assetType == "AssetType::Texture2D") return AssetType::Texture2D;
 		if (assetType == "AssetType::Material") return AssetType::Material;
+		if (assetType == "AssetType::Model") return AssetType::Model;
 
 		return AssetType::None;
 	}
@@ -75,7 +77,7 @@ namespace Engine {
         // 1. Check if we already have this file in the registry
         for (const auto& [handle, metadata] : m_AssetRegistry) {
             if (metadata.FilePath == filepath.string() && metadata.Type == AssetType::Model) {
-                return handle;
+                if (metadata.IsValid()) return handle;
             }
         }
 
@@ -175,7 +177,11 @@ namespace Engine {
     }
 
     void AssetManager::LoadAssetRegistry() {
+        return;
         std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
+
+        if (!std::filesystem::exists(path)) return;
+
 		YAML::Node data;
 		try
 		{
@@ -199,6 +205,7 @@ namespace Engine {
     }
 
     void AssetManager::SaveAssetRegistry() {
+        return;
         std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
 
 		YAML::Emitter out;

@@ -545,12 +545,20 @@ namespace Engine
 			}
 			if (ImGui::Button("Re-Bake Collision Data"))
 			{
-				auto& mc = entity.GetComponent<MeshComponent>(); // Fix this
-				// We load the asset and bake it immediately
-				// if (mc.model) {
-				// 	CollisionBaker::Bake(mc.path, mc.model->GetMeshes());
-				// 	std::cout << "[Editor] Manual Re-Bake successful for " << mc.path << std::endl;
-				// }
+				std::vector<Shared<Mesh>> meshes;
+
+				std::vector<Entity> meshEntities;
+				entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
+				for (auto& e : meshEntities)
+				{
+					UUID handle = e.GetComponent<MeshComponent>().MeshHandle;
+					meshes.emplace_back(AssetManager::GetAsset<Mesh>(handle));
+				}
+
+				AssetMetadata metadata = AssetManager::GetMetadata(meshEntities[0].GetComponent<MeshComponent>().MeshHandle);
+
+				// 1. Ensure a bake exists (or bake it now if missing)
+				CollisionBaker::Bake(metadata.FilePath, meshes);
 			}
 			// Add a small hint so the user knows what this does
 			if (ImGui::IsItemHovered())

@@ -74,7 +74,8 @@ namespace Engine
         RelationshipComponent(const RelationshipComponent&) = default;
     };
 
-    struct MeshComponent {
+    struct MeshComponent
+    {
         UUID MeshHandle = 0;
         
         MeshComponent() = default;
@@ -91,7 +92,8 @@ namespace Engine
         TextureComponent(UUID handle) : TextureHandle(handle) {}
     };
 
-    struct MaterialComponent {
+    struct MaterialComponent
+    {
         UUID MaterialHandle = 0;
 
         MaterialComponent() = default;

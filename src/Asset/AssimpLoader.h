@@ -108,7 +108,7 @@ namespace Engine
             outModel->Materials.reserve(scene->mNumMaterials);
             for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
                 UUID matHandle = UUID();
-                outModel->Materials.push_back(matHandle);
+                outModel->Materials.emplace_back(matHandle);
 
                 AssetMetadata meta;
                 meta.Handle = matHandle;
@@ -116,7 +116,7 @@ namespace Engine
                 meta.FilePath = path.string();
                 meta.Index = i;
                 
-                resultHooks.MaterialHooks.push_back(meta);
+                resultHooks.MaterialHooks.emplace_back(meta);
             }
 
             // 2. Extract Meshes
@@ -130,9 +130,9 @@ namespace Engine
                 meta.Type = AssetType::Mesh;
                 meta.FilePath = path.string();
                 meta.Index = i;
-                outModel->MeshMaterialIndices.push_back(scene->mMeshes[i]->mMaterialIndex);
+                outModel->MeshMaterialIndices.emplace_back(scene->mMeshes[i]->mMaterialIndex);
                 
-                resultHooks.MeshHooks.push_back(meta);
+                resultHooks.MeshHooks.emplace_back(meta);
             }
 
             return resultHooks;
@@ -197,6 +197,9 @@ namespace Engine
                 { ShaderDataType::Float3, "a_Tangent" },
                 { ShaderDataType::Float3, "a_Bitangent" }
             };
+            BufferLayout instanceLayout = {
+                { ShaderDataType::Mat4, "a_InstanceTransform" },
+            };
 
             const size_t floatsPerVertex = 14; 
             vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
@@ -243,10 +246,29 @@ namespace Engine
                     indices.emplace_back(face.mIndices[j]);        
             }
 
-            mesh->SetLayout(meshLayout);
-            mesh->SetAABB({ minExtents, maxExtents });
 
-            mesh->Prepare();
+            Shared<VertexArray> VAO = VertexArray::Create();
+            VAO->Bind();
+
+            Shared<VertexBuffer> VBO = VertexBuffer::Create(&vertices[0], vertices.size() * sizeof(float));
+            VBO->SetLayout(meshLayout);
+            VAO->AddVertexBuffer(VBO);
+
+            Shared<VertexBuffer> VBO2 = VertexBuffer::Create(1000 * sizeof(glm::mat4));
+            VBO2->SetLayout(instanceLayout);
+            VAO->AddVertexBuffer(VBO2);
+
+            Shared<IndexBuffer> EBO = IndexBuffer::Create(&indices[0], indices.size());
+            VAO->SetIndexBuffer(EBO);
+
+            VAO->Unbind();
+
+            std::vector<Shared<VertexBuffer>> VBOs = { VBO, VBO2 };
+
+            mesh->SetVAO(VAO);
+            mesh->SetVBOs(VBOs);
+            mesh->SetEBO(EBO);
+            mesh->SetAABB({ minExtents, maxExtents });
 
             return mesh;
         }

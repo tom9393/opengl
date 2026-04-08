@@ -44,6 +44,7 @@ namespace Engine
 			map[id] = newEntity;
 		}
 		
+		// Note: all components are being shallow copied
 		CopyComponent<TagComponent>(destination, source, map);
 		CopyComponent<TransformComponent>(destination, source, map);
 		CopyComponent<MeshComponent>(destination, source, map);
@@ -53,7 +54,33 @@ namespace Engine
 		CopyComponent<RigidBodyComponent>(destination, source, map);
 		CopyComponent<NativeScriptComponent>(destination, source, map);
 		CopyComponent<LuaScriptComponent>(destination, source, map);
-		CopyComponent<RelationshipComponent>(destination, source, map);
+
+		auto relView = source.view<RelationshipComponent>();
+		for (auto& e : relView)
+		{
+			UUID entityUUID = source.get<IDComponent>(e).id;
+			entt::entity newEntityId = map.at(entityUUID);
+			auto& oldRel = source.get<RelationshipComponent>(e);
+
+			RelationshipComponent newRel;
+			
+			// 1. Translate the Parent handle
+			if (oldRel.Parent != entt::null)
+			{
+				// Find the parent's UUID in the old scene, then get its new handle in the new scene
+				UUID parentUUID = source.get<IDComponent>(oldRel.Parent).id;
+				newRel.Parent = map.at(parentUUID);
+			}
+
+			// 2. Translate all Children handles
+			for (auto childHandle : oldRel.Children)
+			{
+				UUID childUUID = source.get<IDComponent>(childHandle).id;
+				newRel.Children.push_back(map.at(childUUID));
+			}
+
+			destination.emplace_or_replace<RelationshipComponent>(newEntityId, newRel);
+		}
 
 		return newScene;
 	};

@@ -5,6 +5,7 @@
 #include "Render/Renderer.h"
 #include "KeyCodes.h"
 #include "Events/EventBroker.h"
+#include "Asset/AssetManager.h"
 #include <thread>
 
 namespace Engine
@@ -31,6 +32,7 @@ namespace Engine
         EventBroker::Get().Subscribe<KeyboardPressEvent>(BIND_FN(OnKeyPress), this);
 
         Renderer::Init();
+        AssetManager::Init();
 
         m_ImGuiLayer = new ImGuiLayer();
         PushOverlayer(m_ImGuiLayer);
@@ -39,6 +41,8 @@ namespace Engine
     Application::~Application()
     {
         EventBroker::Get().UnsubscribeAll(this);
+
+        AssetManager::Shutdown();
 
         delete m_ThreadPool;
         delete m_LayerStack;

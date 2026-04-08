@@ -67,7 +67,10 @@ namespace Engine
             // 2. Climb up the tree to the absolute root
             while (current.HasParent())
             {
-                current = Entity{ current.GetParent(), m_Scene };
+                entt::entity parent = current.GetParent();
+                if (parent == entt::null) break;
+
+                current = Entity{ parent, m_Scene };
                 
                 // 3. Every time we find the component, overwrite our record 
                 // so we end up with the one highest in the tree.

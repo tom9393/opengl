@@ -21,7 +21,7 @@ namespace Engine {
             for (const auto& mesh : meshes) {
                 // 1. Create a temporary hull from raw mesh vertices
                 btConvexHullShape tempShape;
-                uint32_t stride = mesh->GetLayout().GetStride() / sizeof(float);
+                uint32_t stride = mesh->GetVBOs()[0]->GetLayout().GetStride() / sizeof(float);
                 const std::vector<float>& verts = mesh->GetVertices();
 
                 for (size_t i = 0; i < verts.size(); i += stride) {
