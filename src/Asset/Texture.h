@@ -16,7 +16,9 @@ namespace Engine
         AO,        // PBR: Ambient Occlusion
         Height,    // Often used for parallax
         Diffuse,   // Legacy
-        Specular   // Legacy
+        Specular,  // Legacy
+        Emissive,
+        Transparency
     };
 
     class Texture : public Asset

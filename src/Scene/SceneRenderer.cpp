@@ -73,9 +73,10 @@ namespace Engine {
                 transform = entity.GetComponent<TransformComponent>().GetTransform();
             } else
             {
-                Entity topTransform = entity.GetRootWithComponent<TransformComponent>();
-                if (topTransform.GetHandle() == entt::null) continue;
-                transform = topTransform.GetComponent<TransformComponent>().GetTransform();
+                entt::entity topTransform = entity.GetRootWithComponent<TransformComponent>();
+                if (topTransform == entt::null) continue;
+                Entity top = { topTransform, m_Scene};
+                transform = top.GetComponent<TransformComponent>().GetTransform();
             }
 
 
@@ -89,31 +90,37 @@ namespace Engine {
                 UUID materialHandle = entity.GetComponent<MaterialComponent>().MaterialHandle;
                 cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialHandle);
             }
-            
-            // The SortKey: Group by Mesh AND Material for proper instancing
-            // A simple hash combining both pointers
-            uintptr_t meshPtr = reinterpret_cast<uintptr_t>(mesh.get());
-            uintptr_t matPtr = reinterpret_cast<uintptr_t>(cmd.TargetMaterial.get());
-            cmd.SortKey = meshPtr ^ (matPtr + 0x9e3779b9 + (meshPtr << 6) + (meshPtr >> 2));
-            
-            m_OpaqueDrawList.push_back(cmd);
+            if (!cmd.TargetMaterial)
+            {
+                static Shared<Material> fallbackMaterial = MakeShared<Material>();
+                fallbackMaterial->AlbedoTint = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta
+                fallbackMaterial->MetallicMultiplier = 0.0f;
+                fallbackMaterial->RoughnessMultiplier = 0.5f;
+                cmd.TargetMaterial = fallbackMaterial;
+            }
+
+            m_OpaqueDrawList.emplace_back(cmd);
         }
 
 
         std::sort(m_OpaqueDrawList.begin(), m_OpaqueDrawList.end(), [](const DrawCommand& a, const DrawCommand& b) {
-                return a.SortKey < b.SortKey;
+                if (a.TargetMesh.get() != b.TargetMesh.get())
+                    return a.TargetMesh.get() < b.TargetMesh.get();
+            
+                return a.TargetMaterial.get() < b.TargetMaterial.get();
         });
 
         size_t i = 0;
         while (i < m_OpaqueDrawList.size())
         {
-            uintptr_t currentKey = m_OpaqueDrawList[i].SortKey;
             Shared<Mesh> currentMesh = m_OpaqueDrawList[i].TargetMesh;
             Shared<Material> currentMaterial = m_OpaqueDrawList[i].TargetMaterial;
 
             // 1. Count how many consecutive instances have the EXACT same mesh
-            size_t batchSize = 0;
-            while (i + batchSize < m_OpaqueDrawList.size() && m_OpaqueDrawList[i + batchSize].SortKey == currentKey) 
+             size_t batchSize = 0;
+
+            // Check if the next commands share the EXACT same mesh and material pointers
+            while (i + batchSize < m_OpaqueDrawList.size() && m_OpaqueDrawList[i + batchSize].TargetMesh.get() == currentMesh.get() && m_OpaqueDrawList[i + batchSize].TargetMaterial.get() == currentMaterial.get()) 
             {
                 batchSize++;
             }
@@ -135,34 +142,6 @@ namespace Engine {
         PhysicsEngine::RenderDebug(viewProjection);
 
         Renderer::EndScene();
-    }
-
-    glm::mat4 SceneRenderer::GetWorldTransform(entt::entity entity)
-    {
-        glm::mat4 worldTransform(1.0f);
-        entt::entity current = entity;
-        
-        // Walk up the parent chain
-        while (current != entt::null)
-        {
-            if (m_Scene->GetRegistry().all_of<TransformComponent>(current))
-            {
-                const auto& localTransform = m_Scene->GetRegistry().get<TransformComponent>(current).GetTransform();
-                // GLM matrix multiplication is right-to-left. We prepend the parent's matrix.
-                worldTransform = localTransform * worldTransform; 
-            }
-            
-            if (m_Scene->GetRegistry().all_of<RelationshipComponent>(current))
-            {
-                current = m_Scene->GetRegistry().get<RelationshipComponent>(current).Parent;
-            }
-            else
-            {
-                current = entt::null;
-            }
-        }
-        
-        return worldTransform;
     }
 
 }

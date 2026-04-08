@@ -118,8 +118,25 @@ namespace Engine
 		return e;
 	};
 
-	void Scene::DestroyEntity(Entity entity)
+	void Scene::DestroyEntity(Entity& entity)
 	{
+		if (!entity) return;
+
+		Entity nullparent {};
+		entity.SetParent(nullparent);
+
+		if (entity.HasComponent<RelationshipComponent>())
+		{
+			auto children = entity.GetComponent<RelationshipComponent>().Children;
+			for (auto childHandle : children)
+			{
+				Entity child{ childHandle, this };
+				DestroyEntity(child);
+			}
+		}
+
+		std::cout << (uint32_t)entity.GetHandle() << std::endl;
+
 		m_Registry.destroy(entity);
 	};
 

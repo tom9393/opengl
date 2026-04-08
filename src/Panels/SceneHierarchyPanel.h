@@ -24,6 +24,7 @@ namespace Engine
         private:
         Shared<Scene> m_Context;
         Entity m_SelectionContext;
+        bool m_Deleted = false;
     };
 
 };

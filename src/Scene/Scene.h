@@ -24,7 +24,7 @@ namespace Engine
 
         Entity CreateEntity(const std::string &name = "Entity");
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
-        void DestroyEntity(Entity entity);
+        void DestroyEntity(Entity& entity);
 
         entt::registry& GetRegistry() { return m_Registry; }
 

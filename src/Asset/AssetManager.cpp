@@ -74,7 +74,7 @@ namespace Engine {
     UUID AssetManager::ImportAsset(const std::filesystem::path& filepath) {
         // 1. Check if we already have this file in the registry
         for (const auto& [handle, metadata] : m_AssetRegistry) {
-            if (metadata.FilePath == filepath.string()) {
+            if (metadata.FilePath == filepath.string() && metadata.Type == AssetType::Model) {
                 return handle;
             }
         }
@@ -86,7 +86,7 @@ namespace Engine {
         
         // Determine type based on extension (simplified)
         std::string ext = filepath.extension().string();
-        if (ext == ".obj" || ext == ".assbin") {
+        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") {
             // Create the Model blueprint
             Shared<Model> modelAsset = MakeShared<Model>();
             modelAsset->Handle = UUID();
@@ -117,7 +117,7 @@ namespace Engine {
             SaveAssetRegistry();
             return modelAsset->Handle;
         }
-        else if (ext == ".png" || ext == ".jpg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
+        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else metadata.Type = AssetType::None;
 
         m_AssetRegistry[metadata.Handle] = metadata;
@@ -175,7 +175,7 @@ namespace Engine {
     }
 
     void AssetManager::LoadAssetRegistry() {
-        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry/yaml";
+        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
 		YAML::Node data;
 		try
 		{
@@ -199,7 +199,7 @@ namespace Engine {
     }
 
     void AssetManager::SaveAssetRegistry() {
-        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry/yaml";
+        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
 
 		YAML::Emitter out;
 		{

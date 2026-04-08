@@ -53,15 +53,15 @@ namespace Engine
         }
 
         template <typename T>
-        Entity GetRootWithComponent()
+        entt::entity GetRootWithComponent()
         {
             Entity current = *this;
-            Entity highestWithComponent; // Defaults to a null/invalid entity
+            entt::entity highest = entt::null;
 
             // 1. Check if the starting entity itself has the component
             if (current.HasComponent<T>())
             {
-                highestWithComponent = current;
+                highest = current.GetHandle();
             }
 
             // 2. Climb up the tree to the absolute root
@@ -73,15 +73,15 @@ namespace Engine
                 // so we end up with the one highest in the tree.
                 if (current.HasComponent<T>())
                 {
-                    highestWithComponent = current;
+                    highest = current.GetHandle();
                 }
             }
 
-            return highestWithComponent;
+            return highest;
         }
 
         template <typename T>
-        Entity GetClosestParentWithComponent()
+        entt::entity GetClosestParentWithComponent()
         {
             Entity current = *this;
 
@@ -94,11 +94,11 @@ namespace Engine
                 // Stop and return immediately upon finding the first match
                 if (current.HasComponent<T>())
                 {
-                    return current;
+                    return current.GetHandle();
                 }
             }
 
-            return Entity{}; // Return null entity if none found
+            return entt::null;
         }
 
         template <typename T>

@@ -59,7 +59,7 @@ namespace Engine
 				if (itemExtension == ".pmblend")
 				{
 					ImGui::SetDragDropPayload("SCENE", itemPath, strlen(itemPath) + 1);
-				} else if (itemExtension == ".assbin" || itemExtension == ".obj") {
+				} else if (itemExtension == ".assbin" || itemExtension == ".obj" || itemExtension == ".gltf" || itemExtension == ".fbx") {
 					ImGui::SetDragDropPayload("MODEL", itemPath, strlen(itemPath) + 1);
 				} else if (itemExtension == ".lua") {
 					ImGui::SetDragDropPayload("LUASCRIPT", itemPath, strlen(itemPath) + 1);

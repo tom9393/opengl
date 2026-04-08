@@ -1,0 +1,45 @@
+AssetRegistry:
+  - Handle: 9448332525051669978
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Material
+    Index: 4
+  - Handle: 4903469753670111298
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::<Invalid>
+    Index: 0
+  - Handle: 8709160897166092869
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Material
+    Index: 3
+  - Handle: 7930047600878889455
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Material
+    Index: 2
+  - Handle: 553626057675534043
+    FilePath: ../assets/F-16D/Albedo.jpg
+    Type: AssetType::Texture2D
+    Index: 0
+  - Handle: 18080248773809288162
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Material
+    Index: 0
+  - Handle: 6694392057857491278
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Mesh
+    Index: 1
+  - Handle: 4848505708055661815
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Material
+    Index: 1
+  - Handle: 12009449521087264981
+    FilePath: ../assets/F-16D/F-16D.obj
+    Type: AssetType::Mesh
+    Index: 0
+  - Handle: 7250634159138260715
+    FilePath: ../assets/icons/documentIcon.png
+    Type: AssetType::Texture2D
+    Index: 0
+  - Handle: 13134322685152555772
+    FilePath: ../assets/icons/folderIcon.png
+    Type: AssetType::Texture2D
+    Index: 0

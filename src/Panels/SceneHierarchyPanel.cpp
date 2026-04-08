@@ -204,6 +204,13 @@ namespace Engine
             DrawComponents(m_SelectionContext);
         }
         ImGui::End();
+
+		if (m_Deleted)
+		{
+			m_Context->DestroyEntity(m_SelectionContext);
+			m_SelectionContext = {};
+			m_Deleted = false;
+		}
     };
 
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
@@ -250,7 +257,6 @@ namespace Engine
             ImGui::EndDragDropTarget();
         }
 
-        bool entityDeleted = false;
         if (ImGui::BeginPopupContextItem())
         {
             if (ImGui::MenuItem("Create child entity"))
@@ -260,7 +266,7 @@ namespace Engine
             }
             if (ImGui::MenuItem("Delete entity"))
             {
-                entityDeleted = true;
+                m_Deleted = true;
             }
             ImGui::EndPopup();
         }
@@ -278,15 +284,6 @@ namespace Engine
                 }
             }
             ImGui::TreePop();
-        }
-
-        if (entityDeleted)
-        {
-            m_Context->DestroyEntity(entity); // Make sure your DestroyEntity also handles unparenting children!
-            if (m_SelectionContext == entity)
-            {
-                m_SelectionContext = {};
-            }
         }
     };
 

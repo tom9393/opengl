@@ -26,24 +26,55 @@ namespace Engine
 
     static TextureType AssimpToTextureType(aiTextureType type)
     {
-        if (type == aiTextureType_DIFFUSE || type == aiTextureType_BASE_COLOR) return TextureType::Diffuse;
-        if (type == aiTextureType_SPECULAR) return TextureType::Specular;
-        if (type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT) return TextureType::Normal;
-        if (type == aiTextureType_METALNESS || type == aiTextureType_SHININESS) return TextureType::Metallic;
-        if (type == aiTextureType_AMBIENT_OCCLUSION) return TextureType::AO;
+        // Albedo / Diffuse
+        if (type == aiTextureType_DIFFUSE || type == aiTextureType_BASE_COLOR) 
+            return TextureType::Diffuse;
+        
+        // Specular
+        if (type == aiTextureType_SPECULAR) 
+            return TextureType::Specular;
+
+        // Normals / Height (OBJ files often use Height for Normals)
+        if (type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT || type == aiTextureType_NORMAL_CAMERA) 
+            return TextureType::Normal;
+
+        // Metallic / Shininess
+        if (type == aiTextureType_METALNESS || type == aiTextureType_SHININESS) 
+            return TextureType::Metallic;
+
+        // Roughness
+        if (type == aiTextureType_DIFFUSE_ROUGHNESS || type == aiTextureType_MAYA_SPECULAR_ROUGHNESS) 
+            return TextureType::Roughness;
+
+        // Ambient Occlusion / Lightmaps
+        if (type == aiTextureType_AMBIENT_OCCLUSION || type == aiTextureType_LIGHTMAP || type == aiTextureType_AMBIENT) 
+            return TextureType::AO;
+
+        // Emissive
+        if (type == aiTextureType_EMISSIVE || type == aiTextureType_EMISSION_COLOR) 
+            return TextureType::Emissive;
+
+        // Transparency / Opacity
+        if (type == aiTextureType_OPACITY) 
+            return TextureType::Transparency;
 
         return TextureType::None;
     }
 
     static aiTextureType TypeToAssimpType(TextureType type)
     {
-        if (type == TextureType::Diffuse) return aiTextureType_DIFFUSE;
-        if (type == TextureType::Specular) return aiTextureType_SPECULAR;
-        if (type == TextureType::Normal) return aiTextureType_NORMALS;
-        if (type == TextureType::Metallic) return aiTextureType_METALNESS;
-        if (type == TextureType::AO) return aiTextureType_AMBIENT_OCCLUSION;
-
-        return aiTextureType_NONE;
+        switch (type)
+        {
+            case TextureType::Diffuse:      return aiTextureType_BASE_COLOR;
+            case TextureType::Specular:     return aiTextureType_SPECULAR;
+            case TextureType::Normal:       return aiTextureType_NORMALS;
+            case TextureType::Metallic:     return aiTextureType_METALNESS;
+            case TextureType::Roughness:    return aiTextureType_DIFFUSE_ROUGHNESS;
+            case TextureType::AO:           return aiTextureType_AMBIENT_OCCLUSION;
+            case TextureType::Emissive:     return aiTextureType_EMISSION_COLOR;
+            case TextureType::Transparency: return aiTextureType_OPACITY;
+            default:                        return aiTextureType_NONE;
+        }
     }
 
     static glm::mat4 AssimpToGLMMatrix(const aiMatrix4x4& matrix)
@@ -64,7 +95,7 @@ namespace Engine
         {
             ModelScanResult resultHooks;
             Assimp::Importer importer;
-            
+
             // Pass 0 as flags! We only read the structure/headers, NOT the heavy vertex data.
             const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
@@ -110,7 +141,7 @@ namespace Engine
         static Shared<Mesh> LoadSubMesh(const std::filesystem::path& path, uint32_t submeshIndex)
         {
             Assimp::Importer importer;
-            
+
             // We use heavy processing flags here because we actually need the geometry
             const aiScene* scene = importer.ReadFile(path, s_AssimpFlags);
 
@@ -130,7 +161,7 @@ namespace Engine
         static Shared<Material> LoadMaterial(const std::filesystem::path& path, uint32_t materialIndex)
         {
             Assimp::Importer importer;
-            
+
             // Pass 0 as flags! We only need to read the material string names, not geometry.
             const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
@@ -225,15 +256,52 @@ namespace Engine
             Shared<Material> material = MakeShared<Material>();
 
             std::vector<aiTextureType> textureTypes = { 
-                aiTextureType_DIFFUSE,          // 1  Often used as Albedo in legacy files
-                aiTextureType_BASE_COLOR,       // 12 Modern Albedo
-                aiTextureType_NORMALS,          // 6  PBR Normals
-                aiTextureType_HEIGHT,           // 5  Sometimes used for Normals in OBJ
-                aiTextureType_METALNESS,        // 15 PBR Metallic
-                aiTextureType_DIFFUSE_ROUGHNESS,// 16 PBR Roughness
-                aiTextureType_AMBIENT_OCCLUSION,// 17 PBR AO
-                aiTextureType_SHININESS         // 7  Shininess
+                aiTextureType_DIFFUSE, aiTextureType_BASE_COLOR,
+                aiTextureType_NORMALS, aiTextureType_HEIGHT, aiTextureType_NORMAL_CAMERA,
+                aiTextureType_METALNESS, aiTextureType_SHININESS,
+                aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_MAYA_SPECULAR_ROUGHNESS,
+                aiTextureType_AMBIENT_OCCLUSION, aiTextureType_LIGHTMAP,
+                aiTextureType_EMISSIVE, aiTextureType_EMISSION_COLOR,
+                aiTextureType_OPACITY, aiTextureType_REFLECTION,
+                aiTextureType_SHININESS
             };
+
+            aiColor4D color;
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
+                material->AlbedoTint = glm::vec4(color.r, color.g, color.b, 1.0f);
+            }
+
+            // --- 2. d: Opacity / Alpha ---
+            float opacity = 1.0f;
+            if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_OPACITY, &opacity)) {
+                material->AlbedoTint.a = opacity;
+            }
+
+            // --- 3. Ke: Emissive ---
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
+                // Average the RGB values to get a scalar emission intensity
+                material->Emission = (color.r + color.g + color.b) / 3.0f;
+            }
+
+            // --- 4. Ns: Shininess -> Roughness Conversion ---
+            float shininess = 0.0f;
+            if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_SHININESS, &shininess)) {
+                // Prevent division by zero. 
+                // Math: High shininess (e.g., 714) = very smooth = low roughness.
+                // A common translation formula from Phong to PBR Roughness is:
+                material->RoughnessMultiplier = glm::sqrt(2.0f / (shininess + 2.0f));
+            } else {
+                material->RoughnessMultiplier = 0.5f; // Safe default
+            }
+
+            // --- 5. Ks: Specular -> Metallic Guessing (Optional hack) ---
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &color)) {
+                // In legacy formats, highly reflective grey/colored specular usually implies metal.
+                float specAverage = (color.r + color.g + color.b) / 3.0f;
+                if (specAverage > 0.8f) {
+                    material->MetallicMultiplier = 1.0f; 
+                }
+            }
 
             for (auto& type : textureTypes)
             {
@@ -263,6 +331,7 @@ namespace Engine
                     if (texType == TextureType::Diffuse)  material->AlbedoMap = texture;
                     if (texType == TextureType::Normal)   material->NormalMap = texture;
                     if (texType == TextureType::Metallic) material->MetallicMap = texture;
+                    if (texType == TextureType::Roughness)material->RoughnessMap = texture;
                     if (texType == TextureType::AO)       material->AOMap = texture;
                 }
             }
