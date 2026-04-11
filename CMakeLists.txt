@@ -18,6 +18,7 @@ set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE)
 
 # So far no support for lua 5.5
 find_package(Lua 5.4 EXACT REQUIRED)
+find_package(X11 REQUIRED)
 
 # === Third-party libs ===
 add_subdirectory(lib/bullet)
@@ -77,6 +78,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    ${X11_LIBRARIES}
+    pthread
     GL
     dl
     glfw

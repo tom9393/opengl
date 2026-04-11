@@ -54,6 +54,21 @@ namespace Engine
 		}
 	};
 
+	std::string AssetTypeToString(AssetType type)
+	{
+		switch (type)
+		{
+			case AssetType::None:      return "AssetType::None";
+			case AssetType::Scene:     return "AssetType::Scene";
+			case AssetType::Mesh: return "AssetType::Mesh";
+			case AssetType::Texture2D: return "AssetType::Texture2D";
+			case AssetType::Material: return "AssetType::Material";
+			case AssetType::Model: return "AssetType::Model";
+		}
+
+		return "AssetType::<Invalid>";
+	}
+
 	static void DrawVec3(const std::string &label, glm::vec3 &values, float resetValue = 1.0f, float columnWidth = 100.0f)
 	{
 		ImGuiIO &io = ImGui::GetIO();
@@ -379,41 +394,43 @@ namespace Engine
 				
 				// Retrieve the Model blueprint containing our scanned UUIDs
 				UUID handle = AssetManager::ImportAsset(path);
-				Shared<Model> model = AssetManager::GetAsset<Model>(handle);
-
-				if (model && entity) // Ensure we have a valid model and a selected entity
-				{
-					// Iterate through every mesh handle stored in the Model asset
-					for (size_t i = 0; i < model->Meshes.size(); i++)
-					{
-						// Note: Replace `m_Context` with your actual Scene pointer variable 
-						// if it is named differently in your Editor panel.
-						Entity childEntity = m_Context->CreateEntity("MeshPart_" + std::to_string(i));
-						
-						// Set the hierarchy so it appears under the currently selected entity
-						childEntity.SetParent(entity);
-
-						// Add the MeshComponent using the lazy-load UUID
-						UUID meshHandle = model->Meshes[i];
-						childEntity.AddComponent<MeshComponent>(meshHandle);
-
-						// By definition mesh must have a transform
-						childEntity.AddComponent<TransformComponent>();
-
-						// Attach the Material Component
-						// If you added `std::vector<uint32_t> MeshMaterialIndices` to map them perfectly:
-						if (!model->MeshMaterialIndices.empty()) {
-							uint32_t meshMaterialIndex = model->MeshMaterialIndices[i];
-							UUID materialHandle = model->Materials[meshMaterialIndex];
-
-							childEntity.AddComponent<MaterialComponent>(materialHandle);
-						}
-					}
-				}
 			}
-
 			ImGui::EndDragDropTarget(); 
 		}
+
+		// --- FIXED SECTION ---
+        auto& m_AssetRegistry = AssetManager::m_AssetRegistry; // Reference is better than copying the whole map
+
+        for (auto &entry : m_AssetRegistry)
+        {
+			if (entry.second.Type != AssetType::Model) continue;
+            std::string a = AssetTypeToString(entry.second.Type).append(entry.second.FilePath);
+            if (ImGui::Button(a.c_str()))
+            {
+                // Retrieve the Model blueprint containing our scanned UUIDs
+                AssetMetadata metadata = AssetManager::GetMetadata(entry.first);
+
+                // Iterate through every mesh handle stored in the Model asset
+                for (size_t i = 0; i < metadata.Children.size(); i++)
+                {
+                    Entity childEntity = m_Context->CreateEntity("MeshPart_" + std::to_string(i));
+                    childEntity.SetParent(m_SelectionContext);
+
+                    UUID meshHandle = metadata.Children[i].Handle;
+                    childEntity.AddComponent<MeshComponent>(meshHandle);
+                    childEntity.AddComponent<TransformComponent>();
+
+                    // Attach the Material Components
+                    for (size_t j = 0; j < metadata.Children[i].Children.size(); j++)
+                    {
+                        UUID materialHandle = metadata.Children[i].Children[j].Handle;
+                        childEntity.AddComponent<MaterialComponent>(materialHandle);
+                    }
+                }
+            } // End Button if
+        } // End AssetRegistry loop
+
+        // --- END FIXED SECTION ---
 
 		DrawComponent<MeshComponent>("Mesh", entity, [entity](auto &component) // Fix this
 		{

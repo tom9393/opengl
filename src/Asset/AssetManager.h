@@ -2,6 +2,7 @@
 
 #include "Asset.h"
 #include "../Core/UUID.h"
+#include <yaml-cpp/yaml.h>
 
 namespace Engine {
 
@@ -25,17 +26,19 @@ namespace Engine {
 
     private:
         static Shared<Asset> GetAssetInternal(UUID handle);
+        static AssetMetadata LoadAssetMetadata(const YAML::Node &node);
+        static void SaveAssetMetadata(YAML::Emitter &out, const AssetMetadata &data);
+        static void RegisterAssetRecursive(AssetMetadata &data);
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();
 
     private:
-        // Memory storage: UUID -> Actual OpenGL Data
         static inline std::unordered_map<UUID, Shared<Asset>> m_LoadedAssets;
-        
-        // Metadata storage: UUID -> File Path & Type
         static inline std::unordered_map<UUID, AssetMetadata> m_AssetRegistry;
         
         static inline AssetMetadata s_NullMetadata; // Returned when handle is invalid
+
+        friend class SceneHierarchyPanel;
     };
 
 }

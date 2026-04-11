@@ -87,6 +87,8 @@ namespace Engine
 
         Shared<Shader> shader = material->TargetShader;
 
+        if (!shader) return;
+
         unsigned int idx = 0;
 
         if (material->AlbedoMap)
@@ -189,6 +191,8 @@ namespace Engine
     void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms)
     {
         if (transforms.empty()) return;
+
+        if (!mesh->GetVAO()) return;
 
         uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(material.get());
         if (currentMaterialKey != s_SceneData.s_LastBoundMaterial) {

@@ -76,7 +76,7 @@ namespace Engine {
     UUID AssetManager::ImportAsset(const std::filesystem::path& filepath) {
         // 1. Check if we already have this file in the registry
         for (const auto& [handle, metadata] : m_AssetRegistry) {
-            if (metadata.FilePath == filepath.string() && metadata.Type == AssetType::Model) {
+            if (metadata.FilePath == filepath.string()) {
                 if (metadata.IsValid()) return handle;
             }
         }
@@ -89,35 +89,11 @@ namespace Engine {
         // Determine type based on extension (simplified)
         std::string ext = filepath.extension().string();
         if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") {
-            // Create the Model blueprint
-            Shared<Model> modelAsset = MakeShared<Model>();
-            modelAsset->Handle = UUID();
-
-            // Scan the file and fill the Model's ID vectors
-            ModelScanResult hooks = AssimpLoader::ScanModel(filepath, modelAsset);
-
-            // Register all generated Mesh hooks
-            for (const auto& meta : hooks.MeshHooks) {
-                m_AssetRegistry[meta.Handle] = meta;
-            }
-
-            // Register all generated Material hooks
-            for (const auto& meta : hooks.MaterialHooks) {
-                m_AssetRegistry[meta.Handle] = meta;
-            }
-
-            // Register the Model itself
-            AssetMetadata modelMetadata;
-            modelMetadata.Handle = modelAsset->Handle;
-            modelMetadata.Type = AssetType::Model;
-            modelMetadata.FilePath = filepath.string();
-            m_AssetRegistry[modelAsset->Handle] = modelMetadata;
-
-            // Cache ONLY the lightweight Model struct in memory
-            m_LoadedAssets[modelAsset->Handle] = modelAsset;
-
-            SaveAssetRegistry();
-            return modelAsset->Handle;
+            AssetMetadata mt = AssimpLoader::ScanModel(filepath);
+            RegisterAssetRecursive(mt);
+            metadata.Handle = mt.Handle;
+            metadata.Type = mt.Type;
+            metadata.Children = mt.Children;
         }
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else metadata.Type = AssetType::None;
@@ -138,10 +114,6 @@ namespace Engine {
 
         // 2. Not loaded. Do we know about it in the registry?
         const AssetMetadata& metadata = GetMetadata(handle);
-        if (!metadata.IsValid()) {
-            // Unregistered asset requested
-            return nullptr; 
-        }
 
         // 3. Load from disk based on metadata
         Shared<Asset> newAsset = nullptr;
@@ -176,8 +148,81 @@ namespace Engine {
         return s_NullMetadata;
     }
 
+    void AssetManager::RegisterAssetRecursive(AssetMetadata &data)
+    {
+        m_AssetRegistry[data.Handle] = data;
+        if (data.HasChildren())
+        {
+            for (auto& child : data.Children)
+            {
+                RegisterAssetRecursive(child);
+            }
+        }
+    }
+
+    AssetMetadata AssetManager::LoadAssetMetadata(const YAML::Node& node)
+    {
+        AssetMetadata metadata;
+        metadata.Handle = node["Handle"].as<uint64_t>();
+        metadata.FilePath = node["FilePath"].as<std::string>();
+        metadata.Type = AssetTypeFromString(node["Type"].as<std::string>());
+        metadata.Index = node["Index"].as<uint32_t>();
+
+        auto children = node["Children"];
+        if (children)
+        {
+            for (const auto& childNode : children)
+            {
+                metadata.Children.push_back(LoadAssetMetadata(childNode));
+            }
+        }
+
+        // Add to the flat registry for quick lookup
+        m_AssetRegistry[metadata.Handle] = metadata; 
+        return metadata;
+    }
+
+    void AssetManager::SaveAssetMetadata(YAML::Emitter& out, const AssetMetadata& metadata)
+    {
+        out << YAML::BeginMap;
+        out << YAML::Key << "Handle" << YAML::Value << (uint64_t)metadata.Handle;
+        out << YAML::Key << "FilePath" << YAML::Value << metadata.FilePath;
+        out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(metadata.Type);
+        out << YAML::Key << "Index" << YAML::Value << metadata.Index;
+
+        if (!metadata.Children.empty())
+        {
+            out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+            for (const auto& child : metadata.Children)
+            {
+                SaveAssetMetadata(out, child); // Recursive call
+            }
+            out << YAML::EndSeq;
+        }
+        out << YAML::EndMap;
+    }
+
+    void AssetManager::SaveAssetRegistry() {
+        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
+        YAML::Emitter out;
+        out << YAML::BeginMap << YAML::Key << "AssetRegistry" << YAML::Value << YAML::BeginSeq;
+
+        for (const auto& [handle, metadata] : m_AssetRegistry)
+        {
+            // Only save "Root" assets at the top level to avoid duplication
+            // (Assuming Models are roots, and Meshes/Materials are children)
+            if (metadata.Type == AssetType::Model || metadata.Type == AssetType::Texture2D) 
+            {
+                SaveAssetMetadata(out, metadata);
+            }
+        }
+
+        out << YAML::EndSeq << YAML::EndMap;
+        std::ofstream fout(path);
+        fout << out.c_str();
+    }
+
     void AssetManager::LoadAssetRegistry() {
-        return;
         std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
 
         if (!std::filesystem::exists(path)) return;
@@ -190,46 +235,14 @@ namespace Engine {
 		catch (YAML::ParserException e)
 		{
 		}
+        auto rootNode = data["AssetRegistry"];
+        if (!rootNode) return;
 
-		auto rootNode = data["AssetRegistry"];
-		if (!rootNode)
-			return;
-
-		for (const auto& node : rootNode)
-		{
-			UUID handle = node["Handle"].as<uint64_t>();
-			auto& metadata = m_AssetRegistry[handle];
-			metadata.FilePath = node["FilePath"].as<std::string>();
-			metadata.Type = AssetTypeFromString(node["Type"].as<std::string>());
-		}
-    }
-
-    void AssetManager::SaveAssetRegistry() {
-        return;
-        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
-
-		YAML::Emitter out;
-		{
-			out << YAML::BeginMap; // Root
-			out << YAML::Key << "AssetRegistry" << YAML::Value;
-
-			out << YAML::BeginSeq;
-			for (const auto&[handle, metadata] : m_AssetRegistry)
-			{
-				out << YAML::BeginMap;
-				out << YAML::Key << "Handle" << YAML::Value << handle;
-				std::string filepathStr = metadata.FilePath.c_str();
-				out << YAML::Key << "FilePath" << YAML::Value << filepathStr;
-				out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(metadata.Type);
-				out << YAML::Key << "Index" << YAML::Value << metadata.Index;
-				out << YAML::EndMap;
-			}
-			out << YAML::EndSeq;
-			out << YAML::EndMap; // Root
-		}
-
-		std::ofstream fout(path);
-		fout << out.c_str();
+        m_AssetRegistry.clear();
+        for (const auto& node : rootNode)
+        {
+            LoadAssetMetadata(node);
+        }
     }
 
 }

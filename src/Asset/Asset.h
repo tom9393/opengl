@@ -20,6 +20,9 @@ namespace Engine {
         AssetType Type = AssetType::None;
         std::string FilePath;
         uint32_t Index = 0; 
+        std::vector<AssetMetadata> Children;
+
+        bool HasChildren() { return !Children.empty(); }
         
         bool IsValid() const { return Handle != 0; }
     };

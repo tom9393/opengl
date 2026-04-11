@@ -9,9 +9,6 @@ namespace Engine
 
     struct Model : public Asset
     {
-        std::vector<UUID> Meshes;
-        std::vector<UUID> Materials;
-        std::vector<uint32_t> MeshMaterialIndices;
     };
 
 };

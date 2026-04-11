@@ -53,7 +53,7 @@ namespace Engine {
 
             Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
             Entity entity {e, m_Scene};
-            
+
             glm::mat4 &transform = transformComponent.WorldTransform;
 
             // Frustum Culling

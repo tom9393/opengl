@@ -18,11 +18,6 @@
 namespace Engine
 {
 
-    struct ModelScanResult {
-        std::vector<AssetMetadata> MeshHooks;
-        std::vector<AssetMetadata> MaterialHooks;
-    };
-
     static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
 
     static TextureType AssimpToTextureType(aiTextureType type)
@@ -92,51 +87,49 @@ namespace Engine
     class AssimpLoader
     {
         public:
-        static ModelScanResult ScanModel(const std::filesystem::path& path, Shared<Model>& outModel)
+        static AssetMetadata ScanModel(const std::filesystem::path& path)
         {
-            ModelScanResult resultHooks;
             Assimp::Importer importer;
+
+            AssetMetadata metadata;
 
             // Pass 0 as flags! We only read the structure/headers, NOT the heavy vertex data.
             const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                return resultHooks;
+                return metadata;
             }
 
-            // 1. Extract Materials
-            outModel->Materials.reserve(scene->mNumMaterials);
-            for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
-                UUID matHandle = UUID();
-                outModel->Materials.emplace_back(matHandle);
-
-                AssetMetadata meta;
-                meta.Handle = matHandle;
-                meta.Type = AssetType::Material;
-                meta.FilePath = path.string();
-                meta.Index = i;
-                
-                resultHooks.MaterialHooks.emplace_back(meta);
-            }
+            metadata.Handle = UUID();
+            metadata.Type = AssetType::Model;
+            metadata.FilePath = path;
+            metadata.Index = 0;
 
             // 2. Extract Meshes
-            outModel->Meshes.reserve(scene->mNumMeshes);
             for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
-                UUID meshHandle = UUID();
-                outModel->Meshes.push_back(meshHandle);
+                AssetMetadata mesh;
+                mesh.Handle = UUID();
+                mesh.Type = AssetType::Mesh;
+                mesh.FilePath = path.string();
+                mesh.Index = i;
 
-                AssetMetadata meta;
-                meta.Handle = meshHandle;
-                meta.Type = AssetType::Mesh;
-                meta.FilePath = path.string();
-                meta.Index = i;
-                outModel->MeshMaterialIndices.emplace_back(scene->mMeshes[i]->mMaterialIndex);
-                
-                resultHooks.MeshHooks.emplace_back(meta);
+                uint32_t materialIndex = scene->mMeshes[i]->mMaterialIndex;
+
+                if (materialIndex < scene->mNumMaterials) {
+                    AssetMetadata material;
+                    material.Handle = UUID();
+                    material.Type = AssetType::Material;
+                    material.FilePath = path.string();
+                    material.Index = materialIndex;
+
+                    mesh.Children.emplace_back(material);
+                }
+
+                metadata.Children.emplace_back(mesh);
             }
 
-            return resultHooks;
+            return metadata;
         }
 
         static Shared<Mesh> LoadSubMesh(const std::filesystem::path& path, uint32_t submeshIndex)
