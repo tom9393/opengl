@@ -13,6 +13,7 @@
 #include "Events/EventBroker.h"
 #include "Scripting/ScriptEngine.h"
 #include "Utils/GizmoManager.h"
+#include "Asset/PrimitiveBuilder.h"
 
 namespace Engine
 {
@@ -193,6 +194,46 @@ namespace Engine
                 OpenScene(path);
             }
             ImGui::EndDragDropTarget();
+        }
+
+        if (ImGui::BeginPopupContextWindow("SceneHierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+        {
+            // You can add other standard options here too, like "Create Empty Entity"
+            
+            // Your 3D Object Menu
+            if (ImGui::BeginMenu("Create 3D Object"))
+            {
+                if (ImGui::MenuItem("Cube"))
+                {
+                    Entity entity = m_EditingScene->CreateEntity("Cube");
+                    UUID meshID = PrimitiveBuilder::CreateCube();
+                    
+                    // Adjust this to match your actual Component syntax
+                    entity.AddComponent<MeshComponent>(meshID); 
+                    entity.AddComponent<TransformComponent>(); 
+                }
+
+                if (ImGui::MenuItem("Plane"))
+                {
+                    Entity entity = m_EditingScene->CreateEntity("Plane");
+                    UUID meshID = PrimitiveBuilder::CreatePlane();
+                    entity.AddComponent<MeshComponent>(meshID);
+                    entity.AddComponent<TransformComponent>(); 
+                }
+
+                if (ImGui::MenuItem("Sphere"))
+                {
+                    Entity entity = m_EditingScene->CreateEntity("Sphere");
+                    UUID meshID = PrimitiveBuilder::CreateSphere();
+                    entity.AddComponent<MeshComponent>(meshID);
+                    entity.AddComponent<TransformComponent>(); 
+                }
+
+                ImGui::EndMenu();
+            }
+
+            // You MUST call EndPopup if BeginPopupContextWindow returns true
+            ImGui::EndPopup();
         }
 
         if (m_SceneState == SceneState::Edit)

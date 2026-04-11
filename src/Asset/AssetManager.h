@@ -13,6 +13,7 @@ namespace Engine {
 
         // Imports a file, generates a UUID, adds to registry, and returns the UUID
         static UUID ImportAsset(const std::filesystem::path& filepath);
+        static UUID CreateMemoryAsset(AssetType type, const std::string &name, Shared<Asset> asset);
 
         // Core function: gets a loaded asset, or loads it if it isn't in memory
         template<typename T>

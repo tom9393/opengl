@@ -111,6 +111,27 @@ namespace Engine {
         return metadata.Handle;
     }
 
+    UUID AssetManager::CreateMemoryAsset(AssetType type, const std::string &name, Shared<Asset> asset)
+    {
+        UUID handle; // Generates a new unique ID
+        asset->Handle = handle;
+        
+        // Store the actual asset in memory
+        m_LoadedAssets[handle] = asset;
+
+        // Create virtual metadata for the UI
+        AssetMetadata metadata;
+        metadata.Handle = handle;
+        metadata.Type = type;
+        metadata.Name = name;
+        metadata.FilePath = "Memory/" + name; // Virtual path so it doesn't crash if checked
+        metadata.Index = 0;
+
+        m_AssetRegistry[handle] = metadata;
+        
+        return handle;
+    }
+
     Shared<Asset> AssetManager::GetAssetInternal(UUID handle) {
         if (handle == 0) return nullptr;
 
