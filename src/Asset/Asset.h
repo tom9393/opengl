@@ -12,13 +12,15 @@ namespace Engine {
         Scene,
         Model,
         Mesh,
-        Material
+        Material,
+        LuaScript
     };
 
     struct AssetMetadata {
         UUID Handle = 0;
         AssetType Type = AssetType::None;
         std::string FilePath;
+        std::string Name = "";
         uint32_t Index = 0; 
         std::vector<AssetMetadata> Children;
 

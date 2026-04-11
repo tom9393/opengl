@@ -104,6 +104,7 @@ namespace Engine
             metadata.Handle = UUID();
             metadata.Type = AssetType::Model;
             metadata.FilePath = path;
+            metadata.Name = path.stem().string();
             metadata.Index = 0;
 
             // 2. Extract Meshes
@@ -114,6 +115,9 @@ namespace Engine
                 mesh.FilePath = path.string();
                 mesh.Index = i;
 
+                aiMesh* ai_mesh = scene->mMeshes[i];
+                mesh.Name = ai_mesh->mName.length > 0 ? ai_mesh->mName.C_Str() : "Mesh_" + std::to_string(i);
+
                 uint32_t materialIndex = scene->mMeshes[i]->mMaterialIndex;
 
                 if (materialIndex < scene->mNumMaterials) {
@@ -122,6 +126,14 @@ namespace Engine
                     material.Type = AssetType::Material;
                     material.FilePath = path.string();
                     material.Index = materialIndex;
+
+                    aiMaterial* ai_mat = scene->mMaterials[materialIndex];
+                    aiString matName;
+                    if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
+                        material.Name = matName.C_Str();
+                    } else {
+                        material.Name = "Material_" + std::to_string(materialIndex);
+                    }
 
                     mesh.Children.emplace_back(material);
                 }

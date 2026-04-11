@@ -18,7 +18,8 @@ namespace Engine {
             { ".ktx2", AssetType::Texture2D },
             { ".assbin", AssetType::Model },
             { ".obj", AssetType::Model },
-            { ".fbx", AssetType::Model }
+            { ".fbx", AssetType::Model },
+            { ".lua", AssetType::LuaScript }
     };
 
     static AssetType AssetTypeFromFilepath(const std::filesystem::path& path)
@@ -34,6 +35,7 @@ namespace Engine {
         if (ext == ".assbin")  return AssetType::Model;
         if (ext == ".obj")     return AssetType::Model;
         if (ext == ".fbx")     return AssetType::Model;
+        if (ext == ".lua")     return AssetType::LuaScript;
 
         return AssetType::None;
     }
@@ -48,6 +50,7 @@ namespace Engine {
 			case AssetType::Texture2D: return "AssetType::Texture2D";
 			case AssetType::Material: return "AssetType::Material";
 			case AssetType::Model: return "AssetType::Model";
+			case AssetType::LuaScript: return "AssetType::LuaScript";
 		}
 
 		return "AssetType::<Invalid>";
@@ -61,6 +64,7 @@ namespace Engine {
 		if (assetType == "AssetType::Texture2D") return AssetType::Texture2D;
 		if (assetType == "AssetType::Material") return AssetType::Material;
 		if (assetType == "AssetType::Model") return AssetType::Model;
+		if (assetType == "AssetType::LuaScript") return AssetType::LuaScript;
 
 		return AssetType::None;
 	}
@@ -85,6 +89,7 @@ namespace Engine {
         AssetMetadata metadata;
         metadata.Handle = UUID();
         metadata.FilePath = filepath.string();
+        metadata.Name = filepath.stem().string();
         
         // Determine type based on extension (simplified)
         std::string ext = filepath.extension().string();
@@ -93,9 +98,11 @@ namespace Engine {
             RegisterAssetRecursive(mt);
             metadata.Handle = mt.Handle;
             metadata.Type = mt.Type;
+            metadata.Name = mt.Name;
             metadata.Children = mt.Children;
         }
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
+        else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
         else metadata.Type = AssetType::None;
 
         m_AssetRegistry[metadata.Handle] = metadata;
@@ -165,6 +172,7 @@ namespace Engine {
         AssetMetadata metadata;
         metadata.Handle = node["Handle"].as<uint64_t>();
         metadata.FilePath = node["FilePath"].as<std::string>();
+        metadata.Name = node["Name"].as<std::string>();
         metadata.Type = AssetTypeFromString(node["Type"].as<std::string>());
         metadata.Index = node["Index"].as<uint32_t>();
 
@@ -187,6 +195,7 @@ namespace Engine {
         out << YAML::BeginMap;
         out << YAML::Key << "Handle" << YAML::Value << (uint64_t)metadata.Handle;
         out << YAML::Key << "FilePath" << YAML::Value << metadata.FilePath;
+        out << YAML::Key << "Name" << YAML::Value << metadata.Name;
         out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(metadata.Type);
         out << YAML::Key << "Index" << YAML::Value << metadata.Index;
 

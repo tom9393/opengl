@@ -9,6 +9,7 @@
 #include "../Render/SceneCamera.h"
 #include "../Utils/MathTools.h"
 #include "../Core/UUID.h"
+#include "../Physics/RigidBody.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -121,7 +122,7 @@ namespace Engine
         float mass = 0;
         glm::vec3 inertia = glm::vec3(0, 0, 0);
         
-        void* runtimeBody = nullptr;
+        Shared<RigidBody> RuntimeBody = nullptr;
 
         RigidBodyComponent() = default;
         RigidBodyComponent(const RigidBodyComponent&) = default;
@@ -150,11 +151,12 @@ namespace Engine
 
     struct LuaScriptComponent
     {
-        std::string FilePath;
+        UUID ScriptHandle;
         sol::environment Environment; // Holds the specific state for THIS entity
 
         LuaScriptComponent() = default;
-        LuaScriptComponent(const std::string& path) : FilePath(path) {}
+        LuaScriptComponent(const LuaScriptComponent&) = default;
+        LuaScriptComponent(UUID handle) : ScriptHandle(handle) {}
     };
 
     struct PointLightComponent

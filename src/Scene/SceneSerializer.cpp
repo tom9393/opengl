@@ -174,15 +174,15 @@ namespace Engine
 		});
 
 		SerializeComponent<MeshComponent>(out, e, "MeshComponent", [](auto& out, auto& mc) {
-			out << YAML::Key << "Mesh" << YAML::Value << mc.MeshHandle;
+			out << YAML::Key << "MeshHandle" << YAML::Value << mc.MeshHandle;
 		});
 
 		SerializeComponent<MaterialComponent>(out, e, "MaterialComponent", [](auto& out, auto& mc) {
-			out << YAML::Key << "Mesh" << YAML::Value << mc.MaterialHandle;
+			out << YAML::Key << "MaterialHandle" << YAML::Value << mc.MaterialHandle;
 		});
 
-		SerializeComponent<MaterialComponent>(out, e, "TextureComponent", [](auto& out, auto& tc) {
-			out << YAML::Key << "Mesh" << YAML::Value << tc.MaterialHandle;
+		SerializeComponent<TextureComponent>(out, e, "TextureComponent", [](auto& out, auto& tc) {
+			out << YAML::Key << "TextureHandle" << YAML::Value << tc.TextureHandle;
 		});
 
 		SerializeComponent<RigidBodyComponent>(out, e, "RigidBodyComponent", [](auto& out, auto& rb) {
@@ -192,7 +192,7 @@ namespace Engine
 		});
 
 		SerializeComponent<LuaScriptComponent>(out, e, "LuaScriptComponent", [](auto& out, auto& lsc) {
-			out << YAML::Key << "Path" << YAML::Value << lsc.FilePath;
+			out << YAML::Key << "ScriptHandle" << YAML::Value << lsc.ScriptHandle;
 		});
 
 		if (e.HasComponent<RelationshipComponent>())
@@ -321,7 +321,7 @@ namespace Engine
 		if (node)
 		{
 			auto& lsc = entity.AddComponent<LuaScriptComponent>();
-			lsc.FilePath = node["Path"].as<std::string>();
+			lsc.ScriptHandle = node["ScriptHandle"].as<uint64_t>();
 		}
 	}
 

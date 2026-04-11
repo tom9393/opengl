@@ -97,15 +97,13 @@ namespace Engine {
         }
     }
 
-    void PhysicsEngine::AddRigidBody(RigidBody* body)
+    void PhysicsEngine::AddRigidBody(Shared<RigidBody> &body)
     {
-        if (!body) return;
         s_PhysicsWorldConfiguration->World->addRigidBody(body->GetBody().get());
     }
 
-    void PhysicsEngine::RemoveRigidBody(RigidBody* body)
+    void PhysicsEngine::RemoveRigidBody(Shared<RigidBody> &body)
     {
-        if (!body) return;
         s_PhysicsWorldConfiguration->World->removeRigidBody(body->GetBody().get());
         // Note: associated motion state and collision shape are kept in vectors; if you want to free them here,
         // you'd need to track mapping from body -> indices and erase from vectors too.
@@ -140,14 +138,14 @@ namespace Engine {
 			CollisionBaker::Bake(metadata.FilePath, meshes);
 
 			RBComplexShape* shape = new RBComplexShape(metadata.FilePath);
-			RigidBody* body = new RigidBody(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
+			Shared<RigidBody> body = MakeShared<RigidBody>(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
 			if (!body) return;
-
-			rigidbodyComponent.runtimeBody = body;
 
 			AddRigidBody(body);
 			body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
 			body->SetTransform(transformComponent.translation, transformComponent.rotation);
+
+            rigidbodyComponent.RuntimeBody = body;
 		}
     }
 
@@ -159,12 +157,11 @@ namespace Engine {
 			Entity entity = { e, s_Scene };
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 
-			RigidBody* body = (RigidBody*)rigidbody.runtimeBody;
+			Shared<RigidBody> body = rigidbody.RuntimeBody;
 			
 			if (body)
 			{
 				RemoveRigidBody(body);
-				delete body;
 			};
 		}
 
@@ -194,8 +191,8 @@ namespace Engine {
 		for (auto& e : physics)
 		{
 			auto [rb, transform] = physics.get<RigidBodyComponent, TransformComponent>(e);
-			if (auto* body = static_cast<RigidBody*>(rb.runtimeBody))
-				body->GetTransform(transform.translation, transform.rotation);
+            if (!rb.RuntimeBody) return;
+            rb.RuntimeBody->GetTransform(transform.translation, transform.rotation);
 		}
     }
 

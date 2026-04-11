@@ -39,6 +39,7 @@ namespace Engine {
         static inline AssetMetadata s_NullMetadata; // Returned when handle is invalid
 
         friend class SceneHierarchyPanel;
+        friend class LoadedAssets;
     };
 
 }

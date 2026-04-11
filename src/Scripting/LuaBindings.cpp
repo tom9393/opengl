@@ -1,5 +1,6 @@
 #include "LuaBindings.h"
 #include "ScriptEngine.h"
+#include "../Asset/AssetManager.h"
 #include "../Core/Input.h"
 #include "../Core/KeyCodes.h"
 #include "../Scene/Components.h"
@@ -159,12 +160,15 @@ namespace Engine {
 		for (auto entity : view) {
 			auto& script = view.get<LuaScriptComponent>(entity);
 
-			if (script.Environment.valid() && !script.FilePath.empty()) {
+            AssetMetadata scriptMetadata = AssetManager::GetMetadata(script.ScriptHandle);
+            std::filesystem::path path = scriptMetadata.FilePath;
+
+			if (script.Environment.valid() && !path.empty()) {
 				// 1. Re-run the file into the EXISTING environment
-				auto result = lua.script_file(script.FilePath, script.Environment);
+				auto result = lua.script_file(path, script.Environment);
 				
 				if (result.valid()) {
-					std::cout << "Reloaded: " << script.FilePath << std::endl;
+					std::cout << "Reloaded: " << path << std::endl;
 					
 					// 2. Optionally re-call OnCreate to reset state
 					sol::protected_function onCreate = script.Environment["OnCreate"];
@@ -205,11 +209,8 @@ namespace Engine {
     void LuaBindings::BindComponent<RigidBodyComponent>(Entity &e)
     {
         if (!e.HasComponent<RigidBodyComponent>()) return;
-        // 1. Cast the void* to the actual type you registered (RigidBody)
         auto& rbComponent = e.GetComponent<RigidBodyComponent>();
-        RigidBody* body = static_cast<RigidBody*>(rbComponent.runtimeBody);
-
-        e.GetComponent<LuaScriptComponent>().Environment["RigidBody"] = body;
+        e.GetComponent<LuaScriptComponent>().Environment["RigidBody"] = rbComponent.RuntimeBody;
     }
 
     void LuaBindings::BindComponents(Scene* scene)
@@ -233,8 +234,11 @@ namespace Engine {
             BindComponent<SceneCameraComponent>(entity);
             BindComponent<RigidBodyComponent>(entity);
 
+            AssetMetadata scriptMetadata = AssetManager::GetMetadata(script.ScriptHandle);
+            std::filesystem::path path = scriptMetadata.FilePath;
+
             // Load the script file into this specific environment
-            lua.script_file(script.FilePath, script.Environment);
+            lua.script_file(path, script.Environment);
 
             // Call OnCreate if it exists
             sol::function onCreate = script.Environment["OnCreate"];

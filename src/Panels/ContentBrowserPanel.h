@@ -1,24 +1,27 @@
 #pragma once
-#include "../../pch.h"
-#include "../Asset/Texture.h"
-#include "../Core/Preprocessor.h"
+#include "Subpanels/Directory.h"
+#include "Subpanels/LoadedAssets.h"
 
 namespace Engine
 {
 
+    enum class Tab
+    {
+        Directory,
+        LoadedAssets
+    };
+
     class ContentBrowserPanel
     {
         public:
-
         ContentBrowserPanel();
-
         void OnImGuiRender();
 
         private:
-        std::filesystem::path m_CurrentDirectory;
-        Shared<Texture2D> m_DirIcon;
-        Shared<Texture2D> m_FileIcon;
+        Directory m_Directory;
+        LoadedAssets m_LoadedAssets;
 
+        Tab m_Tab = Tab::Directory;
     };
 
 };

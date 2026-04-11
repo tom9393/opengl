@@ -67,8 +67,8 @@ namespace Engine {
         static void RuntimeStart(Scene* scene);
         static void RuntimeStop();
 
-        static void AddRigidBody(RigidBody* body);
-        static void RemoveRigidBody(RigidBody* body);
+        static void AddRigidBody(Shared<RigidBody> &body);
+        static void RemoveRigidBody(Shared<RigidBody> &body);
 
         static void RegisterCollisionCallback(Callback cb) { s_Callback = cb; }
         static void CheckCollisions();

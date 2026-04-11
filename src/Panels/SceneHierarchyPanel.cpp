@@ -183,7 +183,6 @@ namespace Engine
                 Entity nullParent{}; 
                 child.SetParent(nullParent); 
             }
-            ImGui::EndDragDropTarget();
         }
 
         m_Context->m_Registry.view<entt::entity>().each([this](entt::entity entity)
@@ -269,6 +268,29 @@ namespace Engine
                     child.SetParent(entity);
                 }
             }
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
+			{
+				UUID handle = *(UUID*)payload->Data;
+				AssetMetadata metadata = AssetManager::GetMetadata(handle);
+
+				// Iterate through every mesh handle stored in the Model asset
+				for (size_t i = 0; i < metadata.Children.size(); i++)
+				{
+					Entity childEntity = m_Context->CreateEntity("MeshPart_" + std::to_string(i));
+					childEntity.SetParent(m_SelectionContext);
+
+					UUID meshHandle = metadata.Children[i].Handle;
+					childEntity.AddComponent<MeshComponent>(meshHandle);
+					childEntity.AddComponent<TransformComponent>();
+
+					// Attach the Material Components
+					for (size_t j = 0; j < metadata.Children[i].Children.size(); j++)
+					{
+						UUID materialHandle = metadata.Children[i].Children[j].Handle;
+						childEntity.AddComponent<MaterialComponent>(materialHandle);
+					}
+				}
+			}
             ImGui::EndDragDropTarget();
         }
 
@@ -383,66 +405,15 @@ namespace Engine
 
 		ImGui::PopItemWidth();
 
-		ImGui::Button("Model");
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
-			{
-				const char* p = (char*)payload->Data;
-				std::string path = std::string(p);
-				std::cout << "Importing: " << path << std::endl;
-				
-				// Retrieve the Model blueprint containing our scanned UUIDs
-				UUID handle = AssetManager::ImportAsset(path);
-			}
-			ImGui::EndDragDropTarget(); 
-		}
-
-		// --- FIXED SECTION ---
-        auto& m_AssetRegistry = AssetManager::m_AssetRegistry; // Reference is better than copying the whole map
-
-        for (auto &entry : m_AssetRegistry)
-        {
-			if (entry.second.Type != AssetType::Model) continue;
-            std::string a = AssetTypeToString(entry.second.Type).append(entry.second.FilePath);
-            if (ImGui::Button(a.c_str()))
-            {
-                // Retrieve the Model blueprint containing our scanned UUIDs
-                AssetMetadata metadata = AssetManager::GetMetadata(entry.first);
-
-                // Iterate through every mesh handle stored in the Model asset
-                for (size_t i = 0; i < metadata.Children.size(); i++)
-                {
-                    Entity childEntity = m_Context->CreateEntity("MeshPart_" + std::to_string(i));
-                    childEntity.SetParent(m_SelectionContext);
-
-                    UUID meshHandle = metadata.Children[i].Handle;
-                    childEntity.AddComponent<MeshComponent>(meshHandle);
-                    childEntity.AddComponent<TransformComponent>();
-
-                    // Attach the Material Components
-                    for (size_t j = 0; j < metadata.Children[i].Children.size(); j++)
-                    {
-                        UUID materialHandle = metadata.Children[i].Children[j].Handle;
-                        childEntity.AddComponent<MaterialComponent>(materialHandle);
-                    }
-                }
-            } // End Button if
-        } // End AssetRegistry loop
-
-        // --- END FIXED SECTION ---
-
-		DrawComponent<MeshComponent>("Mesh", entity, [entity](auto &component) // Fix this
+		DrawComponent<MeshComponent>("Mesh", entity, [entity](auto &component)
 		{
 			ImGui::Button("Mesh", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
-			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL")) // Fix this
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MESH"))
 			    {
-					const char* p = (char*)payload->Data;
-					std::string path = std::string(p);
-					std::cout << p << std::endl;
-					//component.path = path;
+					UUID handle = *(UUID*)payload->Data;
+					component.MeshHandle = handle;
 			    }
 			    ImGui::EndDragDropTarget();
 			}
@@ -461,6 +432,19 @@ namespace Engine
 			component.rotation = glm::radians(rotation);
 			component.scale = scale;
 
+		});
+		DrawComponent<MaterialComponent>("MaterialComponent", entity, [entity](auto &component)
+		{
+			ImGui::Button("Material", ImVec2(100.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL"))
+			    {
+					UUID handle = *(UUID*)payload->Data;
+					component.MaterialHandle = handle;
+			    }
+			    ImGui::EndDragDropTarget();
+			}
 		});
 		DrawComponent<SceneCameraComponent>("Camera", entity, [](auto &component)
 		{
@@ -536,10 +520,8 @@ namespace Engine
 			{
 			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("LUASCRIPT"))
 			    {
-					const char* p = (char*)payload->Data;
-					std::string path = std::string(p);
-					std::cout << p << std::endl;
-					component.FilePath = path;
+					UUID handle = *(UUID*)payload->Data;
+					component.ScriptHandle = handle;
 			    }
 			    ImGui::EndDragDropTarget();
 			}
