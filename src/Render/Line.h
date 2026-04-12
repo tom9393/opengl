@@ -23,7 +23,7 @@ namespace Engine {
         LineVertex* VertexBufferBase = nullptr;
         LineVertex* VertexBufferPtr = nullptr;
 
-        void Init(ShaderLibrary* shaderLibrary) {
+        void Init() {
             LineVertexArray = VertexArray::Create();
             LineVertexBuffer = VertexBuffer::Create(MaxLines * sizeof(LineVertex));
 
@@ -40,7 +40,7 @@ namespace Engine {
 
             LineShader = Shader::Create("LineShader");
             LineShader->AddShaders({"assets/shaders/line.vert", "assets/shaders/line.frag"});
-            shaderLibrary->Add(LineShader);
+            ShaderLibrary::Add(LineShader);
         }
 
         void Shutdown() {

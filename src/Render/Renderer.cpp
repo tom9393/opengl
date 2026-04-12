@@ -33,9 +33,9 @@ namespace Engine
         PROFILE_FUNCTION();
 
         RenderCommand::Init();
+        ShaderLibrary::Init();
 
-        s_Data.shaderLibrary = new ShaderLibrary();
-        s_Data.shaderLibrary->Get("Texture")->Bind();
+        ShaderLibrary::Get("Texture")->Bind();
 
         s_Data.CameraUniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
         s_Data.CameraUniformBuffer->Bind(0);
@@ -43,7 +43,7 @@ namespace Engine
         s_Data.LightUniformBuffer = UniformBuffer::Create(nullptr, sizeof(SceneLightData));
         s_Data.LightUniformBuffer->Bind(1);
 
-        s_LineData.Init(s_Data.shaderLibrary);
+        s_LineData.Init();
 
         switch (Renderer::Get())
         {
@@ -66,7 +66,7 @@ namespace Engine
     void Renderer::Shutdown()
     {
         s_LineData.Shutdown();
-        delete s_Data.shaderLibrary;
+        ShaderLibrary::Shutdown();
     }
 
     void Renderer::OnWindowResize(unsigned int width, unsigned int height)
@@ -84,62 +84,7 @@ namespace Engine
         PROFILE_FUNCTION();
 
         if (!material) return;
-
-        Shared<Shader> shader = material->TargetShader;
-
-        if (!shader) return;
-
-        unsigned int idx = 0;
-
-        if (material->AlbedoMap)
-        {
-            material->AlbedoMap->Bind(idx);
-            shader->SetInt("pbr.albedoMap", idx);
-            shader->SetBool("pbr.useAlbedoMap", true);
-            idx++;
-        }
-        else { shader->SetBool("pbr.useAlbedoMap", false); }
-
-        if (material->NormalMap)
-        {
-            material->NormalMap->Bind(idx);
-            shader->SetInt("pbr.normalMap", idx);
-            shader->SetBool("pbr.useNormalMap", true);
-            idx++;
-        }
-        else { shader->SetBool("pbr.useNormalMap", false); }
-
-        if (material->MetallicMap)
-        {
-            material->MetallicMap->Bind(idx);
-            shader->SetInt("pbr.metallicMap", idx);
-            shader->SetBool("pbr.useMetallicMap", true);
-            idx++;
-        }
-        else { shader->SetBool("pbr.useMetallicMap", false); }
-
-        if (material->RoughnessMap)
-        {
-            material->RoughnessMap->Bind(idx);
-            shader->SetInt("pbr.roughnessMap", idx);
-            shader->SetBool("pbr.useRoughnessMap", true);
-            idx++;
-        }
-        else { shader->SetBool("pbr.useRoughnessMap", false); }
-
-        if (material->AOMap)
-        {
-            material->AOMap->Bind(idx);
-            shader->SetInt("pbr.aoMap", idx);
-            shader->SetBool("pbr.useAOMap", true);
-            idx++;
-        }
-        else { shader->SetBool("pbr.useAOMap", false); }
-
-        shader->SetVec4("pbr.albedoTint", material->AlbedoTint);
-        shader->SetFloat("pbr.metallicMultiplier", material->MetallicMultiplier);
-        shader->SetFloat("pbr.roughnessMultiplier", material->RoughnessMultiplier);
-        shader->SetFloat("pbr.emission", material->Emission);
+        material->Bind();
     }
 
     void Renderer::FlushLines()
@@ -178,7 +123,7 @@ namespace Engine
             s_Data.statistics.MaterialSwitches++;
         }
 
-        s_Data.shaderLibrary->Get("Texture")->SetMat4("u_Transform", transform);
+        //s_Data.shaderLibrary->Get("Texture")->SetMat4("u_Transform", transform);
 
         Shared<VertexArray> VAO = mesh->GetVAO();
         VAO->Bind();

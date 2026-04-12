@@ -3,21 +3,43 @@
 
 namespace Engine {
 
+    enum class BlendMode { Opaque, Transparent, Additive };
+
     class Material : public Asset
     {
         public:
-        Shared<Shader> TargetShader = nullptr;
+        Shared<Shader> TargetShader;
 
-        Shared<Texture2D> AlbedoMap = nullptr;
-        Shared<Texture2D> NormalMap = nullptr;
-        Shared<Texture2D> MetallicMap = nullptr;
-        Shared<Texture2D> RoughnessMap = nullptr;
-        Shared<Texture2D> AOMap = nullptr;
+        BlendMode mode = BlendMode::Opaque;
+        bool DepthWrite = true;
+        bool DoubleSided = false;
 
-        // Scalar multipliers / fallback colors
-        glm::vec4 AlbedoTint = glm::vec4(1.0f);
-        float MetallicMultiplier = 0.0f;
-        float RoughnessMultiplier = 0.5f;
-        float Emission = 0.0f;
+        void SetFloat(const std::string& name, float value) { m_Floats[name] = value; }
+        void SetBool(const std::string& name, bool value) { m_Bools[name] = value; }
+        void SetVec4(const std::string& name, const glm::vec4& value) { m_Vec4s[name] = value; }
+        void SetTexture(const std::string& name, Shared<Texture2D> texture) { m_Textures[name] = texture; }
+
+        void Bind() const {
+            TargetShader->Bind();
+
+            for (const auto& [name, val] : m_Floats) TargetShader->SetFloat(name, val);
+            for (const auto& [name, val] : m_Bools) TargetShader->SetFloat(name, val);
+            for (const auto& [name, val] : m_Vec4s)  TargetShader->SetVec4(name, val);
+            
+            uint32_t slot = 0;
+            for (const auto& [name, tex] : m_Textures) {
+                if (tex) {
+                    tex->Bind(slot);
+                    TargetShader->SetInt(name, slot);
+                    slot++;
+                }
+            }
+        }
+
+    private:
+        std::unordered_map<std::string, float> m_Floats;
+        std::unordered_map<std::string, bool> m_Bools;
+        std::unordered_map<std::string, glm::vec4> m_Vec4s;
+        std::unordered_map<std::string, Shared<Texture2D>> m_Textures;
     };
 }

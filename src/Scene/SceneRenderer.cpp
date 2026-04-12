@@ -66,14 +66,7 @@ namespace Engine {
             
             if (entity.HasComponent<MaterialComponent>())
                 cmd.TargetMaterial = AssetManager::GetAsset<Material>(entity.GetComponent<MaterialComponent>().MaterialHandle);
-            
-            if (!cmd.TargetMaterial) {
-                static Shared<Material> fallbackMaterial = MakeShared<Material>();
-                fallbackMaterial->AlbedoTint = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f); // Magenta
-                fallbackMaterial->MetallicMultiplier = 0.0f;
-                fallbackMaterial->RoughnessMultiplier = 0.5f;
-                cmd.TargetMaterial = fallbackMaterial;
-            }
+            else continue;
             
             // Instead of submitting, just fill the list
             m_RenderItems.Opaque.emplace_back(cmd);

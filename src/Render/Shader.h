@@ -35,17 +35,19 @@ namespace Engine
     class ShaderLibrary
     {
         public:
-        ShaderLibrary(const std::initializer_list<std::string> &shaders);
         ShaderLibrary();
         ~ShaderLibrary();
 
-        void Add(const Shared<Shader> &shader);
-        void AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths);
+        static void Init();
+        static void Shutdown();
 
-        Shared<Shader> Get(const std::string &name);
+        static void Add(const Shared<Shader> &shader);
+        static void AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths);
+
+        static Shared<Shader> Get(const std::string &name);
 
         private:
-        std::unordered_map<std::string, Shared<Shader>> m_Shaders;
+        static std::unordered_map<std::string, Shared<Shader>> s_Shaders;
     };
 
 };

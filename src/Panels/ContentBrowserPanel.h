@@ -21,7 +21,7 @@ namespace Engine
         Directory m_Directory;
         LoadedAssets m_LoadedAssets;
 
-        Tab m_Tab = Tab::Directory;
+        Tab m_Tab = Tab::LoadedAssets;
     };
 
 };

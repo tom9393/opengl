@@ -294,43 +294,55 @@ namespace Engine
                 aiTextureType_SHININESS
             };
 
+            // --- 1 & 2. Kd & d: Diffuse Color and Opacity ---
+            glm::vec4 albedoTint = glm::vec4(1.0f);
             aiColor4D color;
             if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
-                material->AlbedoTint = glm::vec4(color.r, color.g, color.b, 1.0f);
+                albedoTint.r = color.r; albedoTint.g = color.g; albedoTint.b = color.b;
             }
-
-            // --- 2. d: Opacity / Alpha ---
             float opacity = 1.0f;
             if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_OPACITY, &opacity)) {
-                material->AlbedoTint.a = opacity;
+                albedoTint.a = opacity;
             }
+            material->SetVec4("pbr.albedoTint", albedoTint);
 
             // --- 3. Ke: Emissive ---
+            float emission = 0.0f;
             if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
                 // Average the RGB values to get a scalar emission intensity
-                material->Emission = (color.r + color.g + color.b) / 3.0f;
+                emission = (color.r + color.g + color.b) / 3.0f;
             }
+            material->SetFloat("pbr.emission", emission);
 
             // --- 4. Ns: Shininess -> Roughness Conversion ---
+            float roughness = 0.5f; // Safe default
             float shininess = 0.0f;
             if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_SHININESS, &shininess)) {
                 // Prevent division by zero. 
                 // Math: High shininess (e.g., 714) = very smooth = low roughness.
-                // A common translation formula from Phong to PBR Roughness is:
-                material->RoughnessMultiplier = glm::sqrt(2.0f / (shininess + 2.0f));
-            } else {
-                material->RoughnessMultiplier = 0.5f; // Safe default
+                roughness = glm::sqrt(2.0f / (shininess + 2.0f));
             }
+            material->SetFloat("pbr.roughnessMultiplier", roughness);
 
             // --- 5. Ks: Specular -> Metallic Guessing (Optional hack) ---
+            float metallic = 0.0f;
             if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &color)) {
                 // In legacy formats, highly reflective grey/colored specular usually implies metal.
                 float specAverage = (color.r + color.g + color.b) / 3.0f;
                 if (specAverage > 0.8f) {
-                    material->MetallicMultiplier = 1.0f; 
+                    metallic = 1.0f; 
                 }
             }
+            material->SetFloat("pbr.metallicMultiplier", metallic);
 
+
+            material->SetBool("pbr.useAlbedoMap", false);
+            material->SetBool("pbr.useNormalMap", false);
+            material->SetBool("pbr.useMetallicMap", false);
+            material->SetBool("pbr.useRoughnessMap", false);
+            material->SetBool("pbr.useAOMap", false);
+
+            // --- 6. Textures ---
             for (auto& type : textureTypes)
             {
                 for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -351,20 +363,36 @@ namespace Engine
                     // else if (std::filesystem::exists(ktxExtensionPath2)) finalLoadPath = ktxExtensionPath2;
 
                     // Load the texture asset. 
-                    // Note: If you fully migrated to UUIDs for textures too, this would be:
                     UUID texHandle = AssetManager::ImportAsset(finalLoadPath);
                     Shared<Texture2D> texture = AssetManager::GetAsset<Texture2D>(texHandle);
 
                     TextureType texType = AssimpToTextureType(type);
-                    if (texType == TextureType::Diffuse)  material->AlbedoMap = texture;
-                    if (texType == TextureType::Normal)   material->NormalMap = texture;
-                    if (texType == TextureType::Metallic) material->MetallicMap = texture;
-                    if (texType == TextureType::Roughness)material->RoughnessMap = texture;
-                    if (texType == TextureType::AO)       material->AOMap = texture;
+                    
+                    // Route the texture to the appropriate string key expected by the shader
+                    if (texType == TextureType::Diffuse) {
+                        material->SetTexture("pbr.albedoMap", texture);
+                        material->SetBool("pbr.useAlbedoMap", true);
+                    }
+                    if (texType == TextureType::Normal) {
+                        material->SetTexture("pbr.normalMap", texture);
+                        material->SetBool("pbr.useNormalMap", true);
+                    }
+                    if (texType == TextureType::Metallic) {
+                        material->SetTexture("pbr.metallicMap", texture);
+                        material->SetBool("pbr.useMetallicMap", true);
+                    }
+                    if (texType == TextureType::Roughness) {
+                        material->SetTexture("pbr.roughnessMap", texture);
+                        material->SetBool("pbr.useRoughnessMap", true);
+                    }
+                    if (texType == TextureType::AO) {
+                        material->SetTexture("pbr.aoMap", texture);
+                        material->SetBool("pbr.useAOMap", true);
+                    }
                 }
             }
 
-            material->TargetShader = Renderer::GetShaderLibrary()->Get("Texture");
+            material->TargetShader = ShaderLibrary::Get("Texture");
 
             return material;
         }

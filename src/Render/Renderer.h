@@ -24,7 +24,6 @@ namespace Engine
 
     struct RenderStorage
     {
-        ShaderLibrary* shaderLibrary;
         Shared<SSBOBuffer> matrixBuffer;
         Shared<UniformBuffer> CameraUniformBuffer;
         Shared<UniformBuffer> LightUniformBuffer;
@@ -73,7 +72,6 @@ namespace Engine
         static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
 
         static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
-        static ShaderLibrary* GetShaderLibrary() { return s_Data.shaderLibrary; }
 
         static void ResetStatistics()
         {
