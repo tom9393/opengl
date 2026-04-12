@@ -16,17 +16,10 @@ namespace Engine {
         
         // Setup layout: Assumes 3 floats for Position, 3 for Normal, 2 for TexCoords.
         // (Adjust the enum/type names if your BufferLayout.h uses different naming)
-        // BufferLayout layout = {
-        //     { ShaderDataType::Float3, "a_Position" },
-        //     { ShaderDataType::Float3, "a_Normal" },
-        //     { ShaderDataType::Float2, "a_TexCoord" }
-        // };
         BufferLayout layout = {
             { ShaderDataType::Float3, "a_Position" },
             { ShaderDataType::Float3, "a_Normal" },
-            { ShaderDataType::Float2, "a_TexCoord" },
-            { ShaderDataType::Float3, "a_Tangent" },
-            { ShaderDataType::Float3, "a_Bitangent" }
+            { ShaderDataType::Float2, "a_TexCoord" }
         };
         BufferLayout instanceLayout = {
             { ShaderDataType::Mat4, "a_InstanceTransform" },

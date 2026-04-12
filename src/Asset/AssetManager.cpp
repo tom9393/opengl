@@ -124,7 +124,7 @@ namespace Engine {
         metadata.Handle = handle;
         metadata.Type = type;
         metadata.Name = name;
-        metadata.FilePath = "Memory/" + name; // Virtual path so it doesn't crash if checked
+        metadata.FilePath = "tmp"; // Virtual path so it doesn't crash if checked
         metadata.Index = 0;
 
         m_AssetRegistry[handle] = metadata;
@@ -241,7 +241,7 @@ namespace Engine {
         {
             // Only save "Root" assets at the top level to avoid duplication
             // (Assuming Models are roots, and Meshes/Materials are children)
-            if (metadata.Type == AssetType::Model || metadata.Type == AssetType::Texture2D) 
+            if (metadata.Type == AssetType::Model || metadata.Type == AssetType::Texture2D || metadata.Type == AssetType::LuaScript) 
             {
                 SaveAssetMetadata(out, metadata);
             }

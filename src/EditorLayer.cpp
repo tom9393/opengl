@@ -207,26 +207,40 @@ namespace Engine
                 {
                     Entity entity = m_EditingScene->CreateEntity("Cube");
                     UUID meshID = PrimitiveBuilder::CreateCube();
+                    Shared<Material> cubeMaterial = MakeShared<Material>();
+                    cubeMaterial->TargetShader = ShaderLibrary::Get("Primitive");
+                    UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, "CubeMaterial", cubeMaterial);
                     
                     // Adjust this to match your actual Component syntax
                     entity.AddComponent<MeshComponent>(meshID); 
                     entity.AddComponent<TransformComponent>(); 
+                    entity.AddComponent<MaterialComponent>(materialID);
                 }
 
                 if (ImGui::MenuItem("Plane"))
                 {
                     Entity entity = m_EditingScene->CreateEntity("Plane");
                     UUID meshID = PrimitiveBuilder::CreatePlane();
+                    Shared<Material> planeMaterial = MakeShared<Material>();
+                    planeMaterial->TargetShader = ShaderLibrary::Get("Primitive");
+                    UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, "CubeMaterial", planeMaterial);
+
                     entity.AddComponent<MeshComponent>(meshID);
                     entity.AddComponent<TransformComponent>(); 
+                    entity.AddComponent<MaterialComponent>(materialID);
                 }
 
                 if (ImGui::MenuItem("Sphere"))
                 {
                     Entity entity = m_EditingScene->CreateEntity("Sphere");
                     UUID meshID = PrimitiveBuilder::CreateSphere();
+                    Shared<Material> sphereMaterial = MakeShared<Material>();
+                    sphereMaterial->TargetShader = ShaderLibrary::Get("Primitive");
+                    UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, "CubeMaterial", sphereMaterial);
+
                     entity.AddComponent<MeshComponent>(meshID);
                     entity.AddComponent<TransformComponent>(); 
+                    entity.AddComponent<MaterialComponent>(materialID);
                 }
 
                 ImGui::EndMenu();

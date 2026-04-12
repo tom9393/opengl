@@ -23,7 +23,7 @@ namespace Engine {
             TargetShader->Bind();
 
             for (const auto& [name, val] : m_Floats) TargetShader->SetFloat(name, val);
-            for (const auto& [name, val] : m_Bools) TargetShader->SetFloat(name, val);
+            for (const auto& [name, val] : m_Bools) TargetShader->SetBool(name, val);
             for (const auto& [name, val] : m_Vec4s)  TargetShader->SetVec4(name, val);
             
             uint32_t slot = 0;

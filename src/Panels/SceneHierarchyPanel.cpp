@@ -445,6 +445,12 @@ namespace Engine
 			    }
 			    ImGui::EndDragDropTarget();
 			}
+			UUID handle = component.MaterialHandle;
+			if (AssetManager::IsAssetLoaded(handle))
+			{
+				Shared<Material> material = AssetManager::GetAsset<Material>(handle);
+
+			}
 		});
 		DrawComponent<SceneCameraComponent>("Camera", entity, [](auto &component)
 		{
@@ -572,20 +578,20 @@ namespace Engine
 			if (ImGui::IsItemHovered())
 			    ImGui::SetTooltip("Recalculates the simplified physics hull from the high-poly mesh.");
 
-			float mass = component.mass;
-			if (ImGui::DragFloat("Mass", &mass))
+			if (ImGui::DragFloat("Mass", &component.mass))
 			{
-				component.mass = mass;
 			}
 		});
 		DrawComponent<PointLightComponent>("PointLight", entity, [](auto &component)
 		{
 			glm::vec3 color = component.Color;
-			float intensity = component.Intensity;
 
 			DrawVec3("Color", color, 0.0f);
-			if(ImGui::DragFloat("Intensity", &intensity))
-				component.Intensity = intensity;
+			if(ImGui::DragFloat("Intensity", &component.Intensity)) {
+
+			}
+
+			component.Color = color;
 		});
 	};
 

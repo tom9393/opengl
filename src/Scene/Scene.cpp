@@ -54,6 +54,7 @@ namespace Engine
 		CopyComponent<RigidBodyComponent>(destination, source, map);
 		CopyComponent<NativeScriptComponent>(destination, source, map);
 		CopyComponent<LuaScriptComponent>(destination, source, map);
+		CopyComponent<PointLightComponent>(destination, source, map);
 
 		auto relView = source.view<RelationshipComponent>();
 		for (auto& e : relView)

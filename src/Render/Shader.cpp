@@ -23,6 +23,12 @@ namespace Engine
         const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
         textureShader->AddShaders({vert, frag});
         Add(textureShader);
+
+        Shared<Shader> primitiveShader = Shader::Create("Primitive");
+        const std::string pvert = "/home/tom/Coding/c++/opengl/shaders/primitive.vert";
+        const std::string pfrag = "/home/tom/Coding/c++/opengl/shaders/primitive.frag";
+        primitiveShader->AddShaders({pvert, pfrag});
+        Add(primitiveShader);
     }
 
     void ShaderLibrary::Shutdown()
