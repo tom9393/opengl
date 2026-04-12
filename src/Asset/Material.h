@@ -36,7 +36,6 @@ namespace Engine {
             }
         }
 
-    private:
         std::unordered_map<std::string, float> m_Floats;
         std::unordered_map<std::string, bool> m_Bools;
         std::unordered_map<std::string, glm::vec4> m_Vec4s;

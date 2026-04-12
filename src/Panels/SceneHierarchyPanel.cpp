@@ -371,6 +371,12 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
+			if (ImGui::MenuItem("Material"))
+			{
+				m_SelectionContext.AddComponent<MaterialComponent>();
+				ImGui::CloseCurrentPopup();
+			}
+
 			if (ImGui::BeginMenu("NativeScript"))
 			{
 				if (ImGui::MenuItem("PlayerScript"))
@@ -449,7 +455,75 @@ namespace Engine
 			if (AssetManager::IsAssetLoaded(handle))
 			{
 				Shared<Material> material = AssetManager::GetAsset<Material>(handle);
+				
+				ImGui::Separator();
+				
+				// 1. Core Material Settings
+				if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					// Blend Mode Selection
+					const char* blendModes[] = { "Opaque", "Transparent", "Additive" };
+					int currentMode = (int)material->mode;
+					if (ImGui::Combo("Blend Mode", &currentMode, blendModes, IM_ARRAYSIZE(blendModes)))
+						material->mode = (BlendMode)currentMode;
 
+					ImGui::Checkbox("Depth Write", &material->DepthWrite);
+					ImGui::Checkbox("Double Sided", &material->DoubleSided);
+					
+					ImGui::TreePop();
+				}
+
+				// 2. Uniforms / Parameters
+				if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					// Floats
+					for (auto& [name, val] : material->m_Floats)
+					{
+						ImGui::DragFloat(name.c_str(), &val, 0.05f);
+					}
+
+					// Bools
+					for (auto& [name, val] : material->m_Bools)
+					{
+						ImGui::Checkbox(name.c_str(), &val);
+					}
+
+					// Vec4s (Usually Colors)
+					for (auto& [name, val] : material->m_Vec4s)
+					{
+						ImGui::ColorEdit4(name.c_str(), glm::value_ptr(val));
+					}
+
+					// Textures
+					for (auto& [name, tex] : material->m_Textures)
+					{
+						ImGui::Text("%s", name.c_str());
+						ImGui::SameLine();
+						
+						// Display a small thumbnail or button for the texture
+						void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
+						if (ImGui::ImageButton(name.c_str(), (ImTextureID)texID, ImVec2(64, 64), { 0, 1 }, { 1, 0 }))
+						{
+							// Logic to select texture asset could go here
+						}
+
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE2D"))
+							{
+								UUID texHandle = *(UUID*)payload->Data;
+								material->m_Textures[name] = AssetManager::GetAsset<Texture2D>(texHandle);
+							}
+							ImGui::EndDragDropTarget();
+						}
+					}
+
+					ImGui::TreePop();
+				}
+			}
+			else
+			{
+				ImGui::TextDisabled("No Material Assigned (Drag & Drop a Material Asset)");
 			}
 		});
 		DrawComponent<SceneCameraComponent>("Camera", entity, [](auto &component)
