@@ -12,7 +12,6 @@ namespace Engine {
 
         // 2. Create the Vertex Buffers
         Shared<VertexBuffer> vbo = VertexBuffer::Create((float*)vertices.data(), vertices.size() * sizeof(float));
-        Shared<VertexBuffer> vbo2 = VertexBuffer::Create(1000 * sizeof(glm::mat4));
         
         // Setup layout: Assumes 3 floats for Position, 3 for Normal, 2 for TexCoords.
         // (Adjust the enum/type names if your BufferLayout.h uses different naming)
@@ -21,20 +20,14 @@ namespace Engine {
             { ShaderDataType::Float3, "a_Normal" },
             { ShaderDataType::Float2, "a_TexCoord" }
         };
-        BufferLayout instanceLayout = {
-            { ShaderDataType::Mat4, "a_InstanceTransform" },
-        };
         vbo->SetLayout(layout);
         vao->AddVertexBuffer(vbo);
-
-        vbo2->SetLayout(instanceLayout);
-        vao->AddVertexBuffer(vbo2);
 
         // 3. Create the Index Buffer
         Shared<IndexBuffer> ebo = IndexBuffer::Create((unsigned int*)indices.data(), indices.size());
         vao->SetIndexBuffer(ebo);
 
-        std::vector<Shared<VertexBuffer>> vbos = { vbo, vbo2 };
+        std::vector<Shared<VertexBuffer>> vbos = { vbo };
 
         // 4. Construct your Mesh class
         Shared<Mesh> mesh = MakeShared<Mesh>(vertices, indices, vao, vbos, ebo); 
