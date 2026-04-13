@@ -18,7 +18,7 @@ struct VertexOutput
     mat3 TBN;
 };
 
-layout (std140, binding = 0) uniform Camera
+layout (std140, binding = 0) uniform Camera // std140 = uniform buffer
 {
     mat4 u_ViewProjection;
     vec3 u_CameraPosition;
@@ -26,7 +26,7 @@ layout (std140, binding = 0) uniform Camera
 
 #define MAX_LIGHTS 64
 
-layout(std430, binding = 0) readonly buffer InstanceData {
+layout(std430, binding = 0) readonly buffer InstanceData { // std430 = shader storage buffer
     mat4 u_InstanceTransforms[]; 
 };
 
