@@ -104,7 +104,65 @@ namespace Engine {
                         ImGui::EndTable();
                     }
                 }
-                
+
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.8f, 0.6f, 0.2f, 1.0f), "Uniform Blocks (UBOs)");
+
+                auto ubos = shader->GetActiveUBOs();
+                if (ubos.empty()) {
+                    ImGui::TextDisabled("No active UBOs found.");
+                } else {
+                    if (ImGui::BeginTable("UBOTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+                    {
+                        ImGui::TableSetupColumn("Binding", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                        ImGui::TableSetupColumn("Block Name");
+                        ImGui::TableSetupColumn("Size (Bytes)");
+                        ImGui::TableHeadersRow();
+
+                        for (const auto& block : ubos) {
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0); ImGui::Text("%d", block.BindingPoint);
+                            ImGui::TableSetColumnIndex(1); ImGui::Text("%s", block.Name.c_str());
+                            ImGui::TableSetColumnIndex(2); ImGui::Text("%d", block.SizeBytes);
+                        }
+                        ImGui::EndTable();
+                    }
+                }
+
+                // --- 4. RENDER SHADER STORAGE BLOCKS (SSBOs) ---
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.8f, 0.3f, 0.3f, 1.0f), "Shader Storage Blocks (SSBOs)");
+
+                auto ssbos = shader->GetActiveSSBOs();
+                if (ssbos.empty()) {
+                    ImGui::TextDisabled("No active SSBOs found.");
+                } else {
+                    if (ImGui::BeginTable("SSBOTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+                    {
+                        ImGui::TableSetupColumn("Binding", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                        ImGui::TableSetupColumn("Block Name");
+                        ImGui::TableSetupColumn("Size (Bytes)");
+                        ImGui::TableHeadersRow();
+
+                        for (const auto& block : ssbos) {
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0); ImGui::Text("%d", block.BindingPoint);
+                            ImGui::TableSetColumnIndex(1); ImGui::Text("%s", block.Name.c_str());
+                            
+                            // Note: SSBOs with unsized arrays (e.g. mat4 transforms[]) will usually 
+                            // return a SizeBytes of 0 because their size is determined at runtime!
+                            ImGui::TableSetColumnIndex(2); 
+                            if (block.SizeBytes == 0) ImGui::Text("Dynamic");
+                            else ImGui::Text("%d", block.SizeBytes);
+                        }
+                        ImGui::EndTable();
+                    }
+                }
+                    
                 ImGui::TreePop();
             }
         }

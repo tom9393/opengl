@@ -25,6 +25,8 @@ namespace Engine
         GLuint GetProgram() const { return id; }
         const std::vector<UniformInfo> &GetActiveUniforms() const override { return m_ActiveUniforms; };
         const std::vector<AttributeInfo> &GetActiveAttributes() const override { return m_ActiveAttributes; };
+        const std::vector<BufferBlockInfo>& GetActiveUBOs() const override { return m_ActiveUBOs; };
+        const std::vector<BufferBlockInfo>& GetActiveSSBOs() const override { return m_ActiveSSBOs; };
 
         // utility uniform functions
         void SetBool(const std::string &name, bool value) const override;
@@ -52,6 +54,9 @@ namespace Engine
         std::string m_Name;
         std::vector<UniformInfo> m_ActiveUniforms;
         std::vector<AttributeInfo> m_ActiveAttributes;
+        std::vector<BufferBlockInfo> m_ActiveUBOs;
+        std::vector<BufferBlockInfo> m_ActiveSSBOs;
+
     };
 
 };

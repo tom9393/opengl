@@ -165,6 +165,8 @@ namespace Engine
     {
         m_ActiveAttributes.clear();
         m_ActiveUniforms.clear();
+        m_ActiveUBOs.clear();
+        m_ActiveSSBOs.clear();
 
         GLint size; 
         GLenum type;
@@ -195,6 +197,47 @@ namespace Engine
             glGetActiveUniform(id, (GLuint)i, bufSize, &length, &size, &type, name);
             m_ActiveUniforms.push_back({ std::string(name), (uint32_t)type, size });
         }
+
+        // The properties we want to extract from each block
+        const GLenum blockProperties[2] = { GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE };
+        GLint values[2];
+        char nameBuffer[256];
+
+        // --- Extract Uniform Blocks (UBOs) ---
+        int uboCount = 0;
+        glGetProgramInterfaceiv(id, GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &uboCount);
+
+        for (int i = 0; i < uboCount; i++) {
+            // Fetch binding point and size
+            glGetProgramResourceiv(id, GL_UNIFORM_BLOCK, i, 2, blockProperties, 2, nullptr, values);
+            // Fetch the block name
+            glGetProgramResourceName(id, GL_UNIFORM_BLOCK, i, sizeof(nameBuffer), nullptr, nameBuffer);
+            
+            m_ActiveUBOs.push_back({ std::string(nameBuffer), values[0], values[1] });
+        }
+
+        // Sort UBOs by binding point for neatness
+        std::sort(m_ActiveUBOs.begin(), m_ActiveUBOs.end(), [](const BufferBlockInfo& a, const BufferBlockInfo& b) {
+            return a.BindingPoint < b.BindingPoint;
+        });
+
+        // --- Extract Shader Storage Blocks (SSBOs) ---
+        int ssboCount = 0;
+        glGetProgramInterfaceiv(id, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &ssboCount);
+
+        for (int i = 0; i < ssboCount; i++) {
+            // Fetch binding point and size
+            glGetProgramResourceiv(id, GL_SHADER_STORAGE_BLOCK, i, 2, blockProperties, 2, nullptr, values);
+            // Fetch the block name
+            glGetProgramResourceName(id, GL_SHADER_STORAGE_BLOCK, i, sizeof(nameBuffer), nullptr, nameBuffer);
+            
+            m_ActiveSSBOs.push_back({ std::string(nameBuffer), values[0], values[1] });
+        }
+
+        // Sort SSBOs by binding point
+        std::sort(m_ActiveSSBOs.begin(), m_ActiveSSBOs.end(), [](const BufferBlockInfo& a, const BufferBlockInfo& b) {
+            return a.BindingPoint < b.BindingPoint;
+        });
     }
 
 

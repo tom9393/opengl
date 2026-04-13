@@ -20,6 +20,13 @@ namespace Engine
         int Location;     // The layout(location = X) index
     };
 
+    struct BufferBlockInfo
+    {
+        std::string Name;
+        int BindingPoint;
+        int SizeBytes;
+    };
+
     class Shader
     {
     public:
@@ -35,6 +42,8 @@ namespace Engine
         virtual const std::string& GetName() const = 0;
         virtual const std::vector<UniformInfo> &GetActiveUniforms() const = 0;
         virtual const std::vector<AttributeInfo> &GetActiveAttributes() const = 0;
+        virtual const std::vector<BufferBlockInfo>& GetActiveUBOs() const = 0;
+        virtual const std::vector<BufferBlockInfo>& GetActiveSSBOs() const = 0;
 
         static Shared<Shader> Create(const std::string &name);
 
