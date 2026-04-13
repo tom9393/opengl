@@ -9,7 +9,7 @@ namespace Engine {
         void SetPlayCallback(const std::function<void()>& callback);
         void SetStopCallback(const std::function<void()>& callback);
 
-        void OnImGuiRender(bool isPlaying);
+        void OnImGuiRender();
 
     private:
         std::function<void()> m_OnPlayCallback;

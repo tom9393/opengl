@@ -1,6 +1,7 @@
 #include "../../pch.h"
 #include "ToolbarPanel.h"
 #include <imgui.h>
+#include "../Utils/SceneManager.h"
 
 namespace Engine {
     void ToolbarPanel::SetPlayCallback(const std::function<void()>& callback) {
@@ -11,8 +12,10 @@ namespace Engine {
         m_OnStopCallback = callback;
     }
 
-    void ToolbarPanel::OnImGuiRender(bool isPlaying) {
+    void ToolbarPanel::OnImGuiRender() {
         ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        bool isPlaying = SceneManager::GetSceneState() == SceneState::Play;
 
         const char* txt = isPlaying ? "Stop" : "Play";
         if (ImGui::Button(txt)) {

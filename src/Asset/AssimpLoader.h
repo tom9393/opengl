@@ -19,6 +19,7 @@ namespace Engine
 {
 
     static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
+    //static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
 
     static TextureType AssimpToTextureType(aiTextureType type)
     {
@@ -100,7 +101,7 @@ namespace Engine
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return metadata;
             }
-
+            
             metadata.Handle = UUID();
             metadata.Type = AssetType::Model;
             metadata.FilePath = path;

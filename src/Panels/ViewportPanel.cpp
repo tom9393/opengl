@@ -7,11 +7,19 @@
 #include "../Utils/ScopedImGuiStyle.h"
 #include "../Utils/GizmoManager.h"
 #include <imgui.h>
-
-// Note: Ensure your ScreenPosToWorldRay and RayIntersectsAABB functions are accessible here
-// You may need to #include "Utils/MathTools.h" or wherever they are stored.
+#include "../Events/EventBroker.h"
 
 namespace Engine {
+
+    ViewportPanel::ViewportPanel()
+    {
+        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed), this);
+    }
+
+    ViewportPanel::~ViewportPanel()
+    {
+        EventBroker::Get().UnsubscribeAll(this);
+    }
 
     void ViewportPanel::SetContext(Shared<Scene> scene) {
         m_Context = scene;
@@ -29,7 +37,7 @@ namespace Engine {
         m_SceneDroppedCallback = callback;
     }
 
-    void ViewportPanel::OnImGuiRender(int sceneState, Entity& selectedEntity) {
+    void ViewportPanel::OnImGuiRender() {
         ImGuiWindowFlags window_flags = 0;
         if (Input::IsKeyPressed(KEY_LEFT_CONTROL))
             window_flags |= ImGuiWindowFlags_NoMove;
@@ -37,7 +45,6 @@ namespace Engine {
         ScopedImGuiStyle noPadding(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("Viewport", nullptr, window_flags);
 
-        // Update state
         m_IsHovered = ImGui::IsWindowHovered();
         m_IsFocused = ImGui::IsWindowFocused();
 
@@ -51,7 +58,6 @@ namespace Engine {
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
         glm::vec2 newViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-        // Handle Resize
         if (m_ViewportSize != newViewportSize && newViewportSize.x > 0 && newViewportSize.y > 0) {
             m_ViewportSize = newViewportSize;
             m_EditorCamera->SetViewportSize((unsigned int)m_ViewportSize.x, (unsigned int)m_ViewportSize.y);
@@ -67,9 +73,8 @@ namespace Engine {
         DrawDragAndDrop();
         DrawContextMenu();
 
-        // SceneState::Edit is assumed to be 0
-        if (sceneState == 0) {
-            UpdateSelectedEntityGizmo(selectedEntity);
+        if (SceneManager::GetSceneState() == SceneState::Edit) {
+            UpdateSelectedEntityGizmo();
         }
 
         ImGui::End();
@@ -138,7 +143,6 @@ namespace Engine {
                 ImGui::EndMenu();
             }
 
-            // You MUST call EndPopup if BeginPopupContextWindow returns true
             ImGui::EndPopup();
         }
     }
@@ -184,7 +188,8 @@ namespace Engine {
         return entt::null;
     }
 
-    void ViewportPanel::UpdateSelectedEntityGizmo(Entity& selectedEntity) {
+    void ViewportPanel::UpdateSelectedEntityGizmo() {
+        Entity selectedEntity = { SceneManager::GetSelectedEntity(), SceneManager::GetContext() };
         if (!selectedEntity || !selectedEntity.HasComponent<TransformComponent>())
             return;
 
@@ -200,5 +205,18 @@ namespace Engine {
         if (result.IsUsing) {
             tc.ApplyMatrix(result.Transform);
         }
+    }
+
+    bool ViewportPanel::OnMouseButtonPressed(MouseButtonPressedEvent &e)
+    {
+        // Handle raycast picking only if clicking in the viewport bounds
+        if (e.GetMouseButton() == MOUSE_BUTTON_LEFT && IsHovered() && !ImGuizmo::IsOver())
+        {
+            entt::entity clickedId = RaycastSelection();
+            if (clickedId != entt::null)
+                SceneManager::SetSelectedEntity(clickedId);
+        }
+
+        return false;
     }
 }

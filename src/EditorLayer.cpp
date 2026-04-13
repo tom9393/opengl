@@ -11,6 +11,7 @@
 #include "Events/EventBroker.h"
 #include "Scripting/ScriptEngine.h"
 #include "Utils/GizmoManager.h"
+#include "Utils/SceneManager.h"
 
 namespace Engine
 {
@@ -27,12 +28,16 @@ namespace Engine
         m_EditingScene = MakeShared<Scene>();
         m_SceneRenderer = MakeShared<SceneRenderer>(m_EditingScene.get());
         m_SceneRenderer->OnViewportResize(500, 500);
-        m_SceneHierarchyPanel.SetContext(m_EditingScene);
+
+        SceneManager::SetContext(m_EditingScene.get());
 
         m_ViewportPanel.SetContext(m_EditingScene);
         m_ViewportPanel.SetRenderer(m_SceneRenderer);
         m_ViewportPanel.SetCamera(m_EditorCamera);
         m_ViewportPanel.SetSceneDroppedCallback([this](const std::string& path) { this->OpenScene(path.c_str()); });
+
+        m_ToolbarPanel.SetPlayCallback([this]() { OnScenePlay();});
+        m_ToolbarPanel.SetStopCallback([this]() { OnSceneStop();});
     };
 
     EditorLayer::~EditorLayer()
@@ -42,7 +47,6 @@ namespace Engine
 
     void EditorLayer::OnAttach() {
         std::cout << "EditorLayer attached" << std::endl;
-        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed), this);
         EventBroker::Get().Subscribe<KeyboardPressEvent>(BIND_FN(OnKeyEvent), this);
     };
 
@@ -55,7 +59,7 @@ namespace Engine
     {
         PROFILE_FUNCTION();
 
-        switch (m_SceneState) {
+        switch (SceneManager::GetSceneState()) {
             case Engine::SceneState::Edit:
             {
                 m_EditorCamera->OnUpdate(ts);
@@ -77,33 +81,15 @@ namespace Engine
 
         m_MenuBarPanel.OnImGuiRender();
         m_StatsPanel.OnImGuiRender();
-        m_ToolbarPanel.OnImGuiRender((bool)m_SceneState);
+        m_ToolbarPanel.OnImGuiRender();
 
-        Entity e = m_SceneHierarchyPanel.GetSelectedEntity();
-
-        m_ViewportPanel.OnImGuiRender((int)m_SceneState, e);
+        m_ViewportPanel.OnImGuiRender();
         m_SceneHierarchyPanel.OnImGuiRender();
         m_ContentBrowserPanel.OnImGuiRender();
         m_SettingsPanel.OnImGuiRender();
 
         Renderer::ResetStatistics();
     }
-
-    bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent &e)
-    {
-        // Handle raycast picking only if clicking in the viewport bounds
-        if (e.GetMouseButton() == MOUSE_BUTTON_LEFT && m_ViewportPanel.IsHovered() && !ImGuizmo::IsOver())
-        {
-            entt::entity clickedId = m_ViewportPanel.RaycastSelection();
-            if (clickedId != entt::null) {
-                Entity entity = {clickedId, m_EditingScene.get()};
-                m_SceneHierarchyPanel.SetSelectedEntity(entity);
-            } else {
-                m_SceneHierarchyPanel.SetSelectedEntity({}); // Deselect
-            }
-        }
-        return false;
-    };
 
     bool EditorLayer::OnKeyEvent(KeyboardPressEvent &e)
     {
@@ -119,7 +105,7 @@ namespace Engine
                 GizmoManager::SetOperation(ImGuizmo::OPERATION::SCALE);
                 break;
             case KEY_F1:
-                if (m_SceneState == SceneState::Edit) OnScenePlay();
+                if (SceneManager::GetSceneState() == SceneState::Edit) OnScenePlay();
                 else OnSceneStop();
                 break;
             case KEY_F5:
@@ -135,7 +121,7 @@ namespace Engine
         if (!filepath.empty())
         {
             m_EditingScene = MakeShared<Scene>();
-            m_SceneHierarchyPanel.SetContext(m_EditingScene);
+            SceneManager::SetContext(m_EditingScene.get());
             SceneSerializer serializer(m_EditingScene);
             serializer.Deserialize(filepath);
 
@@ -148,7 +134,7 @@ namespace Engine
         if (path != nullptr)
         {
             m_EditingScene = AssetManager::GetAsset<Scene>(AssetManager::ImportAsset(path));
-            m_SceneHierarchyPanel.SetContext(m_EditingScene);
+            SceneManager::SetContext(m_EditingScene.get());
 
             m_SceneRenderer->SetScene(m_EditingScene.get());
         }
@@ -166,7 +152,7 @@ namespace Engine
 
     void EditorLayer::OnScenePlay()
     {
-        m_SceneState = SceneState::Play;
+        SceneManager::SetSceneState(SceneState::Play);
 
         m_RuntimeScene = Scene::Copy(m_EditingScene);
         m_SceneRenderer->SetScene(m_RuntimeScene.get());
@@ -176,7 +162,7 @@ namespace Engine
 
     void EditorLayer::OnSceneStop()
     {
-        m_SceneState = SceneState::Edit;
+        SceneManager::SetSceneState(SceneState::Edit);
 
         m_RuntimeScene->OnRuntimeStop();
         m_SceneRenderer->SetScene(m_EditingScene.get());

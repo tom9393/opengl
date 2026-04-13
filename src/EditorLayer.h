@@ -19,12 +19,6 @@
 namespace Engine
 {
 
-    enum class SceneState
-    {
-        Edit = 0,
-        Play = 1
-    };
-
     class EditorLayer : public Layer
     {
         public:
@@ -47,7 +41,6 @@ namespace Engine
         void OnScenePlay();
         void OnSceneStop();
 
-        bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
         bool OnKeyEvent(KeyboardPressEvent &e);
 
         private:
@@ -64,8 +57,6 @@ namespace Engine
         StatsPanel m_StatsPanel;
         ToolbarPanel m_ToolbarPanel;
         MenuBarPanel m_MenuBarPanel;
-
-        SceneState m_SceneState = SceneState::Edit;
     };
 
 };

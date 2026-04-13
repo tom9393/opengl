@@ -3,6 +3,7 @@
 #include "../Scene/Components.h"
 #include "../Asset/CollisionBaker.h"
 #include "../Scripting/PlayerScript.h"
+#include "../Utils/SceneManager.h"
 #include "imgui.h"
 
 namespace Engine
@@ -151,25 +152,12 @@ namespace Engine
 		ImGui::PopID();
 	}
 
-	SceneHierarchyPanel::SceneHierarchyPanel(const Shared<Scene> &context)
-	{
-		SetContext(context);
-	};
-
-	void SceneHierarchyPanel::SetContext(const Shared<Scene> &context)
-	{
-		m_Context = context;
-		m_SelectionContext = {};
-	};
-
-	void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
-	{
-		m_SelectionContext = entity;
-	};
-
 	void SceneHierarchyPanel::OnImGuiRender()
     {
         ImGui::Begin("Scene hierarchy");
+
+		Scene* context = SceneManager::GetContext();
+		if (!context) return;
 
         // --- NEW: Provide a drop target on the empty window space to un-parent entities ---
         if (ImGui::BeginDragDropTarget())
@@ -177,7 +165,7 @@ namespace Engine
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
             {
                 entt::entity payloadEntity = *(const entt::entity*)payload->Data;
-                Entity child{ payloadEntity, m_Context.get() };
+                Entity child{ payloadEntity, context };
                 
                 // An empty entity implies "remove parent" in a robust SetParent implementation
                 Entity nullParent{}; 
@@ -185,9 +173,9 @@ namespace Engine
             }
         }
 
-        m_Context->m_Registry.view<entt::entity>().each([this](entt::entity entity)
+        context->m_Registry.view<entt::entity>().each([this, &context](entt::entity entity)
         {
-            Entity e { entity, m_Context.get() };
+            Entity e { entity, context };
             
             // --- NEW: Only draw ROOT entities in the main loop ---
             if (!e.HasParent())
@@ -196,54 +184,58 @@ namespace Engine
             }
         });
 
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered())
         {
-            m_SelectionContext = {};
+			SceneManager::SetSelectedEntity(entt::null);
         }
 
         if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight))
         {
             if (ImGui::MenuItem("Create empty entity"))
             {
-                m_Context->CreateEntity("Empty entity");
+                context->CreateEntity("Empty entity");
             }
             ImGui::EndPopup();
         }
 
         ImGui::End();
 
+		Entity selection = SceneManager::GetSelectedEntity();
+
         ImGui::Begin("Properties");
-        if (m_SelectionContext)
+        if (selection)
         {
-            DrawComponents(m_SelectionContext);
+            DrawComponents(selection);
         }
         ImGui::End();
 
 		if (m_Deleted)
 		{
-			m_Context->DestroyEntity(m_SelectionContext);
-			m_SelectionContext = {};
+			context->DestroyEntity(selection);
+			SceneManager::SetSelectedEntity(entt::null);
 			m_Deleted = false;
 		}
     };
 
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
     {
-        auto& tag = m_Context->m_Registry.get<TagComponent>(entity.GetHandle());
+		Scene* context = SceneManager::GetContext();
+		Entity selected = SceneManager::GetSelectedEntity();
+        auto& tag = context->m_Registry.get<TagComponent>(entity.GetHandle());
         
         // Check if we have children to determine if we should render as a Leaf or a Tree Node
         bool hasChildren = entity.HasComponent<RelationshipComponent>() && 
                            !entity.GetComponent<RelationshipComponent>().Children.empty();
 
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (m_SelectionContext == entity) flags |= ImGuiTreeNodeFlags_Selected;
+        if (selected == entity) flags |= ImGuiTreeNodeFlags_Selected;
         if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
 
         bool opened = ImGui::TreeNodeEx((void*) entity.GetHandle(), flags, tag.tag.c_str());
         
         if (ImGui::IsItemClicked())
         {
-            m_SelectionContext = entity;
+			SceneManager::SetSelectedEntity(entity.GetHandle());
         }
 
         // --- NEW: Drag and Drop Implementation ---
@@ -260,7 +252,7 @@ namespace Engine
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
             {
                 entt::entity payloadEntity = *(const entt::entity*)payload->Data;
-                Entity child{ payloadEntity, m_Context.get() };
+                Entity child{ payloadEntity, context };
                 
                 // Prevent parenting to yourself or your own children (prevents infinite loops!)
                 if (child != entity) 
@@ -276,8 +268,8 @@ namespace Engine
 				// Iterate through every mesh handle stored in the Model asset
 				for (size_t i = 0; i < metadata.Children.size(); i++)
 				{
-					Entity childEntity = m_Context->CreateEntity("MeshPart_" + std::to_string(i));
-					childEntity.SetParent(m_SelectionContext);
+					Entity childEntity = context->CreateEntity("MeshPart_" + std::to_string(i));
+					childEntity.SetParent(selected);
 
 					UUID meshHandle = metadata.Children[i].Handle;
 					childEntity.AddComponent<MeshComponent>(meshHandle);
@@ -298,7 +290,7 @@ namespace Engine
         {
             if (ImGui::MenuItem("Create child entity"))
             {
-                Entity child = m_Context->CreateEntity("Empty entity");
+                Entity child = context->CreateEntity("Empty entity");
                 child.SetParent(entity);
             }
             if (ImGui::MenuItem("Delete entity"))
@@ -316,7 +308,7 @@ namespace Engine
                 auto& children = entity.GetComponent<RelationshipComponent>().Children;
                 for (auto childID : children)
                 {
-                    Entity child{ childID, m_Context.get() };
+                    Entity child{ childID, context };
                     DrawEntityNode(child);
                 }
             }
@@ -344,6 +336,8 @@ namespace Engine
 		ImGui::SameLine();
 		ImGui::PushItemWidth(-1);
 
+		Entity selection = SceneManager::GetSelectedEntity();
+
 		if (ImGui::Button("Add Component"))
 		{
 			ImGui::OpenPopup("AddComponent");
@@ -354,26 +348,26 @@ namespace Engine
 
 			if (ImGui::MenuItem("Camera"))
 			{
-				m_SelectionContext.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
+				selection.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Mesh"))
 			{
-				m_SelectionContext.AddComponent<MeshComponent>();
+				selection.AddComponent<MeshComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Transform"))
 			{
 				glm::vec3 trans = glm::vec3(0.0f, 0.0f, 0.0f);
-				m_SelectionContext.AddComponent<TransformComponent>(trans);
+				selection.AddComponent<TransformComponent>(trans);
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Material"))
 			{
-				m_SelectionContext.AddComponent<MaterialComponent>();
+				selection.AddComponent<MaterialComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -381,7 +375,7 @@ namespace Engine
 			{
 				if (ImGui::MenuItem("PlayerScript"))
 				{
-					NativeScriptComponent &nsc = m_SelectionContext.AddComponent<NativeScriptComponent>();
+					NativeScriptComponent &nsc = selection.AddComponent<NativeScriptComponent>();
 					nsc.Bind<PlayerScript>();
 					ImGui::CloseCurrentPopup();
 				}
@@ -390,19 +384,19 @@ namespace Engine
 
 			if (ImGui::MenuItem("LuaScript"))
 			{
-				m_SelectionContext.AddComponent<LuaScriptComponent>();
+				selection.AddComponent<LuaScriptComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("RigidBody"))
 			{
-				m_SelectionContext.AddComponent<RigidBodyComponent>();
+				selection.AddComponent<RigidBodyComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("PointLight"))
 			{
-				m_SelectionContext.AddComponent<PointLightComponent>();
+				selection.AddComponent<PointLightComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 

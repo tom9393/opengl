@@ -4,6 +4,7 @@
 #include "../Scene/Entity.h"
 #include "../Scene/SceneRenderer.h"
 #include "../Render/EditorCamera.h"
+#include "../Utils/SceneManager.h"
 #include <functional>
 #include <glm/glm.hpp>
 
@@ -11,7 +12,8 @@ namespace Engine {
 
     class ViewportPanel {
     public:
-        ViewportPanel() = default;
+        ViewportPanel();
+        ~ViewportPanel();
 
         void SetContext(Shared<Scene> scene);
         void SetRenderer(Shared<SceneRenderer> renderer);
@@ -21,7 +23,7 @@ namespace Engine {
         void SetSceneDroppedCallback(const std::function<void(const std::string&)>& callback);
 
         // Called every frame to draw the ImGui window
-        void OnImGuiRender(int sceneState, Entity& selectedEntity);
+        void OnImGuiRender();
 
         // State getters
         bool IsHovered() const { return m_IsHovered; }
@@ -34,7 +36,8 @@ namespace Engine {
     private:
         void DrawDragAndDrop();
         void DrawContextMenu();
-        void UpdateSelectedEntityGizmo(Entity& selectedEntity);
+        void UpdateSelectedEntityGizmo();
+        bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
 
     private:
         Shared<Scene> m_Context;
