@@ -135,8 +135,6 @@ namespace Engine
 
     void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, unsigned int count)
     {
-        if (count < 1) return;
-
         if (!mesh->GetVAO()) return;
 
         uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(material.get());

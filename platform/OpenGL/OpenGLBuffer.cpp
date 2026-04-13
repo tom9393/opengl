@@ -216,13 +216,13 @@ namespace Engine
     OpenGLShaderStorageBuffer::OpenGLShaderStorageBuffer(unsigned int size)
     {
         glCreateBuffers(1, &m_RendererID);
-        glNamedBufferStorage(m_RendererID, size, nullptr, GL_DYNAMIC_DRAW);
+        glNamedBufferStorage(m_RendererID, size, nullptr, GL_DYNAMIC_STORAGE_BIT);
     };
 
     OpenGLShaderStorageBuffer::OpenGLShaderStorageBuffer(void* data, unsigned int size)
     {
         glCreateBuffers(1, &m_RendererID);
-        glNamedBufferStorage(m_RendererID, size, data, GL_DYNAMIC_DRAW);
+        glNamedBufferStorage(m_RendererID, size, data, GL_DYNAMIC_STORAGE_BIT);
     };
 
     OpenGLShaderStorageBuffer::~OpenGLShaderStorageBuffer()
