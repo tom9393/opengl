@@ -14,7 +14,7 @@ namespace Engine
         void Clear() override;
 
         void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) override;
-        void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, const std::vector<glm::mat4> &transforms) override;
+        void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) override;
         void DrawLines(const std::shared_ptr<VertexArray> &lines, uint32_t size) override;
 
         void ToggleWireframe() override;

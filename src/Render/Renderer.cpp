@@ -133,9 +133,9 @@ namespace Engine
         s_Data.statistics.IndicesCount += mesh->GetIndices().size();
     }
 
-    void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms)
+    void Renderer::SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, unsigned int count)
     {
-        if (transforms.empty()) return;
+        if (count < 1) return;
 
         if (!mesh->GetVAO()) return;
 
@@ -149,7 +149,7 @@ namespace Engine
 
         Shared<VertexArray> VAO = mesh->GetVAO();
         VAO->Bind();
-        RenderCommand::DrawIndexedInstances(VAO, transforms);
+        RenderCommand::DrawIndexedInstances(VAO, count);
         s_Data.statistics.DrawCalls++;
         s_Data.statistics.VerticeCount += mesh->GetVertices().size();
         s_Data.statistics.IndicesCount += mesh->GetIndices().size();

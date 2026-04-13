@@ -50,7 +50,9 @@ namespace Engine {
         unsigned int m_ViewportWidth;
         unsigned int m_ViewportHeight;
         RenderGraph m_RenderGraph;
-        std::vector<glm::mat4> m_TransformBuffer;
+        const uint32_t m_MaxInstances = 10000;
+        Shared<ShaderStorageBuffer> m_InstanceSSBO;
+        std::vector<glm::mat4> m_Transforms;
     };
 
 }

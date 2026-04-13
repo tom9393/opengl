@@ -29,9 +29,9 @@ namespace Engine
             s_RendererAPI->DrawIndexed(vertexArray);
         }
 
-        inline static void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, const std::vector<glm::mat4> &transforms)
+        inline static void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count)
         {
-            s_RendererAPI->DrawIndexedInstances(vertexArray, transforms);
+            s_RendererAPI->DrawIndexedInstances(vertexArray, count);
         }
 
         inline static void DrawLines(Shared<VertexArray> &lines, uint32_t count)

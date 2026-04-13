@@ -50,11 +50,20 @@ namespace Engine
         return nullptr;
     };
 
-    Shared<SSBOBuffer> SSBOBuffer::Create(void* data, unsigned int size)
+    Shared<ShaderStorageBuffer> ShaderStorageBuffer::Create(unsigned int size)
     {
         switch (Renderer::Get()) {
             case RendererAPI::API::None: return nullptr;
-            case RendererAPI::API::OpenGL: return MakeShared<OpenGLSSBOBuffer>(data, size);
+            case RendererAPI::API::OpenGL: return MakeShared<OpenGLShaderStorageBuffer>(size);
+            }
+        return nullptr;
+    };
+
+    Shared<ShaderStorageBuffer> ShaderStorageBuffer::Create(void* data, unsigned int size)
+    {
+        switch (Renderer::Get()) {
+            case RendererAPI::API::None: return nullptr;
+            case RendererAPI::API::OpenGL: return MakeShared<OpenGLShaderStorageBuffer>(data, size);
             }
         return nullptr;
     };

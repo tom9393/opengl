@@ -83,14 +83,17 @@ namespace Engine
         unsigned int m_RendererID;
     };
 
-    class OpenGLSSBOBuffer : public SSBOBuffer
+    class OpenGLShaderStorageBuffer : public ShaderStorageBuffer
     {
         public:
-        OpenGLSSBOBuffer(void* data, unsigned int size);
-        ~OpenGLSSBOBuffer();
+        OpenGLShaderStorageBuffer(unsigned int size);
+        OpenGLShaderStorageBuffer(void* data, unsigned int size);
+        ~OpenGLShaderStorageBuffer();
 
         void Bind(unsigned int index) const override;
         void Unbind() const override;
+
+        void SetData(const void* data, uint32_t size, uint32_t offset = 0) override;
 
         private:
         unsigned int m_RendererID;

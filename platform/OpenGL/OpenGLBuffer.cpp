@@ -213,25 +213,38 @@ namespace Engine
         glNamedBufferSubData(m_RendererID, offset, size, data);
     };
 
-    OpenGLSSBOBuffer::OpenGLSSBOBuffer(void* data, unsigned int size)
+    OpenGLShaderStorageBuffer::OpenGLShaderStorageBuffer(unsigned int size)
     {
         glCreateBuffers(1, &m_RendererID);
-        glNamedBufferStorage(m_RendererID, size, data, GL_DYNAMIC_STORAGE_BIT);
+        glNamedBufferStorage(m_RendererID, size, nullptr, GL_DYNAMIC_DRAW);
     };
 
-    OpenGLSSBOBuffer::~OpenGLSSBOBuffer()
+    OpenGLShaderStorageBuffer::OpenGLShaderStorageBuffer(void* data, unsigned int size)
     {
+        glCreateBuffers(1, &m_RendererID);
+        glNamedBufferStorage(m_RendererID, size, data, GL_DYNAMIC_DRAW);
     };
 
-    void OpenGLSSBOBuffer::Bind(unsigned int index) const
+    OpenGLShaderStorageBuffer::~OpenGLShaderStorageBuffer()
+    {
+        glDeleteBuffers(1, &m_RendererID);
+    };
+
+    void OpenGLShaderStorageBuffer::Bind(unsigned int index) const
     {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, m_RendererID);
     };
 
-    void OpenGLSSBOBuffer::Unbind() const
+    void OpenGLShaderStorageBuffer::Unbind() const
     {
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     };
+
+    void OpenGLShaderStorageBuffer::SetData(const void* data, uint32_t size, uint32_t offset)
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_RendererID);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data);
+    }
 
     static bool IsDepthFormat(FramebufferTextureFormat format)
     {

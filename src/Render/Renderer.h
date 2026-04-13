@@ -24,7 +24,6 @@ namespace Engine
 
     struct RenderStorage
     {
-        Shared<SSBOBuffer> matrixBuffer;
         Shared<UniformBuffer> CameraUniformBuffer;
         Shared<UniformBuffer> LightUniformBuffer;
         Statistics statistics;
@@ -65,7 +64,7 @@ namespace Engine
 
         static void SetMaterial(const Shared<Material> &material);
         static void SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform);
-        static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const std::vector<glm::mat4> &transforms);
+        static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, unsigned int count);
 
         static void UpdateLightBuffer(SceneLightData &data);
 

@@ -61,13 +61,16 @@ namespace Engine
         static Shared<UniformBuffer> Create(void* data, unsigned int size);
     };
 
-    class SSBOBuffer
+    class ShaderStorageBuffer
     {
         public:
         virtual void Bind(unsigned int index) const = 0;
         virtual void Unbind() const = 0;
 
-        static Shared<SSBOBuffer> Create(void* data, unsigned int size);
+        virtual void SetData(const void* data, uint32_t size, uint32_t offset = 0) = 0;
+
+        static Shared<ShaderStorageBuffer> Create(uint32_t size);
+        static Shared<ShaderStorageBuffer> Create(void* data, unsigned int size);
     };
 
     enum class FramebufferTextureFormat

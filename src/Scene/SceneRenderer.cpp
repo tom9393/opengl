@@ -21,6 +21,8 @@ namespace Engine {
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         
         });
+
+        m_InstanceSSBO = ShaderStorageBuffer::Create(m_MaxInstances * sizeof(glm::mat4));
     }
 
     void SceneRenderer::PrepareScene(const RenderContext& context)
@@ -140,13 +142,15 @@ namespace Engine {
                 batchSize++;
             }
 
-            m_TransformBuffer.reserve(batchSize);
+            m_Transforms.reserve(batchSize);
             for (size_t j = 0; j < batchSize; j++)
-                m_TransformBuffer.emplace_back(commands[i + j].Transform);
+                m_Transforms.emplace_back(commands[i + j].Transform);
 
-            Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_TransformBuffer);
+            m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
+            m_InstanceSSBO->Bind(0);
+            Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
             i += batchSize;
-            m_TransformBuffer.clear();
+            m_Transforms.clear();
         }
     }
 

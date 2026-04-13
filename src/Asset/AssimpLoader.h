@@ -264,10 +264,6 @@ namespace Engine
                 } 
             }
 
-            BufferLayout instanceLayout = {
-                { ShaderDataType::Mat4, "a_InstanceTransform" },
-            };
-
             std::vector<unsigned int>& indices = mesh->GetIndices();
             indices.reserve(aiMesh->mNumFaces * 3);
             for(unsigned int i = 0; i < aiMesh->mNumFaces; i++)
@@ -284,16 +280,12 @@ namespace Engine
             VBO->SetLayout(meshLayout);
             VAO->AddVertexBuffer(VBO);
 
-            Shared<VertexBuffer> VBO2 = VertexBuffer::Create(1000 * sizeof(glm::mat4));
-            VBO2->SetLayout(instanceLayout);
-            VAO->AddVertexBuffer(VBO2);
-
             Shared<IndexBuffer> EBO = IndexBuffer::Create(&indices[0], indices.size());
             VAO->SetIndexBuffer(EBO);
 
             VAO->Unbind();
 
-            std::vector<Shared<VertexBuffer>> VBOs = { VBO, VBO2 };
+            std::vector<Shared<VertexBuffer>> VBOs = { VBO };
 
             mesh->SetVAO(VAO);
             mesh->SetVBOs(VBOs);

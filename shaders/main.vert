@@ -5,7 +5,6 @@ layout (location = 1) in vec3 a_Normal;
 layout (location = 2) in vec2 a_TexCoord;
 layout (location = 3) in vec3 a_Tangent;
 layout (location = 4) in vec3 a_Bitangent;
-layout (location = 5) in mat4 a_InstanceTransform;
 
 struct PointLight {
     vec4 Position; 
@@ -27,6 +26,10 @@ layout (std140, binding = 0) uniform Camera
 
 #define MAX_LIGHTS 64
 
+layout(std430, binding = 0) readonly buffer InstanceData {
+    mat4 u_InstanceTransforms[]; 
+};
+
 layout(std140, binding = 1) uniform LightData
 {
     PointLight Lights[MAX_LIGHTS];
@@ -37,6 +40,7 @@ layout (location = 0) out VertexOutput Output;
 
 void main()
 {
+    mat4 a_InstanceTransform = u_InstanceTransforms[gl_InstanceID];
     vec3 WorldPos = vec3(a_InstanceTransform * vec4(a_Position, 1.0));
     // Calculate the TBN matrix for normal mapping
     vec3 T = normalize(vec3(a_InstanceTransform * vec4(a_Tangent,   0.0)));

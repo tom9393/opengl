@@ -25,7 +25,7 @@ namespace Engine
         virtual void Clear() = 0;
 
         virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) = 0;
-        virtual void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, const std::vector<glm::mat4> &transforms) = 0;
+        virtual void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) = 0;
         virtual void DrawLines(const std::shared_ptr<VertexArray> &vertexArray, uint32_t count) = 0;
 
         static API GetAPI() { return s_API; }
