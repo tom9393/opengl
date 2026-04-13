@@ -197,52 +197,76 @@ namespace Engine
             Shared<Mesh> mesh = MakeShared<Mesh>();
             std::vector<float>& vertices = mesh->GetVertices();
 
-            BufferLayout meshLayout = {
-                { ShaderDataType::Float3, "a_Position" },
-                { ShaderDataType::Float3, "a_Normal" },
-                { ShaderDataType::Float2, "a_TexCoord" },
-                { ShaderDataType::Float3, "a_Tangent" },
-                { ShaderDataType::Float3, "a_Bitangent" }
-            };
-            BufferLayout instanceLayout = {
-                { ShaderDataType::Mat4, "a_InstanceTransform" },
-            };
-
-            const size_t floatsPerVertex = 14; 
-            vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
-
+            bool hasPositions = aiMesh->HasPositions();
             bool hasNormals = aiMesh->HasNormals();
             bool hasUVs = aiMesh->mTextureCoords[0] != nullptr;
             bool hasTangents = aiMesh->HasTangentsAndBitangents();
 
+            std::vector<BufferElement> layoutElements;
+            size_t floatsPerVertex = 0;
+
+            if (hasPositions) {
+                layoutElements.push_back({ ShaderDataType::Float3, "a_Position" });
+                floatsPerVertex += 3;
+            }
+            if (hasNormals) {
+                layoutElements.push_back({ ShaderDataType::Float3, "a_Normal" });
+                floatsPerVertex += 3;
+            }
+            if (hasUVs) {
+                layoutElements.push_back({ ShaderDataType::Float2, "a_TexCoord" });
+                floatsPerVertex += 2;
+            }
+            if (hasTangents) {
+                layoutElements.push_back({ ShaderDataType::Float3, "a_Tangent" });
+                layoutElements.push_back({ ShaderDataType::Float3, "a_Bitangent" });
+                floatsPerVertex += 6;
+            }
+
+            // Create the dynamic BufferLayout
+            BufferLayout meshLayout(layoutElements);
+
+            // 3. Pre-allocate the exact amount of memory needed
+            vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
+
+            // 4. Extract data (No dummy values needed anymore)
             for(unsigned int i = 0; i < aiMesh->mNumVertices; i++)
             {
-                glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
-                minExtents = glm::min(minExtents, pos);
-                maxExtents = glm::max(maxExtents, pos);
+                if (hasPositions) {
+                    glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
+                    minExtents = glm::min(minExtents, pos);
+                    maxExtents = glm::max(maxExtents, pos);
 
-                vertices.emplace_back(pos.x); vertices.emplace_back(pos.y); vertices.emplace_back(pos.z);
+                    vertices.emplace_back(pos.x); 
+                    vertices.emplace_back(pos.y); 
+                    vertices.emplace_back(pos.z);
+                }
 
                 if (hasNormals) {
-                    vertices.emplace_back(aiMesh->mNormals[i].x); vertices.emplace_back(aiMesh->mNormals[i].y); vertices.emplace_back(aiMesh->mNormals[i].z);
-                } else {
-                    vertices.emplace_back(0.0f); vertices.emplace_back(1.0f); vertices.emplace_back(0.0f); 
-                }
+                    vertices.emplace_back(aiMesh->mNormals[i].x); 
+                    vertices.emplace_back(aiMesh->mNormals[i].y); 
+                    vertices.emplace_back(aiMesh->mNormals[i].z);
+                } 
 
                 if (hasUVs) {
-                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].x); vertices.emplace_back(aiMesh->mTextureCoords[0][i].y);
-                } else {
-                    vertices.emplace_back(0.0f); vertices.emplace_back(0.0f);
-                }
+                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].x); 
+                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].y);
+                } 
 
                 if (hasTangents) {
-                    vertices.emplace_back(aiMesh->mTangents[i].x); vertices.emplace_back(aiMesh->mTangents[i].y); vertices.emplace_back(aiMesh->mTangents[i].z);
-                    vertices.emplace_back(aiMesh->mBitangents[i].x); vertices.emplace_back(aiMesh->mBitangents[i].y); vertices.emplace_back(aiMesh->mBitangents[i].z);
-                } else {
-                    vertices.emplace_back(1.0f); vertices.emplace_back(0.0f); vertices.emplace_back(0.0f); 
-                    vertices.emplace_back(0.0f); vertices.emplace_back(0.0f); vertices.emplace_back(1.0f); 
-                }
+                    vertices.emplace_back(aiMesh->mTangents[i].x); 
+                    vertices.emplace_back(aiMesh->mTangents[i].y); 
+                    vertices.emplace_back(aiMesh->mTangents[i].z);
+                    
+                    vertices.emplace_back(aiMesh->mBitangents[i].x); 
+                    vertices.emplace_back(aiMesh->mBitangents[i].y); 
+                    vertices.emplace_back(aiMesh->mBitangents[i].z);
+                } 
             }
+
+            BufferLayout instanceLayout = {
+                { ShaderDataType::Mat4, "a_InstanceTransform" },
+            };
 
             std::vector<unsigned int>& indices = mesh->GetIndices();
             indices.reserve(aiMesh->mNumFaces * 3);
@@ -252,7 +276,6 @@ namespace Engine
                 for(unsigned int j = 0; j < face.mNumIndices; j++)
                     indices.emplace_back(face.mIndices[j]);        
             }
-
 
             Shared<VertexArray> VAO = VertexArray::Create();
             VAO->Bind();
