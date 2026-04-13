@@ -5,6 +5,21 @@
 namespace Engine
 {
 
+    struct UniformInfo
+    {
+        std::string Name;
+        uint32_t Type;
+        int Size;
+    };
+
+    struct AttributeInfo
+    {
+        std::string Name;
+        uint32_t Type;    // GLenum (e.g., GL_FLOAT_VEC3)
+        int Size;         // Number of elements (e.g., 1 for vec3, >1 for arrays)
+        int Location;     // The layout(location = X) index
+    };
+
     class Shader
     {
     public:
@@ -18,6 +33,8 @@ namespace Engine
         virtual void AddShaders(const std::initializer_list<std::string> &shaders) = 0;
 
         virtual const std::string& GetName() const = 0;
+        virtual const std::vector<UniformInfo> &GetActiveUniforms() const = 0;
+        virtual const std::vector<AttributeInfo> &GetActiveAttributes() const = 0;
 
         static Shared<Shader> Create(const std::string &name);
 
@@ -45,6 +62,7 @@ namespace Engine
         static void AddToShader(const std::string &shader, const std::initializer_list<std::string> &paths);
 
         static Shared<Shader> Get(const std::string &name);
+        static std::unordered_map<std::string, Shared<Shader>> &GetShaders() { return s_Shaders; };
 
         private:
         static std::unordered_map<std::string, Shared<Shader>> s_Shaders;

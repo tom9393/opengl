@@ -17,8 +17,11 @@ namespace Engine
         void Bind() const override;
         void Unbind() const override;
 
+        BufferLayout& GetLayout() override { return m_Layout; }
         const BufferLayout& GetLayout() const override { return m_Layout; }
         void SetLayout(const BufferLayout &layout) override { m_Layout = layout; }
+        void EnableAttribute(uint32_t index) override;
+        void DisableAttribute(uint32_t index) override;
 
         void SetData(const void* data, const uint32_t size) override;
 

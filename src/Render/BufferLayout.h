@@ -53,8 +53,10 @@ namespace Engine
         unsigned int Size;
         bool Normalized;
 
+        bool Enabled;
+
         BufferElement() {}
-        BufferElement(ShaderDataType type, const std::string &name, bool normalized = false) : Name(name), Type(type), Normalized(normalized), Size(ShaderDataTypeSize(type)), Offset(0) {}
+        BufferElement(ShaderDataType type, const std::string &name, bool normalized = false, bool enabled = true) : Name(name), Type(type), Normalized(normalized), Size(ShaderDataTypeSize(type)), Offset(0), Enabled(enabled) {}
 
         unsigned int GetComponentCount() const
         {

@@ -15,6 +15,7 @@
 #include "Panels/StatsPanel.h"
 #include "Panels/ToolbarPanel.h"
 #include "Panels/MenubarPanel.h"
+#include "Panels/ShaderPanel.h"
 
 namespace Engine
 {
@@ -57,6 +58,7 @@ namespace Engine
         StatsPanel m_StatsPanel;
         ToolbarPanel m_ToolbarPanel;
         MenuBarPanel m_MenuBarPanel;
+        ShaderPanel m_ShaderPanel;
     };
 
 };

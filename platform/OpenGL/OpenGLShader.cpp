@@ -156,28 +156,44 @@ namespace Engine
 
         shaderObjList.clear();
 
-        // PrintUniformList();
+        ExtractActiveAttributesAndUniforms();
 
         return true;
     }
 
-
-    void OpenGLShader::PrintUniformList()
+    void OpenGLShader::ExtractActiveAttributesAndUniforms()
     {
-        int Count = 0;
-        glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &Count);
-        printf("Active Uniforms: %d\n", Count);
+        m_ActiveAttributes.clear();
+        m_ActiveUniforms.clear();
 
-        GLint Size; 
-        GLenum Type;
-        const GLsizei BufSize = 16; 
-        GLchar Name[BufSize];
-        GLsizei Length; 
+        GLint size; 
+        GLenum type;
+        const GLsizei bufSize = 256; 
+        GLchar name[bufSize];
+        GLsizei length; 
 
-        for (int i = 0; i < Count; i++) {
-            glGetActiveUniform(id, (GLuint)i, BufSize, &Length, &Size, &Type, Name);
+        // --- Extract Attributes ---
+        int attribCount = 0;
+        glGetProgramiv(id, GL_ACTIVE_ATTRIBUTES, &attribCount);
 
-            printf("Uniform #%d Type: %u Name: %s\n", i, Type, Name);
+        for (int i = 0; i < attribCount; i++) {
+            glGetActiveAttrib(id, (GLuint)i, bufSize, &length, &size, &type, name);
+            int location = glGetAttribLocation(id, name);
+            m_ActiveAttributes.push_back({ std::string(name), (uint32_t)type, size, location });
+        }
+
+        // Sort attributes by location
+        std::sort(m_ActiveAttributes.begin(), m_ActiveAttributes.end(), [](const AttributeInfo& a, const AttributeInfo& b) {
+            return a.Location < b.Location;
+        });
+
+        // --- Extract Uniforms ---
+        int uniformCount = 0;
+        glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &uniformCount);
+
+        for (int i = 0; i < uniformCount; i++) {
+            glGetActiveUniform(id, (GLuint)i, bufSize, &length, &size, &type, name);
+            m_ActiveUniforms.push_back({ std::string(name), (uint32_t)type, size });
         }
     }
 

@@ -82,6 +82,7 @@ namespace Engine
         m_MenuBarPanel.OnImGuiRender();
         m_StatsPanel.OnImGuiRender();
         m_ToolbarPanel.OnImGuiRender();
+        m_ShaderPanel.OnImGuiRender();
 
         m_ViewportPanel.OnImGuiRender();
         m_SceneHierarchyPanel.OnImGuiRender();

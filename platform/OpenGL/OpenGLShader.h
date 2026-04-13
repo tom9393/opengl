@@ -23,6 +23,8 @@ namespace Engine
         void AddShaders(const std::initializer_list<std::string> &shaders) override;
 
         GLuint GetProgram() const { return id; }
+        const std::vector<UniformInfo> &GetActiveUniforms() const override { return m_ActiveUniforms; };
+        const std::vector<AttributeInfo> &GetActiveAttributes() const override { return m_ActiveAttributes; };
 
         // utility uniform functions
         void SetBool(const std::string &name, bool value) const override;
@@ -43,11 +45,13 @@ namespace Engine
 
     private:
 
-        void PrintUniformList();
+        void ExtractActiveAttributesAndUniforms();
         bool AddShader(const std::string &file);
         bool Finalize();
         std::list<GLuint> shaderObjList;
         std::string m_Name;
+        std::vector<UniformInfo> m_ActiveUniforms;
+        std::vector<AttributeInfo> m_ActiveAttributes;
     };
 
 };

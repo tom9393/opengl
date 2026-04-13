@@ -62,6 +62,16 @@ namespace Engine
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    void OpenGLVertexBuffer::EnableAttribute(uint32_t index)
+    {
+		glEnableVertexAttribArray(index);
+    }
+
+    void OpenGLVertexBuffer::DisableAttribute(uint32_t index)
+    {
+		glDisableVertexAttribArray(index);
+    }
+
     OpenGLIndexBuffer::OpenGLIndexBuffer(unsigned int* indices, unsigned int count) : m_Count(count)
     {
         glGenBuffers(1, &m_RendererID);
