@@ -97,61 +97,54 @@ namespace Engine
     class AssimpLoader
     {
         public:
-        static AssetMetadata ScanModel(const std::filesystem::path& path)
+        static Shared<Model> ScanModel(const std::filesystem::path& path)
         {
             Assimp::Importer importer;
 
-            AssetMetadata metadata;
-
-            // Pass 0 as flags! We only read the structure/headers, NOT the heavy vertex data.
             const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                return metadata;
+                return nullptr;
             }
-            
-            metadata.Handle = UUID();
-            metadata.Type = AssetType::Model;
-            metadata.FilePath = path;
-            metadata.Name = path.stem().string();
-            metadata.Index = 0;
 
-            // 2. Extract Meshes
+            Shared<Model> model = MakeShared<Model>();
+
             for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
-                AssetMetadata mesh;
-                mesh.Handle = UUID();
-                mesh.Type = AssetType::Mesh;
-                mesh.FilePath = path.string();
-                mesh.Index = i;
+                ModelMesh modelMesh;
+                modelMesh.Handle = UUID();
+                modelMesh.Index = i;
+                modelMesh.Path = path.string();
+                modelMesh.Name = scene->mMeshes[i]->mName.C_Str();
 
-                aiMesh* ai_mesh = scene->mMeshes[i];
-                mesh.Name = ai_mesh->mName.length > 0 ? ai_mesh->mName.C_Str() : "Mesh_" + std::to_string(i);
+                if (modelMesh.Name.length() > 20)
+                {
+                    modelMesh.Name = modelMesh.Name.substr(0, 17) + "...";
+                }
 
                 uint32_t materialIndex = scene->mMeshes[i]->mMaterialIndex;
 
                 if (materialIndex < scene->mNumMaterials) {
-                    AssetMetadata material;
-                    material.Handle = UUID();
-                    material.Type = AssetType::Material;
-                    material.FilePath = path.string();
-                    material.Index = materialIndex;
+                    ModelMaterial modelMat;
+                    modelMat.Handle = UUID();
+                    modelMat.Index = materialIndex;
+                    modelMat.Path = path.string();
 
                     aiMaterial* ai_mat = scene->mMaterials[materialIndex];
                     aiString matName;
+                    ai_mat->Get(AI_MATKEY_NAME, matName);
                     if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
-                        material.Name = matName.C_Str();
+                        modelMat.Name = matName.C_Str();
                     } else {
-                        material.Name = "Material_" + std::to_string(materialIndex);
+                        modelMat.Name = "Material_" + std::to_string(materialIndex);
                     }
 
-                    mesh.Children.emplace_back(material);
+                    modelMesh.Materials.emplace_back(modelMat);
                 }
-
-                metadata.Children.emplace_back(mesh);
+                model->Meshes.emplace_back(modelMesh);
             }
 
-            return metadata;
+            return model;
         }
 
         static Shared<Mesh> LoadSubMesh(const std::filesystem::path& path, uint32_t submeshIndex)

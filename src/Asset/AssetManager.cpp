@@ -93,14 +93,7 @@ namespace Engine {
         
         // Determine type based on extension (simplified)
         std::string ext = filepath.extension().string();
-        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") {
-            AssetMetadata mt = AssimpLoader::ScanModel(filepath);
-            RegisterAssetRecursive(mt);
-            metadata.Handle = mt.Handle;
-            metadata.Type = mt.Type;
-            metadata.Name = mt.Name;
-            metadata.Children = mt.Children;
-        }
+        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Model;
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
         else metadata.Type = AssetType::None;
@@ -159,6 +152,31 @@ namespace Engine {
             case AssetType::Scene:
                 newAsset = SceneImporter::LoadScene(metadata.FilePath);
                 break;
+            case AssetType::Model:
+                Shared<Model> model = AssimpLoader::ScanModel(metadata.FilePath);
+                for (auto& mesh : model->Meshes)
+                {
+                    AssetMetadata meshdata;
+                    meshdata.Handle = mesh.Handle;
+                    meshdata.FilePath = mesh.Path;
+                    meshdata.Name = mesh.Name;
+                    meshdata.Index = mesh.Index;
+                    meshdata.Type = AssetType::Mesh;
+
+                    for (auto& material : mesh.Materials)
+                    {
+                        AssetMetadata materialdata;
+                        materialdata.Handle = material.Handle;
+                        materialdata.FilePath = material.Path;
+                        materialdata.Name = material.Name;
+                        materialdata.Index = material.Index;
+                        materialdata.Type = AssetType::Material;
+                        m_AssetRegistry[materialdata.Handle] = materialdata;
+                    }
+                    m_AssetRegistry[meshdata.Handle] = meshdata;
+                }
+                newAsset = model;
+                break;
         }
 
         if (newAsset) {
@@ -174,18 +192,6 @@ namespace Engine {
         if (it != m_AssetRegistry.end())
             return it->second;
         return s_NullMetadata;
-    }
-
-    void AssetManager::RegisterAssetRecursive(AssetMetadata &data)
-    {
-        m_AssetRegistry[data.Handle] = data;
-        if (data.HasChildren())
-        {
-            for (auto& child : data.Children)
-            {
-                RegisterAssetRecursive(child);
-            }
-        }
     }
 
     AssetMetadata AssetManager::LoadAssetMetadata(const YAML::Node& node)

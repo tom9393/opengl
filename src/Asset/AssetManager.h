@@ -29,7 +29,6 @@ namespace Engine {
         static Shared<Asset> GetAssetInternal(UUID handle);
         static AssetMetadata LoadAssetMetadata(const YAML::Node &node);
         static void SaveAssetMetadata(YAML::Emitter &out, const AssetMetadata &data);
-        static void RegisterAssetRecursive(AssetMetadata &data);
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();
 

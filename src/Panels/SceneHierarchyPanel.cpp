@@ -263,23 +263,19 @@ namespace Engine
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
 			{
 				UUID handle = *(UUID*)payload->Data;
-				AssetMetadata metadata = AssetManager::GetMetadata(handle);
+				Shared<Model> model = AssetManager::GetAsset<Model>(handle);
 
-				// Iterate through every mesh handle stored in the Model asset
-				for (size_t i = 0; i < metadata.Children.size(); i++)
+				for (auto& mesh : model->Meshes)
 				{
-					Entity childEntity = context->CreateEntity("MeshPart_" + std::to_string(i));
+					Entity childEntity = context->CreateEntity(mesh.Name);
 					childEntity.SetParent(selected);
 
-					UUID meshHandle = metadata.Children[i].Handle;
-					childEntity.AddComponent<MeshComponent>(meshHandle);
+					childEntity.AddComponent<MeshComponent>(mesh.Handle);
 					childEntity.AddComponent<TransformComponent>();
 
-					// Attach the Material Components
-					for (size_t j = 0; j < metadata.Children[i].Children.size(); j++)
+					for (auto& material : mesh.Materials)
 					{
-						UUID materialHandle = metadata.Children[i].Children[j].Handle;
-						childEntity.AddComponent<MaterialComponent>(materialHandle);
+						childEntity.AddComponent<MaterialComponent>(material.Handle);
 					}
 				}
 			}
