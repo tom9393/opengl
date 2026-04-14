@@ -100,44 +100,30 @@ namespace Engine {
             // Your 3D Object Menu
             if (ImGui::BeginMenu("Create 3D Object"))
             {
-                if (ImGui::MenuItem("Cube"))
+                for (auto primitive: AllPrimitives)
                 {
-                    Entity entity = m_Context->CreateEntity("Cube");
-                    UUID meshID = PrimitiveBuilder::CreateCube();
-                    Shared<Material> cubeMaterial = MakeShared<Material>();
-                    cubeMaterial->TargetShader = ShaderLibrary::Get("Primitive");
-                    UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, "CubeMaterial", cubeMaterial);
-                    
-                    // Adjust this to match your actual Component syntax
-                    entity.AddComponent<MeshComponent>(meshID); 
-                    entity.AddComponent<TransformComponent>(); 
-                    entity.AddComponent<MaterialComponent>(materialID);
-                }
+                    const char* name = PrimitiveNames[static_cast<int>(primitive)];
+                    if (ImGui::MenuItem(name))
+                    {
+                        Entity entity = m_Context->CreateEntity(name);
+                        PrimitiveSpecification spec;
+                        spec.Type = primitive;
+                        spec.Segments[0] = 5;
+                        spec.Segments[1] = 5;
+                        spec.Segments[2] = 5;
+                        spec.Size = glm::vec3(5);
 
-                if (ImGui::MenuItem("Plane"))
-                {
-                    Entity entity = m_Context->CreateEntity("Plane");
-                    UUID meshID = PrimitiveBuilder::CreatePlane();
-                    Shared<Material> planeMaterial = MakeShared<Material>();
-                    planeMaterial->TargetShader = ShaderLibrary::Get("Primitive");
-                    UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, "CubeMaterial", planeMaterial);
+                        UUID meshID = PrimitiveBuilder::CreatePrimitive(spec, name);
 
-                    entity.AddComponent<MeshComponent>(meshID);
-                    entity.AddComponent<TransformComponent>(); 
-                    entity.AddComponent<MaterialComponent>(materialID);
-                }
+                        Shared<Material> material = MakeShared<Material>();
+                        material->TargetShader = ShaderLibrary::Get("Texture");
 
-                if (ImGui::MenuItem("Sphere"))
-                {
-                    Entity entity = m_Context->CreateEntity("Sphere");
-                    UUID meshID = PrimitiveBuilder::CreateSphere();
-                    Shared<Material> sphereMaterial = MakeShared<Material>();
-                    sphereMaterial->TargetShader = ShaderLibrary::Get("Primitive");
-                    UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, "CubeMaterial", sphereMaterial);
+                        UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, name, material);
 
-                    entity.AddComponent<MeshComponent>(meshID);
-                    entity.AddComponent<TransformComponent>(); 
-                    entity.AddComponent<MaterialComponent>(materialID);
+                        entity.AddComponent<MeshComponent>(meshID);
+                        entity.AddComponent<TransformComponent>(); 
+                        entity.AddComponent<MaterialComponent>(materialID);
+                    }
                 }
 
                 ImGui::EndMenu();
