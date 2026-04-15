@@ -7,6 +7,13 @@
 
 namespace Engine {
 
+    struct Entry
+    {
+        std::filesystem::path Path;
+        std::string Name;
+        bool IsDirectory;
+    };
+
     class Directory
     {
         public:
@@ -14,7 +21,10 @@ namespace Engine {
         void OnImGuiRender();
 
         private:
+        void RefreshCache();
+
         std::filesystem::path m_CurrentDirectory;
+        std::vector<Entry> m_EditorCache;
         Shared<Texture2D> m_DirIcon;
         Shared<Texture2D> m_FileIcon;
     };
