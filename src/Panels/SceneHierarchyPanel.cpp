@@ -55,16 +55,66 @@ namespace Engine
 		}
 	};
 
+	// Temporarily here
+	static Entity CloneEntity(Entity sourceEntity, Scene* targetScene, Entity targetParent)
+	{
+		std::string name = sourceEntity.GetComponent<TagComponent>().tag;
+		Entity newEntity = targetScene->CreateEntity(name);
+
+		if (targetParent) { 
+			newEntity.SetParent(targetParent);
+		}
+
+		if (sourceEntity.HasComponent<TransformComponent>()) {
+			newEntity.AddComponent<TransformComponent>(sourceEntity.GetComponent<TransformComponent>());
+		}
+		
+		if (sourceEntity.HasComponent<MeshComponent>()) {
+			newEntity.AddComponent<MeshComponent>(sourceEntity.GetComponent<MeshComponent>());
+		}
+
+		if (sourceEntity.HasComponent<MaterialComponent>()) {
+			newEntity.AddComponent<MaterialComponent>(sourceEntity.GetComponent<MaterialComponent>());
+		}
+		// Add other components as needed
+
+		auto children = sourceEntity.GetChildren(); 
+		for (auto& child : children) 
+		{ 
+			Entity e { child, sourceEntity.GetScene() };
+			CloneEntity(e, targetScene, newEntity);
+		}
+
+		return newEntity;
+	}
+
+	// Temporarily here
+	Entity FindRootEntity(Scene* scene)
+	{
+		auto view = scene->GetRegistry().view<TagComponent>();
+		
+		for (auto e : view) 
+		{
+			Entity entity { e, scene };
+			if (!entity.HasParent()) 
+			{
+				return entity; 
+			}
+		}
+		
+		return {};
+	}
+
 	std::string AssetTypeToString(AssetType type)
 	{
 		switch (type)
 		{
 			case AssetType::None:      return "AssetType::None";
 			case AssetType::Scene:     return "AssetType::Scene";
-			case AssetType::Mesh: return "AssetType::Mesh";
+			case AssetType::Mesh: 	   return "AssetType::Mesh";
 			case AssetType::Texture2D: return "AssetType::Texture2D";
-			case AssetType::Material: return "AssetType::Material";
-			case AssetType::Model: return "AssetType::Model";
+			case AssetType::Material:  return "AssetType::Material";
+			case AssetType::Model: 	   return "AssetType::Model";
 		}
 
 		return "AssetType::<Invalid>";
@@ -265,19 +315,15 @@ namespace Engine
 				UUID handle = *(UUID*)payload->Data;
 				Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
 
-				auto view = modelScene->GetRegistry().view<MeshComponent, MaterialComponent>();
-
-				for(auto entity : view) {
-					Entity oldEntity { entity, modelScene.get() };
-					Entity newEntity = context->CreateEntity("Entity");
-					UUID meshHandle = oldEntity.GetComponent<MeshComponent>().MeshHandle;
-					UUID materialHandle = oldEntity.GetComponent<MaterialComponent>().MaterialHandle;
-
-					newEntity.AddComponent<MeshComponent>(meshHandle);
-					newEntity.AddComponent<MaterialComponent>(materialHandle);
-					newEntity.AddComponent<TransformComponent>();
-					newEntity.GetComponent<TagComponent>().tag = oldEntity.GetComponent<TagComponent>().tag;
-					newEntity.SetParent(selected);
+				Entity rootEntity = FindRootEntity(modelScene.get());
+				if (rootEntity) 
+				{
+					Entity spawnedModel = CloneEntity(rootEntity, context, selected);
+					spawnedModel.SetParent(selected);
+				}
+				else 
+				{
+					std::cout << "Warning: Could not find a root entity in the imported model scene!\n";
 				}
 			}
             ImGui::EndDragDropTarget();

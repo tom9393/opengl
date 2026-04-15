@@ -8,8 +8,6 @@ namespace Engine {
     {
 		m_DirIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/folderIcon.png"));
 		m_FileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
-		std::static_pointer_cast<OpenGLTexture2D>(m_DirIcon)->Initialize();
-		std::static_pointer_cast<OpenGLTexture2D>(m_FileIcon)->Initialize();
 		RefreshCache();
     }
 

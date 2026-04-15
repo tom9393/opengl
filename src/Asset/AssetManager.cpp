@@ -36,6 +36,7 @@ namespace Engine {
         if (ext == ".assbin")  return AssetType::Model;
         if (ext == ".obj")     return AssetType::Model;
         if (ext == ".fbx")     return AssetType::Model;
+        if (ext == ".gltf")    return AssetType::Model;
         if (ext == ".lua")     return AssetType::LuaScript;
 
         return AssetType::None;
@@ -79,7 +80,6 @@ namespace Engine {
     }
 
     UUID AssetManager::ImportAsset(const std::filesystem::path& filepath) {
-        // 1. Check if we already have this file in the registry
         for (const auto& [handle, metadata] : m_AssetRegistry) {
             if (metadata.FilePath == filepath.string()) {
                 if (metadata.IsValid()) return handle;

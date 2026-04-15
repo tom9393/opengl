@@ -121,12 +121,11 @@ namespace Engine
             out << YAML::Key << "SourceFilePath" << YAML::Value << path.string();
             out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
 
-            // Start the recursive scene graph traversal
             out << YAML::Key << "Hierarchy";
             ProcessNode(scene->mRootNode, scene, out);
 
-            out << YAML::EndMap; // End Model Map
-            out << YAML::EndMap; // End Root Map
+            out << YAML::EndMap;
+            out << YAML::EndMap;
 
             std::filesystem::path assetPath = path;
             assetPath.replace_extension(".asset");
@@ -164,16 +163,11 @@ namespace Engine
             std::string modelName = modelNode["Name"].as<std::string>();
             std::string sourceFilePath = modelNode["SourceFilePath"].as<std::string>();
 
-            // Initialize a new Scene
             Shared<Scene> scene = MakeShared<Scene>();
-
-            // Create an ultimate root entity to hold the entire imported model
             Entity rootEntity = scene->CreateEntity(modelName);
             
-            // Ensure your root has a transform
             rootEntity.AddComponent<TransformComponent>(); 
 
-            // Start recursive processing
             YAML::Node hierarchyNode = modelNode["Hierarchy"];
             if (hierarchyNode) {
                 ProcessYamlNode(hierarchyNode, scene, rootEntity, sourceFilePath);
@@ -188,7 +182,6 @@ namespace Engine
         {
             Assimp::Importer importer;
 
-            // We use heavy processing flags here because we actually need the geometry
             const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -208,7 +201,6 @@ namespace Engine
         {
             Assimp::Importer importer;
 
-            // Pass 0 as flags! We only need to read the material string names, not geometry.
             const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -221,7 +213,6 @@ namespace Engine
                 return nullptr;
             }
 
-            // Extract the directory from the filepath so we know where to look for textures
             std::filesystem::path path = metadata.FilePath;
             std::string directory = path.parent_path().string();
 
@@ -233,37 +224,28 @@ namespace Engine
         {
             std::string nodeName = yamlNode["Node"].as<std::string>();
             
-            // Create an entity for this specific Assimp Node
             Entity currentEntity = scene->CreateEntity(nodeName);
             
-            // --- 1. Hierarchy ---
-            // If your engine supports a scene graph / parent-child relationships, link it here:
             currentEntity.SetParent(parentEntity);
 
-            // --- 2. Transform ---
             if (auto transformNode = yamlNode["Transform"]) 
             {
-                // Note: Uncomment and adapt to your actual TransformComponent structure
                 auto& transform = currentEntity.AddComponent<TransformComponent>();
                 transform.translation = transformNode["Translation"].as<glm::vec3>();
                 transform.rotation = transformNode["Rotation"].as<glm::vec3>();
                 transform.scale = transformNode["Scale"].as<glm::vec3>();
             }
 
-            // --- 3. Meshes ---
             if (auto meshesNode = yamlNode["Meshes"]) 
             {
                 for (auto meshNode : meshesNode) 
                 {
                     std::string meshName = meshNode["Name"].as<std::string>();
                     
-                    // ECS best practice: If a node has multiple meshes, we create a child entity for each mesh.
-                    // If you only ever have 1 mesh per node, you could attach the MeshComponent directly to `currentEntity`.
                     Entity meshEntity = scene->CreateEntity(meshName);
                     
                     meshEntity.SetParent(currentEntity);
 
-                    // Add your engine's Mesh/Model component
                     auto& meshComp = meshEntity.AddComponent<MeshComponent>();
                     meshComp.MeshHandle = meshNode["Handle"].as<uint64_t>();
 
@@ -274,12 +256,10 @@ namespace Engine
                 }
             }
 
-            // --- 4. Process Children Recursively ---
             if (auto childrenNode = yamlNode["Children"]) 
             {
                 for (auto childNode : childrenNode) 
                 {
-                    // The current entity becomes the parent for the next generation
                     ProcessYamlNode(childNode, scene, currentEntity, sourceFilePath);
                 }
             }
@@ -294,7 +274,6 @@ namespace Engine
             
             out << YAML::Key << "Node" << YAML::Value << nodeName;
 
-            // --- 1. Local Transform ---
             aiVector3D aiScale, aiPos;
             aiQuaternion aiRot;
             node->mTransformation.Decompose(aiScale, aiRot, aiPos);
@@ -311,7 +290,6 @@ namespace Engine
             out << YAML::Key << "Scale" << YAML::Value << scale;
             out << YAML::EndMap;
 
-            // --- 2. Meshes attached to this Node ---
             if (node->mNumMeshes > 0)
             {
                 out << YAML::Key << "Meshes" << YAML::Value << YAML::BeginSeq;
@@ -325,12 +303,10 @@ namespace Engine
                     out << YAML::Key << "Index" << YAML::Value << meshIndex;
                     out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
 
-                    // Stats
                     out << YAML::Key << "VertexCount" << YAML::Value << mesh->mNumVertices;
                     out << YAML::Key << "IndexCount" << YAML::Value << (mesh->mNumFaces * 3);
                     out << YAML::Key << "HasBones" << YAML::Value << mesh->HasBones();
 
-                    // AABB
                     glm::vec3 aabbMin(mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z);
                     glm::vec3 aabbMax(mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z);
                     out << YAML::Key << "AABB" << YAML::Value << YAML::BeginMap;
@@ -338,7 +314,6 @@ namespace Engine
                     out << YAML::Key << "Max" << YAML::Value << aabbMax;
                     out << YAML::EndMap;
 
-                    // Material
                     uint32_t materialIndex = mesh->mMaterialIndex;
                     out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
                     if (materialIndex < scene->mNumMaterials) {
@@ -354,14 +329,13 @@ namespace Engine
                         out << YAML::Key << "Index" << YAML::Value << materialIndex;
                         out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
                     }
-                    out << YAML::EndMap; // End Material
+                    out << YAML::EndMap;
                     
-                    out << YAML::EndMap; // End Mesh Map
+                    out << YAML::EndMap;
                 }
-                out << YAML::EndSeq; // End Meshes
+                out << YAML::EndSeq;
             }
 
-            // --- 3. Recursive Children Processing ---
             if (node->mNumChildren > 0)
             {
                 out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
@@ -372,7 +346,7 @@ namespace Engine
                 out << YAML::EndSeq;
             }
 
-            out << YAML::EndMap; // End Node
+            out << YAML::EndMap;
         }
 
         static Shared<Mesh> ProcessAiMesh(aiMesh* aiMesh)
@@ -409,13 +383,10 @@ namespace Engine
                 floatsPerVertex += 6;
             }
 
-            // Create the dynamic BufferLayout
             BufferLayout meshLayout(layoutElements);
 
-            // 3. Pre-allocate the exact amount of memory needed
             vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
 
-            // 4. Extract data (No dummy values needed anymore)
             for(unsigned int i = 0; i < aiMesh->mNumVertices; i++)
             {
                 if (hasPositions) {
@@ -544,7 +515,6 @@ namespace Engine
             material->SetBool("pbr.useRoughnessMap", false);
             material->SetBool("pbr.useAOMap", false);
 
-            // --- 6. Textures ---
             for (auto& type : textureTypes)
             {
                 for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -555,7 +525,6 @@ namespace Engine
                     std::string filename = std::string(str.C_Str());
                     std::string fullPath = directory + "/" + filename;
                     
-                    // Fallback to .ktx / .ktx2 format handling
                     size_t lastindex = fullPath.find_last_of("."); 
                     std::string ktxExtensionPath = fullPath.substr(0, lastindex) + ".ktx";
                     std::string ktxExtensionPath2 = fullPath.substr(0, lastindex) + ".ktx2";

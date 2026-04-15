@@ -95,15 +95,7 @@ namespace Engine
         m_InternalFormat = internalFormat;
         m_DataFormat = dataFormat;
         m_Loaded = true;
-    };
 
-    OpenGLTexture2D::~OpenGLTexture2D()
-    {
-        glDeleteTextures(1, &m_RendererID);
-    };
-
-    void OpenGLTexture2D::Initialize()
-    {
         glGenTextures(1, &m_RendererID);
 
         glBindTexture(GL_TEXTURE_2D, m_RendererID);
@@ -116,13 +108,15 @@ namespace Engine
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(m_RawData);
-    }
+    };
+
+    OpenGLTexture2D::~OpenGLTexture2D()
+    {
+        glDeleteTextures(1, &m_RendererID);
+    };
 
     void OpenGLTexture2D::Bind(unsigned int slot)
     {
-        if (!m_RendererID)
-            Initialize();
-
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, m_RendererID);
     };

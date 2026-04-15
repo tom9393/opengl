@@ -17,7 +17,6 @@ namespace Engine
         std::filesystem::path &GetPath() override { return m_Path; }
 
         void Bind(unsigned int slot) override;
-        void Initialize();
 
         private:
         std::filesystem::path m_Path;

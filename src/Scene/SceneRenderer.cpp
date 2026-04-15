@@ -47,16 +47,20 @@ namespace Engine {
 
         Renderer::UpdateLightBuffer(lightData);
 
-        auto view = m_Scene->GetRegistry().view<MeshComponent, TransformComponent>();
+        auto view = m_Scene->GetRegistry().view<MeshComponent>();
         for (auto& e : view)
         {
-            auto [meshComponent, transformComponent] = view.get<MeshComponent, TransformComponent>(e);
+            auto& meshComponent = view.get<MeshComponent>(e);
             if (meshComponent.MeshHandle == 0) continue;
 
             Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
             Entity entity {e, m_Scene};
 
-            glm::mat4 &transform = transformComponent.WorldTransform;
+            entt::entity top = entity.GetClosestParentWithComponent<TransformComponent>();
+            if (top == entt::null) continue;
+            Entity closestParent = { top, m_Scene };
+
+            glm::mat4 transform = closestParent.GetComponent<TransformComponent>().GetTransform();
 
             // Frustum Culling
             if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
