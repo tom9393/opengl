@@ -13,6 +13,7 @@ namespace Engine {
 
         static UUID ImportAsset(const std::filesystem::path& filepath);
         static UUID CreateMemoryAsset(AssetType type, const std::string &name, Shared<Asset> asset);
+        static UUID RegisterAsset(AssetMetadata &metadata, Shared<Asset> &asset);
 
         template<typename T>
         static Shared<T> GetAsset(UUID handle) {

@@ -121,6 +121,13 @@ namespace Engine {
         return handle;
     }
 
+    UUID AssetManager::RegisterAsset(AssetMetadata &metadata, Shared<Asset> &asset)
+    {
+        m_AssetRegistry[metadata.Handle] = metadata;
+        m_LoadedAssets[metadata.Handle] = asset;
+        return metadata.Handle;
+    }
+
     Shared<Asset> AssetManager::GetAssetInternal(UUID handle) {
         if (handle == 0) return nullptr;
 

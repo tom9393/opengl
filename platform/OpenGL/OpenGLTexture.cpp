@@ -110,6 +110,62 @@ namespace Engine
         stbi_image_free(m_RawData);
     };
 
+    OpenGLTexture2D::OpenGLTexture2D(void* data, size_t size)
+    {
+        int width, height, channels;
+        
+        stbi_set_flip_vertically_on_load(1);
+        
+        // stbi_load_from_memory decodes the compressed bytes into raw pixel data
+        stbi_uc* pixels = stbi_load_from_memory((const stbi_uc*)data, (int)size, &width, &height, &channels, 4);
+
+        if (!pixels)
+        {
+            std::cout << "ERROR::STB_IMAGE:: Failed to load embedded texture from memory!\n";
+            return;
+        }
+
+        m_Width = width;
+        m_Height = height;
+
+        m_InternalFormat = GL_RGBA8;
+        m_DataFormat = GL_RGBA;
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+        glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+
+        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, pixels);
+
+        stbi_image_free(pixels);
+    }
+
+    OpenGLTexture2D::OpenGLTexture2D(void* data, uint32_t width, uint32_t height)
+    {
+        m_Width = width;
+        m_Height = height;
+
+        m_InternalFormat = GL_RGBA8;
+        
+        // Assimp's uncompressed texture format is an array of aiTexel.
+        // aiTexel is struct { unsigned char b, g, r, a; } -> BGRA format.
+        m_DataFormat = GL_BGRA; 
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+        glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+
+        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+    }
+
     OpenGLTexture2D::~OpenGLTexture2D()
     {
         glDeleteTextures(1, &m_RendererID);

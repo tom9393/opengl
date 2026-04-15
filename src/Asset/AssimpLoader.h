@@ -216,7 +216,7 @@ namespace Engine
             std::filesystem::path path = metadata.FilePath;
             std::string directory = path.parent_path().string();
 
-            return ProcessAiMaterial(scene->mMaterials[metadata.Index], directory);
+            return ProcessAiMaterial(scene->mMaterials[metadata.Index], directory, scene);
         }
 
     private:
@@ -452,7 +452,7 @@ namespace Engine
             return mesh;
         }
 
-        static Shared<Material> ProcessAiMaterial(aiMaterial* mat, const std::string& directory)
+        static Shared<Material> ProcessAiMaterial(aiMaterial* mat, const std::string& directory, const aiScene* scene)
         {
             Shared<Material> material = MakeShared<Material>();
 
@@ -533,9 +533,64 @@ namespace Engine
                     // if (std::filesystem::exists(ktxExtensionPath))       finalLoadPath = ktxExtensionPath;
                     // else if (std::filesystem::exists(ktxExtensionPath2)) finalLoadPath = ktxExtensionPath2;
 
-                    // Load the texture asset. 
-                    UUID texHandle = AssetManager::ImportAsset(finalLoadPath);
-                    Shared<Texture2D> texture = AssetManager::GetAsset<Texture2D>(texHandle);
+                    Shared<Texture2D> texture;
+
+                    if (const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str())) 
+                    {
+                        // --- EMBEDDED TEXTURE HANDLING ---
+                        
+                        if (embeddedTexture->mHeight == 0) 
+                        {
+                            // The texture is compressed (e.g., a PNG or JPEG embedded in the file).
+                            // mWidth contains the size of the buffer in bytes.
+                            void* buffer = embeddedTexture->pcData;
+                            size_t bufferSize = embeddedTexture->mWidth;
+                            
+                            // You will need to implement a new constructor/factory in Texture2D
+                            // that takes a memory buffer and uses stbi_load_from_memory()
+                            texture = Texture2D::Create(buffer, bufferSize); 
+
+                            AssetMetadata metadata;
+                            metadata.Handle = UUID();
+                            metadata.FilePath = "";
+                            metadata.Name = "";
+                            metadata.Index = 0;
+                            metadata.Type = AssetType::Texture2D;
+                            Shared<Asset> tmp = texture;
+                            UUID texHandle = AssetManager::RegisterAsset(metadata, tmp);
+                        } 
+                        else 
+                        {
+                            // The texture is raw uncompressed pixel data (ARGB8888).
+                            // mWidth and mHeight contain the actual dimensions.
+                            void* buffer = embeddedTexture->pcData;
+                            uint32_t width = embeddedTexture->mWidth;
+                            uint32_t height = embeddedTexture->mHeight;
+                            
+                            // You will need a constructor that creates a texture directly from raw pixels
+                            texture = Texture2D::Create(buffer, width, height);
+                            AssetMetadata metadata;
+                            metadata.Handle = UUID();
+                            metadata.FilePath = "";
+                            metadata.Name = "";
+                            metadata.Index = 0;
+                            metadata.Type = AssetType::Texture2D;
+                            Shared<Asset> tmp = texture;
+                            UUID texHandle = AssetManager::RegisterAsset(metadata, tmp);
+                        }
+                    } else {
+                        const aiTexture* text = scene->GetEmbeddedTexture(str.C_Str());
+
+                        // Load the texture asset. 
+                        UUID texHandle = AssetManager::ImportAsset(finalLoadPath);
+                        texture = AssetManager::GetAsset<Texture2D>(texHandle);
+                    }
+
+                    if (!texture)
+                    {
+                        std::cout << "Warning: Failed to load texture: " << filename << std::endl;
+                        continue;
+                    }
 
                     TextureType texType = AssimpToTextureType(type);
                     

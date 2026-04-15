@@ -38,6 +38,8 @@ namespace Engine
     {
         public:
         static std::shared_ptr<Texture2D> Create(const std::filesystem::path &path);
+        static std::shared_ptr<Texture2D> Create(void* data, size_t size); // Create from buffer
+        static std::shared_ptr<Texture2D> Create(void* data, uint32_t width, uint32_t height); // Create from raw bytes
     };
 
     class Texture3D : public Texture
