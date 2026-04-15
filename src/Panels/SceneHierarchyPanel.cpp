@@ -269,12 +269,14 @@ namespace Engine
 
 				for(auto entity : view) {
 					Entity oldEntity { entity, modelScene.get() };
-					Entity newEntity = context->CreateEntity("Test");
+					Entity newEntity = context->CreateEntity("Entity");
 					UUID meshHandle = oldEntity.GetComponent<MeshComponent>().MeshHandle;
 					UUID materialHandle = oldEntity.GetComponent<MaterialComponent>().MaterialHandle;
+
 					newEntity.AddComponent<MeshComponent>(meshHandle);
 					newEntity.AddComponent<MaterialComponent>(materialHandle);
 					newEntity.AddComponent<TransformComponent>();
+					newEntity.GetComponent<TagComponent>().tag = oldEntity.GetComponent<TagComponent>().tag;
 					newEntity.SetParent(selected);
 				}
 			}

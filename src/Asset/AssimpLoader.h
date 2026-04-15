@@ -14,6 +14,11 @@
 #include "../Scene/Scene.h"
 #include "../Scene/Entity.h"
 #include "../Render/Renderer.h"
+#include <glm/gtc/quaternion.hpp>
+
+#include "YamlArchive.h"
+#include <yaml-cpp/yaml.h>
+#include <fstream>
 
 namespace Engine
 {
@@ -27,8 +32,8 @@ namespace Engine
         bool ImportAnimations;
     };
 
-    static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
-    //static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
+    //static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
+    static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
 
     static TextureType AssimpToTextureType(aiTextureType type)
     {
@@ -114,67 +119,26 @@ namespace Engine
             out << YAML::Key << "Model" << YAML::Value << YAML::BeginMap;
             out << YAML::Key << "Name" << YAML::Value << path.stem().string();
             out << YAML::Key << "SourceFilePath" << YAML::Value << path.string();
-            
-            // Generate a UUID for the root model asset
             out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
 
-            out << YAML::Key << "Meshes" << YAML::Value << YAML::BeginSeq;
+            // Start the recursive scene graph traversal
+            out << YAML::Key << "Hierarchy";
+            ProcessNode(scene->mRootNode, scene, out);
 
-            for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
-                out << YAML::BeginMap; // Start Mesh Map
-                
-                aiMesh* mesh = scene->mMeshes[i];
-                std::string meshName = mesh->mName.C_Str();
-
-                // Fallback name if the mesh lacks one
-                if (meshName.empty()) {
-                    meshName = "Mesh_" + std::to_string(i);
-                } else if (meshName.length() > 20) {
-                    meshName = meshName.substr(0, 17) + "...";
-                }
-
-                out << YAML::Key << "Name" << YAML::Value << meshName;
-                out << YAML::Key << "Index" << YAML::Value << i;
-                out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
-
-                uint32_t materialIndex = mesh->mMaterialIndex;
-                
-                out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
-                if (materialIndex < scene->mNumMaterials) {
-                    aiMaterial* ai_mat = scene->mMaterials[materialIndex];
-                    aiString matName;
-                    std::string finalMatName = "Material_" + std::to_string(materialIndex);
-                    
-                    if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
-                        finalMatName = matName.C_Str();
-                    }
-                    
-                    out << YAML::Key << "Name" << YAML::Value << finalMatName;
-                    out << YAML::Key << "Index" << YAML::Value << materialIndex;
-                    out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
-                }
-                out << YAML::EndMap; // End Material Map
-                
-                out << YAML::EndMap; // End Mesh Map
-            }
-
-            out << YAML::EndSeq; // End Meshes Sequence
             out << YAML::EndMap; // End Model Map
             out << YAML::EndMap; // End Root Map
 
-            // Replace the original extension (e.g., .obj, .fbx) with .asset
             std::filesystem::path assetPath = path;
             assetPath.replace_extension(".asset");
 
-            // Write the emitted YAML to the file
             std::ofstream fout(assetPath);
             fout << out.c_str();
 
-            std::cout << "Successfully generated asset file: " << assetPath.string() << std::endl;
+            std::cout << "Successfully generated hierarchical asset file: " << assetPath.string() << std::endl;
 
             AssetMetadata metadata;
             metadata.Handle = UUID();
-            metadata.FilePath = assetPath;
+            metadata.FilePath = assetPath.string();
             metadata.Name = path.stem().string();
             metadata.Type = AssetType::Model;
 
@@ -199,47 +163,23 @@ namespace Engine
             YAML::Node modelNode = data["Model"];
             std::string modelName = modelNode["Name"].as<std::string>();
             std::string sourceFilePath = modelNode["SourceFilePath"].as<std::string>();
-            uint64_t modelHandle = modelNode["Handle"].as<uint64_t>();
 
             // Initialize a new Scene
             Shared<Scene> scene = MakeShared<Scene>();
 
-            // Create a root entity to act as the parent container for the model
+            // Create an ultimate root entity to hold the entire imported model
             Entity rootEntity = scene->CreateEntity(modelName);
             
-            // Add a TransformComponent if your CreateEntity doesn't do it automatically
-            // rootEntity.AddComponent<TransformComponent>();
+            // Ensure your root has a transform
+            rootEntity.AddComponent<TransformComponent>(); 
 
-            YAML::Node meshesNode = modelNode["Meshes"];
-            if (meshesNode) {
-                for (auto meshNode : meshesNode) {
-                    std::string meshName = meshNode["Name"].as<std::string>();
-                    uint32_t meshIndex = meshNode["Index"].as<uint32_t>();
-                    uint64_t meshHandle = meshNode["Handle"].as<uint64_t>();
-
-                    // Create a child entity for each submesh
-                    Entity meshEntity = scene->CreateEntity(meshName);
-                    
-                    meshEntity.SetParent(rootEntity);
-
-                    // Assign the mesh rendering data to the entity
-                    // NOTE: Replace 'MeshComponent' with whatever component your engine uses to store model/mesh render data.
-                    auto& meshComp = meshEntity.AddComponent<MeshComponent>();
-                    meshComp.MeshHandle = meshHandle;
-
-                    YAML::Node materialNode = meshNode["Material"];
-                    if (materialNode) {
-                        std::string matName = materialNode["Name"].as<std::string>();
-                        uint64_t matHandle = materialNode["Handle"].as<uint64_t>();
-                        
-                        // Assign the material handle so the renderer knows what to bind
-                        auto& materialComp = meshEntity.AddComponent<MaterialComponent>();
-                        materialComp.MaterialHandle = matHandle;
-                    }
-                }
+            // Start recursive processing
+            YAML::Node hierarchyNode = modelNode["Hierarchy"];
+            if (hierarchyNode) {
+                ProcessYamlNode(hierarchyNode, scene, rootEntity, sourceFilePath);
             }
 
-            std::cout << "Successfully generated Scene from: " << metadata.FilePath << std::endl;
+            std::cout << "Successfully generated hierarchical Scene from: " << metadata.FilePath << std::endl;
 
             return scene;
         }
@@ -289,6 +229,152 @@ namespace Engine
         }
 
     private:
+        static void ProcessYamlNode(YAML::Node yamlNode, Shared<Scene> scene, Entity parentEntity, const std::string& sourceFilePath)
+        {
+            std::string nodeName = yamlNode["Node"].as<std::string>();
+            
+            // Create an entity for this specific Assimp Node
+            Entity currentEntity = scene->CreateEntity(nodeName);
+            
+            // --- 1. Hierarchy ---
+            // If your engine supports a scene graph / parent-child relationships, link it here:
+            currentEntity.SetParent(parentEntity);
+
+            // --- 2. Transform ---
+            if (auto transformNode = yamlNode["Transform"]) 
+            {
+                // Note: Uncomment and adapt to your actual TransformComponent structure
+                auto& transform = currentEntity.AddComponent<TransformComponent>();
+                transform.translation = transformNode["Translation"].as<glm::vec3>();
+                transform.rotation = transformNode["Rotation"].as<glm::vec3>();
+                transform.scale = transformNode["Scale"].as<glm::vec3>();
+            }
+
+            // --- 3. Meshes ---
+            if (auto meshesNode = yamlNode["Meshes"]) 
+            {
+                for (auto meshNode : meshesNode) 
+                {
+                    std::string meshName = meshNode["Name"].as<std::string>();
+                    
+                    // ECS best practice: If a node has multiple meshes, we create a child entity for each mesh.
+                    // If you only ever have 1 mesh per node, you could attach the MeshComponent directly to `currentEntity`.
+                    Entity meshEntity = scene->CreateEntity(meshName);
+                    
+                    meshEntity.SetParent(currentEntity);
+
+                    // Add your engine's Mesh/Model component
+                    auto& meshComp = meshEntity.AddComponent<MeshComponent>();
+                    meshComp.MeshHandle = meshNode["Handle"].as<uint64_t>();
+
+                    if (auto matNode = meshNode["Material"]) {
+                        auto& materialComp = meshEntity.AddComponent<MaterialComponent>();
+                        materialComp.MaterialHandle = matNode["Handle"].as<uint64_t>();
+                    }
+                }
+            }
+
+            // --- 4. Process Children Recursively ---
+            if (auto childrenNode = yamlNode["Children"]) 
+            {
+                for (auto childNode : childrenNode) 
+                {
+                    // The current entity becomes the parent for the next generation
+                    ProcessYamlNode(childNode, scene, currentEntity, sourceFilePath);
+                }
+            }
+        }
+
+        static void ProcessNode(aiNode* node, const aiScene* scene, YAML::Emitter& out)
+        {
+            out << YAML::BeginMap;
+            
+            std::string nodeName = node->mName.C_Str();
+            if (nodeName.empty()) nodeName = "Unnamed_Node";
+            
+            out << YAML::Key << "Node" << YAML::Value << nodeName;
+
+            // --- 1. Local Transform ---
+            aiVector3D aiScale, aiPos;
+            aiQuaternion aiRot;
+            node->mTransformation.Decompose(aiScale, aiRot, aiPos);
+
+            glm::vec3 translation(aiPos.x, aiPos.y, aiPos.z);
+            glm::vec3 scale(aiScale.x, aiScale.y, aiScale.z);
+            glm::quat q(aiRot.w, aiRot.x, aiRot.y, aiRot.z);
+            glm::vec3 euler = glm::eulerAngles(q);
+            glm::vec3 rotation(euler.x, euler.y, euler.z);
+
+            out << YAML::Key << "Transform" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "Translation" << YAML::Value << translation;
+            out << YAML::Key << "Rotation" << YAML::Value << rotation;
+            out << YAML::Key << "Scale" << YAML::Value << scale;
+            out << YAML::EndMap;
+
+            // --- 2. Meshes attached to this Node ---
+            if (node->mNumMeshes > 0)
+            {
+                out << YAML::Key << "Meshes" << YAML::Value << YAML::BeginSeq;
+                for (uint32_t i = 0; i < node->mNumMeshes; i++)
+                {
+                    uint32_t meshIndex = node->mMeshes[i];
+                    aiMesh* mesh = scene->mMeshes[meshIndex];
+
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "Name" << YAML::Value << mesh->mName.C_Str();
+                    out << YAML::Key << "Index" << YAML::Value << meshIndex;
+                    out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
+
+                    // Stats
+                    out << YAML::Key << "VertexCount" << YAML::Value << mesh->mNumVertices;
+                    out << YAML::Key << "IndexCount" << YAML::Value << (mesh->mNumFaces * 3);
+                    out << YAML::Key << "HasBones" << YAML::Value << mesh->HasBones();
+
+                    // AABB
+                    glm::vec3 aabbMin(mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z);
+                    glm::vec3 aabbMax(mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z);
+                    out << YAML::Key << "AABB" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Min" << YAML::Value << aabbMin;
+                    out << YAML::Key << "Max" << YAML::Value << aabbMax;
+                    out << YAML::EndMap;
+
+                    // Material
+                    uint32_t materialIndex = mesh->mMaterialIndex;
+                    out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
+                    if (materialIndex < scene->mNumMaterials) {
+                        aiMaterial* ai_mat = scene->mMaterials[materialIndex];
+                        aiString matName;
+                        std::string finalMatName = "Material_" + std::to_string(materialIndex);
+                        
+                        if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
+                            finalMatName = matName.C_Str();
+                        }
+                        
+                        out << YAML::Key << "Name" << YAML::Value << finalMatName;
+                        out << YAML::Key << "Index" << YAML::Value << materialIndex;
+                        out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
+                    }
+                    out << YAML::EndMap; // End Material
+                    
+                    out << YAML::EndMap; // End Mesh Map
+                }
+                out << YAML::EndSeq; // End Meshes
+            }
+
+            // --- 3. Recursive Children Processing ---
+            if (node->mNumChildren > 0)
+            {
+                out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+                for (uint32_t i = 0; i < node->mNumChildren; i++)
+                {
+                    ProcessNode(node->mChildren[i], scene, out);
+                }
+                out << YAML::EndSeq;
+            }
+
+            out << YAML::EndMap; // End Node
+        }
+
         static Shared<Mesh> ProcessAiMesh(aiMesh* aiMesh)
         {
             glm::vec3 minExtents(std::numeric_limits<float>::max());

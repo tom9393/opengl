@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IArchive.h"
+#include "../../pch.h"
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
 
@@ -80,51 +80,19 @@ namespace YAML
 			return true;
 		}
 	};
-}
 
-YAML::Emitter& operator<<(YAML::Emitter &out, const glm::vec3 &v)
-{
-	out << YAML::Flow;
-	out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
-	return out;
-}
+	inline YAML::Emitter& operator<<(YAML::Emitter &out, const glm::vec3 &v)
+	{
+		out << YAML::Flow;
+		out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
+		return out;
+	}
 
-YAML::Emitter& operator<<(YAML::Emitter &out, const glm::vec4 &v)
-{
-	out << YAML::Flow;
-	out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
-	return out;
-}
-
-namespace Engine {
-
-    class YamlArchive : public IArchive {
-    public:
-        YamlArchive(YAML::Emitter& emitter) : m_Emitter(emitter) {}
-
-        virtual void Write(const std::string &key, float value) override {
-            m_Emitter << YAML::Key << value << YAML::Value << value;
-        }
-        virtual void Write(const std::string &key, int value) override {
-            m_Emitter << YAML::Key << value << YAML::Value << value;
-        }
-        virtual void Write(const std::string &key, bool value) override {
-            m_Emitter << YAML::Key << value << YAML::Value << value;
-        }
-        virtual void Write(const std::string &key, const std::string &value) override {
-            m_Emitter << YAML::Key << value << YAML::Value << value;
-        }
-        virtual void Write(const std::string& key, const glm::vec3& value) override {
-            m_Emitter << YAML::Key << key << YAML::Value << value;
-        }
-
-        virtual void Read(const std::string &key, float &value) override {
-            
-        }
-
-
-    private:
-        YAML::Emitter& m_Emitter;
-    };
+	inline YAML::Emitter& operator<<(YAML::Emitter &out, const glm::vec4 &v)
+	{
+		out << YAML::Flow;
+		out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
+		return out;
+	}
 
 }

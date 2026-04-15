@@ -244,42 +244,67 @@ namespace Engine {
         std::string sourceFilePath = modelNode["SourceFilePath"].as<std::string>();
 
         // 1. Register the Model Asset
-        // AssetMetadata modelMeta;
-        // modelMeta.Handle = modelNode["Handle"].as<uint64_t>();
-        // modelMeta.FilePath = sourceFilePath; 
-        // modelMeta.Name = modelNode["Name"].as<std::string>();
-        // modelMeta.Type = AssetType::Model; // Ensure you have this enum
-        // modelMeta.Index = 0;
-        // m_AssetRegistry[modelMeta.Handle] = modelMeta;
+        /*
+        AssetMetadata modelMeta;
+        modelMeta.Handle = modelNode["Handle"].as<uint64_t>();
+        modelMeta.FilePath = sourceFilePath; 
+        modelMeta.Name = modelNode["Name"].as<std::string>();
+        modelMeta.Type = AssetType::Model; 
+        modelMeta.Index = 0;
+        m_AssetRegistry[modelMeta.Handle] = modelMeta;
+        */
 
-        // 2. Iterate through Meshes and Materials, adding them flatly to the registry
-        auto meshesNode = modelNode["Meshes"];
-        if (meshesNode) 
+        // Define a recursive lambda to traverse the node tree
+        std::function<void(const YAML::Node&)> processNode = [&](const YAML::Node& node) 
         {
-            for (auto meshNode : meshesNode) 
-            {
-                // Register the Submesh Asset
-                AssetMetadata meshMeta;
-                meshMeta.Handle = meshNode["Handle"].as<uint64_t>();
-                meshMeta.FilePath = sourceFilePath;
-                meshMeta.Name = meshNode["Name"].as<std::string>();
-                meshMeta.Type = AssetType::Mesh; // Ensure you have this enum
-                meshMeta.Index = meshNode["Index"].as<uint32_t>();
-                m_AssetRegistry[meshMeta.Handle] = meshMeta;
+            if (!node) return;
 
-                // Register the Material Asset
-                auto materialNode = meshNode["Material"];
-                if (materialNode) 
+            // 2. Iterate through Meshes attached to THIS specific node
+            auto meshesNode = node["Meshes"];
+            if (meshesNode) 
+            {
+                for (auto meshNode : meshesNode) 
                 {
-                    AssetMetadata matMeta;
-                    matMeta.Handle = materialNode["Handle"].as<uint64_t>();
-                    matMeta.FilePath = sourceFilePath;
-                    matMeta.Name = materialNode["Name"].as<std::string>();
-                    matMeta.Type = AssetType::Material; // Ensure you have this enum
-                    matMeta.Index = materialNode["Index"].as<uint32_t>();
-                    m_AssetRegistry[matMeta.Handle] = matMeta;
+                    // Register the Submesh Asset
+                    AssetMetadata meshMeta;
+                    meshMeta.Handle = meshNode["Handle"].as<uint64_t>();
+                    meshMeta.FilePath = sourceFilePath;
+                    meshMeta.Name = meshNode["Name"].as<std::string>();
+                    meshMeta.Type = AssetType::Mesh; 
+                    meshMeta.Index = meshNode["Index"].as<uint32_t>();
+                    m_AssetRegistry[meshMeta.Handle] = meshMeta;
+
+                    // Register the Material Asset
+                    auto materialNode = meshNode["Material"];
+                    if (materialNode) 
+                    {
+                        AssetMetadata matMeta;
+                        matMeta.Handle = materialNode["Handle"].as<uint64_t>();
+                        matMeta.FilePath = sourceFilePath;
+                        matMeta.Name = materialNode["Name"].as<std::string>();
+                        matMeta.Type = AssetType::Material; 
+                        matMeta.Index = materialNode["Index"].as<uint32_t>();
+                        m_AssetRegistry[matMeta.Handle] = matMeta;
+                    }
                 }
             }
+
+            // 3. Process any child nodes recursively
+            auto childrenNode = node["Children"];
+            if (childrenNode) 
+            {
+                for (auto childNode : childrenNode) 
+                {
+                    processNode(childNode);
+                }
+            }
+        };
+
+        // Start the recursive processing from the root of the hierarchy
+        auto hierarchyNode = modelNode["Hierarchy"];
+        if (hierarchyNode) 
+        {
+            processNode(hierarchyNode);
         }
         
         std::cout << "Successfully imported assets from: " << assetFilePath.filename().string() << std::endl;
