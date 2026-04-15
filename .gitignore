@@ -81,4 +81,7 @@ build/
 # Ignore yaml
 *.yaml
 
+# Ignore .asset
+*.asset
+
 # End of https://www.toptal.com/developers/gitignore/api/c++,cmake

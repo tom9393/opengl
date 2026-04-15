@@ -22,11 +22,19 @@ namespace Engine {
         std::string FilePath;
         std::string Name = "";
         uint32_t Index = 0; 
-        std::vector<AssetMetadata> Children;
-
-        bool HasChildren() { return !Children.empty(); }
         
         bool IsValid() const { return Handle != 0; }
+    };
+
+    struct MeshAssetMetadata : public AssetMetadata
+    {
+        uint32_t Index = 0;
+        glm::mat4 Transform;
+    };
+
+    struct MaterialMetadata : public AssetMetadata
+    {
+        uint32_t Index = 0;
     };
 
     class Asset

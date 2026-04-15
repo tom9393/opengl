@@ -28,6 +28,7 @@ namespace Engine {
     private:
         static Shared<Asset> GetAssetInternal(UUID handle);
         static AssetMetadata LoadAssetMetadata(const YAML::Node &node);
+        static void ImportAssetFile(const std::filesystem::path &path);
         static void SaveAssetMetadata(YAML::Emitter &out, const AssetMetadata &data);
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();

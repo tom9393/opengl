@@ -4,6 +4,7 @@
 #include "AssimpLoader.h"
 #include "SceneImporter.h"
 #include "TextureImporter.h"
+#include "ScriptImporter.h"
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 
@@ -85,34 +86,29 @@ namespace Engine {
             }
         }
 
-        // 2. If not, create new metadata
         AssetMetadata metadata;
-        metadata.Handle = UUID();
-        metadata.FilePath = filepath.string();
-        metadata.Name = filepath.stem().string();
-        
-        // Determine type based on extension (simplified)
-        std::string ext = filepath.extension().string();
-        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Model;
-        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
-        else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
-        else metadata.Type = AssetType::None;
+
+        switch (AssetTypeFromFilepath(filepath))
+        {
+            case AssetType::Scene: metadata = SceneImporter::ImportScene(filepath); break;
+            case AssetType::Model: metadata = AssimpLoader::ImportModel(filepath); break;
+            case AssetType::Texture2D: metadata = TextureImporter::ImportTexture2D(filepath); break;
+            case AssetType::LuaScript: metadata = ScriptImporter::ImportLuaScript(filepath); break;
+        }
 
         m_AssetRegistry[metadata.Handle] = metadata;
         
-        SaveAssetRegistry(); // Optional: Save immediately on import
+        SaveAssetRegistry();
         return metadata.Handle;
     }
 
     UUID AssetManager::CreateMemoryAsset(AssetType type, const std::string &name, Shared<Asset> asset)
     {
-        UUID handle; // Generates a new unique ID
+        UUID handle;
         asset->Handle = handle;
         
-        // Store the actual asset in memory
         m_LoadedAssets[handle] = asset;
 
-        // Create virtual metadata for the UI
         AssetMetadata metadata;
         metadata.Handle = handle;
         metadata.Type = type;
@@ -128,55 +124,19 @@ namespace Engine {
     Shared<Asset> AssetManager::GetAssetInternal(UUID handle) {
         if (handle == 0) return nullptr;
 
-        // 1. Is it already loaded in memory?
         if (IsAssetLoaded(handle)) {
             return m_LoadedAssets[handle];
         }
 
-        // 2. Not loaded. Do we know about it in the registry?
         const AssetMetadata& metadata = GetMetadata(handle);
 
-        // 3. Load from disk based on metadata
         Shared<Asset> newAsset = nullptr;
-        
         switch (metadata.Type) {
-            case AssetType::Mesh:
-                newAsset = AssimpLoader::LoadSubMesh(metadata.FilePath, metadata.Index);
-                break;
-            case AssetType::Texture2D:
-                newAsset = TextureImporter::LoadTexture2D(metadata.FilePath);
-                break;
-            case AssetType::Material:
-                newAsset = AssimpLoader::LoadMaterial(metadata.FilePath, metadata.Index);
-                break;
-            case AssetType::Scene:
-                newAsset = SceneImporter::LoadScene(metadata.FilePath);
-                break;
-            case AssetType::Model:
-                Shared<Model> model = AssimpLoader::ScanModel(metadata.FilePath);
-                for (auto& mesh : model->Meshes)
-                {
-                    AssetMetadata meshdata;
-                    meshdata.Handle = mesh.Handle;
-                    meshdata.FilePath = mesh.Path;
-                    meshdata.Name = mesh.Name;
-                    meshdata.Index = mesh.Index;
-                    meshdata.Type = AssetType::Mesh;
-
-                    for (auto& material : mesh.Materials)
-                    {
-                        AssetMetadata materialdata;
-                        materialdata.Handle = material.Handle;
-                        materialdata.FilePath = material.Path;
-                        materialdata.Name = material.Name;
-                        materialdata.Index = material.Index;
-                        materialdata.Type = AssetType::Material;
-                        m_AssetRegistry[materialdata.Handle] = materialdata;
-                    }
-                    m_AssetRegistry[meshdata.Handle] = meshdata;
-                }
-                newAsset = model;
-                break;
+            case AssetType::Mesh: newAsset = AssimpLoader::LoadSubMesh(metadata); break;
+            case AssetType::Texture2D: newAsset = TextureImporter::LoadTexture2D(metadata); break;
+            case AssetType::Material: newAsset = AssimpLoader::LoadMaterial(metadata); break;
+            case AssetType::Scene: newAsset = SceneImporter::LoadScene(metadata); break;
+            case AssetType::Model: newAsset = AssimpLoader::LoadSceneFromAsset(metadata); break;
         }
 
         if (newAsset) {
@@ -201,56 +161,39 @@ namespace Engine {
         metadata.FilePath = node["FilePath"].as<std::string>();
         metadata.Name = node["Name"].as<std::string>();
         metadata.Type = AssetTypeFromString(node["Type"].as<std::string>());
-        metadata.Index = node["Index"].as<uint32_t>();
+        
+        if (node["Index"])
+            metadata.Index = node["Index"].as<uint32_t>();
+        else
+            metadata.Index = 0;
 
-        auto children = node["Children"];
-        if (children)
-        {
-            for (const auto& childNode : children)
-            {
-                metadata.Children.push_back(LoadAssetMetadata(childNode));
-            }
-        }
-
-        // Add to the flat registry for quick lookup
         m_AssetRegistry[metadata.Handle] = metadata; 
+        if (metadata.Type == AssetType::Model) ImportAssetFile(metadata.FilePath);
         return metadata;
     }
 
     void AssetManager::SaveAssetMetadata(YAML::Emitter& out, const AssetMetadata& metadata)
     {
+        if (metadata.Type == AssetType::Mesh || metadata.Type == AssetType::Material) return;
         out << YAML::BeginMap;
         out << YAML::Key << "Handle" << YAML::Value << (uint64_t)metadata.Handle;
         out << YAML::Key << "FilePath" << YAML::Value << metadata.FilePath;
         out << YAML::Key << "Name" << YAML::Value << metadata.Name;
         out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(metadata.Type);
         out << YAML::Key << "Index" << YAML::Value << metadata.Index;
-
-        if (!metadata.Children.empty())
-        {
-            out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
-            for (const auto& child : metadata.Children)
-            {
-                SaveAssetMetadata(out, child); // Recursive call
-            }
-            out << YAML::EndSeq;
-        }
         out << YAML::EndMap;
+        if (metadata.Type == AssetType::Model) ImportAssetFile(metadata.FilePath);
     }
 
-    void AssetManager::SaveAssetRegistry() {
+    void AssetManager::SaveAssetRegistry() 
+    {
         std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
         YAML::Emitter out;
         out << YAML::BeginMap << YAML::Key << "AssetRegistry" << YAML::Value << YAML::BeginSeq;
 
         for (const auto& [handle, metadata] : m_AssetRegistry)
         {
-            // Only save "Root" assets at the top level to avoid duplication
-            // (Assuming Models are roots, and Meshes/Materials are children)
-            if (metadata.Type == AssetType::Model || metadata.Type == AssetType::Texture2D || metadata.Type == AssetType::LuaScript) 
-            {
-                SaveAssetMetadata(out, metadata);
-            }
+            SaveAssetMetadata(out, metadata);
         }
 
         out << YAML::EndSeq << YAML::EndMap;
@@ -258,19 +201,20 @@ namespace Engine {
         fout << out.c_str();
     }
 
-    void AssetManager::LoadAssetRegistry() {
+    void AssetManager::LoadAssetRegistry() 
+    {
         std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
 
         if (!std::filesystem::exists(path)) return;
 
-		YAML::Node data;
-		try
-		{
-			data = YAML::LoadFile(path.string());
-		}
-		catch (YAML::ParserException e)
-		{
-		}
+        YAML::Node data;
+        try {
+            data = YAML::LoadFile(path.string());
+        } catch (YAML::ParserException e) {
+            std::cout << "Failed to load Asset Registry!\n";
+            return;
+        }
+
         auto rootNode = data["AssetRegistry"];
         if (!rootNode) return;
 
@@ -279,6 +223,66 @@ namespace Engine {
         {
             LoadAssetMetadata(node);
         }
+    }
+
+    void AssetManager::ImportAssetFile(const std::filesystem::path& assetFilePath)
+    {
+        if (!std::filesystem::exists(assetFilePath)) return;
+
+        YAML::Node data;
+        try {
+            data = YAML::LoadFile(assetFilePath.string());
+        } catch (YAML::ParserException e) {
+            std::cout << "ERROR::YAML:: Failed to load .asset file: " << assetFilePath << "\n";
+            return;
+        }
+
+        auto modelNode = data["Model"];
+        if (!modelNode) return;
+
+        // The path to the actual geometry file (.obj, .gltf)
+        std::string sourceFilePath = modelNode["SourceFilePath"].as<std::string>();
+
+        // 1. Register the Model Asset
+        // AssetMetadata modelMeta;
+        // modelMeta.Handle = modelNode["Handle"].as<uint64_t>();
+        // modelMeta.FilePath = sourceFilePath; 
+        // modelMeta.Name = modelNode["Name"].as<std::string>();
+        // modelMeta.Type = AssetType::Model; // Ensure you have this enum
+        // modelMeta.Index = 0;
+        // m_AssetRegistry[modelMeta.Handle] = modelMeta;
+
+        // 2. Iterate through Meshes and Materials, adding them flatly to the registry
+        auto meshesNode = modelNode["Meshes"];
+        if (meshesNode) 
+        {
+            for (auto meshNode : meshesNode) 
+            {
+                // Register the Submesh Asset
+                AssetMetadata meshMeta;
+                meshMeta.Handle = meshNode["Handle"].as<uint64_t>();
+                meshMeta.FilePath = sourceFilePath;
+                meshMeta.Name = meshNode["Name"].as<std::string>();
+                meshMeta.Type = AssetType::Mesh; // Ensure you have this enum
+                meshMeta.Index = meshNode["Index"].as<uint32_t>();
+                m_AssetRegistry[meshMeta.Handle] = meshMeta;
+
+                // Register the Material Asset
+                auto materialNode = meshNode["Material"];
+                if (materialNode) 
+                {
+                    AssetMetadata matMeta;
+                    matMeta.Handle = materialNode["Handle"].as<uint64_t>();
+                    matMeta.FilePath = sourceFilePath;
+                    matMeta.Name = materialNode["Name"].as<std::string>();
+                    matMeta.Type = AssetType::Material; // Ensure you have this enum
+                    matMeta.Index = materialNode["Index"].as<uint32_t>();
+                    m_AssetRegistry[matMeta.Handle] = matMeta;
+                }
+            }
+        }
+        
+        std::cout << "Successfully imported assets from: " << assetFilePath.filename().string() << std::endl;
     }
 
 }

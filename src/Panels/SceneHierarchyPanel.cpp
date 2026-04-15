@@ -263,20 +263,19 @@ namespace Engine
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
 			{
 				UUID handle = *(UUID*)payload->Data;
-				Shared<Model> model = AssetManager::GetAsset<Model>(handle);
+				Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
 
-				for (auto& mesh : model->Meshes)
-				{
-					Entity childEntity = context->CreateEntity(mesh.Name);
-					childEntity.SetParent(selected);
+				auto view = modelScene->GetRegistry().view<MeshComponent, MaterialComponent>();
 
-					childEntity.AddComponent<MeshComponent>(mesh.Handle);
-					childEntity.AddComponent<TransformComponent>();
-
-					for (auto& material : mesh.Materials)
-					{
-						childEntity.AddComponent<MaterialComponent>(material.Handle);
-					}
+				for(auto entity : view) {
+					Entity oldEntity { entity, modelScene.get() };
+					Entity newEntity = context->CreateEntity("Test");
+					UUID meshHandle = oldEntity.GetComponent<MeshComponent>().MeshHandle;
+					UUID materialHandle = oldEntity.GetComponent<MaterialComponent>().MaterialHandle;
+					newEntity.AddComponent<MeshComponent>(meshHandle);
+					newEntity.AddComponent<MaterialComponent>(materialHandle);
+					newEntity.AddComponent<TransformComponent>();
+					newEntity.SetParent(selected);
 				}
 			}
             ImGui::EndDragDropTarget();

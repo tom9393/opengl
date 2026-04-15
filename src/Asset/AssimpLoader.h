@@ -97,97 +97,195 @@ namespace Engine
     class AssimpLoader
     {
         public:
-        static Shared<Model> ScanModel(const std::filesystem::path& path)
+        static AssetMetadata ImportModel(const std::filesystem::path& path)
         {
             Assimp::Importer importer;
 
+            // Load the model using the same flags you defined for geometry processing
             const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+                return AssetMetadata{};
+            }
+
+            YAML::Emitter out;
+            out << YAML::BeginMap;
+            out << YAML::Key << "Model" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "Name" << YAML::Value << path.stem().string();
+            out << YAML::Key << "SourceFilePath" << YAML::Value << path.string();
+            
+            // Generate a UUID for the root model asset
+            out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
+
+            out << YAML::Key << "Meshes" << YAML::Value << YAML::BeginSeq;
+
+            for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
+                out << YAML::BeginMap; // Start Mesh Map
+                
+                aiMesh* mesh = scene->mMeshes[i];
+                std::string meshName = mesh->mName.C_Str();
+
+                // Fallback name if the mesh lacks one
+                if (meshName.empty()) {
+                    meshName = "Mesh_" + std::to_string(i);
+                } else if (meshName.length() > 20) {
+                    meshName = meshName.substr(0, 17) + "...";
+                }
+
+                out << YAML::Key << "Name" << YAML::Value << meshName;
+                out << YAML::Key << "Index" << YAML::Value << i;
+                out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
+
+                uint32_t materialIndex = mesh->mMaterialIndex;
+                
+                out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
+                if (materialIndex < scene->mNumMaterials) {
+                    aiMaterial* ai_mat = scene->mMaterials[materialIndex];
+                    aiString matName;
+                    std::string finalMatName = "Material_" + std::to_string(materialIndex);
+                    
+                    if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
+                        finalMatName = matName.C_Str();
+                    }
+                    
+                    out << YAML::Key << "Name" << YAML::Value << finalMatName;
+                    out << YAML::Key << "Index" << YAML::Value << materialIndex;
+                    out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
+                }
+                out << YAML::EndMap; // End Material Map
+                
+                out << YAML::EndMap; // End Mesh Map
+            }
+
+            out << YAML::EndSeq; // End Meshes Sequence
+            out << YAML::EndMap; // End Model Map
+            out << YAML::EndMap; // End Root Map
+
+            // Replace the original extension (e.g., .obj, .fbx) with .asset
+            std::filesystem::path assetPath = path;
+            assetPath.replace_extension(".asset");
+
+            // Write the emitted YAML to the file
+            std::ofstream fout(assetPath);
+            fout << out.c_str();
+
+            std::cout << "Successfully generated asset file: " << assetPath.string() << std::endl;
+
+            AssetMetadata metadata;
+            metadata.Handle = UUID();
+            metadata.FilePath = assetPath;
+            metadata.Name = path.stem().string();
+            metadata.Type = AssetType::Model;
+
+            return metadata;
+        }
+
+        static Shared<Scene> LoadSceneFromAsset(const AssetMetadata &metadata)
+        {
+            YAML::Node data;
+            try {
+                data = YAML::LoadFile(metadata.FilePath);
+            } catch (YAML::ParserException& e) {
+                std::cout << "ERROR::YAML:: Failed to load .asset file: " << metadata.FilePath << " (" << e.what() << ")\n";
                 return nullptr;
             }
 
-            Shared<Model> model = MakeShared<Model>();
-
-            for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
-                ModelMesh modelMesh;
-                modelMesh.Handle = UUID();
-                modelMesh.Index = i;
-                modelMesh.Path = path.string();
-                modelMesh.Name = scene->mMeshes[i]->mName.C_Str();
-
-                if (modelMesh.Name.length() > 20)
-                {
-                    modelMesh.Name = modelMesh.Name.substr(0, 17) + "...";
-                }
-
-                uint32_t materialIndex = scene->mMeshes[i]->mMaterialIndex;
-
-                if (materialIndex < scene->mNumMaterials) {
-                    ModelMaterial modelMat;
-                    modelMat.Handle = UUID();
-                    modelMat.Index = materialIndex;
-                    modelMat.Path = path.string();
-
-                    aiMaterial* ai_mat = scene->mMaterials[materialIndex];
-                    aiString matName;
-                    ai_mat->Get(AI_MATKEY_NAME, matName);
-                    if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
-                        modelMat.Name = matName.C_Str();
-                    } else {
-                        modelMat.Name = "Material_" + std::to_string(materialIndex);
-                    }
-
-                    modelMesh.Materials.emplace_back(modelMat);
-                }
-                model->Meshes.emplace_back(modelMesh);
+            if (!data["Model"]) {
+                std::cout << "ERROR::YAML:: Invalid .asset file format! Root 'Model' node missing.\n";
+                return nullptr;
             }
 
-            return model;
+            YAML::Node modelNode = data["Model"];
+            std::string modelName = modelNode["Name"].as<std::string>();
+            std::string sourceFilePath = modelNode["SourceFilePath"].as<std::string>();
+            uint64_t modelHandle = modelNode["Handle"].as<uint64_t>();
+
+            // Initialize a new Scene
+            Shared<Scene> scene = MakeShared<Scene>();
+
+            // Create a root entity to act as the parent container for the model
+            Entity rootEntity = scene->CreateEntity(modelName);
+            
+            // Add a TransformComponent if your CreateEntity doesn't do it automatically
+            // rootEntity.AddComponent<TransformComponent>();
+
+            YAML::Node meshesNode = modelNode["Meshes"];
+            if (meshesNode) {
+                for (auto meshNode : meshesNode) {
+                    std::string meshName = meshNode["Name"].as<std::string>();
+                    uint32_t meshIndex = meshNode["Index"].as<uint32_t>();
+                    uint64_t meshHandle = meshNode["Handle"].as<uint64_t>();
+
+                    // Create a child entity for each submesh
+                    Entity meshEntity = scene->CreateEntity(meshName);
+                    
+                    meshEntity.SetParent(rootEntity);
+
+                    // Assign the mesh rendering data to the entity
+                    // NOTE: Replace 'MeshComponent' with whatever component your engine uses to store model/mesh render data.
+                    auto& meshComp = meshEntity.AddComponent<MeshComponent>();
+                    meshComp.MeshHandle = meshHandle;
+
+                    YAML::Node materialNode = meshNode["Material"];
+                    if (materialNode) {
+                        std::string matName = materialNode["Name"].as<std::string>();
+                        uint64_t matHandle = materialNode["Handle"].as<uint64_t>();
+                        
+                        // Assign the material handle so the renderer knows what to bind
+                        auto& materialComp = meshEntity.AddComponent<MaterialComponent>();
+                        materialComp.MaterialHandle = matHandle;
+                    }
+                }
+            }
+
+            std::cout << "Successfully generated Scene from: " << metadata.FilePath << std::endl;
+
+            return scene;
         }
 
-        static Shared<Mesh> LoadSubMesh(const std::filesystem::path& path, uint32_t submeshIndex)
+        static Shared<Mesh> LoadSubMesh(const AssetMetadata &metadata)
         {
             Assimp::Importer importer;
 
             // We use heavy processing flags here because we actually need the geometry
-            const aiScene* scene = importer.ReadFile(path, s_AssimpFlags);
+            const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return nullptr;
             }
 
-            if (submeshIndex >= scene->mNumMeshes) {
+            if (metadata.Index >= scene->mNumMeshes) {
                 std::cout << "ERROR::ASSIMP:: Submesh index out of bounds!" << std::endl;
                 return nullptr;
             }
 
-            return ProcessAiMesh(scene->mMeshes[submeshIndex]);
+            return ProcessAiMesh(scene->mMeshes[metadata.Index]);
         }
 
-        static Shared<Material> LoadMaterial(const std::filesystem::path& path, uint32_t materialIndex)
+        static Shared<Material> LoadMaterial(const AssetMetadata &metadata)
         {
             Assimp::Importer importer;
 
             // Pass 0 as flags! We only need to read the material string names, not geometry.
-            const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
+            const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return nullptr;
             }
 
-            if (materialIndex >= scene->mNumMaterials) {
+            if (metadata.Index >= scene->mNumMaterials) {
                 std::cout << "ERROR::ASSIMP:: Material index out of bounds!" << std::endl;
                 return nullptr;
             }
 
             // Extract the directory from the filepath so we know where to look for textures
+            std::filesystem::path path = metadata.FilePath;
             std::string directory = path.parent_path().string();
 
-            return ProcessAiMaterial(scene->mMaterials[materialIndex], directory);
+            return ProcessAiMaterial(scene->mMaterials[metadata.Index], directory);
         }
 
     private:
