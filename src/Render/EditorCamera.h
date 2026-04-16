@@ -27,6 +27,7 @@ namespace Engine
                 inline void SetDistance(float distance) { m_Distance = distance; }
 
                 inline void SetViewportSize(unsigned int width, unsigned int height) { m_ViewportWidth = width; m_ViewportHeight = height; UpdateProjection(); }
+                void SetViewportHovered(bool hovered) { m_IsHovered = hovered; }
 
                 const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
                 glm::mat4 GetViewProjection() const { return m_Projection * m_ViewMatrix; }
@@ -71,6 +72,7 @@ namespace Engine
                 float m_Pitch = 0.0f, m_Yaw = 0.0f;
 
                 unsigned int m_ViewportWidth = 1280, m_ViewportHeight = 720;
+                bool m_IsHovered = true;
         };
 
 };

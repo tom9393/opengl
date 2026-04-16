@@ -48,6 +48,9 @@ namespace Engine {
         m_IsHovered = ImGui::IsWindowHovered();
         m_IsFocused = ImGui::IsWindowFocused();
 
+        if (m_EditorCamera)
+            m_EditorCamera->SetViewportHovered(m_IsHovered);
+
         // Calculate view bounds and mouse position
         auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
         auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();

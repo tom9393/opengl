@@ -81,6 +81,7 @@ namespace Engine
 
         bool EditorCamera::OnMouseScroll(MouseScrolledEvent& e)
         {
+                if (!m_IsHovered) return false;
                 float delta = e.GetYOffset() * 0.1f;
                 MouseZoom(delta);
                 UpdateView();
