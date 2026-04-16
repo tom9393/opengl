@@ -102,7 +102,7 @@ namespace Engine
     class AssimpLoader
     {
         public:
-        static AssetMetadata ImportModel(const std::filesystem::path& path)
+        static Shared<AssetMetadata> ImportModel(const std::filesystem::path& path)
         {
             Assimp::Importer importer;
 
@@ -111,7 +111,7 @@ namespace Engine
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                return AssetMetadata{};
+                return nullptr;
             }
 
             YAML::Emitter out;
@@ -135,22 +135,22 @@ namespace Engine
 
             std::cout << "Successfully generated hierarchical asset file: " << assetPath.string() << std::endl;
 
-            AssetMetadata metadata;
-            metadata.Handle = UUID();
-            metadata.FilePath = assetPath.string();
-            metadata.Name = path.stem().string();
-            metadata.Type = AssetType::Model;
+            Shared<AssetMetadata> metadata;
+            metadata->Handle = UUID();
+            metadata->FilePath = assetPath.string();
+            metadata->Name = path.stem().string();
+            metadata->Type = AssetType::Model;
 
             return metadata;
         }
 
-        static Shared<Scene> LoadSceneFromAsset(const AssetMetadata &metadata)
+        static Shared<Scene> LoadSceneFromAsset(Shared<AssetMetadata> &metadata)
         {
             YAML::Node data;
             try {
-                data = YAML::LoadFile(metadata.FilePath);
+                data = YAML::LoadFile(metadata->FilePath);
             } catch (YAML::ParserException& e) {
-                std::cout << "ERROR::YAML:: Failed to load .asset file: " << metadata.FilePath << " (" << e.what() << ")\n";
+                std::cout << "ERROR::YAML:: Failed to load .asset file: " << metadata->FilePath << " (" << e.what() << ")\n";
                 return nullptr;
             }
 
@@ -173,50 +173,50 @@ namespace Engine
                 ProcessYamlNode(hierarchyNode, scene, rootEntity, sourceFilePath);
             }
 
-            std::cout << "Successfully generated hierarchical Scene from: " << metadata.FilePath << std::endl;
+            std::cout << "Successfully generated hierarchical Scene from: " << metadata->FilePath << std::endl;
 
             return scene;
         }
 
-        static Shared<Mesh> LoadSubMesh(const AssetMetadata &metadata)
+        static Shared<Mesh> LoadSubMesh(Shared<MeshAssetMetadata> &metadata)
         {
             Assimp::Importer importer;
 
-            const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
+            const aiScene* scene = importer.ReadFile(metadata->FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return nullptr;
             }
 
-            if (metadata.Index >= scene->mNumMeshes) {
+            if (metadata->Index >= scene->mNumMeshes) {
                 std::cout << "ERROR::ASSIMP:: Submesh index out of bounds!" << std::endl;
                 return nullptr;
             }
 
-            return ProcessAiMesh(scene->mMeshes[metadata.Index]);
+            return ProcessAiMesh(scene->mMeshes[metadata->Index]);
         }
 
-        static Shared<Material> LoadMaterial(const AssetMetadata &metadata)
+        static Shared<Material> LoadMaterial(Shared<MaterialAssetMetadata> &metadata)
         {
             Assimp::Importer importer;
 
-            const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
+            const aiScene* scene = importer.ReadFile(metadata->FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return nullptr;
             }
 
-            if (metadata.Index >= scene->mNumMaterials) {
+            if (metadata->Index >= scene->mNumMaterials) {
                 std::cout << "ERROR::ASSIMP:: Material index out of bounds!" << std::endl;
                 return nullptr;
             }
 
-            std::filesystem::path path = metadata.FilePath;
+            std::filesystem::path path = metadata->FilePath;
             std::string directory = path.parent_path().string();
 
-            return ProcessAiMaterial(scene->mMaterials[metadata.Index], directory, scene);
+            return ProcessAiMaterial(scene->mMaterials[metadata->Index], directory, scene);
         }
 
     private:
@@ -550,14 +550,15 @@ namespace Engine
                             // that takes a memory buffer and uses stbi_load_from_memory()
                             texture = Texture2D::Create(buffer, bufferSize); 
 
-                            AssetMetadata metadata;
-                            metadata.Handle = UUID();
-                            metadata.FilePath = "";
-                            metadata.Name = "";
-                            metadata.Index = 0;
-                            metadata.Type = AssetType::Texture2D;
+                            Shared<MaterialAssetMetadata> metadata = MakeShared<MaterialAssetMetadata>();
+                            metadata->Handle = UUID();
+                            metadata->FilePath = "";
+                            metadata->Name = "";
+                            metadata->Index = 0;
+                            metadata->Type = AssetType::Texture2D;
                             Shared<Asset> tmp = texture;
-                            UUID texHandle = AssetManager::RegisterAsset(metadata, tmp);
+                            Shared<AssetMetadata> cast = metadata;
+                            UUID texHandle = AssetManager::RegisterAsset(cast, tmp);
                         } 
                         else 
                         {
@@ -569,14 +570,16 @@ namespace Engine
                             
                             // You will need a constructor that creates a texture directly from raw pixels
                             texture = Texture2D::Create(buffer, width, height);
-                            AssetMetadata metadata;
-                            metadata.Handle = UUID();
-                            metadata.FilePath = "";
-                            metadata.Name = "";
-                            metadata.Index = 0;
-                            metadata.Type = AssetType::Texture2D;
+
+                            Shared<MaterialAssetMetadata> metadata = MakeShared<MaterialAssetMetadata>();
+                            metadata->Handle = UUID();
+                            metadata->FilePath = "";
+                            metadata->Name = "";
+                            metadata->Index = 0;
+                            metadata->Type = AssetType::Texture2D;
                             Shared<Asset> tmp = texture;
-                            UUID texHandle = AssetManager::RegisterAsset(metadata, tmp);
+                            Shared<AssetMetadata> cast = metadata;
+                            UUID texHandle = AssetManager::RegisterAsset(cast, tmp);
                         }
                     } else {
                         const aiTexture* text = scene->GetEmbeddedTexture(str.C_Str());

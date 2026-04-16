@@ -3,21 +3,21 @@
 
 namespace Engine {
 
-    Shared<Scene> SceneImporter::LoadScene(const AssetMetadata &metadata)
+    Shared<Scene> SceneImporter::LoadScene(Shared<AssetMetadata> &metadata)
     {
         Shared<Scene> scene = MakeShared<Scene>();
         SceneSerializer serializer(scene);
-        serializer.Deserialize(metadata.FilePath);
+        serializer.Deserialize(metadata->FilePath);
         return scene;
     }
 
-    AssetMetadata SceneImporter::ImportScene(const std::filesystem::path &path)
+    Shared<AssetMetadata> SceneImporter::ImportScene(const std::filesystem::path &path)
     {
-        AssetMetadata metadata;
-        metadata.Handle = UUID();
-        metadata.FilePath = path.string();
-        metadata.Name = path.stem().string();
-        metadata.Type = AssetType::Scene;
+        Shared<AssetMetadata> metadata = MakeShared<AssetMetadata>();
+        metadata->Handle = UUID();
+        metadata->FilePath = path.string();
+        metadata->Name = path.stem().string();
+        metadata->Type = AssetType::Scene;
 
         return metadata;
     }

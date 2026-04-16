@@ -7,6 +7,6 @@ namespace Engine {
     class ScriptImporter
     {
         public:
-        static AssetMetadata ImportLuaScript(const std::filesystem::path &path);
+        static Shared<AssetMetadata> ImportLuaScript(const std::filesystem::path &path);
     };
 }

@@ -6,8 +6,8 @@ namespace Engine {
     class SceneImporter
     {
         public:
-        static Shared<Scene> LoadScene(const AssetMetadata &metadata);
+        static Shared<Scene> LoadScene(Shared<AssetMetadata> &metadata);
 
-        static AssetMetadata ImportScene(const std::filesystem::path &path);
+        static Shared<AssetMetadata> ImportScene(const std::filesystem::path &path);
     };
 }

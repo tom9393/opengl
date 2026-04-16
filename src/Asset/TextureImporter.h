@@ -6,8 +6,8 @@ namespace Engine {
     class TextureImporter
     {
         public:
-        static Shared<Texture2D> LoadTexture2D(const AssetMetadata &metadata);
+        static Shared<Texture2D> LoadTexture2D(Shared<AssetMetadata> &metadata);
 
-        static AssetMetadata ImportTexture2D(const std::filesystem::path &path);
+        static Shared<AssetMetadata> ImportTexture2D(const std::filesystem::path &path);
     };
 }

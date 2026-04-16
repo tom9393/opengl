@@ -81,12 +81,12 @@ namespace Engine {
 
     UUID AssetManager::ImportAsset(const std::filesystem::path& filepath) {
         for (const auto& [handle, metadata] : m_AssetRegistry) {
-            if (metadata.FilePath == filepath.string()) {
-                if (metadata.IsValid()) return handle;
+            if (metadata->FilePath == filepath.string()) {
+                if (metadata->IsValid()) return handle;
             }
         }
 
-        AssetMetadata metadata;
+        Shared<AssetMetadata> metadata;
 
         switch (AssetTypeFromFilepath(filepath))
         {
@@ -96,36 +96,17 @@ namespace Engine {
             case AssetType::LuaScript: metadata = ScriptImporter::ImportLuaScript(filepath); break;
         }
 
-        m_AssetRegistry[metadata.Handle] = metadata;
+        m_AssetRegistry[metadata->Handle] = metadata;
         
         SaveAssetRegistry();
-        return metadata.Handle;
+        return metadata->Handle;
     }
 
-    UUID AssetManager::CreateMemoryAsset(AssetType type, const std::string &name, Shared<Asset> asset)
+    UUID AssetManager::RegisterAsset(Shared<AssetMetadata> &metadata, Shared<Asset> &asset)
     {
-        UUID handle;
-        asset->Handle = handle;
-        
-        m_LoadedAssets[handle] = asset;
-
-        AssetMetadata metadata;
-        metadata.Handle = handle;
-        metadata.Type = type;
-        metadata.Name = name;
-        metadata.FilePath = "tmp"; // Virtual path so it doesn't crash if checked
-        metadata.Index = 0;
-
-        m_AssetRegistry[handle] = metadata;
-        
-        return handle;
-    }
-
-    UUID AssetManager::RegisterAsset(AssetMetadata &metadata, Shared<Asset> &asset)
-    {
-        m_AssetRegistry[metadata.Handle] = metadata;
-        m_LoadedAssets[metadata.Handle] = asset;
-        return metadata.Handle;
+        m_AssetRegistry[metadata->Handle] = metadata;
+        m_LoadedAssets[metadata->Handle] = asset;
+        return metadata->Handle;
     }
 
     Shared<Asset> AssetManager::GetAssetInternal(UUID handle) {
@@ -135,10 +116,10 @@ namespace Engine {
             return m_LoadedAssets[handle];
         }
 
-        const AssetMetadata& metadata = GetMetadata(handle);
+        Shared<AssetMetadata> metadata = GetMetadata(handle);
 
         Shared<Asset> newAsset = nullptr;
-        switch (metadata.Type) {
+        switch (metadata->Type) {
             case AssetType::Mesh: newAsset = AssimpLoader::LoadSubMesh(metadata); break;
             case AssetType::Texture2D: newAsset = TextureImporter::LoadTexture2D(metadata); break;
             case AssetType::Material: newAsset = AssimpLoader::LoadMaterial(metadata); break;
@@ -154,42 +135,49 @@ namespace Engine {
         return newAsset;
     }
 
-    const AssetMetadata& AssetManager::GetMetadata(UUID handle) {
+    Shared<AssetMetadata> AssetManager::GetMetadata(UUID handle) {
         auto it = m_AssetRegistry.find(handle);
         if (it != m_AssetRegistry.end())
             return it->second;
-        return s_NullMetadata;
+        return nullptr;
     }
 
-    AssetMetadata AssetManager::LoadAssetMetadata(const YAML::Node& node)
+    Shared<AssetMetadata> AssetManager::LoadAssetMetadata(const YAML::Node& node)
     {
-        AssetMetadata metadata;
-        metadata.Handle = node["Handle"].as<uint64_t>();
-        metadata.FilePath = node["FilePath"].as<std::string>();
-        metadata.Name = node["Name"].as<std::string>();
-        metadata.Type = AssetTypeFromString(node["Type"].as<std::string>());
-        
-        if (node["Index"])
-            metadata.Index = node["Index"].as<uint32_t>();
-        else
-            metadata.Index = 0;
+        std::string typeString = node["Type"].as<std::string>();
+        AssetType type = AssetTypeFromString(typeString);
 
-        m_AssetRegistry[metadata.Handle] = metadata; 
-        if (metadata.Type == AssetType::Model) ImportAssetFile(metadata.FilePath);
+        Shared<AssetMetadata> metadata;
+
+        // Instantiate the correct derived class
+        switch (type)
+        {
+            case AssetType::Mesh:     metadata = MakeShared<MeshAssetMetadata>(); break;
+            case AssetType::Material: metadata = MakeShared<MaterialAssetMetadata>(); break;
+            case AssetType::Model:    // Fallthrough...
+            case AssetType::Scene:    // Fallthrough...
+            default:                  metadata = MakeShared<AssetMetadata>(); break;
+        }
+
+        // The overridden virtual method takes care of the exact fields
+        metadata->LoadYAMLNode(node);
+
+        m_AssetRegistry[metadata->Handle] = metadata; 
+        
+        if (metadata->Type == AssetType::Model) {
+            ImportAssetFile(metadata->FilePath);
+        }
+        
         return metadata;
     }
 
-    void AssetManager::SaveAssetMetadata(YAML::Emitter& out, const AssetMetadata& metadata)
+    void AssetManager::SaveAssetMetadata(YAML::Emitter& out, const Shared<AssetMetadata> &metadata)
     {
-        if (metadata.Type == AssetType::Mesh || metadata.Type == AssetType::Material) return;
+        if (metadata->Type == AssetType::Mesh || metadata->Type == AssetType::Material) return;
         out << YAML::BeginMap;
-        out << YAML::Key << "Handle" << YAML::Value << (uint64_t)metadata.Handle;
-        out << YAML::Key << "FilePath" << YAML::Value << metadata.FilePath;
-        out << YAML::Key << "Name" << YAML::Value << metadata.Name;
-        out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(metadata.Type);
-        out << YAML::Key << "Index" << YAML::Value << metadata.Index;
+        metadata->SaveYAMLNode(out);
         out << YAML::EndMap;
-        if (metadata.Type == AssetType::Model) ImportAssetFile(metadata.FilePath);
+        if (metadata->Type == AssetType::Model) ImportAssetFile(metadata->FilePath);
     }
 
     void AssetManager::SaveAssetRegistry() 

@@ -6,7 +6,7 @@
 namespace Engine {
 
     // Helper to streamline creating and registering the mesh
-    static UUID RegisterMesh(const std::string& name, const std::vector<float>& vertices, const std::vector<uint32_t>& indices, bool hasNormals = false, bool hasTangents = false, bool hasBitangents = false)
+    static Shared<Mesh> BuildMesh(const std::string& name, const std::vector<float>& vertices, const std::vector<uint32_t>& indices, bool hasNormals = false, bool hasTangents = false, bool hasBitangents = false)
     {
         Shared<VertexArray> vao = VertexArray::Create();
         Shared<VertexBuffer> vbo = VertexBuffer::Create((float*)vertices.data(), vertices.size() * sizeof(float));
@@ -74,7 +74,7 @@ namespace Engine {
         aabb.Max = maxAABB;
         mesh->SetAABB(aabb);
 
-        return AssetManager::CreateMemoryAsset(AssetType::Mesh, name, mesh);
+        return mesh;
     }
 
     UUID PrimitiveBuilder::CreatePrimitive(PrimitiveSpecification spec, const std::string& name)
@@ -96,10 +96,17 @@ namespace Engine {
             case PrimitiveType::Capsule:  BuildCapsule(spec, vertices, indices); break;
         }
 
-        UUID registeredMesh =  RegisterMesh(name, vertices, indices, spec.CalculateNormals, spec.CalculateTangents, spec.CalculateBitangents);
-        m_ReadyTypes[spec.Type] = registeredMesh;
+        Shared<Asset> mesh = BuildMesh(name, vertices, indices, spec.CalculateNormals, spec.CalculateTangents, spec.CalculateBitangents);
+        Shared<AssetMetadata> metadata = MakeShared<AssetMetadata>();
+        metadata->Handle = UUID();
+        metadata->FilePath = "";
+        metadata->Name = "";
+        metadata->IsMemoryAsset = true;
+        metadata->Type = AssetType::Mesh;
+        UUID handle = AssetManager::RegisterAsset(metadata, mesh);
+        m_ReadyTypes[spec.Type] = handle;
 
-        return registeredMesh;
+        return handle;
     }
 
     void PrimitiveBuilder::BuildPlane(const PrimitiveSpecification& spec, std::vector<float>& vertices, std::vector<uint32_t>& indices)
