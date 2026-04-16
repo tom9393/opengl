@@ -88,265 +88,124 @@ namespace Engine
         }
     }
 
-    static glm::mat4 AssimpToGLMMatrix(const aiMatrix4x4& matrix)
-    {
-        glm::mat4 result;
-        // Assimp is row-major, GLM is column-major. We transpose it here.
-        result[0][0] = matrix.a1; result[1][0] = matrix.a2; result[2][0] = matrix.a3; result[3][0] = matrix.a4;
-        result[0][1] = matrix.b1; result[1][1] = matrix.b2; result[2][1] = matrix.b3; result[3][1] = matrix.b4;
-        result[0][2] = matrix.c1; result[1][2] = matrix.c2; result[2][2] = matrix.c3; result[3][2] = matrix.c4;
-        result[0][3] = matrix.d1; result[1][3] = matrix.d2; result[2][3] = matrix.d3; result[3][3] = matrix.d4;
-        return result;
-    }
-
     class AssimpLoader
     {
         public:
-        static Shared<AssetMetadata> ImportModel(const std::filesystem::path& path)
+        static Shared<Scene> LoadModel(const AssetMetadata &metadata)
         {
             Assimp::Importer importer;
-
-            // Load the model using the same flags you defined for geometry processing
-            const aiScene* scene = importer.ReadFile(path.string(), s_AssimpFlags);
+            std::filesystem::path path = metadata.FilePath;
+            const aiScene* scene = importer.ReadFile(path, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
                 std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
                 return nullptr;
             }
 
-            YAML::Emitter out;
-            out << YAML::BeginMap;
-            out << YAML::Key << "Model" << YAML::Value << YAML::BeginMap;
-            out << YAML::Key << "Name" << YAML::Value << path.stem().string();
-            out << YAML::Key << "SourceFilePath" << YAML::Value << path.string();
-            out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
+            std::string modelName = metadata.Name;
+            Shared<Scene> targetScene = MakeShared<Scene>();
+            Entity rootEntity = targetScene->CreateEntity(modelName);
+            rootEntity.AddComponent<TransformComponent>();
 
-            out << YAML::Key << "Hierarchy";
-            ProcessNode(scene->mRootNode, scene, out);
+            // 1. Process and Register all Materials
+            std::vector<UUID> materialHandles(scene->mNumMaterials);
+            for (uint32_t i = 0; i < scene->mNumMaterials; i++) 
+            {
+                // Pass the callback down so embedded textures can also be registered
+                Shared<Material> material = ProcessAiMaterial(scene->mMaterials[i], path.parent_path().string(), scene);
+                
+                aiString aiMatName;
+                scene->mMaterials[i]->Get(AI_MATKEY_NAME, aiMatName);
+                std::string matName = aiMatName.length > 0 ? aiMatName.C_Str() : "Material_" + std::to_string(i);
 
-            out << YAML::EndMap;
-            out << YAML::EndMap;
+                AssetMetadata metadata;
+                metadata.Handle = UUID();
+                metadata.Name = modelName + "_" + matName;
+                metadata.FilePath = path.string();
+                metadata.Type = AssetType::Material;
+                metadata.IsMemoryAsset = true;
 
-            std::filesystem::path assetPath = path;
-            assetPath.replace_extension(".asset");
-
-            std::ofstream fout(assetPath);
-            fout << out.c_str();
-
-            std::cout << "Successfully generated hierarchical asset file: " << assetPath.string() << std::endl;
-
-            Shared<AssetMetadata> metadata;
-            metadata->Handle = UUID();
-            metadata->FilePath = assetPath.string();
-            metadata->Name = path.stem().string();
-            metadata->Type = AssetType::Model;
-
-            return metadata;
-        }
-
-        static Shared<Scene> LoadSceneFromAsset(Shared<AssetMetadata> &metadata)
-        {
-            YAML::Node data;
-            try {
-                data = YAML::LoadFile(metadata->FilePath);
-            } catch (YAML::ParserException& e) {
-                std::cout << "ERROR::YAML:: Failed to load .asset file: " << metadata->FilePath << " (" << e.what() << ")\n";
-                return nullptr;
+                Shared<Asset> assetCast = material;
+                materialHandles[i] = AssetManager::RegisterAsset(metadata, assetCast);
             }
 
-            if (!data["Model"]) {
-                std::cout << "ERROR::YAML:: Invalid .asset file format! Root 'Model' node missing.\n";
-                return nullptr;
+            // 2. Process and Register all Meshes
+            std::vector<UUID> meshHandles(scene->mNumMeshes);
+            for (uint32_t i = 0; i < scene->mNumMeshes; i++) 
+            {
+                Shared<Mesh> mesh = ProcessAiMesh(scene->mMeshes[i]);
+                
+                std::string meshName = scene->mMeshes[i]->mName.C_Str();
+                if (meshName.empty()) meshName = "Mesh_" + std::to_string(i);
+
+                AssetMetadata metadata;
+                metadata.Handle = UUID();
+                metadata.Name = modelName + "_" + meshName;
+                metadata.FilePath = path.string();
+                metadata.Type = AssetType::Mesh;
+                metadata.IsMemoryAsset = true;
+
+                Shared<Asset> assetCast = mesh;
+                meshHandles[i] = AssetManager::RegisterAsset(metadata, assetCast);
             }
 
-            YAML::Node modelNode = data["Model"];
-            std::string modelName = modelNode["Name"].as<std::string>();
-            std::string sourceFilePath = modelNode["SourceFilePath"].as<std::string>();
+            // 3. Process the Hierarchy directly into the Scene
+            ProcessAiNodeToEntity(scene->mRootNode, scene, targetScene, rootEntity, meshHandles, materialHandles);
 
-            Shared<Scene> scene = MakeShared<Scene>();
-            Entity rootEntity = scene->CreateEntity(modelName);
-            
-            rootEntity.AddComponent<TransformComponent>(); 
+            Shared<Asset> castedScene = targetScene;
+            AssetManager::RegisterAsset(metadata, castedScene);
 
-            YAML::Node hierarchyNode = modelNode["Hierarchy"];
-            if (hierarchyNode) {
-                ProcessYamlNode(hierarchyNode, scene, rootEntity, sourceFilePath);
-            }
-
-            std::cout << "Successfully generated hierarchical Scene from: " << metadata->FilePath << std::endl;
-
-            return scene;
-        }
-
-        static Shared<Mesh> LoadSubMesh(Shared<MeshAssetMetadata> &metadata)
-        {
-            Assimp::Importer importer;
-
-            const aiScene* scene = importer.ReadFile(metadata->FilePath, s_AssimpFlags);
-
-            if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-                std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                return nullptr;
-            }
-
-            if (metadata->Index >= scene->mNumMeshes) {
-                std::cout << "ERROR::ASSIMP:: Submesh index out of bounds!" << std::endl;
-                return nullptr;
-            }
-
-            return ProcessAiMesh(scene->mMeshes[metadata->Index]);
-        }
-
-        static Shared<Material> LoadMaterial(Shared<MaterialAssetMetadata> &metadata)
-        {
-            Assimp::Importer importer;
-
-            const aiScene* scene = importer.ReadFile(metadata->FilePath, s_AssimpFlags);
-
-            if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-                std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                return nullptr;
-            }
-
-            if (metadata->Index >= scene->mNumMaterials) {
-                std::cout << "ERROR::ASSIMP:: Material index out of bounds!" << std::endl;
-                return nullptr;
-            }
-
-            std::filesystem::path path = metadata->FilePath;
-            std::string directory = path.parent_path().string();
-
-            return ProcessAiMaterial(scene->mMaterials[metadata->Index], directory, scene);
+            std::cout << "Successfully loaded and registered entire model: " << path.string() << std::endl;
+            return targetScene;
         }
 
     private:
-        static void ProcessYamlNode(YAML::Node yamlNode, Shared<Scene> scene, Entity parentEntity, const std::string& sourceFilePath)
+        static void ProcessAiNodeToEntity(aiNode* node, const aiScene* scene, Shared<Scene>& targetScene, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles)
         {
-            std::string nodeName = yamlNode["Node"].as<std::string>();
-            
-            Entity currentEntity = scene->CreateEntity(nodeName);
-            
-            currentEntity.SetParent(parentEntity);
-
-            if (auto transformNode = yamlNode["Transform"]) 
-            {
-                auto& transform = currentEntity.AddComponent<TransformComponent>();
-                transform.translation = transformNode["Translation"].as<glm::vec3>();
-                transform.rotation = transformNode["Rotation"].as<glm::vec3>();
-                transform.scale = transformNode["Scale"].as<glm::vec3>();
-            }
-
-            if (auto meshesNode = yamlNode["Meshes"]) 
-            {
-                for (auto meshNode : meshesNode) 
-                {
-                    std::string meshName = meshNode["Name"].as<std::string>();
-                    
-                    Entity meshEntity = scene->CreateEntity(meshName);
-                    
-                    meshEntity.SetParent(currentEntity);
-
-                    auto& meshComp = meshEntity.AddComponent<MeshComponent>();
-                    meshComp.MeshHandle = meshNode["Handle"].as<uint64_t>();
-
-                    if (auto matNode = meshNode["Material"]) {
-                        auto& materialComp = meshEntity.AddComponent<MaterialComponent>();
-                        materialComp.MaterialHandle = matNode["Handle"].as<uint64_t>();
-                    }
-                }
-            }
-
-            if (auto childrenNode = yamlNode["Children"]) 
-            {
-                for (auto childNode : childrenNode) 
-                {
-                    ProcessYamlNode(childNode, scene, currentEntity, sourceFilePath);
-                }
-            }
-        }
-
-        static void ProcessNode(aiNode* node, const aiScene* scene, YAML::Emitter& out)
-        {
-            out << YAML::BeginMap;
-            
             std::string nodeName = node->mName.C_Str();
             if (nodeName.empty()) nodeName = "Unnamed_Node";
-            
-            out << YAML::Key << "Node" << YAML::Value << nodeName;
 
+            Entity currentEntity = targetScene->CreateEntity(nodeName);
+            currentEntity.SetParent(parentEntity);
+
+            // Extract and set Transform
             aiVector3D aiScale, aiPos;
             aiQuaternion aiRot;
             node->mTransformation.Decompose(aiScale, aiRot, aiPos);
 
-            glm::vec3 translation(aiPos.x, aiPos.y, aiPos.z);
-            glm::vec3 scale(aiScale.x, aiScale.y, aiScale.z);
-            glm::quat q(aiRot.w, aiRot.x, aiRot.y, aiRot.z);
-            glm::vec3 euler = glm::eulerAngles(q);
-            glm::vec3 rotation(euler.x, euler.y, euler.z);
+            auto& transform = currentEntity.AddComponent<TransformComponent>();
+            transform.translation = { aiPos.x, aiPos.y, aiPos.z };
+            transform.rotation = glm::eulerAngles(glm::quat(aiRot.w, aiRot.x, aiRot.y, aiRot.z));
+            transform.scale = { aiScale.x, aiScale.y, aiScale.z };
 
-            out << YAML::Key << "Transform" << YAML::Value << YAML::BeginMap;
-            out << YAML::Key << "Translation" << YAML::Value << translation;
-            out << YAML::Key << "Rotation" << YAML::Value << rotation;
-            out << YAML::Key << "Scale" << YAML::Value << scale;
-            out << YAML::EndMap;
-
-            if (node->mNumMeshes > 0)
+            // Attach Meshes (Assimp nodes can have multiple meshes)
+            for (uint32_t i = 0; i < node->mNumMeshes; i++) 
             {
-                out << YAML::Key << "Meshes" << YAML::Value << YAML::BeginSeq;
-                for (uint32_t i = 0; i < node->mNumMeshes; i++)
-                {
-                    uint32_t meshIndex = node->mMeshes[i];
-                    aiMesh* mesh = scene->mMeshes[meshIndex];
-
-                    out << YAML::BeginMap;
-                    out << YAML::Key << "Name" << YAML::Value << mesh->mName.C_Str();
-                    out << YAML::Key << "Index" << YAML::Value << meshIndex;
-                    out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
-
-                    out << YAML::Key << "VertexCount" << YAML::Value << mesh->mNumVertices;
-                    out << YAML::Key << "IndexCount" << YAML::Value << (mesh->mNumFaces * 3);
-                    out << YAML::Key << "HasBones" << YAML::Value << mesh->HasBones();
-
-                    glm::vec3 aabbMin(mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z);
-                    glm::vec3 aabbMax(mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z);
-                    out << YAML::Key << "AABB" << YAML::Value << YAML::BeginMap;
-                    out << YAML::Key << "Min" << YAML::Value << aabbMin;
-                    out << YAML::Key << "Max" << YAML::Value << aabbMax;
-                    out << YAML::EndMap;
-
-                    uint32_t materialIndex = mesh->mMaterialIndex;
-                    out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
-                    if (materialIndex < scene->mNumMaterials) {
-                        aiMaterial* ai_mat = scene->mMaterials[materialIndex];
-                        aiString matName;
-                        std::string finalMatName = "Material_" + std::to_string(materialIndex);
-                        
-                        if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS && matName.length > 0) {
-                            finalMatName = matName.C_Str();
-                        }
-                        
-                        out << YAML::Key << "Name" << YAML::Value << finalMatName;
-                        out << YAML::Key << "Index" << YAML::Value << materialIndex;
-                        out << YAML::Key << "Handle" << YAML::Value << (uint64_t)UUID();
-                    }
-                    out << YAML::EndMap;
-                    
-                    out << YAML::EndMap;
+                uint32_t meshIndex = node->mMeshes[i];
+                aiMesh* aiMesh = scene->mMeshes[meshIndex];
+                
+                // If a node has multiple meshes, we create sub-entities for them to keep the 1-Mesh-per-Entity standard
+                Entity meshEntity = (node->mNumMeshes == 1) ? currentEntity : targetScene->CreateEntity(aiMesh->mName.C_Str());
+                if (node->mNumMeshes > 1) {
+                    meshEntity.SetParent(currentEntity);
+                    meshEntity.AddComponent<TransformComponent>();
                 }
-                out << YAML::EndSeq;
+
+                auto& meshComp = meshEntity.AddComponent<MeshComponent>();
+                meshComp.MeshHandle = meshHandles[meshIndex];
+
+                uint32_t materialIndex = aiMesh->mMaterialIndex;
+                if (materialIndex < materialHandles.size()) {
+                    auto& matComp = meshEntity.AddComponent<MaterialComponent>();
+                    matComp.MaterialHandle = materialHandles[materialIndex];
+                }
             }
 
-            if (node->mNumChildren > 0)
+            // Recursively process children
+            for (uint32_t i = 0; i < node->mNumChildren; i++) 
             {
-                out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
-                for (uint32_t i = 0; i < node->mNumChildren; i++)
-                {
-                    ProcessNode(node->mChildren[i], scene, out);
-                }
-                out << YAML::EndSeq;
+                ProcessAiNodeToEntity(node->mChildren[i], scene, targetScene, currentEntity, meshHandles, materialHandles);
             }
-
-            out << YAML::EndMap;
         }
 
         static Shared<Mesh> ProcessAiMesh(aiMesh* aiMesh)
@@ -538,49 +397,32 @@ namespace Engine
                     if (const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str())) 
                     {
                         // --- EMBEDDED TEXTURE HANDLING ---
-                        
+
                         if (embeddedTexture->mHeight == 0) 
                         {
-                            // The texture is compressed (e.g., a PNG or JPEG embedded in the file).
-                            // mWidth contains the size of the buffer in bytes.
+                            // Compressed embedded texture
                             void* buffer = embeddedTexture->pcData;
                             size_t bufferSize = embeddedTexture->mWidth;
-                            
-                            // You will need to implement a new constructor/factory in Texture2D
-                            // that takes a memory buffer and uses stbi_load_from_memory()
                             texture = Texture2D::Create(buffer, bufferSize); 
-
-                            Shared<MaterialAssetMetadata> metadata = MakeShared<MaterialAssetMetadata>();
-                            metadata->Handle = UUID();
-                            metadata->FilePath = "";
-                            metadata->Name = "";
-                            metadata->Index = 0;
-                            metadata->Type = AssetType::Texture2D;
-                            Shared<Asset> tmp = texture;
-                            Shared<AssetMetadata> cast = metadata;
-                            UUID texHandle = AssetManager::RegisterAsset(cast, tmp);
                         } 
                         else 
                         {
-                            // The texture is raw uncompressed pixel data (ARGB8888).
-                            // mWidth and mHeight contain the actual dimensions.
+                            // Raw embedded texture
                             void* buffer = embeddedTexture->pcData;
                             uint32_t width = embeddedTexture->mWidth;
                             uint32_t height = embeddedTexture->mHeight;
-                            
-                            // You will need a constructor that creates a texture directly from raw pixels
                             texture = Texture2D::Create(buffer, width, height);
-
-                            Shared<MaterialAssetMetadata> metadata = MakeShared<MaterialAssetMetadata>();
-                            metadata->Handle = UUID();
-                            metadata->FilePath = "";
-                            metadata->Name = "";
-                            metadata->Index = 0;
-                            metadata->Type = AssetType::Texture2D;
-                            Shared<Asset> tmp = texture;
-                            Shared<AssetMetadata> cast = metadata;
-                            UUID texHandle = AssetManager::RegisterAsset(cast, tmp);
                         }
+
+                        // Use the callback instead of hardcoded AssetManager
+                        AssetMetadata metadata;
+                        metadata.Name = std::string(str.C_Str());
+                        metadata.Type = AssetType::Texture2D;
+                        metadata.IsMemoryAsset = true;
+
+                        Shared<Asset> texCast = texture;
+                        UUID texHandle = AssetManager::RegisterAsset(metadata, texCast);
+                        
                     } else {
                         const aiTexture* text = scene->GetEmbeddedTexture(str.C_Str());
 

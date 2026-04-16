@@ -60,7 +60,7 @@ namespace Engine
                 return speed;
         }
 
-        void EditorCamera::OnUpdate(TimeStep ts)
+        void EditorCamera::OnUpdate()
         {
                 if (Input::IsKeyPressed(KEY_LEFT_CONTROL))
                 {

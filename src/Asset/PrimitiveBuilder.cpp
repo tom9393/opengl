@@ -77,7 +77,7 @@ namespace Engine {
         return mesh;
     }
 
-    UUID PrimitiveBuilder::CreatePrimitive(PrimitiveSpecification spec, const std::string& name)
+    Shared<Mesh> PrimitiveBuilder::CreatePrimitive(PrimitiveSpecification spec, const std::string& name)
     {
         if (m_ReadyTypes.find(spec.Type) != m_ReadyTypes.end())
         {
@@ -96,17 +96,11 @@ namespace Engine {
             case PrimitiveType::Capsule:  BuildCapsule(spec, vertices, indices); break;
         }
 
-        Shared<Asset> mesh = BuildMesh(name, vertices, indices, spec.CalculateNormals, spec.CalculateTangents, spec.CalculateBitangents);
-        Shared<AssetMetadata> metadata = MakeShared<AssetMetadata>();
-        metadata->Handle = UUID();
-        metadata->FilePath = "";
-        metadata->Name = "";
-        metadata->IsMemoryAsset = true;
-        metadata->Type = AssetType::Mesh;
-        UUID handle = AssetManager::RegisterAsset(metadata, mesh);
-        m_ReadyTypes[spec.Type] = handle;
+        Shared<Mesh> mesh = BuildMesh(name, vertices, indices, spec.CalculateNormals, spec.CalculateTangents, spec.CalculateBitangents);
 
-        return handle;
+        m_ReadyTypes[spec.Type] = mesh;
+
+        return mesh;
     }
 
     void PrimitiveBuilder::BuildPlane(const PrimitiveSpecification& spec, std::vector<float>& vertices, std::vector<uint32_t>& indices)

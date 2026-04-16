@@ -51,11 +51,11 @@ namespace Engine {
     class PrimitiveBuilder
     {
     public:
-        static UUID CreatePrimitive(PrimitiveSpecification spec, const std::string& name = "Primitive");
+        static Shared<Mesh> CreatePrimitive(PrimitiveSpecification spec, const std::string& name = "Primitive");
 
     private:
 
-        static inline std::unordered_map<PrimitiveType, UUID> m_ReadyTypes;
+        static inline std::unordered_map<PrimitiveType, Shared<Mesh>> m_ReadyTypes;
 
         static void BuildPlane(const PrimitiveSpecification& spec, std::vector<float>& vertices, std::vector<uint32_t>& indices);
         static void BuildCube(const PrimitiveSpecification& spec, std::vector<float>& vertices, std::vector<uint32_t>& indices);

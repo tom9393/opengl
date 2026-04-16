@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/UUID.h"
+#include "YamlArchive.h"
 
 namespace Engine {
 
@@ -16,104 +17,53 @@ namespace Engine {
         LuaScript
     };
 
-    struct AssetMetadata {
-        UUID Handle = 0;
-        AssetType Type = AssetType::None;
-        bool IsMemoryAsset = false;
-        std::string FilePath;
-        std::string Name = "";
-
-        virtual ~AssetMetadata() = default;
-
-        virtual void LoadYAMLNode(const YAML::Node& node)
-        {
-            Handle = node["Handle"].as<uint64_t>();
-            FilePath = node["FilePath"].as<std::string>();
-            Name = node["Name"].as<std::string>();
-            Type = AssetTypeFromString(node["Type"].as<std::string>());
-        }
-
-        virtual void SaveYAMLNode(YAML::Emitter& out) const
-        {
-            out << YAML::Key << "Handle" << YAML::Value << (uint64_t)Handle;
-            out << YAML::Key << "FilePath" << YAML::Value << FilePath;
-            out << YAML::Key << "Name" << YAML::Value << Name;
-            out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(Type);
-        }
-        
-        bool IsValid() const { return Handle != 0; }
-    };
-
-    struct NodeAssetMetadata : public AssetMetadata
+    inline AssetType AssetTypeFromFilepath(const std::filesystem::path& path)
     {
-        glm::vec3 Translation = glm::vec3(0.0f);
-        glm::vec3 Rotation = glm::vec3(0.0f);
-        glm::vec3 Scale = glm::vec3(1.0f);
+        std::string ext = path.extension().string();
 
-        virtual void LoadYAMLNode(const YAML::Node &node) override
-        {
-            AssetMetadata::LoadYAMLNode(node);
+        if (ext == ".pmblend") return AssetType::Scene;
+        if (ext == ".png")     return AssetType::Texture2D;
+        if (ext == ".jpg")     return AssetType::Texture2D;
+        if (ext == ".jpeg")    return AssetType::Texture2D;
+        if (ext == ".ktx")     return AssetType::Texture2D;
+        if (ext == ".ktx2")    return AssetType::Texture2D;
+        if (ext == ".assbin")  return AssetType::Model;
+        if (ext == ".obj")     return AssetType::Model;
+        if (ext == ".fbx")     return AssetType::Model;
+        if (ext == ".gltf")    return AssetType::Model;
+        if (ext == ".lua")     return AssetType::LuaScript;
 
-            if (auto transformNode = node["Transform"]) 
-            {
-                Translation = transformNode["Translation"].as<glm::vec3>();
-                Rotation = transformNode["Rotation"].as<glm::vec3>();
-                Scale = transformNode["Scale"].as<glm::vec3>();
-            }
-        }
+        return AssetType::None;
+    }
 
-        virtual void SaveYAMLNode(YAML::Emitter &out) const override
-        {
-            AssetMetadata::SaveYAMLNode(out);
+    inline std::string AssetTypeToString(AssetType type)
+	{
+		switch (type)
+		{
+			case AssetType::None:      return "AssetType::None";
+			case AssetType::Scene:     return "AssetType::Scene";
+			case AssetType::Mesh: return "AssetType::Mesh";
+			case AssetType::Texture2D: return "AssetType::Texture2D";
+			case AssetType::Material: return "AssetType::Material";
+			case AssetType::Model: return "AssetType::Model";
+			case AssetType::LuaScript: return "AssetType::LuaScript";
+		}
 
-            out << YAML::Key << "Transform" << YAML::Value << YAML::BeginMap;
-            out << YAML::Key << "Translation" << YAML::Value << Translation;
-            out << YAML::Key << "Rotation" << YAML::Value << Rotation;
-            out << YAML::Key << "Scale" << YAML::Value << Scale;
-            out << YAML::EndMap;
-        }
-    };
+		return "AssetType::<Invalid>";
+	}
 
-    struct MeshAssetMetadata : public AssetMetadata
-    {
-        uint32_t Index = 0;
+	inline AssetType AssetTypeFromString(std::string_view assetType)
+	{
+		if (assetType == "AssetType::None")      return AssetType::None;
+		if (assetType == "AssetType::Scene")     return AssetType::Scene;
+		if (assetType == "AssetType::Mesh") return AssetType::Mesh;
+		if (assetType == "AssetType::Texture2D") return AssetType::Texture2D;
+		if (assetType == "AssetType::Material") return AssetType::Material;
+		if (assetType == "AssetType::Model") return AssetType::Model;
+		if (assetType == "AssetType::LuaScript") return AssetType::LuaScript;
 
-        virtual void LoadYAMLNode(const YAML::Node& node) override
-        {
-            AssetMetadata::LoadYAMLNode(node);
-            
-            if (node["Index"])
-                Index = node["Index"].as<uint32_t>();
-
-        }
-
-        virtual void SaveYAMLNode(YAML::Emitter& out) const override
-        {
-            AssetMetadata::SaveYAMLNode(out);
-            
-            out << YAML::Key << "Index" << YAML::Value << Index;
-        }
-    };
-
-    struct MaterialAssetMetadata : public AssetMetadata
-    {
-        uint32_t Index = 0;
-
-        virtual void LoadYAMLNode(const YAML::Node& node) override
-        {
-            AssetMetadata::LoadYAMLNode(node);
-            
-            if (node["Index"])
-                Index = node["Index"].as<uint32_t>();
-        }
-
-        virtual void SaveYAMLNode(YAML::Emitter& out) const override
-        {
-            AssetMetadata::SaveYAMLNode(out);
-            
-            out << YAML::Key << "Index" << YAML::Value << Index;
-        }
-    };
+		return AssetType::None;
+	}
 
     class Asset
     {
@@ -125,4 +75,15 @@ namespace Engine {
         bool m_Loaded = false;
         AssetType m_Type;
     };
+
+    struct AssetMetadata {
+        UUID Handle = 0;
+        AssetType Type = AssetType::None;
+        bool IsMemoryAsset = false;
+        std::string FilePath;
+        std::string Name = "";
+        
+        bool IsValid() const { return Handle != 0; }
+    };
+
 }

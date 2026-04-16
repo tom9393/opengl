@@ -2,6 +2,7 @@
 #include "../Scene/Entity.h"
 #include "../Scene/Components.h"
 #include "../Asset/CollisionBaker.h"
+#include "../Asset/Asset.h"
 #include "../Scripting/PlayerScript.h"
 #include "../Utils/SceneManager.h"
 #include "imgui.h"
@@ -103,21 +104,6 @@ namespace Engine
 		}
 		
 		return {};
-	}
-
-	std::string AssetTypeToString(AssetType type)
-	{
-		switch (type)
-		{
-			case AssetType::None:      return "AssetType::None";
-			case AssetType::Scene:     return "AssetType::Scene";
-			case AssetType::Mesh: 	   return "AssetType::Mesh";
-			case AssetType::Texture2D: return "AssetType::Texture2D";
-			case AssetType::Material:  return "AssetType::Material";
-			case AssetType::Model: 	   return "AssetType::Model";
-		}
-
-		return "AssetType::<Invalid>";
 	}
 
 	static void DrawVec3(const std::string &label, glm::vec3 &values, float resetValue = 1.0f, float columnWidth = 100.0f)
@@ -310,7 +296,7 @@ namespace Engine
                     child.SetParent(entity);
                 }
             }
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL"))
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Model"))
 			{
 				UUID handle = *(UUID*)payload->Data;
 				Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
@@ -453,7 +439,7 @@ namespace Engine
 			ImGui::Button("Mesh", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
-			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MESH"))
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Mesh"))
 			    {
 					UUID handle = *(UUID*)payload->Data;
 					component.MeshHandle = handle;
@@ -570,7 +556,7 @@ namespace Engine
 			ImGui::Button("Material", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
-			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL"))
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Material"))
 			    {
 					UUID handle = *(UUID*)payload->Data;
 					component.MaterialHandle = handle;
@@ -635,7 +621,7 @@ namespace Engine
 
 						if (ImGui::BeginDragDropTarget())
 						{
-							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE2D"))
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
 							{
 								UUID texHandle = *(UUID*)payload->Data;
 								material->m_Textures[name] = AssetManager::GetAsset<Texture2D>(texHandle);
@@ -724,7 +710,7 @@ namespace Engine
 		{
 			if (ImGui::BeginDragDropTarget())
 			{
-			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("LUASCRIPT"))
+			    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::LuaScript"))
 			    {
 					UUID handle = *(UUID*)payload->Data;
 					component.ScriptHandle = handle;

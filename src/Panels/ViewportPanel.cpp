@@ -82,7 +82,7 @@ namespace Engine {
 
     void ViewportPanel::DrawDragAndDrop() {
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Scene")) {
                 const char* path = (char*)payload->Data;
                 if (m_SceneDroppedCallback) {
                     m_SceneDroppedCallback(path);
@@ -113,12 +113,27 @@ namespace Engine {
                         spec.Segments[2] = 5;
                         spec.Size = glm::vec3(5);
 
-                        UUID meshID = PrimitiveBuilder::CreatePrimitive(spec, name);
+                        AssetMetadata metadata;
+                        metadata.Handle = UUID();
+                        metadata.Name = name;
+                        metadata.FilePath = "";
+                        metadata.IsMemoryAsset = true;
+                        metadata.Type = AssetType::Mesh;
+
+                        Shared<Asset> primitive = PrimitiveBuilder::CreatePrimitive(spec, name);
 
                         Shared<Material> material = MakeShared<Material>();
                         material->TargetShader = ShaderLibrary::Get("Texture");
 
-                        UUID materialID = AssetManager::CreateMemoryAsset(AssetType::Material, name, material);
+                        AssetMetadata materialMeta;
+                        materialMeta.Handle = UUID();
+                        materialMeta.Name = "Primitive material";
+                        materialMeta.FilePath = "";
+                        materialMeta.IsMemoryAsset = true;
+                        materialMeta.Type = AssetType::Material;
+
+                        UUID meshID = AssetManager::RegisterAsset(metadata, primitive);
+                        UUID materialID = AssetManager::RegisterAsset(materialMeta, primitive);
 
                         entity.AddComponent<MeshComponent>(meshID);
                         entity.AddComponent<TransformComponent>(); 

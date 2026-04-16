@@ -20,21 +20,6 @@ namespace Engine {
         }
     }
 
-    static std::string AssetTypeToString(AssetType type)
-    {
-        switch (type)
-        {
-            case Engine::AssetType::Texture2D: return "TEXTURE2D";
-            case Engine::AssetType::Texture3D: return "TEXTURE3D";
-            case Engine::AssetType::Scene:     return "SCENE";
-            case Engine::AssetType::Model:     return "MODEL";
-            case Engine::AssetType::Mesh:      return "MESH";
-            case Engine::AssetType::Material:  return "MATERIAL";
-            case Engine::AssetType::LuaScript: return "LUASCRIPT";
-            default:                           return "NONE";
-        }
-    }
-
     LoadedAssets::LoadedAssets()
     {
 		m_FileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
@@ -55,10 +40,8 @@ namespace Engine {
 
         for (const auto& [uuid, asset] : AssetManager::m_AssetRegistry)
         {
-            const AssetMetadata& metadata = AssetManager::GetMetadata(uuid);
-            
             // You can format this string to show the file path if your metadata structure supports it
-            std::string displayName = metadata.Name;
+            std::string displayName = asset.Name;
 
             if (displayName.length() > 20)
             {
@@ -67,7 +50,7 @@ namespace Engine {
 
             ImGui::PushID((int)(uint64_t)uuid);
 
-            ImVec4 bgColor = GetColorForAssetType(metadata.Type);
+            ImVec4 bgColor = GetColorForAssetType(asset.Type);
 
             ImGui::ImageButton("AssetIcon", 
 					(ImTextureID)m_FileIcon->GetID(), 
@@ -78,13 +61,13 @@ namespace Engine {
 
             if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Path: %s", metadata.FilePath.c_str());
+				ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
 			}
 
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
             {
                 UUID payloadUUID = uuid;
-                ImGui::SetDragDropPayload(AssetTypeToString(metadata.Type).c_str(), &payloadUUID, sizeof(UUID));
+                ImGui::SetDragDropPayload(AssetTypeToString(asset.Type).c_str(), &payloadUUID, sizeof(UUID));
                 
                 ImGui::Text("Dropping %s", displayName.c_str());
                 ImGui::EndDragDropSource();
@@ -94,7 +77,7 @@ namespace Engine {
 
             if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Path: %s", metadata.FilePath.c_str());
+				ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
 			}
 
 			ImGui::NextColumn();

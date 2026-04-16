@@ -2,9 +2,9 @@
 
 namespace Engine {
 
-    Shared<Texture2D> TextureImporter::LoadTexture2D(Shared<AssetMetadata> &metadata)
+    Shared<Texture2D> TextureImporter::LoadTexture2D(const AssetMetadata &metadata)
     {
-        return Texture2D::Create(metadata->FilePath);
+        return Texture2D::Create(metadata.FilePath);
     }
 
     Shared<AssetMetadata> TextureImporter::ImportTexture2D(const std::filesystem::path &path)

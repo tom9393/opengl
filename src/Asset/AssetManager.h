@@ -12,7 +12,7 @@ namespace Engine {
         static void Shutdown();
 
         static UUID ImportAsset(const std::filesystem::path& filepath);
-        static UUID RegisterAsset(Shared<AssetMetadata> &metadata, Shared<Asset> &asset);
+        static UUID RegisterAsset(const AssetMetadata &metadata, Shared<Asset> &asset);
 
         template<typename T>
         static Shared<T> GetAsset(UUID handle) {
@@ -21,20 +21,19 @@ namespace Engine {
         }
 
         static bool IsAssetLoaded(UUID handle) { return m_LoadedAssets.find(handle) != m_LoadedAssets.end(); }
-        static Shared<AssetMetadata> GetMetadata(UUID handle);
+        static const AssetMetadata& GetMetadata(UUID handle);
 
     private:
         static Shared<Asset> GetAssetInternal(UUID handle);
-        static Shared<AssetMetadata> LoadAssetMetadata(const YAML::Node &node);
-        static void ImportAssetFile(const std::filesystem::path &path);
-        static void SaveAssetMetadata(YAML::Emitter &out, const Shared<AssetMetadata> &data);
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();
 
     private:
         static inline std::unordered_map<UUID, Shared<Asset>> m_LoadedAssets;
-        static inline std::unordered_map<UUID, Shared<AssetMetadata>> m_AssetRegistry;
+        static inline std::unordered_map<UUID, AssetMetadata> m_AssetRegistry;
         
+        static inline AssetMetadata s_NullMetadata; // Returned when handle is invalid
+
         friend class SceneHierarchyPanel;
         friend class LoadedAssets;
     };

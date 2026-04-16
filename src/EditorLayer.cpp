@@ -62,7 +62,7 @@ namespace Engine
         switch (SceneManager::GetSceneState()) {
             case Engine::SceneState::Edit:
             {
-                m_EditorCamera->OnUpdate(ts);
+                m_EditorCamera->OnUpdate();
                 m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition());
                 break;
             }

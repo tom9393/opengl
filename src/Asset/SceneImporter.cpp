@@ -3,11 +3,11 @@
 
 namespace Engine {
 
-    Shared<Scene> SceneImporter::LoadScene(Shared<AssetMetadata> &metadata)
+    Shared<Scene> SceneImporter::LoadScene(const AssetMetadata &metadata)
     {
         Shared<Scene> scene = MakeShared<Scene>();
         SceneSerializer serializer(scene);
-        serializer.Deserialize(metadata->FilePath);
+        serializer.Deserialize(metadata.FilePath);
         return scene;
     }
 

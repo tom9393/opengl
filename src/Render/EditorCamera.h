@@ -21,7 +21,7 @@ namespace Engine
                 EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
                 ~EditorCamera();
 
-                void OnUpdate(TimeStep ts);
+                void OnUpdate();
 
                 inline float GetDistance() const { return m_Distance; }
                 inline void SetDistance(float distance) { m_Distance = distance; }
