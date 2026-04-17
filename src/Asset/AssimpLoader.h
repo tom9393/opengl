@@ -463,7 +463,7 @@ namespace Engine
                 }
             }
 
-            material->TargetShader = ShaderLibrary::Get("Texture");
+            material->TargetShader = ShaderLibrary::Get("GBufferShader");
 
             return material;
         }

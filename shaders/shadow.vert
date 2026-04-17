@@ -11,4 +11,4 @@ void main()
 {
     mat4 a_InstanceTransform = u_InstanceTransforms[gl_InstanceID];
     gl_Position = u_LightSpaceMatrix * a_InstanceTransform * vec4(a_Position, 1.0);
-}  
+}

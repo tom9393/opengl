@@ -35,7 +35,7 @@ namespace Engine
         RenderCommand::Init();
         ShaderLibrary::Init();
 
-        ShaderLibrary::Get("Texture")->Bind();
+        ShaderLibrary::Get("GBufferShader")->Bind();
 
         s_Data.CameraUniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
         s_Data.CameraUniformBuffer->Bind(0);
@@ -110,6 +110,46 @@ namespace Engine
 
         s_LineData.AddVertex(p0, color);
         s_LineData.AddVertex(p1, color);
+    }
+
+    static uint32_t s_QuadVAO = 0;
+    static uint32_t s_QuadVBO = 0;
+
+    void Renderer::DrawFullscreenQuad()
+    {
+        if (s_QuadVAO == 0)
+        {
+            // A fullscreen quad defined in Normalized Device Coordinates (NDC)
+            // spanning from -1 to 1 on both X and Y axes.
+            float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+                 1.0f,  1.0f, 0.0f,  1.0f, 1.0f,
+                 1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+            };
+            
+            glGenVertexArrays(1, &s_QuadVAO);
+            glGenBuffers(1, &s_QuadVBO);
+            
+            glBindVertexArray(s_QuadVAO);
+            
+            glBindBuffer(GL_ARRAY_BUFFER, s_QuadVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+            
+            // Layout location 0: a_Position (vec3)
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+            
+            // Layout location 1: a_TexCoords (vec2)
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        }
+        
+        // Bind the VAO and draw the quad as a triangle strip
+        glBindVertexArray(s_QuadVAO);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindVertexArray(0);
     }
 
     void Renderer::SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform)

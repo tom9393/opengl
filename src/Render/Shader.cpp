@@ -18,17 +18,30 @@ namespace Engine
 
     void ShaderLibrary::Init()
     {
-        Shared<Shader> textureShader = Shader::Create("Texture");
-        const std::string vert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
-        const std::string frag = "/home/tom/Coding/c++/opengl/shaders/main.frag";
-        textureShader->AddShaders({vert, frag});
-        Add(textureShader);
+        Shared<Shader> geometryShader = Shader::Create("GBufferShader");
+        const std::string gbuffervert = "/home/tom/Coding/c++/opengl/shaders/main.vert";
+        const std::string gbufferfrag = "/home/tom/Coding/c++/opengl/shaders/gbuffer.frag";
+        geometryShader->AddShaders({gbuffervert, gbufferfrag});
+        Add(geometryShader);
 
-        Shared<Shader> shadowShader = Shader::Create("Shadow");
+        Shared<Shader> pointshadowShader = Shader::Create("PointShadowShader");
+        const std::string psvert = "/home/tom/Coding/c++/opengl/shaders/shadow_point.vert";
+        const std::string psgeom = "/home/tom/Coding/c++/opengl/shaders/shadow_point.geom";
+        const std::string psfrag = "/home/tom/Coding/c++/opengl/shaders/shadow_point.frag";
+        pointshadowShader->AddShaders({psvert, psgeom, psfrag});
+        Add(pointshadowShader);
+
+        Shared<Shader> shadowShader = Shader::Create("ShadowShader");
         const std::string svert = "/home/tom/Coding/c++/opengl/shaders/shadow.vert";
         const std::string sfrag = "/home/tom/Coding/c++/opengl/shaders/shadow.frag";
         shadowShader->AddShaders({svert, sfrag});
         Add(shadowShader);
+
+        Shared<Shader> deferredlightingShader = Shader::Create("DeferredLighting");
+        const std::string dlvert = "/home/tom/Coding/c++/opengl/shaders/deferred_lighting.vert";
+        const std::string dlfrag = "/home/tom/Coding/c++/opengl/shaders/deferred_lighting.frag";
+        deferredlightingShader->AddShaders({dlvert, dlfrag});
+        Add(deferredlightingShader);
     }
 
     void ShaderLibrary::Shutdown()

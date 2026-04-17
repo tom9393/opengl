@@ -34,12 +34,21 @@ namespace Engine
 
     GLenum OpenGLShader::GetShaderFromExtension(const std::string &file)
     {
-        if(file.substr(file.find_last_of(".") + 1) == "vert") {
+        std::string extension = file.substr(file.find_last_of(".") + 1);
+
+        if (extension == "vert") {
             return GL_VERTEX_SHADER;
-        } else {
+        } 
+        else if (extension == "geom") {
+            return GL_GEOMETRY_SHADER;
+        } 
+        else if (extension == "frag") {
             return GL_FRAGMENT_SHADER;
         }
-    };
+
+        // Fallback or error logging
+        return GL_FALSE; 
+    }
 
 
     void OpenGLShader::AddShaders(const std::vector<std::string> &shaders)

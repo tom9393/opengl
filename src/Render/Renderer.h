@@ -36,20 +36,6 @@ namespace Engine
         float padding;
     };
 
-    struct ShaderLight
-    {
-        glm::vec4 PositionType; // xyz position, w type
-        glm::vec4 ColorInner; // xyz color, w inner cutoff
-        glm::vec4 DirectionOuter; // xyz direction, w outer cutoff
-    };
-
-    struct SceneLightData 
-    {
-        ShaderLight Lights[64]; // Max 64 lights for this example
-        int LightCount;
-        int padding[3];           // Padding to align
-    };
-
     class Renderer
     {
         public:
@@ -70,6 +56,7 @@ namespace Engine
         static void UpdateLightBuffer(SceneLightData &data);
 
         static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
+        static void DrawFullscreenQuad();
 
         static RendererAPI::API Get() { return RendererAPI::GetAPI(); }
 

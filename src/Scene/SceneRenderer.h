@@ -11,6 +11,18 @@ namespace Engine {
     class Material;
     class Mesh;
 
+    struct GPULight {
+        glm::vec4 PositionType;   // xyz = position, w = type (0=Point, 1=Directional, 2=Cone)
+        glm::vec4 ColorInner;     // xyz = color, w = inner cutoff
+        glm::vec4 DirectionOuter; // xyz = direction, w = outer cutoff
+        glm::mat4 LightSpaceMatrix;
+    };
+
+    struct SceneLightData {
+        GPULight Lights[64];
+        int LightCount = 0;
+    };
+
     struct DrawCommand
     {
         Shared<Mesh> TargetMesh;
@@ -50,7 +62,12 @@ namespace Engine {
         const uint32_t m_MaxInstances = 10000;
         Shared<ShaderStorageBuffer> m_InstanceSSBO;
         std::vector<glm::mat4> m_Transforms;
-        glm::mat4 m_LightSpaceMatrix = glm::mat4(1.0f);
+
+        SceneLightData m_LightData;
+
+        glm::mat4 m_DirLightSpaceMatrix = glm::mat4(1.0f);
+        glm::vec3 m_PointLightPos = glm::vec3(0.0f);
+        float m_PointLightFarPlane = 100.0f;
     };
 
 }
