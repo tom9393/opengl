@@ -7,7 +7,7 @@
 namespace Engine {
 
     SceneRenderer::SceneRenderer(Scene* scene)
-        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight)
+        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight), m_PointLightFarPlane(100.0f)
     {
         auto& shadowPass2D = m_RenderGraph.AddPass("ShadowPass2D");
         shadowPass2D.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D);
@@ -45,26 +45,26 @@ namespace Engine {
         pointShadowPass.SetViewportSize(1024, 1024);
         pointShadowPass.SetCallback([this](RenderContext& ctx) {
             glClear(GL_DEPTH_BUFFER_BIT);
-            Shared<Shader> shadowShader = ShaderLibrary::Get("PointShadowShader");
-            shadowShader->Bind();
+            Shared<Shader> pointshadowShader = ShaderLibrary::Get("PointShadowShader");
+            pointshadowShader->Bind();
 
             // Create the 6 view-projection matrices for the cubemap faces
             // Aspect ratio is 1.0, FOV is 90 degrees
             glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, m_PointLightFarPlane);
             std::vector<glm::mat4> shadowTransforms;
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // Right
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // Left
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f))); // Top
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f))); // Bottom
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // Near
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // Far
+            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // POSITIVE_X (Right)
+            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // NEGATIVE_X (Left)
+            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f))); // POSITIVE_Y (Top)
+            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f))); // NEGATIVE_Y (Bottom)
+            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // POSITIVE_Z (Backward)
+            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // NEGATIVE_Z (Forward)
 
             // Send matrices to the geometry shader
             for (int i = 0; i < 6; ++i) {
-                shadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+                pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
             }
-            shadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
-            shadowShader->SetVec3("u_LightPos", m_PointLightPos);
+            pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
+            pointshadowShader->SetVec3("u_LightPos", m_PointLightPos);
 
             // Submit meshes (identical logic to the 2D pass)
             size_t i = 0;

@@ -130,6 +130,13 @@ void main()
             shadow = ShadowCalculation2D(fragPosLightSpace, N, L);
         }
         else if (type == 0) { // Point
+            vec3 fragToLight = WorldPos - light.PositionType.xyz;
+            float rawDepth = texture(u_PointShadowCubemap, fragToLight).r;
+            
+            // Output the raw depth buffer to the screen as a grayscale color
+            FragColor = vec4(vec3(rawDepth), 1.0);
+            return; // Exit the shader immediately
+
             L = normalize(light.PositionType.xyz - WorldPos);
             float distance = length(light.PositionType.xyz - WorldPos);
             attenuation = 1.0 / (distance * distance);

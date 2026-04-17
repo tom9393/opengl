@@ -136,7 +136,7 @@ namespace Engine
 						ShaderDataTypeToOpenGLBaseType(element.Type),
 						element.Normalized ? GL_TRUE : GL_FALSE,
 						layout.GetStride(),
-						(const void*)element.Offset);
+						(const void*)(intptr_t)element.Offset);
 					m_VertexBufferIndex++;
 					break;
 				}
@@ -151,7 +151,7 @@ namespace Engine
 						element.GetComponentCount(),
 						ShaderDataTypeToOpenGLBaseType(element.Type),
 						layout.GetStride(),
-						(const void*)element.Offset);
+						(const void*)(intptr_t)element.Offset);
 					m_VertexBufferIndex++;
 					break;
 				}
@@ -264,6 +264,7 @@ namespace Engine
             case BufferTextureType::Texture2D_Multisample: return GL_TEXTURE_2D_MULTISAMPLE;
             case BufferTextureType::Cubemap: return GL_TEXTURE_CUBE_MAP;
         }
+        return GL_NONE;
     }
 
     static void CreateTexture(BufferTextureType type, unsigned int* outID, unsigned int count)
@@ -324,7 +325,7 @@ namespace Engine
                 break;
             }
             case BufferTextureType::Cubemap: {
-                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
+                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32F;
                 GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
                 GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
 
@@ -338,9 +339,6 @@ namespace Engine
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
                 break;
             }
         }

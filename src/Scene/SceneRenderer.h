@@ -67,7 +67,7 @@ namespace Engine {
 
         glm::mat4 m_DirLightSpaceMatrix = glm::mat4(1.0f);
         glm::vec3 m_PointLightPos = glm::vec3(0.0f);
-        float m_PointLightFarPlane = 100.0f;
+        float m_PointLightFarPlane;
     };
 
 }
