@@ -31,7 +31,7 @@ namespace Engine
 			unsigned int passWidth = pass.GetWidth() > 0 ? pass.GetWidth() : m_Width;
         	unsigned int passHeight = pass.GetHeight() > 0 ? pass.GetHeight() : m_Height;
 
-			Shared<FramebufferHandle> fbHandle = m_Pool.AcquireFramebuffer(pass.GetName(), attachments, type, m_Width, m_Height);
+			Shared<FramebufferHandle> fbHandle = m_Pool.AcquireFramebuffer(pass.GetName(), attachments, type, passWidth, passHeight);
 			if (!fbHandle)
 				continue;
 

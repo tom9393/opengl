@@ -271,12 +271,12 @@ namespace Engine
         glCreateTextures(BufferTextureTypeToGL(type), count, outID);
     };
 
-    static void AttachColorTexture(unsigned int id, BufferTextureType type, unsigned int samples, GLenum internalFormat, GLenum format, unsigned int width, unsigned int height, int index)
+    static void AttachColorTexture(unsigned int id, BufferTextureType type, unsigned int samples, GLenum internalFormat, GLenum format, GLenum dataType, unsigned int width, unsigned int height, int index)
     {
         switch (type)
         {
             case BufferTextureType::Texture2D: {
-                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -291,7 +291,7 @@ namespace Engine
             case BufferTextureType::Cubemap: {
                 for (unsigned int i = 0; i < 6; ++i)
                 {
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, dataType, nullptr);
                 }
                 
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -414,13 +414,13 @@ namespace Engine
                 switch (m_ColorAttachmentSpecs[i].TextureFormat)
                 {
                     case FramebufferTextureFormat::RGBA8:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA8, GL_RGBA, m_Specification.width, m_Specification.height, i);
+                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, m_Specification.width, m_Specification.height, i);
                         break;
                     case FramebufferTextureFormat::RGBA16F:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA16F, GL_RGBA, m_Specification.width, m_Specification.height, i);
+                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA16F, GL_RGBA, GL_FLOAT, m_Specification.width, m_Specification.height, i);
                         break;
                     case FramebufferTextureFormat::RED_INTEGER:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_R32I, GL_RED_INTEGER, m_Specification.width, m_Specification.height, i);
+                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_R32I, GL_RED_INTEGER, GL_INT, m_Specification.width, m_Specification.height, i);
                         break;
                 }
             };

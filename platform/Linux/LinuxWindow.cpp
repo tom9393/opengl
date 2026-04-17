@@ -8,6 +8,30 @@
 namespace Engine
 {
 
+    void APIENTRY glDebugOutput(GLenum source, 
+                            GLenum type, 
+                            unsigned int id, 
+                            GLenum severity, 
+                            GLsizei length, 
+                            const char *message, 
+                            const void *userParam)
+    {
+        // Ignore non-significant error/warning codes
+        if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+
+        std::cout << "---------------" << std::endl;
+        std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+
+        switch (severity)
+        {
+            case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+            case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+            case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+            case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+        } 
+        std::cout << std::endl;
+    }
+
     static bool s_GLFWInitialized = false;
 
     static void GLFWErrorCallback(int error, const char* desc)
@@ -44,6 +68,12 @@ namespace Engine
             glfwSetErrorCallback(GLFWErrorCallback);
         }
 
+        bool debug = true;
+
+        if (debug)
+        {
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+        }
         m_Window = glfwCreateWindow((int)props.width, (int)props.height, props.title.c_str(), nullptr, nullptr);
         m_Context = new OpenGLContext(m_Window);
         m_Context->Init();
@@ -56,6 +86,19 @@ namespace Engine
 
         SetVsync(true);
         glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+        if (debug)
+        {
+            int flags; 
+            glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+            if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+            {
+                glEnable(GL_DEBUG_OUTPUT);
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // Ensures errors are printed as they happen
+                glDebugMessageCallback(glDebugOutput, nullptr);
+                glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+            }
+        }
 
         // GLFW callbacks
         glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
