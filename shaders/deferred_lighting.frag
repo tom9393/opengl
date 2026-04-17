@@ -148,7 +148,9 @@ void main()
             vec4 fragPosLightSpace = light.LightSpaceMatrix * vec4(WorldPos, 1.0);
             shadow = ShadowCalculation2D(fragPosLightSpace, N, L);
         }
-        
+
+        shadow = 0.0; // For debugging
+
         vec3 radiance = lightColor * attenuation * (1.0 - shadow);
 
         vec3 H = normalize(V + L);

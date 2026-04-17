@@ -129,7 +129,7 @@ namespace Engine {
         });
 
         // 3. Deferred Lighting Pass
-        auto& lightingPass = m_RenderGraph.AddPass("LightingPass");
+        auto& lightingPass = m_RenderGraph.AddPass("ScenePass");
         lightingPass.SetAttachments({ FramebufferTextureFormat::RGBA8 }, BufferTextureType::Texture2D );
         lightingPass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
         lightingPass.SetCallback([this](RenderContext &ctx) {

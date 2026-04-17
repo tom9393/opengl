@@ -39,7 +39,9 @@ namespace Engine {
             VertexCount = 0;
 
             LineShader = Shader::Create("LineShader");
-            LineShader->AddShaders({"assets/shaders/line.vert", "assets/shaders/line.frag"});
+            const std::string vert = "/home/tom/Coding/c++/opengl/shaders/line.vert";
+            const std::string frag = "/home/tom/Coding/c++/opengl/shaders/line.frag";
+            LineShader->AddShaders({ vert, frag });
             ShaderLibrary::Add(LineShader);
         }
 

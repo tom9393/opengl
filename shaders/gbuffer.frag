@@ -4,6 +4,7 @@ layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gAlbedo;
 layout (location = 3) out vec4 gPBR; // r: metallic, g: roughness, b: ao
+layout (location = 4) out int gEntityID; // <-- ADD THIS
 
 struct PBR {
     sampler2D albedoMap;
@@ -86,6 +87,8 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+uniform int u_EntityID; // <-- ADD THIS
+
 void main()
 {
     // Extract Albedo, Normal, Metallic, Roughness exactly as you currently do
@@ -137,4 +140,6 @@ void main()
     gNormal = vec4(N, 1.0);
     gAlbedo = vec4(albedo, 1.0);
     gPBR = vec4(metallic, roughness, ao, 1.0);
+
+    gEntityID = u_EntityID; // <-- ADD THIS
 }
