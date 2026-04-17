@@ -159,12 +159,20 @@ namespace Engine
         LuaScriptComponent(UUID handle) : ScriptHandle(handle) {}
     };
 
-    struct PointLightComponent
+    struct LightComponent
     {
-        glm::vec3 Color = glm::vec3(1.0f);
-        float Intensity = 1000.0f;
+        enum class LightType { Point = 0, Directional = 1, Cone = 2 };
 
-        PointLightComponent() = default;
-        PointLightComponent(const PointLightComponent&) = default;
+        LightType Type = LightType::Point;
+        
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1000.0f; // High for point/cone, usually lower (~1.0f) for directional
+
+        // Only used when Type == Cone
+        float InnerCutOff = glm::cos(glm::radians(12.5f));
+        float OuterCutOff = glm::cos(glm::radians(17.5f));
+
+        LightComponent() = default;
+        LightComponent(const LightComponent&) = default;
     };
 };

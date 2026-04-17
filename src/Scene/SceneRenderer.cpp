@@ -35,32 +35,50 @@ namespace Engine {
         SceneLightData lightData = {};
         lightData.LightCount = 0;
 
-        auto lightView = m_Scene->GetRegistry().view<PointLightComponent, TransformComponent>();
+        auto lightView = m_Scene->GetRegistry().view<LightComponent, TransformComponent>();
         for (auto& e : lightView)
         {
-            auto [transform, light] = lightView.get<TransformComponent, PointLightComponent>(e);
+            if (lightData.LightCount >= 64) break;
+            auto [light, transform] = lightView.get<LightComponent, TransformComponent>(e);
         
-            lightData.Lights[lightData.LightCount].Position = glm::vec4(transform.translation, 1.0f);
-            lightData.Lights[lightData.LightCount].Color = glm::vec4(light.Color * light.Intensity, 1.0f);
+            glm::vec3 direction = transform.GetForward();
+            float typeFloat = static_cast<float>(light.Type);
+
+            switch (light.Type)
+            {
+                case LightComponent::LightType::Point:
+                    lightData.Lights[lightData.LightCount].PositionType = glm::vec4(transform.translation, typeFloat);
+                    lightData.Lights[lightData.LightCount].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
+                    lightData.Lights[lightData.LightCount].DirectionOuter = glm::vec4(0.0f);
+                    break;
+
+                case LightComponent::LightType::Directional:
+                    // Directional lights don't care about position
+                    lightData.Lights[lightData.LightCount].PositionType = glm::vec4(0.0f, 0.0f, 0.0f, typeFloat);
+                    lightData.Lights[lightData.LightCount].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
+                    lightData.Lights[lightData.LightCount].DirectionOuter = glm::vec4(direction, 0.0f);
+                    break;
+
+                case LightComponent::LightType::Cone:
+                    lightData.Lights[lightData.LightCount].PositionType = glm::vec4(transform.translation, typeFloat);
+                    lightData.Lights[lightData.LightCount].ColorInner   = glm::vec4(light.Color * light.Intensity, light.InnerCutOff);
+                    lightData.Lights[lightData.LightCount].DirectionOuter = glm::vec4(direction, light.OuterCutOff);
+                    break;
+            }
+            
             lightData.LightCount++;
         }
 
         Renderer::UpdateLightBuffer(lightData);
 
-        auto view = m_Scene->GetRegistry().view<MeshComponent>();
+        auto view = m_Scene->GetRegistry().view<MeshComponent, TransformComponent, MaterialComponent>();
         for (auto& e : view)
         {
-            auto& meshComponent = view.get<MeshComponent>(e);
+            auto [meshComponent, transformComponent, materialComponent] = view.get<MeshComponent, TransformComponent, MaterialComponent>(e);
             if (meshComponent.MeshHandle == 0) continue;
 
             Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
-            Entity entity {e, m_Scene};
-
-            entt::entity top = entity.GetClosestParentWithComponent<TransformComponent>();
-            if (top == entt::null) continue;
-            Entity closestParent = { top, m_Scene };
-
-            glm::mat4 transform = closestParent.GetComponent<TransformComponent>().GetTransform();
+            glm::mat4 transform = transformComponent.GetTransform();
 
             // Frustum Culling
             if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
@@ -68,11 +86,8 @@ namespace Engine {
             // Build Command
             DrawCommand cmd;
             cmd.TargetMesh = mesh;
-            cmd.Transform = transform;;
-            
-            if (entity.HasComponent<MaterialComponent>())
-                cmd.TargetMaterial = AssetManager::GetAsset<Material>(entity.GetComponent<MaterialComponent>().MaterialHandle);
-            else continue;
+            cmd.Transform = transform;
+            cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialComponent.MaterialHandle);
             
             // Instead of submitting, just fill the list
             m_RenderItems.Opaque.emplace_back(cmd);

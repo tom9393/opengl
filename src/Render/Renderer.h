@@ -36,15 +36,16 @@ namespace Engine
         float padding;
     };
 
-    struct PointLightData 
+    struct ShaderLight
     {
-        glm::vec4 Position; // w is ignored
-        glm::vec4 Color;    // rgb = color * intensity, w is ignored
+        glm::vec4 PositionType; // xyz position, w type
+        glm::vec4 ColorInner; // xyz color, w inner cutoff
+        glm::vec4 DirectionOuter; // xyz direction, w outer cutoff
     };
 
     struct SceneLightData 
     {
-        PointLightData Lights[64]; // Max 64 lights for this example
+        ShaderLight Lights[64]; // Max 64 lights for this example
         int LightCount;
         int padding[3];           // Padding to align
     };

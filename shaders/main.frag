@@ -31,9 +31,10 @@ struct VertexOutput
     mat3 TBN;
 };
 
-struct PointLight {
-    vec4 Position; 
-    vec4 Color;
+struct Light {
+    vec4 PositionType;
+    vec4 ColorInner;
+    vec4 DirectionOuter;
 };
 
 layout (location = 0) in VertexOutput Input;
@@ -48,7 +49,7 @@ layout (std140, binding = 0) uniform Camera
 
 layout(std140, binding = 1) uniform LightData
 {
-    PointLight Lights[MAX_LIGHTS];
+    Light Lights[MAX_LIGHTS];
     int LightCount;
 };
 
@@ -151,26 +152,60 @@ void main()
 
     for(int i = 0; i < LightCount; i++) 
     {
-        PointLight light = Lights[i];
-        vec3 lightPosition = light.Position.xyz;
-        vec3 lightColor = light.Color.xyz;
-        vec3 L = normalize(lightPosition - WorldPos);
-        vec3 H = normalize(V + L);
-        float distance = length(lightPosition - WorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lightColor * attenuation;
+        Light light = Lights[i];
+        
+        int type = int(light.PositionType.w);
+        vec3 lightColor = light.ColorInner.xyz;
+        vec3 L;
+        float attenuation = 1.0;
 
+        if (type == 1) 
+        {
+            // --- DIRECTIONAL LIGHT ---
+            // For directional light, direction vector is constant
+            L = normalize(-light.DirectionOuter.xyz);
+            attenuation = 1.0; // Directional lights don't decay based on distance
+        } 
+        else 
+        {
+            // --- POINT & CONE LIGHTS ---
+            vec3 lightPos = light.PositionType.xyz;
+            L = normalize(lightPos - WorldPos);
+            float distance = length(lightPos - WorldPos);
+            attenuation = 1.0 / (distance * distance); // Inverse square law
+
+            if (type == 2) 
+            {
+                // --- CONE (SPOT) LIGHT FALLOFF ---
+                vec3 lightDir = normalize(light.DirectionOuter.xyz);
+                float theta = dot(L, normalize(-lightDir)); 
+                
+                float innerCutOff = light.ColorInner.w;
+                float outerCutOff = light.DirectionOuter.w;
+                float epsilon = innerCutOff - outerCutOff;
+                
+                // Clamp gives smoothed edges using inner/outer cutoffs
+                float intensity = clamp((theta - outerCutOff) / epsilon, 0.0, 1.0);
+                attenuation *= intensity;
+            }
+        }
+
+        // Apply attenuation to the light color
+        vec3 radiance = lightColor * attenuation;
+        
+        // --- PBR BRDF Evaluation (Remains Unchanged) ---
+        vec3 H = normalize(V + L);
         float NDF = DistributionGGX(N, H, roughness);   
-        float G   = GeometrySmith(N, V, L, roughness);      
+        float G   = GeometrySmith(N, V, L, roughness);
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
-            
-        vec3 numerator    = NDF * G * F; 
+
+        vec3 numerator    = NDF * G * F;
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; 
         vec3 specular = numerator / denominator;
-        
+
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;    
+        kD *= 1.0 - metallic;
 
         float NdotL = max(dot(N, L), 0.0);        
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;

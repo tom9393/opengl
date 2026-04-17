@@ -423,9 +423,9 @@ namespace Engine
 				ImGui::CloseCurrentPopup();
 			}
 
-			if (ImGui::MenuItem("PointLight"))
+			if (ImGui::MenuItem("Light"))
 			{
-				selection.AddComponent<PointLightComponent>();
+				selection.AddComponent<LightComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -768,16 +768,43 @@ namespace Engine
 			{
 			}
 		});
-		DrawComponent<PointLightComponent>("PointLight", entity, [](auto &component)
+		DrawComponent<LightComponent>("Light", entity, [](auto &component)
 		{
-			glm::vec3 color = component.Color;
+            const char* lightTypeStrings[] = { "Point", "Directional", "Cone" };
+            const char* currentLightTypeString = lightTypeStrings[(int)component.Type];
 
-			DrawVec3("Color", color, 0.0f);
-			if(ImGui::DragFloat("Intensity", &component.Intensity)) {
+            if (ImGui::BeginCombo("Type", currentLightTypeString))
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    bool isSelected = currentLightTypeString == lightTypeStrings[i];
+                    if (ImGui::Selectable(lightTypeStrings[i], isSelected))
+                    {
+                        currentLightTypeString = lightTypeStrings[i];
+                        component.Type = (LightComponent::LightType)i;
+                    }
 
-			}
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
 
-			component.Color = color;
+            // Color
+            glm::vec3 color = component.Color;
+            DrawVec3("Color", color, 0.0f);
+            component.Color = color;
+
+            // Intensity
+            ImGui::DragFloat("Intensity", &component.Intensity, 0.1f, 0.0f, 10000.0f);
+
+            // Conditionally draw Cone properties
+            if (component.Type == LightComponent::LightType::Cone)
+            {
+                // Note: These are stored as cosines, so the values generally range from 0.0 to 1.0
+                ImGui::DragFloat("Inner CutOff", &component.InnerCutOff, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Outer CutOff", &component.OuterCutOff, 0.01f, 0.0f, 1.0f);
+            }
 		});
 	};
 

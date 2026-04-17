@@ -104,6 +104,14 @@ namespace Engine
 			out << YAML::Key << "ScriptHandle" << YAML::Value << lsc.ScriptHandle;
 		});
 
+		SerializeComponent<LightComponent>(out, e, "LightComponent", [](auto& out, auto& lc) {
+			out << YAML::Key << "Type" << YAML::Value << (int)lc.Type;
+            out << YAML::Key << "Color" << YAML::Value << lc.Color;
+            out << YAML::Key << "Intensity" << YAML::Value << lc.Intensity;
+            out << YAML::Key << "InnerCutOff" << YAML::Value << lc.InnerCutOff;
+            out << YAML::Key << "OuterCutOff" << YAML::Value << lc.OuterCutOff;
+		});
+
 		if (e.HasComponent<RelationshipComponent>())
         {
             auto& rc = e.GetComponent<RelationshipComponent>();
@@ -234,6 +242,27 @@ namespace Engine
 		}
 	}
 
+	template <>
+	void DeserializeComponent<LightComponent>(Entity &entity, Shared<Scene> &scene, YAML::Node node) {
+		if (node)
+		{
+			auto& light = entity.AddComponent<LightComponent>();
+                
+			// Read the type and cast it back to the enum
+			light.Type = (LightComponent::LightType)node["Type"].as<int>();
+			
+			light.Color = node["Color"].as<glm::vec3>();
+			light.Intensity = node["Intensity"].as<float>();
+			
+			// We use if-checks here just in case you try to load an older scene file
+			// before you added the CutOff variables!
+			if (node["InnerCutOff"])
+				light.InnerCutOff = node["InnerCutOff"].as<float>();
+			if (node["OuterCutOff"])
+				light.OuterCutOff = node["OuterCutOff"].as<float>();
+		}
+	}
+
 	Entity DeserializeEntity(Shared<Scene> &scene, YAML::Node& node) {
 		uint64_t uuid = node["Entity"].as<uint64_t>();
 		std::string tag = node["TagComponent"]["Tag"].as<std::string>("");
@@ -247,6 +276,7 @@ namespace Engine
 		DeserializeComponent<TextureComponent>(entity, scene, node["TextureComponent"]);
 		DeserializeComponent<RigidBodyComponent>(entity, scene, node["RigidBodyComponent"]);
 		DeserializeComponent<LuaScriptComponent>(entity, scene, node["LuaScriptComponent"]);
+		DeserializeComponent<LightComponent>(entity, scene, node["LightComponent"]);
 
 		return entity;
 	}
