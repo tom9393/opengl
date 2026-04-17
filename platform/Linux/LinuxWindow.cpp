@@ -96,7 +96,8 @@ namespace Engine
                 glEnable(GL_DEBUG_OUTPUT);
                 glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // Ensures errors are printed as they happen
                 glDebugMessageCallback(glDebugOutput, nullptr);
-                glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+                unsigned int unusedIds[] = { 131140 };
+                glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, unusedIds, GL_TRUE);
             }
         }
 
