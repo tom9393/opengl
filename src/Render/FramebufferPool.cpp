@@ -5,9 +5,9 @@
 namespace Engine
 {
 
-	Shared<FramebufferHandle> FramebufferPool::AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height)
+	Shared<FramebufferHandle> FramebufferPool::AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height)
 	{
-	    std::string key = BuildKey(attachments, width, height);
+	    std::string key = BuildKey(attachments, type, width, height);
 	    auto it = m_Pool.find(key);
 	    if (it != m_Pool.end())
 		return it->second;
@@ -22,6 +22,7 @@ namespace Engine
 	    spec.width = width;
 	    spec.height = height;
 	    spec.samples = 1;
+		spec.type = type;
 	    spec.attachments = specs;
 
 	    Shared<Framebuffer> fb = Framebuffer::Create(spec);
@@ -38,13 +39,12 @@ namespace Engine
 	    m_Pool.clear();
 	}
 
-	std::string FramebufferPool::BuildKey(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height) const
+	std::string FramebufferPool::BuildKey(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height) const
 	{
-	    std::ostringstream oss;
-	    oss << width << "x" << height << ":";
-	    for (auto a : attachments)
-		oss << static_cast<int>(a) << ",";
-	    return oss.str();
+		std::string key = std::to_string(width) + "x" + std::to_string(height) + "_type" + std::to_string((int)type) + "_";
+		for (auto format : attachments)
+			key += std::to_string((int)format) + "_";
+		return key;
 	}
 
 };

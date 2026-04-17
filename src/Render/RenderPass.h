@@ -21,9 +21,10 @@ namespace Engine
         RenderPass(const std::string& name) : m_Name(name) {}
 
         // Attachments is the list of FramebufferTextureFormat in the same order the framebuffer expects.
-        RenderPass& SetAttachments(const std::vector<FramebufferTextureFormat>& attachments)
+        RenderPass& SetAttachments(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type = BufferTextureType::None)
         {
             m_Attachments = attachments;
+            m_TargetType = type;
             return *this;
         }
 
@@ -51,6 +52,7 @@ namespace Engine
 
         const std::string& GetName() const { return m_Name; }
         const std::vector<FramebufferTextureFormat>& GetAttachments() const { return m_Attachments; }
+        BufferTextureType GetTargetType() const { return m_TargetType; }
         const glm::vec4& GetClearColor() const { return m_ClearColor; }
         bool HasClearColor() const { return m_HasClearColor; }
         const std::unordered_map<unsigned int, int>& GetClearInts() const { return m_ClearInts; }
@@ -59,6 +61,7 @@ namespace Engine
     private:
         std::string m_Name;
         std::vector<FramebufferTextureFormat> m_Attachments;
+        BufferTextureType m_TargetType = BufferTextureType::None;
         glm::vec4 m_ClearColor = glm::vec4(0.0f);
         bool m_HasClearColor = false;
         std::unordered_map<unsigned int, int> m_ClearInts;

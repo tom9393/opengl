@@ -29,6 +29,7 @@ struct VertexOutput
     vec3 FragPos;
     vec2 TexCoord;
     mat3 TBN;
+    vec4 FragPosLightSpace;
 };
 
 struct Light {
@@ -56,6 +57,7 @@ layout(std140, binding = 1) uniform LightData
 const float PI = 3.14159265359;
 
 uniform PBR pbr;
+uniform sampler2D u_ShadowMap;
 
 // 1. Normal Distribution Function (GGX)
 float DistributionGGX(vec3 N, vec3 H, float roughness) {

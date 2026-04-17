@@ -50,6 +50,7 @@ namespace Engine {
         const uint32_t m_MaxInstances = 10000;
         Shared<ShaderStorageBuffer> m_InstanceSSBO;
         std::vector<glm::mat4> m_Transforms;
+        glm::mat4 m_LightSpaceMatrix = glm::mat4(1.0f);
     };
 
 }

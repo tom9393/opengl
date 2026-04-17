@@ -256,61 +256,90 @@ namespace Engine
         return false;
     };
 
-    static GLenum TextureTarget(bool multisampled)
+    static GLenum BufferTextureTypeToGL(BufferTextureType type)
     {
-        return multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
-    };
-
-    static void CreateTexture(bool multisampled, unsigned int* outID, unsigned int count)
-    {
-        glCreateTextures(TextureTarget(multisampled), count, outID);
-    };
-
-    static void BindTexture(bool multisampled, unsigned int id)
-    {
-        glBindTexture(TextureTarget(multisampled), id);
-    };
-
-    static void AttachColorTexture(unsigned int id, int samples, GLenum internalFormat, GLenum format, unsigned int width, unsigned int height, int index)
-    {
-        bool multisampled = samples > 1;
-        if (multisampled)
+        switch (type)
         {
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
+            case BufferTextureType::Texture2D: return GL_TEXTURE_2D;
+            case BufferTextureType::Texture2D_Multisample: return GL_TEXTURE_2D_MULTISAMPLE;
+            case BufferTextureType::Cubemap: return GL_TEXTURE_CUBE_MAP;
         }
-        else
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+    }
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        };
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, TextureTarget(multisampled), id, 0);
+    static void CreateTexture(BufferTextureType type, unsigned int* outID, unsigned int count)
+    {
+        glCreateTextures(BufferTextureTypeToGL(type), count, outID);
     };
 
-    static void AttachDepthTexture(unsigned int id, int samples, GLenum format, GLenum attachmentType, int width, unsigned int height)
+    static void AttachColorTexture(unsigned int id, BufferTextureType type, unsigned int samples, GLenum internalFormat, GLenum format, unsigned int width, unsigned int height, int index)
     {
-        bool multisampled = samples > 1;
-        if (multisampled)
+        switch (type)
         {
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
+            case BufferTextureType::Texture2D: {
+                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                break;
+            }
+            case BufferTextureType::Texture2D_Multisample: {
+                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_FALSE);
+                break;
+            }
+            case BufferTextureType::Cubemap: {
+                for (unsigned int i = 0; i < 6; ++i)
+                {
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+                }
+                
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                break;
+            }
         }
-        else
+
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, id, 0);
+    };
+
+    static void AttachDepthTexture(unsigned int id, BufferTextureType type, int samples, GLenum format, GLenum attachmentType, int width, unsigned int height)
+    {
+        switch (type)
         {
-            glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
+            case BufferTextureType::Texture2D: {
+                glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        };
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                break;
+            }
+            case BufferTextureType::Texture2D_Multisample: {
+                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
+                break;
+            }
+            case BufferTextureType::Cubemap: {
+                for (unsigned int i = 0; i < 6; ++i)
+                {
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+                }
+                
+                // Note: Shadows usually look better with GL_NEAREST or hardware PCF, but GL_LINEAR is fine for testing
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                break;
+            }
+        }
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, TextureTarget(multisampled), id, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, id, 0);
     };
 
     static GLenum FBTextureFormatToGL(FramebufferTextureFormat format)
@@ -369,23 +398,20 @@ namespace Engine
         glCreateFramebuffers(1, &m_RendererID);
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
-        bool multisample = m_Specification.samples > 1;
-
         if (m_ColorAttachmentSpecs.size())
         {
             m_ColorAttachments.resize(m_ColorAttachmentSpecs.size());
-            CreateTexture(multisample, m_ColorAttachments.data(), m_ColorAttachments.size());
-
+            glCreateTextures(BufferTextureTypeToGL(m_Specification.type), m_ColorAttachments.size(), m_ColorAttachments.data());
             for (unsigned int i = 0; i < m_ColorAttachments.size(); i++)
             {
-                BindTexture(multisample, m_ColorAttachments[i]);
+                glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_ColorAttachments[i]);
                 switch (m_ColorAttachmentSpecs[i].TextureFormat)
                 {
                     case FramebufferTextureFormat::RGBA8:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.samples, GL_RGBA8, GL_RGBA, m_Specification.width, m_Specification.height, i);
+                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA8, GL_RGBA, m_Specification.width, m_Specification.height, i);
                         break;
                     case FramebufferTextureFormat::RED_INTEGER:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.samples, GL_R32I, GL_RED_INTEGER, m_Specification.width, m_Specification.height, i);
+                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_R32I, GL_RED_INTEGER, m_Specification.width, m_Specification.height, i);
                         break;
                 }
             };
@@ -393,12 +419,12 @@ namespace Engine
 
         if (m_DepthSpec.TextureFormat != FramebufferTextureFormat::None)
         {
-            CreateTexture(multisample, &m_DepthAttachment, 1);
-            BindTexture(multisample, m_DepthAttachment);
+            glCreateTextures(BufferTextureTypeToGL(m_Specification.type), 1, &m_DepthAttachment);
+            glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_DepthAttachment);
             switch (m_DepthSpec.TextureFormat)
             {
                 case FramebufferTextureFormat::DEPTH24STENCIL8:
-                    AttachDepthTexture(m_DepthAttachment, m_Specification.samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.width, m_Specification.height);
+                    AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.width, m_Specification.height);
                     break;
             };
         };

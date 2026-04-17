@@ -53,13 +53,13 @@ namespace Engine
 
         // Acquire or create a framebuffer configured with the given attachments and size.
         // Returns a FramebufferHandle (wrapped in Shared) that provides the convenience methods.
-        Shared<FramebufferHandle> AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height);
+        Shared<FramebufferHandle> AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height);
 
         // Clears the pool (free all resources)
         void Clear();
 
     private:
-        std::string BuildKey(const std::vector<FramebufferTextureFormat>& attachments, unsigned int width, unsigned int height) const;
+        std::string BuildKey(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height) const;
 
     private:
         std::unordered_map<std::string, Shared<FramebufferHandle>> m_Pool;

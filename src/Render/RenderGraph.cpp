@@ -26,8 +26,9 @@ namespace Engine
 	    {
 			RenderPass& pass = *passPtr;
 			const auto& attachments = pass.GetAttachments();
+			BufferTextureType type = pass.GetTargetType();
 
-			Shared<FramebufferHandle> fbHandle = m_Pool.AcquireFramebuffer(attachments, m_Width, m_Height);
+			Shared<FramebufferHandle> fbHandle = m_Pool.AcquireFramebuffer(attachments, type, m_Width, m_Height);
 			if (!fbHandle)
 				continue;
 

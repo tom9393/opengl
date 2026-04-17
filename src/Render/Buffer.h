@@ -102,10 +102,21 @@ namespace Engine
         std::vector<FramebufferTextureSpecification> Attachments;
     };
 
+    enum class BufferTextureType
+    {
+        None = 0,
+
+        Texture2D,
+        Texture2D_Multisample,
+
+        Cubemap
+    };
+
     struct FramebufferSpecification
     {
         unsigned int width = 0, height = 0;
         FramebufferAttachmentSpecification attachments;
+        BufferTextureType type = BufferTextureType::None;
         unsigned int samples = 1;
         bool swapChainTarget = false;
     };

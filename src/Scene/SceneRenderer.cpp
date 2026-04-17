@@ -10,7 +10,7 @@ namespace Engine {
         : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight)
     {
         auto& pass = m_RenderGraph.AddPass("ScenePass");
-        pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth });
+        pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D );
         pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
         pass.SetClearInt(1, -1);
         pass.SetCallback([this](RenderContext &ctx)
