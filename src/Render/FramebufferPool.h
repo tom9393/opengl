@@ -27,6 +27,12 @@ namespace Engine
             return m_Framebuffer->GetColorAttachmentRendererID(idx);
         }
 
+        unsigned int GetDepthAttachmentRendererID() const
+        {
+            if (m_Framebuffer) return 0;
+            return m_Framebuffer->GetDepthAttachmentRendererID();
+        }
+
         int ReadPixel(unsigned int attachmentIdx, int x, int y) const
         {
             if (!m_Framebuffer) return -1;

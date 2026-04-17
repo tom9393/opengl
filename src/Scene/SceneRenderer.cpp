@@ -147,9 +147,42 @@ namespace Engine {
             deferredShader->SetInt("u_PointShadowCubemap", 5);
             deferredShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
 
+            auto gBufferFB = m_RenderGraph.GetPassFramebuffer("GeometryPass");
+            auto shadow2DFB = m_RenderGraph.GetPassFramebuffer("ShadowPass2D");
+            auto shadowCubeFB = m_RenderGraph.GetPassFramebuffer("PointShadowPass");
+
+            if (gBufferFB)
+            {
+                // Note: Ensure glad.h is included at the top of SceneRenderer.cpp
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(0)); // Position
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(1)); // Normal
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(2)); // Albedo
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(3)); // PBR
+            }
+
+            // Bind 2D Shadow Map
+            if (shadow2DFB)
+            {
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, shadow2DFB->GetDepthAttachmentRendererID()); 
+            }
+
+            // Bind Point Light Shadow Cubemap
+            if (shadowCubeFB)
+            {
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeFB->GetDepthAttachmentRendererID()); 
+            }
+
             // Render full screen quad to calculate lighting
             // Assuming you have a static method like this in your Renderer
+            glDisable(GL_DEPTH_TEST);
             Renderer::DrawFullscreenQuad(); 
+            glEnable(GL_DEPTH_TEST);
             
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         });
