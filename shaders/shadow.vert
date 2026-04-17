@@ -1,10 +1,14 @@
-#version 330 core
-layout (location = 0) in vec3 aPos;
+#version 460 core
+layout (location = 0) in vec3 a_Position;
 
-uniform mat4 lightSpaceMatrix;
-uniform mat4 model;
+layout(std430, binding = 0) readonly buffer InstanceData {
+    mat4 u_InstanceTransforms[];
+};
+
+uniform mat4 u_LightSpaceMatrix;
 
 void main()
 {
-    gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);
+    mat4 a_InstanceTransform = u_InstanceTransforms[gl_InstanceID];
+    gl_Position = u_LightSpaceMatrix * a_InstanceTransform * vec4(a_Position, 1.0);
 }  

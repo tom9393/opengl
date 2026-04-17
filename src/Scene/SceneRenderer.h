@@ -42,9 +42,6 @@ namespace Engine {
         RenderGraph &GetRenderGraph() { return m_RenderGraph; }
 
     private:
-        void SubmitBatchedMeshes(std::vector<DrawCommand> &commands);
-
-    private:
         Scene* m_Scene;
         RenderItems m_RenderItems;
         unsigned int m_ViewportWidth;

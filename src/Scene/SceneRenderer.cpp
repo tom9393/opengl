@@ -15,11 +15,32 @@ namespace Engine {
         pass.SetClearInt(1, -1);
         pass.SetCallback([this](RenderContext &ctx)
         {
-            SubmitBatchedMeshes(m_RenderItems.Opaque);
-            
-            // Render Physics debug shapes on top
+            size_t i = 0;
+            while (i < m_RenderItems.Opaque.size())
+            {
+                auto& base = m_RenderItems.Opaque[i];
+                size_t batchSize = 0;
+
+                // Find how many items share this Mesh + Material
+                while (i + batchSize < m_RenderItems.Opaque.size() && 
+                    m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh && 
+                    m_RenderItems.Opaque[i + batchSize].TargetMaterial == base.TargetMaterial) 
+                {
+                    batchSize++;
+                }
+
+                m_Transforms.reserve(batchSize);
+                for (size_t j = 0; j < batchSize; j++)
+                    m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+
+                m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
+                m_InstanceSSBO->Bind(0);
+                Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
+                i += batchSize;
+                m_Transforms.clear();
+            }
+
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
-        
         });
 
         m_InstanceSSBO = ShaderStorageBuffer::Create(m_MaxInstances * sizeof(glm::mat4));
@@ -143,34 +164,6 @@ namespace Engine {
 			auto& cameraComponent = view.get<SceneCameraComponent>(e);
 			if (!cameraComponent.fixedAspectRatio) cameraComponent.sceneCamera->SetViewportSize(width, height);
 		}
-    }
-
-    void SceneRenderer::SubmitBatchedMeshes(std::vector<DrawCommand>& commands)
-    {
-        size_t i = 0;
-        while (i < commands.size())
-        {
-            auto& base = commands[i];
-            size_t batchSize = 0;
-
-            // Find how many items share this Mesh + Material
-            while (i + batchSize < commands.size() && 
-                   commands[i + batchSize].TargetMesh == base.TargetMesh && 
-                   commands[i + batchSize].TargetMaterial == base.TargetMaterial) 
-            {
-                batchSize++;
-            }
-
-            m_Transforms.reserve(batchSize);
-            for (size_t j = 0; j < batchSize; j++)
-                m_Transforms.emplace_back(commands[i + j].Transform);
-
-            m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-            m_InstanceSSBO->Bind(0);
-            Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
-            i += batchSize;
-            m_Transforms.clear();
-        }
     }
 
 }
