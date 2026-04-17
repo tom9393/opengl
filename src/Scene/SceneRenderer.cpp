@@ -9,8 +9,42 @@ namespace Engine {
     SceneRenderer::SceneRenderer(Scene* scene)
         : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight)
     {
+        // Shadow pass
+        auto& shadowPass = m_RenderGraph.AddPass("ShadowPass");
+        // Only need a depth attachment for shadow mapping
+        shadowPass.SetAttachments({
+            FramebufferTextureFormat::Depth },
+            BufferTextureType::Texture2D);
+        shadowPass.SetCallback([this](RenderContext& ctx) {
+            // 1. Bind shadow shaders
+            // 2. Calculate u_LightSpaceMatrix based on your directional light
+            // 3. Set glViewport to shadow map resolution
+            // 4. Submit opaque meshes (similar to your current ScenePass)
+        });
+
+        // Geometry pass
+        auto& geoPass = m_RenderGraph.AddPass("GeometryPass");
+        // Multiple Render Targets (MRT): Position, Normal, Albedo/Rough/Metal, plus Depth
+        // Note: You may need to add RGBA16F to FramebufferTextureFormat for accurate positions/normals
+        geoPass.SetAttachments({ 
+            FramebufferTextureFormat::RGBA16F, // Position
+            FramebufferTextureFormat::RGBA16F, // Normal
+            FramebufferTextureFormat::RGBA8,   // Albedo
+            FramebufferTextureFormat::RGBA8,   // PBR (Metallic, Roughness, AO)
+            FramebufferTextureFormat::RED_INTEGER, // Entity ID
+            FramebufferTextureFormat::Depth 
+        }, BufferTextureType::Texture2D);
+        geoPass.SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+        geoPass.SetCallback([this](RenderContext& ctx) {
+            // 1. Bind G-Buffer shader
+            // 2. Submit opaque meshes and SSBO data exactly as you do now
+        });
+
+        // Scene pass
         auto& pass = m_RenderGraph.AddPass("ScenePass");
-        pass.SetAttachments({ FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D );
+        pass.SetAttachments({
+            FramebufferTextureFormat::RGBA8 },
+            BufferTextureType::Texture2D );
         pass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
         pass.SetClearInt(1, -1);
         pass.SetCallback([this](RenderContext &ctx)

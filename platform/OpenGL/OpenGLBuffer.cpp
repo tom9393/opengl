@@ -410,6 +410,9 @@ namespace Engine
                     case FramebufferTextureFormat::RGBA8:
                         AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA8, GL_RGBA, m_Specification.width, m_Specification.height, i);
                         break;
+                    case FramebufferTextureFormat::RGBA16F:
+                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA16F, GL_RGBA, m_Specification.width, m_Specification.height, i);
+                        break;
                     case FramebufferTextureFormat::RED_INTEGER:
                         AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_R32I, GL_RED_INTEGER, m_Specification.width, m_Specification.height, i);
                         break;

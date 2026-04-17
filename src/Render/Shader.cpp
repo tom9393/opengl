@@ -24,16 +24,10 @@ namespace Engine
         textureShader->AddShaders({vert, frag});
         Add(textureShader);
 
-        Shared<Shader> primitiveShader = Shader::Create("Primitive");
-        const std::string pvert = "/home/tom/Coding/c++/opengl/shaders/primitive.vert";
-        const std::string pfrag = "/home/tom/Coding/c++/opengl/shaders/primitive.frag";
-        primitiveShader->AddShaders({pvert, pfrag});
-        Add(primitiveShader);
-
         Shared<Shader> shadowShader = Shader::Create("Shadow");
         const std::string svert = "/home/tom/Coding/c++/opengl/shaders/shadow.vert";
         const std::string sfrag = "/home/tom/Coding/c++/opengl/shaders/shadow.frag";
-        primitiveShader->AddShaders({svert, sfrag});
+        shadowShader->AddShaders({svert, sfrag});
         Add(shadowShader);
     }
 

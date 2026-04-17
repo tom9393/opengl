@@ -78,6 +78,7 @@ namespace Engine
         None = 0,
 
         RGBA8,
+        RGBA16F,
         RED_INTEGER,
 
         DEPTH24STENCIL8,
