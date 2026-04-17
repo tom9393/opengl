@@ -324,17 +324,23 @@ namespace Engine
                 break;
             }
             case BufferTextureType::Cubemap: {
-                for (unsigned int i = 0; i < 6; ++i)
-                {
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
+                GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
+                GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
+
+                for (unsigned int i = 0; i < 6; ++i) {
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, pixelFormat, typeFormat, NULL);
                 }
-                
+
                 // Note: Shadows usually look better with GL_NEAREST or hardware PCF, but GL_LINEAR is fine for testing
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
                 break;
             }
         }
@@ -434,12 +440,13 @@ namespace Engine
 
         if (m_ColorAttachments.size() > 1)
         {
-            GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+            GLenum buffers[12] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11 };
             glDrawBuffers(m_ColorAttachments.size(), buffers);
         }
         else if (m_ColorAttachments.empty())
         {
             glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -56,8 +56,8 @@ namespace Engine {
     private:
         Scene* m_Scene;
         RenderItems m_RenderItems;
-        unsigned int m_ViewportWidth;
-        unsigned int m_ViewportHeight;
+        unsigned int m_ViewportWidth = 1024;
+        unsigned int m_ViewportHeight = 1024;
         RenderGraph m_RenderGraph;
         const uint32_t m_MaxInstances = 10000;
         Shared<ShaderStorageBuffer> m_InstanceSSBO;

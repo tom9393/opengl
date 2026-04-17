@@ -5,9 +5,9 @@
 namespace Engine
 {
 
-	Shared<FramebufferHandle> FramebufferPool::AcquireFramebuffer(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height)
+	Shared<FramebufferHandle> FramebufferPool::AcquireFramebuffer(const std::string& passName, const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height)
 	{
-	    std::string key = BuildKey(attachments, type, width, height);
+	    std::string key = BuildKey(passName, attachments, type, width, height);
 	    auto it = m_Pool.find(key);
 	    if (it != m_Pool.end())
 		return it->second;
@@ -39,9 +39,9 @@ namespace Engine
 	    m_Pool.clear();
 	}
 
-	std::string FramebufferPool::BuildKey(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height) const
+	std::string FramebufferPool::BuildKey(const std::string& passName, const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height) const
 	{
-		std::string key = std::to_string(width) + "x" + std::to_string(height) + "_type" + std::to_string((int)type) + "_";
+		std::string key = passName + "_" + std::to_string(width) + "x" + std::to_string(height) + "_type" + std::to_string((int)type) + "_";
 		for (auto format : attachments)
 			key += std::to_string((int)format) + "_";
 		return key;

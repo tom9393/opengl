@@ -12,6 +12,7 @@ namespace Engine {
         auto& shadowPass2D = m_RenderGraph.AddPass("ShadowPass2D");
         shadowPass2D.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D);
         shadowPass2D.SetCallback([this](RenderContext& ctx) {
+            glClear(GL_DEPTH_BUFFER_BIT);
             Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
             shadowShader->Bind();
             shadowShader->SetMat4("u_LightSpaceMatrix", m_DirLightSpaceMatrix);
@@ -41,7 +42,9 @@ namespace Engine {
         auto& pointShadowPass = m_RenderGraph.AddPass("PointShadowPass");
         // NOTE: Make sure your RenderGraph supports BufferTextureType::TextureCubeMap!
         pointShadowPass.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Cubemap);
+        pointShadowPass.SetViewportSize(1024, 1024);
         pointShadowPass.SetCallback([this](RenderContext& ctx) {
+            glClear(GL_DEPTH_BUFFER_BIT);
             Shared<Shader> shadowShader = ShaderLibrary::Get("PointShadowShader");
             shadowShader->Bind();
 
@@ -226,9 +229,19 @@ namespace Engine {
                     m_LightData.Lights[idx].PositionType = glm::vec4(0.0f, 0.0f, 0.0f, typeFloat);
                     m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
                     m_LightData.Lights[idx].DirectionOuter = glm::vec4(direction, 0.0f);
+
+                    // 1. Keep the near plane positive!
+                    glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, 1.0f, 1000.0f);
+                    
+                    // 2. Prevent NaN crashes if pointing straight down
+                    glm::vec3 up = glm::abs(direction.y) > 0.999f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+                    
+                    // 3. Push the camera backwards along the direction vector so the whole scene fits inside
+                    glm::vec3 shadowCameraPos = transform.translation - (direction * 300.0f);
                     
                     // Ortho projection for directional shadows
-                    glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 50.0f);
+                    //glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 50.0f);
+                    //glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, -500.0f, 1000.0f);
                     glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
                     m_LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
                     
@@ -266,7 +279,7 @@ namespace Engine {
             glm::mat4 transform = transformComponent.GetTransform();
 
             // Frustum Culling
-            if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
+            //if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
 
             // Build Command
             DrawCommand cmd;

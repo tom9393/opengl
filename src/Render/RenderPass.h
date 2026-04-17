@@ -50,6 +50,15 @@ namespace Engine
             return *this;
         }
 
+        unsigned int GetWidth() const { return m_Width; }
+        unsigned int GetHeight() const { return m_Height; }
+
+        void SetViewportSize(unsigned int width, unsigned int height)
+        {
+            m_Width = width;
+            m_Height = height;
+        }
+
         const std::string& GetName() const { return m_Name; }
         const std::vector<FramebufferTextureFormat>& GetAttachments() const { return m_Attachments; }
         BufferTextureType GetTargetType() const { return m_TargetType; }
@@ -66,6 +75,8 @@ namespace Engine
         bool m_HasClearColor = false;
         std::unordered_map<unsigned int, int> m_ClearInts;
         Callback m_Callback;
+        unsigned int m_Width = 0;
+        unsigned int m_Height = 0;
     };
 
 };

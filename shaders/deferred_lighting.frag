@@ -149,7 +149,7 @@ void main()
             shadow = ShadowCalculation2D(fragPosLightSpace, N, L);
         }
 
-        shadow = 0.0; // For debugging
+        //shadow = 0.0; // For debugging
 
         vec3 radiance = lightColor * attenuation * (1.0 - shadow);
 
