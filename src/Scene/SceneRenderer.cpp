@@ -7,7 +7,7 @@
 namespace Engine {
 
     SceneRenderer::SceneRenderer(Scene* scene)
-        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight), m_PointLightFarPlane(100.0f)
+        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight), m_PointLightFarPlane(35.0f)
     {
         auto& shadowPass2D = m_RenderGraph.AddPass("ShadowPass2D");
         shadowPass2D.SetAttachments({ FramebufferTextureFormat::DEPTH24STENCIL8 }, BufferTextureType::Texture2D_Array);
@@ -20,24 +20,24 @@ namespace Engine {
             uint32_t fboID = fb ? fb->GetDepthAttachmentRendererID() : 0;
 
             for (size_t layer = 0; layer < m_DirSpotShadowCasters.size(); ++layer) {
+                auto& caster = m_DirSpotShadowCasters[layer];
                 m_RenderGraph.GetPassFramebuffer("ShadowPass2D")->GetFramebuffer()->AttachLayer(layer);
                 
-                shadowShader->SetMat4("u_LightSpaceMatrix", m_DirSpotShadowCasters[layer]);
+                shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
 
                 size_t i = 0;
-                while (i < m_RenderItems.Opaque.size()) {
-                    auto& base = m_RenderItems.Opaque[i];
+                while (i < caster.RenderItems.size()) {
                     size_t batchSize = 0;
-                    while (i + batchSize < m_RenderItems.Opaque.size() && m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh) {
+                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh) {
                         batchSize++;
                     }
                     m_Transforms.reserve(batchSize);
                     for (size_t j = 0; j < batchSize; j++)
-                        m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+                        m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
 
                     m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
                     m_InstanceSSBO->Bind(0);
-                    Renderer::SubmitInstancedMesh(base.TargetMesh, nullptr, m_Transforms.size()); 
+                    Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size()); 
                     i += batchSize;
                     m_Transforms.clear();
                 }
@@ -57,7 +57,8 @@ namespace Engine {
             glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, m_PointLightFarPlane);
 
             for (size_t layer = 0; layer < m_PointShadowCasters.size(); ++layer) {
-                glm::vec3 lightPos = m_PointShadowCasters[layer];
+                auto& caster = m_PointShadowCasters[layer];
+                glm::vec3& lightPos = caster.Position;
                 
                 std::vector<glm::mat4> shadowTransforms;
                 shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
@@ -75,19 +76,18 @@ namespace Engine {
                 pointshadowShader->SetInt("u_BaseLayer", layer);
 
                 size_t i = 0;
-                while (i < m_RenderItems.Opaque.size()) {
-                    auto& base = m_RenderItems.Opaque[i];
+                while (i < caster.RenderItems.size()) {
                     size_t batchSize = 0;
-                    while (i + batchSize < m_RenderItems.Opaque.size() && m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh) {
+                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh) {
                         batchSize++;
                     }
                     m_Transforms.reserve(batchSize);
                     for (size_t j = 0; j < batchSize; j++)
-                        m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+                        m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
 
                     m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
                     m_InstanceSSBO->Bind(0);
-                    Renderer::SubmitInstancedMesh(base.TargetMesh, nullptr, m_Transforms.size()); 
+                    Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size()); 
                     i += batchSize;
                     m_Transforms.clear();
                 }
@@ -127,10 +127,6 @@ namespace Engine {
 
                 m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
                 m_InstanceSSBO->Bind(0);
-                
-                if (base.TargetMaterial) {
-                    base.TargetMaterial->Bind(); 
-                }
 
                 Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
                 i += batchSize;
@@ -189,12 +185,12 @@ namespace Engine {
     void SceneRenderer::PrepareScene(const RenderContext& context)
     {
         m_RenderItems.Opaque.clear();
+        m_DirSpotShadowCasters.clear();
+        m_PointShadowCasters.clear();
         Frustum cameraFrustum = CreateFrustumFromMatrix(context.ViewProjection);
 
         m_Scene->UpdateWorldTransforms();
 
-        m_DirSpotShadowCasters.clear();
-        m_PointShadowCasters.clear();
         m_LightData.LightCount = 0;
 
         auto lightView = m_Scene->GetRegistry().view<LightComponent, TransformComponent>();
@@ -221,7 +217,7 @@ namespace Engine {
                     
                     if (light.CastShadows) {
                         shadowIndex = m_PointShadowCasters.size();
-                        m_PointShadowCasters.push_back(transform.translation);
+                        m_PointShadowCasters.push_back({ transform.translation, {} });
                     }
                     break;
                 }
@@ -241,7 +237,7 @@ namespace Engine {
                     
                     if (light.CastShadows) {
                         shadowIndex = m_DirSpotShadowCasters.size();
-                        m_DirSpotShadowCasters.push_back(m_LightData.Lights[idx].LightSpaceMatrix);
+                        m_DirSpotShadowCasters.push_back({ m_LightData.Lights[idx].LightSpaceMatrix, {} });
                     }
                     break;
                 }
@@ -258,12 +254,12 @@ namespace Engine {
                     
                     if (light.CastShadows) {
                         shadowIndex = m_DirSpotShadowCasters.size();
-                        m_DirSpotShadowCasters.push_back(m_LightData.Lights[idx].LightSpaceMatrix);
+                        m_DirSpotShadowCasters.push_back({ m_LightData.Lights[idx].LightSpaceMatrix, {} });
                     }
                     break;
                 }
             }
-            m_LightData.Lights[idx].Params = glm::ivec4(shadowIndex, 0, 0, 0); // Injecting layer index
+            m_LightData.Lights[idx].Params = glm::ivec4(shadowIndex, 0, 0, 0);
             m_LightData.LightCount++;
         }
 
@@ -278,26 +274,41 @@ namespace Engine {
             Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
             glm::mat4 transform = transformComponent.GetTransform();
 
-            // Frustum Culling
-            if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
-
             // Build Command
             DrawCommand cmd;
             cmd.TargetMesh = mesh;
             cmd.Transform = transform;
             cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialComponent.MaterialHandle);
             
-            // Instead of submitting, just fill the list
-            m_RenderItems.Opaque.emplace_back(cmd);
+            if (IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) {
+                m_RenderItems.Opaque.emplace_back(cmd);
+            }
+
+            for (auto& caster : m_DirSpotShadowCasters) {
+                Frustum lightFrustum = CreateFrustumFromMatrix(caster.LightSpaceMatrix);
+                if (IsAABBInFrustum(lightFrustum, mesh->GetAABB(), transform)) {
+                    caster.RenderItems.emplace_back(cmd);
+                }
+            }
+
+            for (auto& caster : m_PointShadowCasters) {
+                // Simple distance check (fallback since we don't have a specific Sphere vs AABB function)
+                // You can refine this radius check based on your mesh sizes!
+                float distanceToLight = glm::distance(caster.Position, glm::vec3(transform[3]));
+                if (distanceToLight < m_PointLightFarPlane + 5.0f) {
+                    caster.RenderItems.emplace_back(cmd);
+                }
+            }
         }
 
-        // Sort once per frame to benefit all passes
-        std::sort(m_RenderItems.Opaque.begin(), m_RenderItems.Opaque.end(), [](const DrawCommand& a, const DrawCommand& b) {
-            if (a.TargetMesh.get() != b.TargetMesh.get())
-                return a.TargetMesh.get() < b.TargetMesh.get();
-        
+        auto sortFunc = [](const DrawCommand& a, const DrawCommand& b) {
+            if (a.TargetMesh.get() != b.TargetMesh.get()) return a.TargetMesh.get() < b.TargetMesh.get();
             return a.TargetMaterial.get() < b.TargetMaterial.get();
-        });
+        };
+
+        std::sort(m_RenderItems.Opaque.begin(), m_RenderItems.Opaque.end(), sortFunc);
+        for (auto& caster : m_DirSpotShadowCasters) std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
+        for (auto& caster : m_PointShadowCasters)   std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
     }
 
     void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos)

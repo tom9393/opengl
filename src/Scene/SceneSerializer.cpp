@@ -108,6 +108,7 @@ namespace Engine
 			out << YAML::Key << "Type" << YAML::Value << (int)lc.Type;
             out << YAML::Key << "Color" << YAML::Value << lc.Color;
             out << YAML::Key << "Intensity" << YAML::Value << lc.Intensity;
+            out << YAML::Key << "CastShadows" << YAML::Value << lc.CastShadows;
             out << YAML::Key << "InnerCutOff" << YAML::Value << lc.InnerCutOff;
             out << YAML::Key << "OuterCutOff" << YAML::Value << lc.OuterCutOff;
 		});
@@ -253,6 +254,7 @@ namespace Engine
 			
 			light.Color = node["Color"].as<glm::vec3>();
 			light.Intensity = node["Intensity"].as<float>();
+			light.CastShadows = node["CastShadows"].as<bool>();
 			
 			// We use if-checks here just in case you try to load an older scene file
 			// before you added the CutOff variables!

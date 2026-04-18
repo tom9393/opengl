@@ -38,6 +38,16 @@ namespace Engine {
         std::vector<DrawCommand> Transparent;
     };
 
+    struct ShadowCaster2D {
+        glm::mat4 LightSpaceMatrix;
+        std::vector<DrawCommand> RenderItems;
+    };
+
+    struct ShadowCasterPoint {
+        glm::vec3 Position;
+        std::vector<DrawCommand> RenderItems;
+    };
+
     class SceneRenderer {
     public:
         SceneRenderer(Scene* scene);
@@ -66,8 +76,8 @@ namespace Engine {
 
         SceneLightData m_LightData;
 
-        std::vector<glm::vec3> m_PointShadowCasters;
-        std::vector<glm::mat4> m_DirSpotShadowCasters;
+        std::vector<ShadowCasterPoint> m_PointShadowCasters;
+        std::vector<ShadowCaster2D> m_DirSpotShadowCasters;
         float m_PointLightFarPlane;
     };
 
