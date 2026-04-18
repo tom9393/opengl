@@ -29,7 +29,7 @@ namespace Engine
 
         unsigned int GetDepthAttachmentRendererID() const
         {
-            if (m_Framebuffer) return 0;
+            if (!m_Framebuffer) return 0;
             return m_Framebuffer->GetDepthAttachmentRendererID();
         }
 
