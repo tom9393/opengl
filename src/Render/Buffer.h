@@ -137,7 +137,7 @@ namespace Engine
         virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
 
         virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
-        virtual void AttachLayer(unsigned int attachment, unsigned int layer);
+        virtual void AttachLayer(unsigned int attachment, unsigned int layer) = 0;
 
         virtual const FramebufferSpecification &GetSpecification() const = 0;
         virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;

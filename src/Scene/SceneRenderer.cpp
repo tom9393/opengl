@@ -22,9 +22,7 @@ namespace Engine {
             // Loop over all directional/spot lights that cast shadows
             for (size_t layer = 0; layer < m_DirSpotShadowCasters.size(); ++layer) {
                 // Attach specific layer to FBO
-                if (fboID) {
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fboID, 0, layer);
-                }
+                m_RenderGraph.GetPassFramebuffer("ShadowPass2D")->GetFramebuffer()->AttachLayer(GL_DEPTH_ATTACHMENT, layer);
                 
                 glClear(GL_DEPTH_BUFFER_BIT);
                 shadowShader->SetMat4("u_LightSpaceMatrix", m_DirSpotShadowCasters[layer]);
@@ -194,14 +192,14 @@ namespace Engine {
             if (shadow2DFB)
             {
                 glActiveTexture(GL_TEXTURE4);
-                glBindTexture(GL_TEXTURE_2D, shadow2DFB->GetDepthAttachmentRendererID()); 
+                glBindTexture(GL_TEXTURE_2D_ARRAY, shadow2DFB->GetDepthAttachmentRendererID()); 
             }
 
             // Bind Point Light Shadow Cubemap
             if (shadowCubeFB)
             {
                 glActiveTexture(GL_TEXTURE5);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeFB->GetDepthAttachmentRendererID()); 
+                glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, shadowCubeFB->GetDepthAttachmentRendererID()); 
             }
 
             // Render full screen quad to calculate lighting
