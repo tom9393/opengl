@@ -10,8 +10,8 @@ namespace Engine {
         : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight), m_PointLightFarPlane(100.0f)
     {
         auto& shadowPass2D = m_RenderGraph.AddPass("ShadowPass2D");
-        // Ensure BufferTextureType::Texture2DArray is supported by your RenderGraph!
-        shadowPass2D.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D_Array);
+        shadowPass2D.SetAttachments({ FramebufferTextureFormat::DEPTH24STENCIL8 }, BufferTextureType::Texture2D_Array);
+        shadowPass2D.SetViewportSize(2048, 2048);
         shadowPass2D.SetCallback([this](RenderContext& ctx) {
             Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
             shadowShader->Bind();
@@ -19,12 +19,9 @@ namespace Engine {
             auto fb = m_RenderGraph.GetPassFramebuffer("ShadowPass2D");
             uint32_t fboID = fb ? fb->GetDepthAttachmentRendererID() : 0;
 
-            // Loop over all directional/spot lights that cast shadows
             for (size_t layer = 0; layer < m_DirSpotShadowCasters.size(); ++layer) {
-                // Attach specific layer to FBO
-                m_RenderGraph.GetPassFramebuffer("ShadowPass2D")->GetFramebuffer()->AttachLayer(GL_DEPTH_ATTACHMENT, layer);
+                m_RenderGraph.GetPassFramebuffer("ShadowPass2D")->GetFramebuffer()->AttachLayer(layer);
                 
-                glClear(GL_DEPTH_BUFFER_BIT);
                 shadowShader->SetMat4("u_LightSpaceMatrix", m_DirSpotShadowCasters[layer]);
 
                 size_t i = 0;
@@ -48,9 +45,8 @@ namespace Engine {
         });
 
         auto& pointShadowPass = m_RenderGraph.AddPass("PointShadowPass");
-        // Ensure BufferTextureType::CubemapArray is supported by your RenderGraph!
-        pointShadowPass.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Cubemap_Array);
-        pointShadowPass.SetViewportSize(1024, 1024);
+        pointShadowPass.SetAttachments({ FramebufferTextureFormat::DEPTH24STENCIL8 }, BufferTextureType::Cubemap_Array);
+        pointShadowPass.SetViewportSize(128, 128);
         pointShadowPass.SetCallback([this](RenderContext& ctx) {
             Shared<Shader> pointshadowShader = ShaderLibrary::Get("PointShadowShader");
             pointshadowShader->Bind();
@@ -63,15 +59,6 @@ namespace Engine {
             for (size_t layer = 0; layer < m_PointShadowCasters.size(); ++layer) {
                 glm::vec3 lightPos = m_PointShadowCasters[layer];
                 
-                // Note: Geometry shader must handle `gl_Layer = (layer * 6) + gl_InvocationID;`
-                // Alternatively, attach layer by layer using glFramebufferTextureLayer if modifying GS is difficult.
-                
-                // For this example, we assume you update the geometry shader with `u_BaseLayer` 
-                // OR you manually iterate all 6 faces per layer here. 
-                // Using glFramebufferTexture (no layer) attaches the whole array.
-                
-                glClear(GL_DEPTH_BUFFER_BIT);
-
                 std::vector<glm::mat4> shadowTransforms;
                 shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
                 shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
@@ -85,7 +72,7 @@ namespace Engine {
                 }
                 pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
                 pointshadowShader->SetVec3("u_LightPos", lightPos);
-                pointshadowShader->SetInt("u_BaseLayer", layer); // NEW: Send layer to geometry shader
+                pointshadowShader->SetInt("u_BaseLayer", layer);
 
                 size_t i = 0;
                 while (i < m_RenderItems.Opaque.size()) {
@@ -107,7 +94,6 @@ namespace Engine {
             }
         });
 
-        // 2. Geometry pass (G-Buffer)
         auto& geoPass = m_RenderGraph.AddPass("GeometryPass");
         geoPass.SetAttachments({ 
             FramebufferTextureFormat::RGBA16F,     // 0: Position
@@ -115,7 +101,7 @@ namespace Engine {
             FramebufferTextureFormat::RGBA8,       // 2: Albedo
             FramebufferTextureFormat::RGBA8,       // 3: PBR (Metallic, Roughness, AO)
             FramebufferTextureFormat::RED_INTEGER, // 4: Entity ID
-            FramebufferTextureFormat::Depth 
+            FramebufferTextureFormat::DEPTH24STENCIL8 
         }, BufferTextureType::Texture2D);
         geoPass.SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
         geoPass.SetClearInt(4, -1);
@@ -152,7 +138,6 @@ namespace Engine {
             }
         });
 
-        // 3. Deferred Lighting Pass
         auto& lightingPass = m_RenderGraph.AddPass("ScenePass");
         lightingPass.SetAttachments({ FramebufferTextureFormat::RGBA8 }, BufferTextureType::Texture2D );
         lightingPass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
@@ -177,36 +162,23 @@ namespace Engine {
 
             if (gBufferFB)
             {
-                // Note: Ensure glad.h is included at the top of SceneRenderer.cpp
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(0)); // Position
-                glActiveTexture(GL_TEXTURE1);
-                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(1)); // Normal
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(2)); // Albedo
-                glActiveTexture(GL_TEXTURE3);
-                glBindTexture(GL_TEXTURE_2D, gBufferFB->GetColorAttachmentRendererID(3)); // PBR
+                gBufferFB->AttachToTextureSlot(0, 0);
+                gBufferFB->AttachToTextureSlot(1, 1);
+                gBufferFB->AttachToTextureSlot(2, 2);
+                gBufferFB->AttachToTextureSlot(3, 3);
             }
 
-            // Bind 2D Shadow Map
             if (shadow2DFB)
             {
-                glActiveTexture(GL_TEXTURE4);
-                glBindTexture(GL_TEXTURE_2D_ARRAY, shadow2DFB->GetDepthAttachmentRendererID()); 
+                shadow2DFB->AttachToTextureSlotDepth(4);
             }
 
-            // Bind Point Light Shadow Cubemap
             if (shadowCubeFB)
             {
-                glActiveTexture(GL_TEXTURE5);
-                glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, shadowCubeFB->GetDepthAttachmentRendererID()); 
+                shadowCubeFB->AttachToTextureSlotDepth(5);
             }
 
-            // Render full screen quad to calculate lighting
-            // Assuming you have a static method like this in your Renderer
-            glDisable(GL_DEPTH_TEST);
             Renderer::DrawFullscreenQuad(); 
-            glEnable(GL_DEPTH_TEST);
             
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         });
@@ -259,7 +231,8 @@ namespace Engine {
                     m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
                     m_LightData.Lights[idx].DirectionOuter = glm::vec4(direction, 0.0f);
 
-                    glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, 1.0f, 1000.0f);
+                    float orthoRange = 40.0f; 
+                    glm::mat4 lightProjection = glm::ortho(-orthoRange, orthoRange, -orthoRange, orthoRange, 1.0f, 400.0f);
                     glm::vec3 up = glm::abs(direction.y) > 0.999f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
                     glm::vec3 shadowCameraPos = transform.translation - (direction * 300.0f);
                     
@@ -306,7 +279,7 @@ namespace Engine {
             glm::mat4 transform = transformComponent.GetTransform();
 
             // Frustum Culling
-            //if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
+            if (!IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) continue;
 
             // Build Command
             DrawCommand cmd;

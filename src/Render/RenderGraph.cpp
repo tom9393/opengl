@@ -74,8 +74,7 @@ namespace Engine
 
 	void RenderGraph::Resize(unsigned int width, unsigned int height)
 	{
-	    if (m_Width == width && m_Height == height)
-		return;
+	    if (m_Width == width && m_Height == height) return;
 	    m_Width = width;
 	    m_Height = height;
 	    m_Pool.Clear();

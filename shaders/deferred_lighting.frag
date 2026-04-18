@@ -69,43 +69,111 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 // --- Shadow Calculation Functions ---
+// float ShadowCalculation2D(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int shadowIndex)
+// {
+//     if (shadowIndex < 0) return 0.0; // Light doesn't cast shadows
+
+//     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+//     projCoords = projCoords * 0.5 + 0.5;
+    
+//     if(projCoords.z > 1.0) return 0.0;
+    
+//     float currentDepth = projCoords.z;
+//     float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
+    
+//     float shadow = 0.0;
+//     // textureSize for 2DArray returns vec3(width, height, layers)
+//     vec2 texelSize = 1.0 / textureSize(u_DirSpotShadowMaps, 0).xy; 
+//     for(int x = -1; x <= 1; ++x) {
+//         for(int y = -1; y <= 1; ++y) {
+//             // Note the vec3 texture coord: (u, v, layer)
+//             float pcfDepth = texture(u_DirSpotShadowMaps, vec3(projCoords.xy + vec2(x, y) * texelSize, shadowIndex)).r;
+//             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+//         }    
+//     }
+//     return shadow / 9.0;
+// }
+
 float ShadowCalculation2D(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int shadowIndex)
 {
-    if (shadowIndex < 0) return 0.0; // Light doesn't cast shadows
+    if (shadowIndex < 0) return 0.0;
 
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
-    
     if(projCoords.z > 1.0) return 0.0;
     
     float currentDepth = projCoords.z;
     float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
-    
     float shadow = 0.0;
-    // textureSize for 2DArray returns vec3(width, height, layers)
-    vec2 texelSize = 1.0 / textureSize(u_DirSpotShadowMaps, 0).xy; 
-    for(int x = -1; x <= 1; ++x) {
-        for(int y = -1; y <= 1; ++y) {
-            // Note the vec3 texture coord: (u, v, layer)
-            float pcfDepth = texture(u_DirSpotShadowMaps, vec3(projCoords.xy + vec2(x, y) * texelSize, shadowIndex)).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-        }    
+    
+    vec2 texelSize = 1.0 / textureSize(u_DirSpotShadowMaps, 0).xy;
+
+    // Poisson disk offsets for smoother blurring
+    vec2 poissonDisk[4] = vec2[](
+        vec2( -0.94201624, -0.39906216 ),
+        vec2( 0.94558609, -0.76890725 ),
+        vec2( -0.094184101, -0.92938870 ),
+        vec2( 0.34495938, 0.29387760 )
+    );
+    
+    // PCF with variable blur radius
+    float pcfFilterSize = 2.0; // Increase this to make the shadow softer
+    
+    for (int i = 0; i < 4; i++) {
+        float pcfDepth = texture(u_DirSpotShadowMaps, vec3(projCoords.xy + poissonDisk[i] * texelSize * pcfFilterSize, shadowIndex)).r; 
+        shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
     }
-    return shadow / 9.0;
+    
+    return shadow / 4.0;
 }
+
+// float ShadowCalculationPoint(vec3 fragPos, vec3 lightPos, int shadowIndex) {
+//     if (shadowIndex < 0) return 0.0;
+
+//     vec3 fragToLight = fragPos - lightPos;
+//     float currentDepth = length(fragToLight);
+    
+//     // Note the vec4 texture coord for CubeArray: (x, y, z, layer)
+//     float closestDepth = texture(u_PointShadowCubemaps, vec4(fragToLight, shadowIndex)).r;
+//     closestDepth *= u_FarPlane;
+    
+//     float bias = 0.05; 
+//     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+// }
+
+const vec3 gridSamplingDisk[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
 
 float ShadowCalculationPoint(vec3 fragPos, vec3 lightPos, int shadowIndex) {
     if (shadowIndex < 0) return 0.0;
-
+    
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
     
-    // Note the vec4 texture coord for CubeArray: (x, y, z, layer)
-    float closestDepth = texture(u_PointShadowCubemaps, vec4(fragToLight, shadowIndex)).r;
-    closestDepth *= u_FarPlane;
+    float shadow = 0.0;
+    float bias = 0.2; // Slightly higher bias to prevent acne with PCF
+    int samples = 20;
     
-    float bias = 0.05; 
-    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    // Scale the blur radius based on how far the viewer is to make it look natural
+    float viewDistance = length(u_CameraPosition - fragPos);
+    float diskRadius = (1.0 + (viewDistance / u_FarPlane)) / 25.0;
+    
+    for(int i = 0; i < samples; ++i)
+    {
+        float closestDepth = texture(u_PointShadowCubemaps, vec4(fragToLight + gridSamplingDisk[i] * diskRadius, shadowIndex)).r;
+        closestDepth *= u_FarPlane;   // Undo mapping [0;1]
+        
+        if(currentDepth - bias > closestDepth)
+            shadow += 1.0;
+    }
+    
+    return shadow / float(samples);
 }
 
 void main()

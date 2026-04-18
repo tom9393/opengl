@@ -113,7 +113,9 @@ namespace Engine
         int ReadPixel(unsigned int attachmentIdx, int x, int y) override;
 
         void ClearAttachment(unsigned int attachmentIdx, int value) override;
-        void AttachLayer(unsigned int attachment, unsigned int layer) override;
+        void AttachLayer(unsigned int layer) override;
+        void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) override;
+        void AttachToDepthSlot(unsigned int idx) override;
 
         const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
         const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }

@@ -251,6 +251,7 @@ namespace Engine
         switch (format)
         {
             case FramebufferTextureFormat::DEPTH24STENCIL8: return true;
+            case FramebufferTextureFormat::Depth: return true;
         }
 
         return false;
@@ -323,7 +324,10 @@ namespace Engine
                 break;
             }
             case BufferTextureType::Texture2D_Array: {
-                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, width, height, layers, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32F;
+                GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
+                GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, pixelFormat, typeFormat, nullptr);
     
                 glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -367,6 +371,7 @@ namespace Engine
                 glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                break;
             }
         }
 
@@ -460,15 +465,18 @@ namespace Engine
                 case FramebufferTextureFormat::DEPTH24STENCIL8:
                     AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, m_Specification.layers, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.width, m_Specification.height);
                     break;
+                case FramebufferTextureFormat::Depth:
+                    AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, m_Specification.layers, GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT, m_Specification.width, m_Specification.height);
+                    break;
             };
         };
 
-        if (m_ColorAttachments.size() > 1)
+        if (!m_ColorAttachments.empty())
         {
             GLenum buffers[12] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11 };
             glDrawBuffers(m_ColorAttachments.size(), buffers);
         }
-        else if (m_ColorAttachments.empty())
+        else
         {
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
@@ -524,13 +532,32 @@ namespace Engine
         }
     };
 
-    void OpenGLFramebuffer::AttachLayer(unsigned int attachment, unsigned int layer)
+    void OpenGLFramebuffer::AttachLayer(unsigned int layer)
     {
         // Ensure the FBO is bound first
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+
+        unsigned int attachmentFormat = 0;
+        switch (m_DepthSpec.TextureFormat)
+        {
+            case FramebufferTextureFormat::DEPTH24STENCIL8: attachmentFormat = GL_DEPTH_STENCIL_ATTACHMENT; break;
+            case FramebufferTextureFormat::Depth: attachmentFormat = GL_DEPTH_ATTACHMENT; break;
+        }
         
         // m_DepthAttachment is the OpenGL ID of your generated Texture2DArray
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, m_DepthAttachment, 0, layer);
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentFormat, m_DepthAttachment, 0, layer);
+    }
+
+    void OpenGLFramebuffer::AttachToTextureSlot(unsigned int idx, unsigned int rendererID)
+    {
+        glActiveTexture(GL_TEXTURE0 + idx);
+        glBindTexture(GL_TEXTURE_2D, rendererID);
+    }
+
+    void OpenGLFramebuffer::AttachToDepthSlot(unsigned int idx)
+    {
+        glActiveTexture(GL_TEXTURE0 + idx);
+        glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_DepthAttachment);
     }
 
 };

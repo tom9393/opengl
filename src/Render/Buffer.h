@@ -83,7 +83,7 @@ namespace Engine
 
         DEPTH24STENCIL8,
 
-        Depth = DEPTH24STENCIL8
+        Depth
     };
 
     struct FramebufferTextureSpecification
@@ -137,7 +137,9 @@ namespace Engine
         virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
 
         virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
-        virtual void AttachLayer(unsigned int attachment, unsigned int layer) = 0;
+        virtual void AttachLayer(unsigned int layer) = 0;
+        virtual void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) = 0;
+        virtual void AttachToDepthSlot(unsigned int idx) = 0;
 
         virtual const FramebufferSpecification &GetSpecification() const = 0;
         virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;

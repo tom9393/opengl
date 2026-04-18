@@ -45,6 +45,18 @@ namespace Engine
             m_Framebuffer->ClearAttachment(attachmentIdx, value);
         }
 
+        void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) const
+        {
+            if (!m_Framebuffer) return;
+            m_Framebuffer->AttachToTextureSlot(idx, GetColorAttachmentRendererID(rendererID));
+        }
+
+        void AttachToTextureSlotDepth(unsigned int idx)
+        {
+            if (!m_Framebuffer) return;
+            m_Framebuffer->AttachToDepthSlot(idx);
+        }
+
     private:
         Shared<Framebuffer> m_Framebuffer;
     };
