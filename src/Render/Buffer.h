@@ -108,9 +108,11 @@ namespace Engine
         None = 0,
 
         Texture2D,
+        Texture2D_Array,
         Texture2D_Multisample,
 
-        Cubemap
+        Cubemap,
+        Cubemap_Array
     };
 
     struct FramebufferSpecification
@@ -119,6 +121,7 @@ namespace Engine
         FramebufferAttachmentSpecification attachments;
         BufferTextureType type = BufferTextureType::None;
         unsigned int samples = 1;
+        unsigned int layers = 64;
         bool swapChainTarget = false;
     };
 
@@ -134,6 +137,7 @@ namespace Engine
         virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
 
         virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
+        virtual void AttachLayer(unsigned int attachment, unsigned int layer);
 
         virtual const FramebufferSpecification &GetSpecification() const = 0;
         virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;

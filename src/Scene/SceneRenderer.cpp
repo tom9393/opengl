@@ -10,79 +10,102 @@ namespace Engine {
         : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight), m_PointLightFarPlane(100.0f)
     {
         auto& shadowPass2D = m_RenderGraph.AddPass("ShadowPass2D");
-        shadowPass2D.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D);
+        // Ensure BufferTextureType::Texture2DArray is supported by your RenderGraph!
+        shadowPass2D.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Texture2D_Array);
         shadowPass2D.SetCallback([this](RenderContext& ctx) {
-            glClear(GL_DEPTH_BUFFER_BIT);
             Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
             shadowShader->Bind();
-            shadowShader->SetMat4("u_LightSpaceMatrix", m_DirLightSpaceMatrix);
 
-            // Set viewport to match your shadow map resolution (e.g., 2048x2048)
-            // glViewport(0, 0, 2048, 2048); 
+            auto fb = m_RenderGraph.GetPassFramebuffer("ShadowPass2D");
+            uint32_t fboID = fb ? fb->GetDepthAttachmentRendererID() : 0;
 
-            size_t i = 0;
-            while (i < m_RenderItems.Opaque.size()) {
-                auto& base = m_RenderItems.Opaque[i];
-                size_t batchSize = 0;
-                while (i + batchSize < m_RenderItems.Opaque.size() && m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh) {
-                    batchSize++;
+            // Loop over all directional/spot lights that cast shadows
+            for (size_t layer = 0; layer < m_DirSpotShadowCasters.size(); ++layer) {
+                // Attach specific layer to FBO
+                if (fboID) {
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fboID, 0, layer);
                 }
-                m_Transforms.reserve(batchSize);
-                for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+                
+                glClear(GL_DEPTH_BUFFER_BIT);
+                shadowShader->SetMat4("u_LightSpaceMatrix", m_DirSpotShadowCasters[layer]);
 
-                m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                m_InstanceSSBO->Bind(0);
-                Renderer::SubmitInstancedMesh(base.TargetMesh, nullptr, m_Transforms.size()); // No material needed for depth
-                i += batchSize;
-                m_Transforms.clear();
+                size_t i = 0;
+                while (i < m_RenderItems.Opaque.size()) {
+                    auto& base = m_RenderItems.Opaque[i];
+                    size_t batchSize = 0;
+                    while (i + batchSize < m_RenderItems.Opaque.size() && m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh) {
+                        batchSize++;
+                    }
+                    m_Transforms.reserve(batchSize);
+                    for (size_t j = 0; j < batchSize; j++)
+                        m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+
+                    m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
+                    m_InstanceSSBO->Bind(0);
+                    Renderer::SubmitInstancedMesh(base.TargetMesh, nullptr, m_Transforms.size()); 
+                    i += batchSize;
+                    m_Transforms.clear();
+                }
             }
         });
 
         auto& pointShadowPass = m_RenderGraph.AddPass("PointShadowPass");
-        // NOTE: Make sure your RenderGraph supports BufferTextureType::TextureCubeMap!
-        pointShadowPass.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Cubemap);
+        // Ensure BufferTextureType::CubemapArray is supported by your RenderGraph!
+        pointShadowPass.SetAttachments({ FramebufferTextureFormat::Depth }, BufferTextureType::Cubemap_Array);
         pointShadowPass.SetViewportSize(1024, 1024);
         pointShadowPass.SetCallback([this](RenderContext& ctx) {
-            glClear(GL_DEPTH_BUFFER_BIT);
             Shared<Shader> pointshadowShader = ShaderLibrary::Get("PointShadowShader");
             pointshadowShader->Bind();
 
-            // Create the 6 view-projection matrices for the cubemap faces
-            // Aspect ratio is 1.0, FOV is 90 degrees
+            auto fb = m_RenderGraph.GetPassFramebuffer("PointShadowPass");
+            uint32_t fboID = fb ? fb->GetDepthAttachmentRendererID() : 0;
+
             glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, m_PointLightFarPlane);
-            std::vector<glm::mat4> shadowTransforms;
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // POSITIVE_X (Right)
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // NEGATIVE_X (Left)
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f))); // POSITIVE_Y (Top)
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f))); // NEGATIVE_Y (Bottom)
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // POSITIVE_Z (Backward)
-            shadowTransforms.push_back(shadowProj * glm::lookAt(m_PointLightPos, m_PointLightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); // NEGATIVE_Z (Forward)
 
-            // Send matrices to the geometry shader
-            for (int i = 0; i < 6; ++i) {
-                pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-            }
-            pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
-            pointshadowShader->SetVec3("u_LightPos", m_PointLightPos);
+            for (size_t layer = 0; layer < m_PointShadowCasters.size(); ++layer) {
+                glm::vec3 lightPos = m_PointShadowCasters[layer];
+                
+                // Note: Geometry shader must handle `gl_Layer = (layer * 6) + gl_InvocationID;`
+                // Alternatively, attach layer by layer using glFramebufferTextureLayer if modifying GS is difficult.
+                
+                // For this example, we assume you update the geometry shader with `u_BaseLayer` 
+                // OR you manually iterate all 6 faces per layer here. 
+                // Using glFramebufferTexture (no layer) attaches the whole array.
+                
+                glClear(GL_DEPTH_BUFFER_BIT);
 
-            // Submit meshes (identical logic to the 2D pass)
-            size_t i = 0;
-            while (i < m_RenderItems.Opaque.size()) {
-                auto& base = m_RenderItems.Opaque[i];
-                size_t batchSize = 0;
-                while (i + batchSize < m_RenderItems.Opaque.size() && m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh) {
-                    batchSize++;
+                std::vector<glm::mat4> shadowTransforms;
+                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
+                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
+                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f))); 
+                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f))); 
+                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
+                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
+
+                for (int i = 0; i < 6; ++i) {
+                    pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
                 }
-                m_Transforms.reserve(batchSize);
-                for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+                pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
+                pointshadowShader->SetVec3("u_LightPos", lightPos);
+                pointshadowShader->SetInt("u_BaseLayer", layer); // NEW: Send layer to geometry shader
 
-                m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                m_InstanceSSBO->Bind(0);
-                Renderer::SubmitInstancedMesh(base.TargetMesh, nullptr, m_Transforms.size()); 
-                i += batchSize;
-                m_Transforms.clear();
+                size_t i = 0;
+                while (i < m_RenderItems.Opaque.size()) {
+                    auto& base = m_RenderItems.Opaque[i];
+                    size_t batchSize = 0;
+                    while (i + batchSize < m_RenderItems.Opaque.size() && m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh) {
+                        batchSize++;
+                    }
+                    m_Transforms.reserve(batchSize);
+                    for (size_t j = 0; j < batchSize; j++)
+                        m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
+
+                    m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
+                    m_InstanceSSBO->Bind(0);
+                    Renderer::SubmitInstancedMesh(base.TargetMesh, nullptr, m_Transforms.size()); 
+                    i += batchSize;
+                    m_Transforms.clear();
+                }
             }
         });
 
@@ -146,8 +169,8 @@ namespace Engine {
             deferredShader->SetInt("gPBR", 3);
             
             // Set Shadow Maps
-            deferredShader->SetInt("u_DirSpotShadowMap", 4);
-            deferredShader->SetInt("u_PointShadowCubemap", 5);
+            deferredShader->SetInt("u_DirSpotShadowMaps", 4);    // Updated to array
+            deferredShader->SetInt("u_PointShadowCubemaps", 5);  // Updated to array
             deferredShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
 
             auto gBufferFB = m_RenderGraph.GetPassFramebuffer("GeometryPass");
@@ -200,6 +223,8 @@ namespace Engine {
 
         m_Scene->UpdateWorldTransforms();
 
+        m_DirSpotShadowCasters.clear();
+        m_PointShadowCasters.clear();
         m_LightData.LightCount = 0;
 
         auto lightView = m_Scene->GetRegistry().view<LightComponent, TransformComponent>();
@@ -207,11 +232,14 @@ namespace Engine {
         {
             if (m_LightData.LightCount >= 64) break;
             auto [light, transform] = lightView.get<LightComponent, TransformComponent>(e);
-        
-            glm::vec3 direction = transform.GetForward();
-            float typeFloat = static_cast<float>(light.Type);
-            int idx = m_LightData.LightCount;
 
+            int idx = m_LightData.LightCount;
+            int shadowIndex = -1; // Default to no shadow
+            float typeFloat = static_cast<float>(light.Type);
+            glm::vec3 direction = transform.GetForward();
+
+            if (!light.CastShadows) continue;
+        
             switch (light.Type)
             {
                 case LightComponent::LightType::Point:
@@ -221,7 +249,10 @@ namespace Engine {
                     m_LightData.Lights[idx].DirectionOuter = glm::vec4(0.0f);
                     m_LightData.Lights[idx].LightSpaceMatrix = glm::mat4(1.0f);
                     
-                    m_PointLightPos = transform.translation; // Track for omnidirectional shadow
+                    if (light.CastShadows) {
+                        shadowIndex = m_PointShadowCasters.size();
+                        m_PointShadowCasters.push_back(transform.translation);
+                    }
                     break;
                 }
                 case LightComponent::LightType::Directional:
@@ -230,22 +261,17 @@ namespace Engine {
                     m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
                     m_LightData.Lights[idx].DirectionOuter = glm::vec4(direction, 0.0f);
 
-                    // 1. Keep the near plane positive!
                     glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, 1.0f, 1000.0f);
-                    
-                    // 2. Prevent NaN crashes if pointing straight down
                     glm::vec3 up = glm::abs(direction.y) > 0.999f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-                    
-                    // 3. Push the camera backwards along the direction vector so the whole scene fits inside
                     glm::vec3 shadowCameraPos = transform.translation - (direction * 300.0f);
                     
-                    // Ortho projection for directional shadows
-                    //glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 50.0f);
-                    //glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, -500.0f, 1000.0f);
                     glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
                     m_LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
                     
-                    m_DirLightSpaceMatrix = m_LightData.Lights[idx].LightSpaceMatrix; // Track for shadow pass
+                    if (light.CastShadows) {
+                        shadowIndex = m_DirSpotShadowCasters.size();
+                        m_DirSpotShadowCasters.push_back(m_LightData.Lights[idx].LightSpaceMatrix);
+                    }
                     break;
                 }
                 case LightComponent::LightType::Cone:
@@ -254,16 +280,19 @@ namespace Engine {
                     m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, light.InnerCutOff);
                     m_LightData.Lights[idx].DirectionOuter = glm::vec4(direction, light.OuterCutOff);
                     
-                    // Perspective projection for spotlight shadows
                     float fov = glm::acos(light.OuterCutOff) * 2.0f;
                     glm::mat4 lightProjection = glm::perspective(fov, 1.0f, 0.1f, 100.0f);
                     glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
                     m_LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
                     
-                    m_DirLightSpaceMatrix = m_LightData.Lights[idx].LightSpaceMatrix;
+                    if (light.CastShadows) {
+                        shadowIndex = m_DirSpotShadowCasters.size();
+                        m_DirSpotShadowCasters.push_back(m_LightData.Lights[idx].LightSpaceMatrix);
+                    }
                     break;
                 }
             }
+            m_LightData.Lights[idx].Params = glm::ivec4(shadowIndex, 0, 0, 0); // Injecting layer index
             m_LightData.LightCount++;
         }
 

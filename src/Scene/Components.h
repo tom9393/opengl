@@ -168,6 +168,8 @@ namespace Engine
         glm::vec3 Color = glm::vec3(1.0f);
         float Intensity = 1000.0f; // High for point/cone, usually lower (~1.0f) for directional
 
+        bool CastShadows = true;
+
         // Only used when Type == Cone
         float InnerCutOff = glm::cos(glm::radians(12.5f));
         float OuterCutOff = glm::cos(glm::radians(17.5f));

@@ -8,8 +8,8 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedo;
 uniform sampler2D gPBR;
 
-uniform sampler2D u_DirSpotShadowMap;
-uniform samplerCube u_PointShadowCubemap;
+uniform sampler2DArray u_DirSpotShadowMaps;
+uniform samplerCubeArray u_PointShadowCubemaps;
 uniform float u_FarPlane;
 
 struct Light {
@@ -17,6 +17,7 @@ struct Light {
     vec4 ColorInner;
     vec4 DirectionOuter;
     mat4 LightSpaceMatrix;
+    ivec4 Params;
 };
 
 layout (std140, binding = 0) uniform Camera
@@ -68,8 +69,10 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 // --- Shadow Calculation Functions ---
-float ShadowCalculation2D(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+float ShadowCalculation2D(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int shadowIndex)
 {
+    if (shadowIndex < 0) return 0.0; // Light doesn't cast shadows
+
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
     
@@ -78,23 +81,27 @@ float ShadowCalculation2D(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     float currentDepth = projCoords.z;
     float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
     
-    // Simple PCF
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(u_DirSpotShadowMap, 0);
+    // textureSize for 2DArray returns vec3(width, height, layers)
+    vec2 texelSize = 1.0 / textureSize(u_DirSpotShadowMaps, 0).xy; 
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(u_DirSpotShadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+            // Note the vec3 texture coord: (u, v, layer)
+            float pcfDepth = texture(u_DirSpotShadowMaps, vec3(projCoords.xy + vec2(x, y) * texelSize, shadowIndex)).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }    
     }
     return shadow / 9.0;
 }
 
-float ShadowCalculationPoint(vec3 fragPos, vec3 lightPos) {
+float ShadowCalculationPoint(vec3 fragPos, vec3 lightPos, int shadowIndex) {
+    if (shadowIndex < 0) return 0.0;
+
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
     
-    float closestDepth = texture(u_PointShadowCubemap, fragToLight).r;
+    // Note the vec4 texture coord for CubeArray: (x, y, z, layer)
+    float closestDepth = texture(u_PointShadowCubemaps, vec4(fragToLight, shadowIndex)).r;
     closestDepth *= u_FarPlane;
     
     float bias = 0.05; 
@@ -123,17 +130,18 @@ void main()
         vec3 L;
         float attenuation = 1.0;
         float shadow = 0.0;
+        int shadowIndex = light.Params.x;
 
         if (type == 1) { // Directional
             L = normalize(-light.DirectionOuter.xyz);
             vec4 fragPosLightSpace = light.LightSpaceMatrix * vec4(WorldPos, 1.0);
-            shadow = ShadowCalculation2D(fragPosLightSpace, N, L);
+            shadow = ShadowCalculation2D(fragPosLightSpace, N, L, shadowIndex);
         }
         else if (type == 0) { // Point
             L = normalize(light.PositionType.xyz - WorldPos);
             float distance = length(light.PositionType.xyz - WorldPos);
             attenuation = 1.0 / (distance * distance);
-            shadow = ShadowCalculationPoint(WorldPos, light.PositionType.xyz);
+            shadow = ShadowCalculationPoint(WorldPos, light.PositionType.xyz, shadowIndex);
         }
         else if (type == 2) { // Cone (Spot)
             L = normalize(light.PositionType.xyz - WorldPos);
@@ -144,9 +152,8 @@ void main()
             float epsilon = light.ColorInner.w - light.DirectionOuter.w;
             float intensity = clamp((theta - light.DirectionOuter.w) / epsilon, 0.0, 1.0);
             attenuation *= intensity;
-
             vec4 fragPosLightSpace = light.LightSpaceMatrix * vec4(WorldPos, 1.0);
-            shadow = ShadowCalculation2D(fragPosLightSpace, N, L);
+            shadow = ShadowCalculation2D(fragPosLightSpace, N, L, shadowIndex);
         }
 
         //shadow = 0.0; // For debugging

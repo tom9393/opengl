@@ -16,6 +16,7 @@ namespace Engine {
         glm::vec4 ColorInner;     // xyz = color, w = inner cutoff
         glm::vec4 DirectionOuter; // xyz = direction, w = outer cutoff
         glm::mat4 LightSpaceMatrix;
+        glm::ivec4 Params; // x = shadowindex, yzw padding
     };
 
     struct SceneLightData {
@@ -65,8 +66,8 @@ namespace Engine {
 
         SceneLightData m_LightData;
 
-        glm::mat4 m_DirLightSpaceMatrix = glm::mat4(1.0f);
-        glm::vec3 m_PointLightPos = glm::vec3(0.0f);
+        std::vector<glm::vec3> m_PointShadowCasters;
+        std::vector<glm::mat4> m_DirSpotShadowCasters;
         float m_PointLightFarPlane;
     };
 

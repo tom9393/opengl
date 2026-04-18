@@ -261,8 +261,10 @@ namespace Engine
         switch (type)
         {
             case BufferTextureType::Texture2D: return GL_TEXTURE_2D;
+            case BufferTextureType::Texture2D_Array: return GL_TEXTURE_2D_ARRAY;
             case BufferTextureType::Texture2D_Multisample: return GL_TEXTURE_2D_MULTISAMPLE;
             case BufferTextureType::Cubemap: return GL_TEXTURE_CUBE_MAP;
+            case BufferTextureType::Cubemap_Array: return GL_TEXTURE_CUBE_MAP_ARRAY;
         }
         return GL_NONE;
     }
@@ -307,7 +309,7 @@ namespace Engine
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, id, 0);
     };
 
-    static void AttachDepthTexture(unsigned int id, BufferTextureType type, int samples, GLenum format, GLenum attachmentType, int width, unsigned int height)
+    static void AttachDepthTexture(unsigned int id, BufferTextureType type, int samples, unsigned int layers, GLenum format, GLenum attachmentType, int width, unsigned int height)
     {
         switch (type)
         {
@@ -319,6 +321,19 @@ namespace Engine
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 break;
+            }
+            case BufferTextureType::Texture2D_Array: {
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, width, height, layers, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                
+                float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+                glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
+                break;
+
             }
             case BufferTextureType::Texture2D_Multisample: {
                 glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
@@ -340,6 +355,15 @@ namespace Engine
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
                 break;
+            }
+            case BufferTextureType::Cubemap_Array: {
+                glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, width, height, layers * 6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
             }
         }
 
@@ -431,7 +455,7 @@ namespace Engine
             switch (m_DepthSpec.TextureFormat)
             {
                 case FramebufferTextureFormat::DEPTH24STENCIL8:
-                    AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.width, m_Specification.height);
+                    AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, m_Specification.layers, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.width, m_Specification.height);
                     break;
             };
         };
@@ -496,5 +520,14 @@ namespace Engine
             glClearBufferfv(GL_COLOR, attachmentIdx, clearColor);
         }
     };
+
+    void OpenGLFramebuffer::AttachLayer(unsigned int attachment, unsigned int layer)
+    {
+        // Ensure the FBO is bound first
+        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        
+        // m_DepthAttachment is the OpenGL ID of your generated Texture2DArray
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, m_DepthAttachment, 0, layer);
+    }
 
 };
