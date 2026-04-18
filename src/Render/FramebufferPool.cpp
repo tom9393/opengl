@@ -22,6 +22,7 @@ namespace Engine
 	    spec.width = width;
 	    spec.height = height;
 	    spec.samples = 1;
+		spec.layers = 64;
 		spec.type = type;
 	    spec.attachments = specs;
 

@@ -357,7 +357,10 @@ namespace Engine
                 break;
             }
             case BufferTextureType::Cubemap_Array: {
-                glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, width, height, layers * 6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32F;
+                GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
+                GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
+                glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, internalFormat, width, height, layers * 6, 0, pixelFormat, typeFormat, nullptr);
     
                 glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
