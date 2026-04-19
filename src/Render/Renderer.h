@@ -8,8 +8,8 @@
 #include "../Asset/Mesh.h"
 #include "../../platform/OpenGL/OpenGLTexture.h"
 #include "../Scene/Components.h"
-#include "SceneRenderer.h"
 #include "Line.h"
+#include "RenderContext.h"
 
 namespace Engine
 {
@@ -24,16 +24,7 @@ namespace Engine
 
     struct RenderStorage
     {
-        Shared<UniformBuffer> CameraUniformBuffer;
-        Shared<UniformBuffer> LightUniformBuffer;
         Statistics statistics;
-    };
-
-    struct CameraData
-    {
-        glm::mat4 ViewProjection;
-        glm::vec3 CameraPosition;
-        float padding;
     };
 
     class Renderer
@@ -46,14 +37,12 @@ namespace Engine
 
         static void ToggleWireframe();
 
-        static void BeginScene(RenderContext& context);
+        static void BeginScene();
         static void EndScene();
 
         static void SetMaterial(const Shared<Material> &material);
         static void SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform);
         static void SubmitInstancedMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, unsigned int count);
-
-        static void UpdateLightBuffer(SceneLightData &data);
 
         static void DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color);
         static void DrawFullscreenQuad();

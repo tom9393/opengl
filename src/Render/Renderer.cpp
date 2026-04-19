@@ -10,16 +10,10 @@ namespace Engine
     RenderStorage Renderer::s_Data;
     LineData Renderer::s_LineData;
 
-    void Renderer::BeginScene(RenderContext &context)
+    void Renderer::BeginScene()
     {
-        CameraData data;
-        data.ViewProjection = context.ViewProjection;
-        data.CameraPosition = context.CameraPosition;
-
-        s_Data.CameraUniformBuffer->Update(0, sizeof(CameraData), &data);
-
-        s_SceneData.ViewProjectionMatrix = data.ViewProjection;
-	    s_SceneData.cameraFrustum = CreateFrustumFromMatrix(data.ViewProjection);
+        // s_SceneData.ViewProjectionMatrix = data.ViewProjection;
+	    // s_SceneData.cameraFrustum = CreateFrustumFromMatrix(data.ViewProjection);
         s_SceneData.s_LastBoundMaterial = 0;
     };
 
@@ -34,14 +28,6 @@ namespace Engine
 
         RenderCommand::Init();
         ShaderLibrary::Init();
-
-        ShaderLibrary::Get("GBufferShader")->Bind();
-
-        s_Data.CameraUniformBuffer = UniformBuffer::Create(nullptr, sizeof(CameraData));
-        s_Data.CameraUniformBuffer->Bind(0);
-
-        s_Data.LightUniformBuffer = UniformBuffer::Create(nullptr, sizeof(SceneLightData));
-        s_Data.LightUniformBuffer->Bind(1);
 
         s_LineData.Init();
 
@@ -74,11 +60,6 @@ namespace Engine
         RenderCommand::SetViewport(0, 0, width, height);
     };
 
-    void Renderer::UpdateLightBuffer(SceneLightData& lightData)
-    {
-        s_Data.LightUniformBuffer->Update(0, sizeof(SceneLightData), &lightData);
-    }
-
     void Renderer::SetMaterial(const Shared<Material> &material)
     {
         PROFILE_FUNCTION();
@@ -89,17 +70,17 @@ namespace Engine
 
     void Renderer::FlushLines()
     {
-        if (s_LineData.VertexCount == 0) return;
+        // if (s_LineData.VertexCount == 0) return; // Fix this later
 
-        s_LineData.LineVertexBuffer->SetData(s_LineData.VertexBufferBase, s_LineData.GetDataSize());
+        // s_LineData.LineVertexBuffer->SetData(s_LineData.VertexBufferBase, s_LineData.GetDataSize());
 
-        s_LineData.LineShader->Bind();
-        s_LineData.LineShader->SetMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
+        // s_LineData.LineShader->Bind();
+        // s_LineData.LineShader->SetMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
 
-        RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.VertexCount);
+        // RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.VertexCount);
 
-        s_LineData.ResetBatch();
-        s_Data.statistics.DrawCalls++;
+        // s_LineData.ResetBatch();
+        // s_Data.statistics.DrawCalls++;
     }
 
     void Renderer::DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color)

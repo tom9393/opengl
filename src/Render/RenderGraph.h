@@ -4,13 +4,16 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "RenderPass.h"
 #include "FramebufferPool.h"
 #include "../Core/TimeStep.h"
 #include "RenderContext.h"
+#include "RenderView.h"
+#include "Passes/RenderPass.h"
 
 namespace Engine
 {
+
+    class RenderPass;
 
     // Simple RenderGraph: linear list of passes that execute in order.
     // Each pass has attachments; after Execute() you can query the framebuffer handle used by a pass
@@ -22,10 +25,17 @@ namespace Engine
         ~RenderGraph();
 
         // Add a pass (returns reference to configure)
-        RenderPass& AddPass(const std::string& name);
+        template <typename Pass>
+        RenderPass& AddPass(const std::string& name)
+        {
+            std::unique_ptr<RenderPass> pass = std::make_unique<Pass>(name);
+            pass->Setup(*this);
+            m_Passes.push_back(std::move(pass));
+            return *m_Passes.back();
+        }
 
         // Execute all passes in order for the given timestep
-        void Execute(RenderContext &context);
+        void Execute(RenderContext &context, const RenderView &view);
 
         // Resize invalidates pool resources where necessary
         void Resize(unsigned int width, unsigned int height);

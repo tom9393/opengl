@@ -1,6 +1,7 @@
 #include "RenderGraph.h"
 #include "RenderCommand.h"
 #include "Renderer.h"
+#include "Passes/RenderPass.h"
 
 namespace Engine
 {
@@ -12,13 +13,7 @@ namespace Engine
 
 	RenderGraph::~RenderGraph() = default;
 
-	RenderPass& RenderGraph::AddPass(const std::string& name)
-	{
-	    m_Passes.emplace_back(std::make_unique<RenderPass>(name));
-	    return *m_Passes.back();
-	}
-
-	void RenderGraph::Execute(RenderContext &context)
+	void RenderGraph::Execute(RenderContext &context, const RenderView &renderView)
 	{
 	    m_PassFramebuffers.clear();
 
@@ -63,10 +58,8 @@ namespace Engine
 				}
 			}
 
-			// Execute the pass callback
-			auto cb = pass.GetCallback();
-			if (cb)
-				cb(context);
+			// Execute the pass
+			pass.Execute(context, renderView);
 
 			fbHandle->GetFramebuffer()->Unbind();
 	    }

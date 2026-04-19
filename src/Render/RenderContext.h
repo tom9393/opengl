@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pch.h"
+#include "DynamicBufferPool.h"
 
 namespace Engine {
 
@@ -15,6 +16,7 @@ namespace Engine {
     {
         glm::mat4 ViewProjection;
         glm::vec3 CameraPosition;
-        PassType Type;
+
+        DynamicBufferPool* InstancePool;
     };
 }

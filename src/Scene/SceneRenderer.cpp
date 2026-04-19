@@ -1,324 +1,44 @@
 #include "SceneRenderer.h"
 #include "Render/Renderer.h"
 #include "Scene/Components.h"
+#include "Scene/SceneExtractor.h"
 #include "Scene/Entity.h"
 #include "../Asset/AssetManager.h"
+#include "Passes/ShadowPass2D.h"
+#include "Passes/ShadowPass3D.h"
+#include "Passes/GeometryPass.h"
+#include "Passes/ScenePass.h"
+#include "RenderView.h"
 
 namespace Engine {
 
     SceneRenderer::SceneRenderer(Scene* scene)
-        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight), m_PointLightFarPlane(35.0f)
+        : m_Scene(scene), m_RenderGraph(m_ViewportWidth, m_ViewportHeight)
     {
-        auto& shadowPass2D = m_RenderGraph.AddPass("ShadowPass2D");
-        shadowPass2D.SetAttachments({ FramebufferTextureFormat::DEPTH24STENCIL8 }, BufferTextureType::Texture2D_Array);
-        shadowPass2D.SetViewportSize(2048, 2048);
-        shadowPass2D.SetCallback([this](RenderContext& ctx) {
-            Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
-            shadowShader->Bind();
+        m_InstancePool = MakeShared<DynamicBufferPool>(10 * 1024 * 1024); // 10MB
 
-            auto fb = m_RenderGraph.GetPassFramebuffer("ShadowPass2D");
-            uint32_t fboID = fb ? fb->GetDepthAttachmentRendererID() : 0;
-
-            for (size_t layer = 0; layer < m_DirSpotShadowCasters.size(); ++layer) {
-                auto& caster = m_DirSpotShadowCasters[layer];
-                m_RenderGraph.GetPassFramebuffer("ShadowPass2D")->GetFramebuffer()->AttachLayer(layer);
-                
-                shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
-
-                size_t i = 0;
-                while (i < caster.RenderItems.size()) {
-                    size_t batchSize = 0;
-                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh) {
-                        batchSize++;
-                    }
-                    m_Transforms.reserve(batchSize);
-                    for (size_t j = 0; j < batchSize; j++)
-                        m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
-
-                    m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                    m_InstanceSSBO->Bind(0);
-                    Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size()); 
-                    i += batchSize;
-                    m_Transforms.clear();
-                }
-            }
-        });
-
-        auto& pointShadowPass = m_RenderGraph.AddPass("PointShadowPass");
-        pointShadowPass.SetAttachments({ FramebufferTextureFormat::DEPTH24STENCIL8 }, BufferTextureType::Cubemap_Array);
-        pointShadowPass.SetViewportSize(128, 128);
-        pointShadowPass.SetCallback([this](RenderContext& ctx) {
-            Shared<Shader> pointshadowShader = ShaderLibrary::Get("PointShadowShader");
-            pointshadowShader->Bind();
-
-            auto fb = m_RenderGraph.GetPassFramebuffer("PointShadowPass");
-            uint32_t fboID = fb ? fb->GetDepthAttachmentRendererID() : 0;
-
-            glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, m_PointLightFarPlane);
-
-            for (size_t layer = 0; layer < m_PointShadowCasters.size(); ++layer) {
-                auto& caster = m_PointShadowCasters[layer];
-                glm::vec3& lightPos = caster.Position;
-                
-                std::vector<glm::mat4> shadowTransforms;
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f))); 
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f))); 
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))); 
-
-                for (int i = 0; i < 6; ++i) {
-                    pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-                }
-                pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
-                pointshadowShader->SetVec3("u_LightPos", lightPos);
-                pointshadowShader->SetInt("u_BaseLayer", layer);
-
-                size_t i = 0;
-                while (i < caster.RenderItems.size()) {
-                    size_t batchSize = 0;
-                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh) {
-                        batchSize++;
-                    }
-                    m_Transforms.reserve(batchSize);
-                    for (size_t j = 0; j < batchSize; j++)
-                        m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
-
-                    m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                    m_InstanceSSBO->Bind(0);
-                    Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size()); 
-                    i += batchSize;
-                    m_Transforms.clear();
-                }
-            }
-        });
-
-        auto& geoPass = m_RenderGraph.AddPass("GeometryPass");
-        geoPass.SetAttachments({ 
-            FramebufferTextureFormat::RGBA16F,     // 0: Position
-            FramebufferTextureFormat::RGBA16F,     // 1: Normal
-            FramebufferTextureFormat::RGBA8,       // 2: Albedo
-            FramebufferTextureFormat::RGBA8,       // 3: PBR (Metallic, Roughness, AO)
-            FramebufferTextureFormat::RED_INTEGER, // 4: Entity ID
-            FramebufferTextureFormat::DEPTH24STENCIL8 
-        }, BufferTextureType::Texture2D);
-        geoPass.SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
-        geoPass.SetClearInt(4, -1);
-        geoPass.SetCallback([this](RenderContext& ctx) {
-            Shared<Shader> gBufferShader = ShaderLibrary::Get("GBufferShader");
-            gBufferShader->Bind();
-
-            size_t i = 0;
-            while (i < m_RenderItems.Opaque.size()) {
-                auto& base = m_RenderItems.Opaque[i];
-                size_t batchSize = 0;
-
-                while (i + batchSize < m_RenderItems.Opaque.size() && 
-                    m_RenderItems.Opaque[i + batchSize].TargetMesh == base.TargetMesh && 
-                    m_RenderItems.Opaque[i + batchSize].TargetMaterial == base.TargetMaterial) 
-                {
-                    batchSize++;
-                }
-
-                m_Transforms.reserve(batchSize);
-                for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(m_RenderItems.Opaque[i + j].Transform);
-
-                m_InstanceSSBO->SetData(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                m_InstanceSSBO->Bind(0);
-
-                Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
-                i += batchSize;
-                m_Transforms.clear();
-            }
-        });
-
-        auto& lightingPass = m_RenderGraph.AddPass("ScenePass");
-        lightingPass.SetAttachments({ FramebufferTextureFormat::RGBA8 }, BufferTextureType::Texture2D );
-        lightingPass.SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
-        lightingPass.SetCallback([this](RenderContext &ctx) {
-            Shared<Shader> deferredShader = ShaderLibrary::Get("DeferredLighting");
-            deferredShader->Bind();
-
-            // Note: In your actual engine, get these texture IDs from the G-Buffer Pass Framebuffer
-            deferredShader->SetInt("gPosition", 0);
-            deferredShader->SetInt("gNormal", 1);
-            deferredShader->SetInt("gAlbedo", 2);
-            deferredShader->SetInt("gPBR", 3);
-            
-            // Set Shadow Maps
-            deferredShader->SetInt("u_DirSpotShadowMaps", 4);    // Updated to array
-            deferredShader->SetInt("u_PointShadowCubemaps", 5);  // Updated to array
-            deferredShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
-
-            auto gBufferFB = m_RenderGraph.GetPassFramebuffer("GeometryPass");
-            auto shadow2DFB = m_RenderGraph.GetPassFramebuffer("ShadowPass2D");
-            auto shadowCubeFB = m_RenderGraph.GetPassFramebuffer("PointShadowPass");
-
-            if (gBufferFB)
-            {
-                gBufferFB->AttachToTextureSlot(0, 0);
-                gBufferFB->AttachToTextureSlot(1, 1);
-                gBufferFB->AttachToTextureSlot(2, 2);
-                gBufferFB->AttachToTextureSlot(3, 3);
-            }
-
-            if (shadow2DFB)
-            {
-                shadow2DFB->AttachToTextureSlotDepth(4);
-            }
-
-            if (shadowCubeFB)
-            {
-                shadowCubeFB->AttachToTextureSlotDepth(5);
-            }
-
-            Renderer::DrawFullscreenQuad(); 
-            
-            PhysicsEngine::RenderDebug(ctx.ViewProjection);
-        });
-
-        m_InstanceSSBO = ShaderStorageBuffer::Create(m_MaxInstances * sizeof(glm::mat4));
-    }
-
-    void SceneRenderer::PrepareScene(const RenderContext& context)
-    {
-        m_RenderItems.Opaque.clear();
-        m_DirSpotShadowCasters.clear();
-        m_PointShadowCasters.clear();
-        Frustum cameraFrustum = CreateFrustumFromMatrix(context.ViewProjection);
-
-        m_Scene->UpdateWorldTransforms();
-
-        m_LightData.LightCount = 0;
-
-        auto lightView = m_Scene->GetRegistry().view<LightComponent, TransformComponent>();
-        for (auto& e : lightView)
-        {
-            if (m_LightData.LightCount >= 64) break;
-            auto [light, transform] = lightView.get<LightComponent, TransformComponent>(e);
-
-            int idx = m_LightData.LightCount;
-            int shadowIndex = -1; // Default to no shadow
-            float typeFloat = static_cast<float>(light.Type);
-            glm::vec3 direction = transform.GetForward();
-
-            if (!light.CastShadows) continue;
-        
-            switch (light.Type)
-            {
-                case LightComponent::LightType::Point:
-                {
-                    m_LightData.Lights[idx].PositionType = glm::vec4(transform.translation, typeFloat);
-                    m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
-                    m_LightData.Lights[idx].DirectionOuter = glm::vec4(0.0f);
-                    m_LightData.Lights[idx].LightSpaceMatrix = glm::mat4(1.0f);
-                    
-                    if (light.CastShadows) {
-                        shadowIndex = m_PointShadowCasters.size();
-                        m_PointShadowCasters.push_back({ transform.translation, {} });
-                    }
-                    break;
-                }
-                case LightComponent::LightType::Directional:
-                {
-                    m_LightData.Lights[idx].PositionType = glm::vec4(0.0f, 0.0f, 0.0f, typeFloat);
-                    m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
-                    m_LightData.Lights[idx].DirectionOuter = glm::vec4(direction, 0.0f);
-
-                    float orthoRange = 40.0f; 
-                    glm::mat4 lightProjection = glm::ortho(-orthoRange, orthoRange, -orthoRange, orthoRange, 1.0f, 400.0f);
-                    glm::vec3 up = glm::abs(direction.y) > 0.999f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-                    glm::vec3 shadowCameraPos = transform.translation - (direction * 300.0f);
-                    
-                    glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
-                    m_LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
-                    
-                    if (light.CastShadows) {
-                        shadowIndex = m_DirSpotShadowCasters.size();
-                        m_DirSpotShadowCasters.push_back({ m_LightData.Lights[idx].LightSpaceMatrix, {} });
-                    }
-                    break;
-                }
-                case LightComponent::LightType::Cone:
-                {
-                    m_LightData.Lights[idx].PositionType = glm::vec4(transform.translation, typeFloat);
-                    m_LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, light.InnerCutOff);
-                    m_LightData.Lights[idx].DirectionOuter = glm::vec4(direction, light.OuterCutOff);
-                    
-                    float fov = glm::acos(light.OuterCutOff) * 2.0f;
-                    glm::mat4 lightProjection = glm::perspective(fov, 1.0f, 0.1f, 100.0f);
-                    glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
-                    m_LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
-                    
-                    if (light.CastShadows) {
-                        shadowIndex = m_DirSpotShadowCasters.size();
-                        m_DirSpotShadowCasters.push_back({ m_LightData.Lights[idx].LightSpaceMatrix, {} });
-                    }
-                    break;
-                }
-            }
-            m_LightData.Lights[idx].Params = glm::ivec4(shadowIndex, 0, 0, 0);
-            m_LightData.LightCount++;
-        }
-
-        Renderer::UpdateLightBuffer(m_LightData);
-
-        auto view = m_Scene->GetRegistry().view<MeshComponent, TransformComponent, MaterialComponent>();
-        for (auto& e : view)
-        {
-            auto [meshComponent, transformComponent, materialComponent] = view.get<MeshComponent, TransformComponent, MaterialComponent>(e);
-            if (meshComponent.MeshHandle == 0) continue;
-
-            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
-            glm::mat4 transform = transformComponent.GetTransform();
-
-            // Build Command
-            DrawCommand cmd;
-            cmd.TargetMesh = mesh;
-            cmd.Transform = transform;
-            cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialComponent.MaterialHandle);
-            
-            if (IsAABBInFrustum(cameraFrustum, mesh->GetAABB(), transform)) {
-                m_RenderItems.Opaque.emplace_back(cmd);
-            }
-
-            for (auto& caster : m_DirSpotShadowCasters) {
-                Frustum lightFrustum = CreateFrustumFromMatrix(caster.LightSpaceMatrix);
-                if (IsAABBInFrustum(lightFrustum, mesh->GetAABB(), transform)) {
-                    caster.RenderItems.emplace_back(cmd);
-                }
-            }
-
-            for (auto& caster : m_PointShadowCasters) {
-                // Simple distance check (fallback since we don't have a specific Sphere vs AABB function)
-                // You can refine this radius check based on your mesh sizes!
-                float distanceToLight = glm::distance(caster.Position, glm::vec3(transform[3]));
-                if (distanceToLight < m_PointLightFarPlane + 5.0f) {
-                    caster.RenderItems.emplace_back(cmd);
-                }
-            }
-        }
-
-        auto sortFunc = [](const DrawCommand& a, const DrawCommand& b) {
-            if (a.TargetMesh.get() != b.TargetMesh.get()) return a.TargetMesh.get() < b.TargetMesh.get();
-            return a.TargetMaterial.get() < b.TargetMaterial.get();
-        };
-
-        std::sort(m_RenderItems.Opaque.begin(), m_RenderItems.Opaque.end(), sortFunc);
-        for (auto& caster : m_DirSpotShadowCasters) std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
-        for (auto& caster : m_PointShadowCasters)   std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
+        m_RenderGraph.AddPass<ShadowPass2D>("ShadowPass2D");
+        m_RenderGraph.AddPass<ShadowPass3D>("PointShadowPass");
+        m_RenderGraph.AddPass<GeometryPass>("GeometryPass");
+        m_RenderGraph.AddPass<ScenePass>("ScenePass");
     }
 
     void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos)
     {
-        RenderContext ctx{ viewProj, camPos };
-        PrepareScene(ctx);
-        
-        Renderer::BeginScene(ctx);
-        m_RenderGraph.Execute(ctx);
+        m_InstancePool->BeginFrame();
+
+        RenderContext ctx;
+        ctx.ViewProjection = viewProj;
+        ctx.CameraPosition = camPos;
+        ctx.InstancePool = m_InstancePool.get();
+
+        RenderView view = SceneExtractor::Extract(m_Scene, ctx);
+
+        Renderer::BeginScene();
+        m_RenderGraph.Execute(ctx, view);
         Renderer::EndScene();
+
+        m_InstancePool->InsertFrameFence();
     }
 
     void SceneRenderer::RenderRuntime()
@@ -329,12 +49,20 @@ namespace Engine {
             auto [transform, camera] = view.get<TransformComponent, SceneCameraComponent>(entity);
             if (camera.primary) 
             {
-                RenderContext ctx {camera.sceneCamera->GetProjection() * glm::inverse(transform.GetTransform()), transform.translation};
-                PrepareScene(ctx);
+                m_InstancePool->BeginFrame();
+
+                RenderContext ctx;
+                ctx.ViewProjection = camera.sceneCamera->GetProjection() * glm::inverse(transform.GetTransform());
+                ctx.CameraPosition = transform.translation;
+                ctx.InstancePool = m_InstancePool.get();
+
+                RenderView view = SceneExtractor::Extract(m_Scene, ctx);
                 
-                Renderer::BeginScene(ctx);
-                m_RenderGraph.Execute(ctx);
+                Renderer::BeginScene();
+                m_RenderGraph.Execute(ctx, view);
                 Renderer::EndScene();
+
+                m_InstancePool->InsertFrameFence();
                 break;
             }
         }

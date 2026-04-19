@@ -6,19 +6,22 @@
 #include <glm/glm.hpp>
 #include "Buffer.h"
 #include "RenderContext.h"
+#include "RenderView.h"
 
 namespace Engine
 {
 
     class TimeStep;
+    class RenderGraph;
 
     // Very small RenderPass description for the RenderGraph
     class RenderPass
     {
     public:
-        using Callback = std::function<void(RenderContext&)>;
-
         RenderPass(const std::string& name) : m_Name(name) {}
+
+        virtual void Setup(RenderGraph& graph) = 0;
+        virtual void Execute(RenderContext& ctx, const RenderView& view) = 0;
 
         // Attachments is the list of FramebufferTextureFormat in the same order the framebuffer expects.
         RenderPass& SetAttachments(const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type = BufferTextureType::None)
@@ -43,13 +46,6 @@ namespace Engine
             return *this;
         }
 
-        // Provide the draw callback (gets invoked with the TimeStep for the frame)
-        RenderPass& SetCallback(Callback cb)
-        {
-            m_Callback = std::move(cb);
-            return *this;
-        }
-
         unsigned int GetWidth() const { return m_Width; }
         unsigned int GetHeight() const { return m_Height; }
 
@@ -65,16 +61,15 @@ namespace Engine
         const glm::vec4& GetClearColor() const { return m_ClearColor; }
         bool HasClearColor() const { return m_HasClearColor; }
         const std::unordered_map<unsigned int, int>& GetClearInts() const { return m_ClearInts; }
-        Callback GetCallback() const { return m_Callback; }
 
-    private:
+    protected:
         std::string m_Name;
+        RenderGraph* m_RenderGraph;
         std::vector<FramebufferTextureFormat> m_Attachments;
         BufferTextureType m_TargetType = BufferTextureType::None;
         glm::vec4 m_ClearColor = glm::vec4(0.0f);
         bool m_HasClearColor = false;
         std::unordered_map<unsigned int, int> m_ClearInts;
-        Callback m_Callback;
         unsigned int m_Width = 0;
         unsigned int m_Height = 0;
     };
