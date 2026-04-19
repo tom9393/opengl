@@ -2,6 +2,7 @@
 
 #include "../pch.h"
 #include <queue>
+#include "../Core/Application.h"
 
 namespace Engine {
 
@@ -13,16 +14,26 @@ namespace Engine {
     class DynamicBufferPool {
     public:
         DynamicBufferPool(size_t capacity) : m_Capacity(capacity) {
+
+            m_FrameCapacity = m_Capacity / m_MaxFramesInFlight;
             glCreateBuffers(1, &m_RendererID);
+
+            // 1. Storage Flags: Allocates the immutable memory on the GPU. 
+            // FLUSH_EXPLICIT is NOT allowed here.
+            GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT;
             
-            // The magic flags: Persistent and Coherent
-            GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+            // 2. Map Flags: Tells OpenGL how we intend to access the pointer.
+            // FLUSH_EXPLICIT is required here so we can use glFlushMappedNamedBufferRange.
+            GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
             
-            // Allocate immutable storage
-            glNamedBufferStorage(m_RendererID, m_Capacity, nullptr, flags);
+            // Allocate the storage
+            glNamedBufferStorage(m_RendererID, m_Capacity, nullptr, storageFlags);
             
-            // Map the pointer permanently
-            m_MappedPtr = (uint8_t*)glMapNamedBufferRange(m_RendererID, 0, m_Capacity, flags);
+            // Map the pointer
+            m_MappedPtr = (uint8_t*)glMapNamedBufferRange(m_RendererID, 0, m_Capacity, mapFlags);
+            if (m_MappedPtr == nullptr) {
+                std::cerr << "FATAL ERROR: Failed to map persistent buffer! OpenGL Error: " << glGetError() << std::endl;
+            }
         }
 
         ~DynamicBufferPool() {
@@ -32,23 +43,24 @@ namespace Engine {
 
         Allocation Allocate(const void* data, size_t size)
         {
+            PROFILE_FUNCTION();
             // Alignment is crucial for SSBOs and UBOs! 
             // SSBOs usually require 16 or 256 byte alignment depending on the hardware.
             size_t alignment = 256;  // Make sure this is in alignment with UBO
             m_Head = (m_Head + alignment - 1) & ~(alignment - 1);
 
-            // If we run out of space, wrap around to the beginning (Ring Buffer)
-            if (m_Head + size > m_Capacity) {
-                m_Head = 0;
-                // Optional Sanity Check: If a single frame requires more memory than 
-                // m_Capacity / m_MaxFramesInFlight, you will overwrite data!
-                // In a production engine, you'd want to assert here if size > (m_Capacity / 3)
+            if (m_Head + size > (m_CurrentFrame + 1) * m_FrameCapacity) {
+                // In a real engine, you would assert or resize here!
+                std::cerr << "Out of memory for current frame!\n";
+                return { 0, 0 }; 
             }
 
             size_t currentOffset = m_Head;
             
             // Copy data directly to mapped GPU memory (Zero driver overhead!)
             memcpy(m_MappedPtr + currentOffset, data, size);
+            // Tell opengl what memory just changed
+            glFlushMappedNamedBufferRange(m_RendererID, currentOffset, size);
             
             m_Head += size;
             
@@ -56,37 +68,39 @@ namespace Engine {
         }
 
         void BindAsSSBO(uint32_t bindingPoint, size_t offset, size_t size) {
+            PROFILE_FUNCTION();
             glBindBufferRange(GL_SHADER_STORAGE_BUFFER, bindingPoint, m_RendererID, offset, size);
         }
 
         void BindAsUBO(uint32_t bindingPoint, size_t offset, size_t size) {
+            PROFILE_FUNCTION();
             glBindBufferRange(GL_UNIFORM_BUFFER, bindingPoint, m_RendererID, offset, size);
         }
 
         void BeginFrame()
         {
-            // If we have reached our maximum allowed frames in flight, 
-            // we must wait for the oldest frame to finish on the GPU.
+            PROFILE_FUNCTION();
             while (m_FrameFences.size() >= m_MaxFramesInFlight) {
                 GLsync oldestSync = m_FrameFences.front();
                 
-                // Ask OpenGL to wait. We use a short timeout (e.g., 1ms = 1,000,000 nanoseconds)
-                // inside a loop to prevent infinite deadlocks in case of driver crashes.
-                // GL_SYNC_FLUSH_COMMANDS_BIT ensures the GPU actually starts processing.
-                GLenum waitReturn = glClientWaitSync(oldestSync, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+                // Block for up to 1 second (1,000,000,000 ns). 
+                // The driver will put the thread to sleep optimally.
+                GLuint64 timeout = 1000000000; 
+                GLenum waitReturn = glClientWaitSync(oldestSync, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
                 
                 if (waitReturn == GL_ALREADY_SIGNALED || waitReturn == GL_CONDITION_SATISFIED) {
-                    // The GPU has passed the fence! It is done reading that frame's memory.
-                    // We can safely clean up the sync object and proceed.
                     glDeleteSync(oldestSync);
                     m_FrameFences.pop();
                 } 
                 else if (waitReturn == GL_WAIT_FAILED) {
-                    // Something went terribly wrong in the GL driver
+                    std::cerr << "GL_WAIT_FAILED in BeginFrame\n";
                     break; 
                 }
-                // If it returns GL_TIMEOUT_EXPIRED, the loop continues and we wait again.
             }
+            m_CurrentFrame = (m_CurrentFrame + 1) % m_MaxFramesInFlight;
+    
+            // Reset head to the start of the current frame's dedicated memory block
+            m_Head = m_CurrentFrame * m_FrameCapacity;
         }
 
         void InsertFrameFence()
@@ -102,5 +116,7 @@ namespace Engine {
         size_t m_Head = 0;
         std::queue<GLsync> m_FrameFences;
         const size_t m_MaxFramesInFlight = 3;
+        size_t m_CurrentFrame = 0;
+        size_t m_FrameCapacity;
     };
 }

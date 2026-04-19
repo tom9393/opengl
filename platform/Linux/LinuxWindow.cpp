@@ -70,6 +70,10 @@ namespace Engine
 
         bool debug = true;
 
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
         if (debug)
         {
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
@@ -188,6 +192,7 @@ namespace Engine
 
     void LinuxWindow::OnUpdate()
     {
+        PROFILE_FUNCTION();
         glfwPollEvents();
         m_Context->SwapBuffers();
     };

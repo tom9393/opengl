@@ -13,7 +13,7 @@ namespace Engine {
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetAttachments({ FramebufferTextureFormat::DEPTH24STENCIL8 }, BufferTextureType::Texture2D_Array);
-            SetViewportSize(2048, 2048);
+            SetViewportSize(1024, 1024);
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
             Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
