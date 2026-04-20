@@ -31,7 +31,6 @@ namespace Engine {
         unsigned int m_ViewportWidth = 1024;
         unsigned int m_ViewportHeight = 1024;
         RenderGraph m_RenderGraph;
-        const uint32_t m_MaxInstances = 10000;
 
         Shared<DynamicBufferPool> m_InstancePool;
     };

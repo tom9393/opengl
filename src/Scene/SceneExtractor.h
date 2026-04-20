@@ -123,7 +123,7 @@ namespace Engine {
             if (meshComponent.MeshHandle == 0) continue;
 
             Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
-            glm::mat4 transform = transformComponent.GetTransform();
+            glm::mat4 transform = transformComponent.WorldTransform;
 
             // Build Command
             DrawCommand cmd;

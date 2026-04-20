@@ -90,6 +90,7 @@ namespace Engine
 	{
 		PhysicsEngine::OnUpdate(ts);
 		ScriptEngine::OnUpdate(ts);
+		UpdateWorldTransforms();
 	};
 
 	void Scene::OnRuntimeStart()
