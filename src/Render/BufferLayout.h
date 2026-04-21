@@ -2,6 +2,7 @@
 
 #include "../pch.h"
 #include "../Asset/Texture.h"
+#include "../Asset/MaterialSpecification.h"
 
 namespace Engine
 {

@@ -6,21 +6,6 @@
 namespace Engine
 {
 
-    enum class TextureType
-    {
-        None = 0,
-        Albedo,    // PBR: Base color
-        Normal,    // PBR: Surface detail
-        Metallic,  // PBR: Metalness
-        Roughness, // PBR: Micro-surface detail
-        AO,        // PBR: Ambient Occlusion
-        Height,    // Often used for parallax
-        Diffuse,   // Legacy
-        Specular,  // Legacy
-        Emissive,
-        Transparency
-    };
-
     class Texture : public Asset
     {
         public:

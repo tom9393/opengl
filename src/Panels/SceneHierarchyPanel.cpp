@@ -587,52 +587,52 @@ namespace Engine
 				}
 
 				// 2. Uniforms / Parameters
-				if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					// Floats
-					for (auto& [name, val] : material->m_Floats)
-					{
-						ImGui::DragFloat(name.c_str(), &val, 0.05f);
-					}
+				// if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
+				// {
+				// 	// Floats
+				// 	for (auto& [name, val] : material->m_Floats)
+				// 	{
+				// 		ImGui::DragFloat(name.c_str(), &val, 0.05f);
+				// 	}
 
-					// Bools
-					for (auto& [name, val] : material->m_Bools)
-					{
-						ImGui::Checkbox(name.c_str(), &val);
-					}
+				// 	// Bools
+				// 	for (auto& [name, val] : material->m_Bools)
+				// 	{
+				// 		ImGui::Checkbox(name.c_str(), &val);
+				// 	}
 
-					// Vec4s (Usually Colors)
-					for (auto& [name, val] : material->m_Vec4s)
-					{
-						ImGui::ColorEdit4(name.c_str(), glm::value_ptr(val));
-					}
+				// 	// Vec4s (Usually Colors)
+				// 	for (auto& [name, val] : material->m_Vec4s)
+				// 	{
+				// 		ImGui::ColorEdit4(name.c_str(), glm::value_ptr(val));
+				// 	}
 
-					// Textures
-					for (auto& [name, tex] : material->m_Textures)
-					{
-						ImGui::Text("%s", name.c_str());
-						ImGui::SameLine();
+				// 	// Textures
+				// 	for (auto& [name, tex] : material->m_Textures)
+				// 	{
+				// 		ImGui::Text("%s", name.c_str());
+				// 		ImGui::SameLine();
 						
-						// Display a small thumbnail or button for the texture
-						void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
-						if (ImGui::ImageButton(name.c_str(), (ImTextureID)texID, ImVec2(64, 64), { 0, 1 }, { 1, 0 }))
-						{
-							// Logic to select texture asset could go here
-						}
+				// 		// Display a small thumbnail or button for the texture
+				// 		void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
+				// 		if (ImGui::ImageButton(name.c_str(), (ImTextureID)texID, ImVec2(64, 64), { 0, 1 }, { 1, 0 }))
+				// 		{
+				// 			// Logic to select texture asset could go here
+				// 		}
 
-						if (ImGui::BeginDragDropTarget())
-						{
-							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
-							{
-								UUID texHandle = *(UUID*)payload->Data;
-								material->m_Textures[name] = AssetManager::GetAsset<Texture2D>(texHandle);
-							}
-							ImGui::EndDragDropTarget();
-						}
-					}
+				// 		if (ImGui::BeginDragDropTarget())
+				// 		{
+				// 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
+				// 			{
+				// 				UUID texHandle = *(UUID*)payload->Data;
+				// 				material->m_Textures[name] = AssetManager::GetAsset<Texture2D>(texHandle);
+				// 			}
+				// 			ImGui::EndDragDropTarget();
+				// 		}
+				// 	}
 
-					ImGui::TreePop();
-				}
+				// 	ImGui::TreePop();
+				// }
 			}
 			else
 			{

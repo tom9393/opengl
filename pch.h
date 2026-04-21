@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <filesystem>
 #include <initializer_list>
+#include <variant>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

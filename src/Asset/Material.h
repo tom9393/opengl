@@ -1,5 +1,7 @@
 #include "Texture.h"
 #include "Shader.h"
+#include "MaterialSpecification.h"
+#include "DefaultTextures.h"
 
 namespace Engine {
 
@@ -14,31 +16,61 @@ namespace Engine {
         bool DepthWrite = true;
         bool DoubleSided = false;
 
-        void SetFloat(const std::string& name, float value) { m_Floats[name] = value; }
-        void SetBool(const std::string& name, bool value) { m_Bools[name] = value; }
-        void SetVec4(const std::string& name, const glm::vec4& value) { m_Vec4s[name] = value; }
-        void SetTexture(const std::string& name, Shared<Texture2D> texture) { m_Textures[name] = texture; }
-
-        void Bind() const {
-            TargetShader->Bind();
-
-            for (const auto& [name, val] : m_Floats) TargetShader->SetFloat(name, val);
-            for (const auto& [name, val] : m_Bools) TargetShader->SetBool(name, val);
-            for (const auto& [name, val] : m_Vec4s)  TargetShader->SetVec4(name, val);
-            
-            uint32_t slot = 0;
-            for (const auto& [name, tex] : m_Textures) {
-                if (tex) {
-                    tex->Bind(slot);
-                    TargetShader->SetInt(name, slot);
-                    slot++;
-                }
+        void Add(MaterialProperty& property)
+        {
+            if (property.Type == PropertyKey::Map) {
+                // If it's a map, unpack it and store it in the texture map
+                const auto& texMap = std::get<TextureMap>(property.Value);
+                m_Textures[texMap.Type] = texMap.MapTexture;
+            } else {
+                // Otherwise, store it in the standard properties map
+                m_Properties[property.Type] = property.Value;
             }
         }
 
-        std::unordered_map<std::string, float> m_Floats;
-        std::unordered_map<std::string, bool> m_Bools;
-        std::unordered_map<std::string, glm::vec4> m_Vec4s;
-        std::unordered_map<std::string, Shared<Texture2D>> m_Textures;
+        void Bind() const
+        {
+            TargetShader->Bind();
+
+            for (const auto& [key, value] : m_Properties)
+            {
+                std::string uniformName = GetUniformNameForProperty(key);
+                if (std::holds_alternative<float>(value))
+                    TargetShader->SetFloat(uniformName, std::get<float>(value));
+                else if (std::holds_alternative<int>(value))
+                    TargetShader->SetInt(uniformName, std::get<int>(value));
+                else if (std::holds_alternative<glm::vec4>(value))
+                    TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
+            }
+
+            BindTexture(TextureType::Albedo,    "pbr.albedoMap",    0, DefaultTextures::GetWhiteTexture());
+            BindTexture(TextureType::Normal,    "pbr.normalMap",    1, DefaultTextures::GetNormalTexture());
+            BindTexture(TextureType::Metallic,  "pbr.metallicMap",  2, DefaultTextures::GetWhiteTexture());
+            BindTexture(TextureType::Roughness, "pbr.roughnessMap", 3, DefaultTextures::GetWhiteTexture());
+            BindTexture(TextureType::AO,        "pbr.aoMap",        4, DefaultTextures::GetWhiteTexture());
+        }
+
+        //private:
+        std::string GetUniformNameForProperty(PropertyKey key) const {
+            switch(key) {
+                case PropertyKey::AlbedoTint:          return "pbr.albedoTint";
+                case PropertyKey::Emission:            return "pbr.emission";
+                case PropertyKey::RoughnessMultiplier: return "pbr.roughnessMultiplier";
+                case PropertyKey::MetallicMultiplier:  return "pbr.metallicMultiplier";
+                default: return "";
+            }
+        }
+
+        // Helper to bind a texture if it exists, or a default fallback if it doesn't
+        void BindTexture(TextureType type, const std::string& uniformName, uint32_t slot, Shared<Texture2D> fallback) const {
+            auto it = m_Textures.find(type);
+            Shared<Texture2D> texToBind = (it != m_Textures.end() && it->second) ? it->second : fallback;
+            
+            texToBind->Bind(slot);
+            TargetShader->SetInt(uniformName, slot);
+        }
+
+        std::unordered_map<PropertyKey, PropertyValue> m_Properties;
+        std::unordered_map<TextureType, Shared<Texture2D>> m_Textures;
     };
 }

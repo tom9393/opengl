@@ -8,22 +8,17 @@ layout (location = 4) out int gEntityID; // <-- ADD THIS
 
 struct PBR {
     sampler2D albedoMap;
-    bool useAlbedoMap;
     vec4 albedoTint;
 
     sampler2D normalMap;
-    bool useNormalMap;
 
     sampler2D metallicMap;
-    bool useMetallicMap;
     float metallicMultiplier;
 
     sampler2D roughnessMap;
-    bool useRoughnessMap;
     float roughnessMultiplier;
 
     sampler2D aoMap;
-    bool useAOMap;
     
     float emission;
 };
@@ -97,44 +92,24 @@ void main()
     mat3 TBN = Input.TBN;
     vec3 WorldPos = Input.FragPos;
 
-    // --- PROPERTY EXTRACTION WITH FALLBACKS ---
+    // --- PROPERTY EXTRACTION ---
+    // 1. Albedo (Texture multiplied by Tint)
+    vec3 texColor = pow(texture(pbr.albedoMap, TexCoords).rgb, vec3(2.2));
+    vec3 albedo = pbr.albedoTint.rgb * texColor;
 
-    // 1. Albedo
-    vec3 albedo = pbr.albedoTint.rgb;
-    if (pbr.useAlbedoMap) {
-        vec3 texColor = pow(texture(pbr.albedoMap, TexCoords).rgb, vec3(2.2));
-        albedo *= texColor;
-    }
-
-    // 2. Normal
-    vec3 N;
-    if (pbr.useNormalMap) {
-        vec3 normalMap = texture(pbr.normalMap, TexCoords).rgb;
-        normalMap = normalMap * 2.0 - 1.0; 
-        N = normalize(TBN * normalMap);
-    } else {
-        // If no normal map, use the vertex normal.
-        // TBN[2] represents the Z axis of the matrix, which is the original Normal vector!
-        N = normalize(TBN[2]);
-    }
+    // 2. Normal (Assuming a default flat normal map RGB(128, 128, 255) is bound if none exists)
+    vec3 normalMap = texture(pbr.normalMap, TexCoords).rgb;
+    normalMap = normalMap * 2.0 - 1.0; 
+    vec3 N = normalize(TBN * normalMap);
 
     // 3. Metallic
-    float metallic = pbr.metallicMultiplier;
-    if (pbr.useMetallicMap) {
-        metallic *= texture(pbr.metallicMap, TexCoords).r;
-    }
+    float metallic = pbr.metallicMultiplier * texture(pbr.metallicMap, TexCoords).r;
 
     // 4. Roughness
-    float roughness = pbr.roughnessMultiplier;
-    if (pbr.useRoughnessMap) {
-        roughness *= texture(pbr.roughnessMap, TexCoords).r;
-    }
+    float roughness = pbr.roughnessMultiplier * texture(pbr.roughnessMap, TexCoords).r;
 
-    // 5. Ambient Occlusion
-    float ao = 1.0; // Default to full brightness if no AO map
-    if (pbr.useAOMap) {
-        ao = texture(pbr.aoMap, TexCoords).r;
-    }
+    // 5. Ambient Occlusion (Default AO map is pure white)
+    float ao = texture(pbr.aoMap, TexCoords).r;
     
     gPosition = vec4(Input.FragPos, 1.0);
     gNormal = vec4(N, 1.0);

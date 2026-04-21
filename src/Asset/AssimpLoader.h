@@ -11,6 +11,7 @@
 #include "Mesh.h"
 #include "../Render/BufferLayout.h"
 #include "Texture.h"
+#include "MaterialSpecification.h"
 #include "../Scene/Scene.h"
 #include "../Scene/Entity.h"
 #include "../Render/Renderer.h"
@@ -336,7 +337,9 @@ namespace Engine
             if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_OPACITY, &opacity)) {
                 albedoTint.a = opacity;
             }
-            material->SetVec4("pbr.albedoTint", albedoTint);
+            MaterialProperty albedoTintProperty = {PropertyKey::AlbedoTint, albedoTint};
+
+            material->Add(albedoTintProperty);
 
             // --- 3. Ke: Emissive ---
             float emission = 0.0f;
@@ -344,7 +347,8 @@ namespace Engine
                 // Average the RGB values to get a scalar emission intensity
                 emission = (color.r + color.g + color.b) / 3.0f;
             }
-            material->SetFloat("pbr.emission", emission);
+            MaterialProperty emissionProperty = {PropertyKey::Emission, emission};
+            material->Add(emissionProperty);
 
             // --- 4. Ns: Shininess -> Roughness Conversion ---
             float roughness = 0.5f; // Safe default
@@ -354,7 +358,8 @@ namespace Engine
                 // Math: High shininess (e.g., 714) = very smooth = low roughness.
                 roughness = glm::sqrt(2.0f / (shininess + 2.0f));
             }
-            material->SetFloat("pbr.roughnessMultiplier", roughness);
+            MaterialProperty roughnessMultiplierProperty = {PropertyKey::RoughnessMultiplier, roughness};
+            material->Add(roughnessMultiplierProperty);
 
             // --- 5. Ks: Specular -> Metallic Guessing (Optional hack) ---
             float metallic = 0.0f;
@@ -365,14 +370,8 @@ namespace Engine
                     metallic = 1.0f; 
                 }
             }
-            material->SetFloat("pbr.metallicMultiplier", metallic);
-
-
-            material->SetBool("pbr.useAlbedoMap", false);
-            material->SetBool("pbr.useNormalMap", false);
-            material->SetBool("pbr.useMetallicMap", false);
-            material->SetBool("pbr.useRoughnessMap", false);
-            material->SetBool("pbr.useAOMap", false);
+            MaterialProperty metallicMultiplierProperty = {PropertyKey::MetallicMultiplier, metallic};
+            material->Add(metallicMultiplierProperty);
 
             for (auto& type : textureTypes)
             {
@@ -437,29 +436,9 @@ namespace Engine
                         continue;
                     }
 
-                    TextureType texType = AssimpToTextureType(type);
-                    
-                    // Route the texture to the appropriate string key expected by the shader
-                    if (texType == TextureType::Diffuse) {
-                        material->SetTexture("pbr.albedoMap", texture);
-                        material->SetBool("pbr.useAlbedoMap", true);
-                    }
-                    if (texType == TextureType::Normal) {
-                        material->SetTexture("pbr.normalMap", texture);
-                        material->SetBool("pbr.useNormalMap", true);
-                    }
-                    if (texType == TextureType::Metallic) {
-                        material->SetTexture("pbr.metallicMap", texture);
-                        material->SetBool("pbr.useMetallicMap", true);
-                    }
-                    if (texType == TextureType::Roughness) {
-                        material->SetTexture("pbr.roughnessMap", texture);
-                        material->SetBool("pbr.useRoughnessMap", true);
-                    }
-                    if (texType == TextureType::AO) {
-                        material->SetTexture("pbr.aoMap", texture);
-                        material->SetBool("pbr.useAOMap", true);
-                    }
+                    TextureMap map = {AssimpToTextureType(type), texture};
+                    MaterialProperty materialMap = {PropertyKey::Map, map};
+                    material->Add(materialMap);
                 }
             }
 
