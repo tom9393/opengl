@@ -7,6 +7,26 @@ namespace Engine {
 
     enum class BlendMode { Opaque, Transparent, Additive };
 
+    static TextureType StringToTextureType(const std::string& typeStr)
+    {
+        if (typeStr == "Albedo")    return TextureType::Albedo;
+        if (typeStr == "Normal")    return TextureType::Normal;
+        if (typeStr == "Metallic")  return TextureType::Metallic;
+        if (typeStr == "Roughness") return TextureType::Roughness;
+        if (typeStr == "AO")        return TextureType::AO;
+        return TextureType::None;
+    }
+
+    static PropertyKey StringToPropertyKey(const std::string& typeStr)
+    {
+        if (typeStr == "AlbedoTint")          return PropertyKey::AlbedoTint;
+        if (typeStr == "Emission")            return PropertyKey::Emission;
+        if (typeStr == "RoughnessMultiplier") return PropertyKey::RoughnessMultiplier;
+        if (typeStr == "MetallicMultiplier")  return PropertyKey::MetallicMultiplier;
+        
+        return PropertyKey::Map; 
+    }
+
     class Material : public Asset
     {
         public:
@@ -19,12 +39,46 @@ namespace Engine {
         void Add(const MaterialProperty& property)
         {
             if (property.Type == PropertyKey::Map) {
-                // If it's a map, unpack it and store it in the texture map
                 const auto& texMap = std::get<TextureMap>(property.Value);
                 m_Textures[texMap.Type] = texMap.MapTexture;
             } else {
-                // Otherwise, store it in the standard properties map
                 m_Properties[property.Type] = property.Value;
+            }
+        }
+
+        void LoadMaterialDefinition(const std::string& filepath)
+        {
+            YAML::Node data;
+            try {
+                data = YAML::LoadFile(filepath);
+            } catch (YAML::ParserException& e) {
+                std::cout << "Failed to load material definition: " << e.what() << std::endl;
+                return;
+            }
+
+            auto matDef = data["MaterialDefinition"];
+            if (!matDef) return;
+
+            TargetShader = ShaderLibrary::Get(matDef["Shader"].as<std::string>());
+
+            auto texBindings = matDef["TextureBindings"];
+            if (texBindings)
+            {
+                for (auto it = texBindings.begin(); it != texBindings.end(); ++it)
+                {
+                    TextureType enumType = StringToTextureType(it->first.as<std::string>());
+                    TextureBindings[enumType] = it->second.as<std::string>();
+                }
+            }
+
+            auto propBindings = matDef["PropertyBindings"];
+            if (propBindings)
+            {
+                for (auto it = propBindings.begin(); it != propBindings.end(); ++it)
+                {
+                    PropertyKey enumType = StringToPropertyKey(it->first.as<std::string>());
+                    PropertyBindings[enumType] = it->second.as<std::string>();
+                }
             }
         }
 
@@ -34,7 +88,11 @@ namespace Engine {
 
             for (const auto& [key, value] : m_Properties)
             {
-                std::string uniformName = GetUniformNameForProperty(key);
+                auto bindingIt = PropertyBindings.find(key);
+                if (bindingIt == PropertyBindings.end()) continue;
+
+                std::string uniformName = bindingIt->second;
+
                 if (std::holds_alternative<float>(value))
                     TargetShader->SetFloat(uniformName, std::get<float>(value));
                 else if (std::holds_alternative<int>(value))
@@ -43,40 +101,35 @@ namespace Engine {
                     TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
             }
 
-            BindTexture(TextureType::Albedo,    "pbr.albedoMap",    0, DefaultTextures::GetWhiteTexture());
-            BindTexture(TextureType::Normal,    "pbr.normalMap",    1, DefaultTextures::GetNormalTexture());
-            BindTexture(TextureType::Metallic,  "pbr.metallicMap",  2, DefaultTextures::GetBlackTexture());
-            BindTexture(TextureType::Roughness, "pbr.roughnessMap", 3, DefaultTextures::GetWhiteTexture());
-            BindTexture(TextureType::AO,        "pbr.aoMap",        4, DefaultTextures::GetWhiteTexture());
+            uint32_t slot = 0;
+            for (const auto& [type, uniformName] : TextureBindings)
+            {
+                BindTexture(type, uniformName, slot);
+                slot++;
+            }
         }
 
         //private:
-        std::string GetUniformNameForProperty(PropertyKey key) const {
-            switch(key) {
-                case PropertyKey::AlbedoTint:          return "pbr.albedoTint";
-                case PropertyKey::Emission:            return "pbr.emission";
-                case PropertyKey::RoughnessMultiplier: return "pbr.roughnessMultiplier";
-                case PropertyKey::MetallicMultiplier:  return "pbr.metallicMultiplier";
-                default: return "";
-            }
-        }
-
         // Helper to bind a texture if it exists, or a default fallback if it doesn't
-        void BindTexture(TextureType type, const std::string& uniformName, uint32_t slot, Shared<Texture2D> fallback) const {
+        void BindTexture(TextureType type, const std::string& uniformName, uint32_t slot) const {
             auto it = m_Textures.find(type);
-            Shared<Texture2D> texToBind = (it != m_Textures.end() && it->second) ? it->second : fallback;
-            if (it != m_Textures.end())
-            {
-                std::cout << "Primary" << std::endl;
-            } else {
-                std::cout << "Fallback" << std::endl;
-            }
-            
+            Shared<Texture2D> texToBind = (it != m_Textures.end() && it->second) ? it->second : GetDefaultFallback(type);
             texToBind->Bind(slot);
             TargetShader->SetInt(uniformName, slot);
         }
 
+        Shared<Texture2D> GetDefaultFallback(TextureType type) const {
+            switch(type) {
+                case TextureType::Normal: return DefaultTextures::GetNormalTexture();
+                case TextureType::Metallic: return DefaultTextures::GetBlackTexture();
+                default: return DefaultTextures::GetWhiteTexture();
+            }
+        }
+
         std::unordered_map<PropertyKey, PropertyValue> m_Properties;
         std::unordered_map<TextureType, Shared<Texture2D>> m_Textures;
+
+        std::unordered_map<TextureType, std::string> TextureBindings;
+        std::unordered_map<PropertyKey, std::string> PropertyBindings;
     };
 }

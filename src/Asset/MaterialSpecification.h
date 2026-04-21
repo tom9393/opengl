@@ -35,7 +35,7 @@ namespace Engine {
         TextureType Type;
         Shared<Texture2D> MapTexture;
 
-        TextureMap(TextureType type, Shared<Texture2D> &texture) : Type(type), MapTexture(texture) {}
+        TextureMap(TextureType type, const Shared<Texture2D> &texture) : Type(type), MapTexture(texture) {}
     };
 
     using PropertyValue = std::variant<float, int, glm::vec4, TextureMap>;

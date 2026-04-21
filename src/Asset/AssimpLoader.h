@@ -40,7 +40,7 @@ namespace Engine
     {
         // Albedo / Diffuse
         if (type == aiTextureType_DIFFUSE || type == aiTextureType_BASE_COLOR) 
-            return TextureType::Diffuse;
+            return TextureType::Albedo;
         
         // Specular
         if (type == aiTextureType_SPECULAR) 
@@ -316,6 +316,8 @@ namespace Engine
         {
             Shared<Material> material = MakeShared<Material>();
 
+            material->LoadMaterialDefinition("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
+
             std::vector<aiTextureType> textureTypes = { 
                 aiTextureType_DIFFUSE, aiTextureType_BASE_COLOR,
                 aiTextureType_NORMALS, aiTextureType_HEIGHT, aiTextureType_NORMAL_CAMERA,
@@ -436,8 +438,6 @@ namespace Engine
                     material->Add(materialMap);
                 }
             }
-
-            material->TargetShader = ShaderLibrary::Get("GBufferShader");
 
             return material;
         }
