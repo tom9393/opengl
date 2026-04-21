@@ -337,9 +337,7 @@ namespace Engine
             if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_OPACITY, &opacity)) {
                 albedoTint.a = opacity;
             }
-            MaterialProperty albedoTintProperty = {PropertyKey::AlbedoTint, albedoTint};
-
-            material->Add(albedoTintProperty);
+            material->Add({PropertyKey::AlbedoTint, albedoTint});
 
             // --- 3. Ke: Emissive ---
             float emission = 0.0f;
@@ -347,8 +345,7 @@ namespace Engine
                 // Average the RGB values to get a scalar emission intensity
                 emission = (color.r + color.g + color.b) / 3.0f;
             }
-            MaterialProperty emissionProperty = {PropertyKey::Emission, emission};
-            material->Add(emissionProperty);
+            material->Add({PropertyKey::Emission, emission});
 
             // --- 4. Ns: Shininess -> Roughness Conversion ---
             float roughness = 0.5f; // Safe default
@@ -358,8 +355,7 @@ namespace Engine
                 // Math: High shininess (e.g., 714) = very smooth = low roughness.
                 roughness = glm::sqrt(2.0f / (shininess + 2.0f));
             }
-            MaterialProperty roughnessMultiplierProperty = {PropertyKey::RoughnessMultiplier, roughness};
-            material->Add(roughnessMultiplierProperty);
+            material->Add({PropertyKey::RoughnessMultiplier, roughness});
 
             // --- 5. Ks: Specular -> Metallic Guessing (Optional hack) ---
             float metallic = 0.0f;
@@ -370,8 +366,7 @@ namespace Engine
                     metallic = 1.0f; 
                 }
             }
-            MaterialProperty metallicMultiplierProperty = {PropertyKey::MetallicMultiplier, metallic};
-            material->Add(metallicMultiplierProperty);
+            material->Add({PropertyKey::MetallicMultiplier, metallic});
 
             for (auto& type : textureTypes)
             {

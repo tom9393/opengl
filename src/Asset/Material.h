@@ -16,7 +16,7 @@ namespace Engine {
         bool DepthWrite = true;
         bool DoubleSided = false;
 
-        void Add(MaterialProperty& property)
+        void Add(const MaterialProperty& property)
         {
             if (property.Type == PropertyKey::Map) {
                 // If it's a map, unpack it and store it in the texture map
@@ -45,7 +45,7 @@ namespace Engine {
 
             BindTexture(TextureType::Albedo,    "pbr.albedoMap",    0, DefaultTextures::GetWhiteTexture());
             BindTexture(TextureType::Normal,    "pbr.normalMap",    1, DefaultTextures::GetNormalTexture());
-            BindTexture(TextureType::Metallic,  "pbr.metallicMap",  2, DefaultTextures::GetWhiteTexture());
+            BindTexture(TextureType::Metallic,  "pbr.metallicMap",  2, DefaultTextures::GetBlackTexture());
             BindTexture(TextureType::Roughness, "pbr.roughnessMap", 3, DefaultTextures::GetWhiteTexture());
             BindTexture(TextureType::AO,        "pbr.aoMap",        4, DefaultTextures::GetWhiteTexture());
         }
@@ -65,6 +65,12 @@ namespace Engine {
         void BindTexture(TextureType type, const std::string& uniformName, uint32_t slot, Shared<Texture2D> fallback) const {
             auto it = m_Textures.find(type);
             Shared<Texture2D> texToBind = (it != m_Textures.end() && it->second) ? it->second : fallback;
+            if (it != m_Textures.end())
+            {
+                std::cout << "Primary" << std::endl;
+            } else {
+                std::cout << "Fallback" << std::endl;
+            }
             
             texToBind->Bind(slot);
             TargetShader->SetInt(uniformName, slot);
