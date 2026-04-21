@@ -36,6 +36,17 @@ namespace Engine
     //static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
     static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
 
+    static std::array<aiTextureType, 16> AssimpTextureTypes = { 
+        aiTextureType_DIFFUSE, aiTextureType_BASE_COLOR,
+        aiTextureType_NORMALS, aiTextureType_HEIGHT, aiTextureType_NORMAL_CAMERA,
+        aiTextureType_METALNESS, aiTextureType_SHININESS,
+        aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_MAYA_SPECULAR_ROUGHNESS,
+        aiTextureType_AMBIENT_OCCLUSION, aiTextureType_LIGHTMAP,
+        aiTextureType_EMISSIVE, aiTextureType_EMISSION_COLOR,
+        aiTextureType_OPACITY, aiTextureType_REFLECTION,
+        aiTextureType_SHININESS
+    };
+
     static TextureType AssimpToTextureType(aiTextureType type)
     {
         // Albedo / Diffuse
@@ -318,59 +329,12 @@ namespace Engine
 
             material->LoadMaterialDefinition("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
-            std::vector<aiTextureType> textureTypes = { 
-                aiTextureType_DIFFUSE, aiTextureType_BASE_COLOR,
-                aiTextureType_NORMALS, aiTextureType_HEIGHT, aiTextureType_NORMAL_CAMERA,
-                aiTextureType_METALNESS, aiTextureType_SHININESS,
-                aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_MAYA_SPECULAR_ROUGHNESS,
-                aiTextureType_AMBIENT_OCCLUSION, aiTextureType_LIGHTMAP,
-                aiTextureType_EMISSIVE, aiTextureType_EMISSION_COLOR,
-                aiTextureType_OPACITY, aiTextureType_REFLECTION,
-                aiTextureType_SHININESS
-            };
+            material->Add({PropertyKey::AlbedoTint, GetAlbedoTint(mat)});
+            material->Add({PropertyKey::Emission, GetEmission(mat)});
+            material->Add({PropertyKey::RoughnessMultiplier, GetRoughness(mat)});
+            material->Add({PropertyKey::MetallicMultiplier, GetMetallic(mat)});
 
-            // --- 1 & 2. Kd & d: Diffuse Color and Opacity ---
-            glm::vec4 albedoTint = glm::vec4(1.0f);
-            aiColor4D color;
-            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
-                albedoTint.r = color.r; albedoTint.g = color.g; albedoTint.b = color.b;
-            }
-            float opacity = 1.0f;
-            if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_OPACITY, &opacity)) {
-                albedoTint.a = opacity;
-            }
-            material->Add({PropertyKey::AlbedoTint, albedoTint});
-
-            // --- 3. Ke: Emissive ---
-            float emission = 0.0f;
-            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
-                // Average the RGB values to get a scalar emission intensity
-                emission = (color.r + color.g + color.b) / 3.0f;
-            }
-            material->Add({PropertyKey::Emission, emission});
-
-            // --- 4. Ns: Shininess -> Roughness Conversion ---
-            float roughness = 0.5f; // Safe default
-            float shininess = 0.0f;
-            if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_SHININESS, &shininess)) {
-                // Prevent division by zero. 
-                // Math: High shininess (e.g., 714) = very smooth = low roughness.
-                roughness = glm::sqrt(2.0f / (shininess + 2.0f));
-            }
-            material->Add({PropertyKey::RoughnessMultiplier, roughness});
-
-            // --- 5. Ks: Specular -> Metallic Guessing (Optional hack) ---
-            float metallic = 0.0f;
-            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &color)) {
-                // In legacy formats, highly reflective grey/colored specular usually implies metal.
-                float specAverage = (color.r + color.g + color.b) / 3.0f;
-                if (specAverage > 0.8f) {
-                    metallic = 1.0f; 
-                }
-            }
-            material->Add({PropertyKey::MetallicMultiplier, metallic});
-
-            for (auto& type : textureTypes)
+            for (auto& type : AssimpTextureTypes)
             {
                 for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
                 {
@@ -380,52 +344,16 @@ namespace Engine
                     std::string filename = std::string(str.C_Str());
                     std::string fullPath = directory + "/" + filename;
                     
-                    size_t lastindex = fullPath.find_last_of("."); 
-                    std::string ktxExtensionPath = fullPath.substr(0, lastindex) + ".ktx";
-                    std::string ktxExtensionPath2 = fullPath.substr(0, lastindex) + ".ktx2";
+                    // Todo: figure out ktx loading
 
-                    std::string finalLoadPath = fullPath;
+                    // size_t lastindex = fullPath.find_last_of("."); 
+                    // std::string ktxExtensionPath = fullPath.substr(0, lastindex) + ".ktx";
+                    // std::string ktxExtensionPath2 = fullPath.substr(0, lastindex) + ".ktx2";
+                    // std::string finalLoadPath = fullPath;
                     // if (std::filesystem::exists(ktxExtensionPath))       finalLoadPath = ktxExtensionPath;
                     // else if (std::filesystem::exists(ktxExtensionPath2)) finalLoadPath = ktxExtensionPath2;
 
-                    Shared<Texture2D> texture;
-
-                    if (const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str())) 
-                    {
-                        // --- EMBEDDED TEXTURE HANDLING ---
-
-                        if (embeddedTexture->mHeight == 0) 
-                        {
-                            // Compressed embedded texture
-                            void* buffer = embeddedTexture->pcData;
-                            size_t bufferSize = embeddedTexture->mWidth;
-                            texture = Texture2D::Create(buffer, bufferSize); 
-                        } 
-                        else 
-                        {
-                            // Raw embedded texture
-                            void* buffer = embeddedTexture->pcData;
-                            uint32_t width = embeddedTexture->mWidth;
-                            uint32_t height = embeddedTexture->mHeight;
-                            texture = Texture2D::Create(buffer, width, height);
-                        }
-
-                        // Use the callback instead of hardcoded AssetManager
-                        AssetMetadata metadata;
-                        metadata.Name = std::string(str.C_Str());
-                        metadata.Type = AssetType::Texture2D;
-                        metadata.IsMemoryAsset = true;
-
-                        Shared<Asset> texCast = texture;
-                        UUID texHandle = AssetManager::RegisterAsset(metadata, texCast);
-                        
-                    } else {
-                        const aiTexture* text = scene->GetEmbeddedTexture(str.C_Str());
-
-                        // Load the texture asset. 
-                        UUID texHandle = AssetManager::ImportAsset(finalLoadPath);
-                        texture = AssetManager::GetAsset<Texture2D>(texHandle);
-                    }
+                    Shared<Texture2D> texture = GetTexture(scene, str, fullPath);
 
                     if (!texture)
                     {
@@ -440,6 +368,98 @@ namespace Engine
             }
 
             return material;
+        }
+
+        static glm::vec4 GetAlbedoTint(aiMaterial* mat)
+        {
+            glm::vec4 albedoTint = glm::vec4(1.0f);
+            aiColor4D color;
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
+                albedoTint.r = color.r; albedoTint.g = color.g; albedoTint.b = color.b;
+            }
+
+            float opacity = 1.0f;
+            if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_OPACITY, &opacity)) {
+                albedoTint.a = opacity;
+            }
+            return albedoTint;
+        }
+
+        static float GetEmission(aiMaterial* mat)
+        {
+            aiColor4D color;
+            float emission = 0.0f;
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
+                // Average the RGB values to get a scalar emission intensity
+                emission = (color.r + color.g + color.b) / 3.0f;
+            }
+            return emission;
+        }
+
+        static float GetRoughness(aiMaterial* mat)
+        {
+            float roughness = 0.5f; // Safe default
+            float shininess = 0.0f;
+            if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_SHININESS, &shininess)) {
+                // Prevent division by zero. 
+                // Math: High shininess (e.g., 714) = very smooth = low roughness.
+                roughness = glm::sqrt(2.0f / (shininess + 2.0f));
+            }
+            return roughness;
+        }
+
+        static float GetMetallic(aiMaterial* mat)
+        {
+            aiColor4D color;
+            float metallic = 0.0f;
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &color)) {
+                // In legacy formats, highly reflective grey/colored specular usually implies metal.
+                float specAverage = (color.r + color.g + color.b) / 3.0f;
+                if (specAverage > 0.8f) {
+                    metallic = 1.0f; 
+                }
+            }
+            return metallic;
+        }
+
+        static Shared<Texture2D> GetTexture(const aiScene* scene, const aiString &str, const std::string &path)
+        {
+            if (const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str())) 
+            {
+                Shared<Texture2D> texture = CreateEmbeddedTexture(embeddedTexture);
+
+                AssetMetadata metadata;
+                metadata.Name = std::string(str.C_Str());
+                metadata.Type = AssetType::Texture2D;
+                metadata.IsMemoryAsset = true;
+
+                Shared<Asset> texCast = texture;
+                UUID texHandle = AssetManager::RegisterAsset(metadata, texCast);
+
+                return texture;
+            }
+
+            UUID texHandle = AssetManager::ImportAsset(path);
+            return AssetManager::GetAsset<Texture2D>(texHandle);
+
+        }
+
+        static Shared<Texture2D> CreateEmbeddedTexture(const aiTexture* embeddedTexture)
+        {
+            if (embeddedTexture->mHeight == 0) 
+            {
+                // Compressed embedded texture
+                void* buffer = embeddedTexture->pcData;
+                size_t bufferSize = embeddedTexture->mWidth;
+                return Texture2D::Create(buffer, bufferSize);
+            } 
+
+            // Raw embedded texture
+            void* buffer = embeddedTexture->pcData;
+            uint32_t width = embeddedTexture->mWidth;
+            uint32_t height = embeddedTexture->mHeight;
+            return Texture2D::Create(buffer, width, height);
+
         }
     };
 
