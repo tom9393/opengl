@@ -396,7 +396,8 @@ namespace Engine
 
 			if (ImGui::MenuItem("Material"))
 			{
-				selection.AddComponent<MaterialComponent>();
+				MaterialComponent& mc = selection.AddComponent<MaterialComponent>();
+				mc.MaterialHandle = UUID();
 				ImGui::CloseCurrentPopup();
 			}
 

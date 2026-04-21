@@ -26,12 +26,9 @@ namespace Engine
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
         void DestroyEntity(Entity& entity);
 
-        void UpdateWorldTransforms();
-
         entt::registry& GetRegistry() { return m_Registry; }
 
         private:
-        void UpdateTransformTree(entt::entity handle, const glm::mat4 &parentTransform);
         void OnMousePress(MouseButtonPressedEvent &e);
 
         private:
