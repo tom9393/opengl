@@ -41,7 +41,7 @@ namespace Engine
 
     protected:
 
-        GLint GetUniformLocation(const char* pUniformName);
+        GLint GetUniformLocation(const std::string &name) const;
         GLenum GetShaderFromExtension(const std::string &path);
         GLuint id = 0;
 
@@ -52,6 +52,8 @@ namespace Engine
         bool Finalize();
         std::list<GLuint> shaderObjList;
         std::string m_Name;
+        std::unordered_map<std::string, GLint> m_UniformLocationCache;
+
         std::vector<UniformInfo> m_ActiveUniforms;
         std::vector<AttributeInfo> m_ActiveAttributes;
         std::vector<BufferBlockInfo> m_ActiveUBOs;

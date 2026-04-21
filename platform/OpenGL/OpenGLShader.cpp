@@ -205,6 +205,9 @@ namespace Engine
         for (int i = 0; i < uniformCount; i++) {
             glGetActiveUniform(id, (GLuint)i, bufSize, &length, &size, &type, name);
             m_ActiveUniforms.push_back({ std::string(name), (uint32_t)type, size });
+
+            int location = glGetUniformLocation(id, name);
+            m_UniformLocationCache[std::string(name)] = location;
         }
 
         // The properties we want to extract from each block
@@ -260,54 +263,61 @@ namespace Engine
         glUseProgram(0);
     }
 
-    GLint OpenGLShader::GetUniformLocation(const char* pUniformName)
+    GLint OpenGLShader::GetUniformLocation(const std::string &name) const
     {
-        return glGetUniformLocation(id, pUniformName);
+        auto it = m_UniformLocationCache.find(name);
+        if (it != m_UniformLocationCache.end()) {
+            return it->second;
+        }
+
+        return -1;
     }
 
     void OpenGLShader::SetBool(const std::string &name, bool value) const
     {         
-        glUniform1i(glGetUniformLocation(id, name.c_str()), (int)value); 
+        glUniform1i(GetUniformLocation(name.c_str()), (int)value); 
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetInt(const std::string &name, int value) const
     { 
-        glUniform1i(glGetUniformLocation(id, name.c_str()), value); 
+        glUniform1i(GetUniformLocation(name.c_str()), value); 
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetFloat(const std::string &name, float value) const
     { 
-        glUniform1f(glGetUniformLocation(id, name.c_str()), value); 
+        glUniform1f(GetUniformLocation(name.c_str()), value); 
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetVec2(const std::string &name, const glm::vec2 &value) const
     { 
-        glUniform2fv(glGetUniformLocation(id, name.c_str()), 1, &value[0]); 
+        glUniform2fv(GetUniformLocation(name.c_str()), 1, &value[0]); 
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetVec3(const std::string &name, const glm::vec3 &value) const
     { 
-        glUniform3fv(glGetUniformLocation(id, name.c_str()), 1, &value[0]); 
+        glUniform3fv(GetUniformLocation(name.c_str()), 1, &value[0]); 
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetVec4(const std::string &name, const glm::vec4 &value) const
     { 
-        glUniform4fv(glGetUniformLocation(id, name.c_str()), 1, &value[0]); 
+        PROFILE_FUNCTION();
+        glUniform4fv(GetUniformLocation(name.c_str()), 1, &value[0]); 
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetMat2(const std::string &name, const glm::mat2 &mat) const
     {
-        glUniformMatrix2fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+        glUniformMatrix2fv(GetUniformLocation(name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetMat3(const std::string &name, const glm::mat3 &mat) const
     {
-        glUniformMatrix3fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+        glUniformMatrix3fv(GetUniformLocation(name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
     // ------------------------------------------------------------------------
     void OpenGLShader::SetMat4(const std::string &name, const glm::mat4 &mat) const
     {
-        glUniformMatrix4fv(glGetUniformLocation(id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+        PROFILE_FUNCTION();
+        glUniformMatrix4fv(GetUniformLocation(name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
 
 };
