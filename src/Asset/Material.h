@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Texture.h"
 #include "Shader.h"
 #include "MaterialSpecification.h"
@@ -6,26 +8,6 @@
 namespace Engine {
 
     enum class BlendMode { Opaque, Transparent, Additive };
-
-    static TextureType StringToTextureType(const std::string& typeStr)
-    {
-        if (typeStr == "Albedo")    return TextureType::Albedo;
-        if (typeStr == "Normal")    return TextureType::Normal;
-        if (typeStr == "Metallic")  return TextureType::Metallic;
-        if (typeStr == "Roughness") return TextureType::Roughness;
-        if (typeStr == "AO")        return TextureType::AO;
-        return TextureType::None;
-    }
-
-    static PropertyKey StringToPropertyKey(const std::string& typeStr)
-    {
-        if (typeStr == "AlbedoTint")          return PropertyKey::AlbedoTint;
-        if (typeStr == "Emission")            return PropertyKey::Emission;
-        if (typeStr == "RoughnessMultiplier") return PropertyKey::RoughnessMultiplier;
-        if (typeStr == "MetallicMultiplier")  return PropertyKey::MetallicMultiplier;
-        
-        return PropertyKey::Map; 
-    }
 
     class Material : public Asset
     {
@@ -46,42 +28,6 @@ namespace Engine {
             }
         }
 
-        void LoadMaterialDefinition(const std::string& filepath)
-        {
-            YAML::Node data;
-            try {
-                data = YAML::LoadFile(filepath);
-            } catch (YAML::ParserException& e) {
-                std::cout << "Failed to load material definition: " << e.what() << std::endl;
-                return;
-            }
-
-            auto matDef = data["MaterialDefinition"];
-            if (!matDef) return;
-
-            TargetShader = ShaderLibrary::Get(matDef["Shader"].as<std::string>());
-
-            auto texBindings = matDef["TextureBindings"];
-            if (texBindings)
-            {
-                for (auto it = texBindings.begin(); it != texBindings.end(); ++it)
-                {
-                    TextureType enumType = StringToTextureType(it->first.as<std::string>());
-                    TextureBindings[enumType] = it->second.as<std::string>();
-                }
-            }
-
-            auto propBindings = matDef["PropertyBindings"];
-            if (propBindings)
-            {
-                for (auto it = propBindings.begin(); it != propBindings.end(); ++it)
-                {
-                    PropertyKey enumType = StringToPropertyKey(it->first.as<std::string>());
-                    PropertyBindings[enumType] = it->second.as<std::string>();
-                }
-            }
-        }
-
         void Bind() const
         {
             TargetShader->Bind();
@@ -93,29 +39,20 @@ namespace Engine {
 
                 std::string uniformName = bindingIt->second;
 
-                if (std::holds_alternative<float>(value))
-                    TargetShader->SetFloat(uniformName, std::get<float>(value));
-                else if (std::holds_alternative<int>(value))
-                    TargetShader->SetInt(uniformName, std::get<int>(value));
-                else if (std::holds_alternative<glm::vec4>(value))
-                    TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
+                if (std::holds_alternative<float>(value)) TargetShader->SetFloat(uniformName, std::get<float>(value));
+                else if (std::holds_alternative<int>(value)) TargetShader->SetInt(uniformName, std::get<int>(value));
+                else if (std::holds_alternative<glm::vec4>(value)) TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
             }
 
             uint32_t slot = 0;
             for (const auto& [type, uniformName] : TextureBindings)
             {
-                BindTexture(type, uniformName, slot);
+                auto it = m_Textures.find(type);
+                Shared<Texture2D> texture = (it != m_Textures.end() && it->second) ? it->second : GetDefaultFallback(type);
+                texture->Bind(slot);
+                TargetShader->SetInt(uniformName, slot);
                 slot++;
             }
-        }
-
-        //private:
-        // Helper to bind a texture if it exists, or a default fallback if it doesn't
-        void BindTexture(TextureType type, const std::string& uniformName, uint32_t slot) const {
-            auto it = m_Textures.find(type);
-            Shared<Texture2D> texToBind = (it != m_Textures.end() && it->second) ? it->second : GetDefaultFallback(type);
-            texToBind->Bind(slot);
-            TargetShader->SetInt(uniformName, slot);
         }
 
         Shared<Texture2D> GetDefaultFallback(TextureType type) const {

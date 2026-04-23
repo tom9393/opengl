@@ -12,6 +12,7 @@
 #include "../Render/BufferLayout.h"
 #include "Texture.h"
 #include "MaterialSpecification.h"
+#include "MatdefLoader.h"
 #include "../Scene/Scene.h"
 #include "../Scene/Entity.h"
 #include "../Render/Renderer.h"
@@ -325,9 +326,7 @@ namespace Engine
 
         static Shared<Material> ProcessAiMaterial(aiMaterial* mat, const std::string& directory, const aiScene* scene)
         {
-            Shared<Material> material = MakeShared<Material>();
-
-            material->LoadMaterialDefinition("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
+            Shared<Material> material = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
             material->Add({PropertyKey::AlbedoTint, GetAlbedoTint(mat)});
             material->Add({PropertyKey::Emission, GetEmission(mat)});
@@ -345,14 +344,6 @@ namespace Engine
                     std::string fullPath = directory + "/" + filename;
                     
                     // Todo: figure out ktx loading
-
-                    // size_t lastindex = fullPath.find_last_of("."); 
-                    // std::string ktxExtensionPath = fullPath.substr(0, lastindex) + ".ktx";
-                    // std::string ktxExtensionPath2 = fullPath.substr(0, lastindex) + ".ktx2";
-                    // std::string finalLoadPath = fullPath;
-                    // if (std::filesystem::exists(ktxExtensionPath))       finalLoadPath = ktxExtensionPath;
-                    // else if (std::filesystem::exists(ktxExtensionPath2)) finalLoadPath = ktxExtensionPath2;
-
                     Shared<Texture2D> texture = GetTexture(scene, str, fullPath);
 
                     if (!texture)
