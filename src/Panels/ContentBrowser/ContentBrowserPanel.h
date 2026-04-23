@@ -1,6 +1,7 @@
 #pragma once
-#include "Subpanels/Directory.h"
-#include "Subpanels/LoadedAssets.h"
+
+#include "Directory.h"
+#include "LoadedAssets.h"
 
 namespace Engine
 {
