@@ -1,6 +1,4 @@
-#include "../../pch.h"
 #include "ToolbarPanel.h"
-#include <imgui.h>
 #include "../Utils/SceneManager.h"
 
 namespace Engine {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Core/UUID.h"
-#include "YamlArchive.h"
 
 namespace Engine {
 

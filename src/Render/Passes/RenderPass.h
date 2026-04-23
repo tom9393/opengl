@@ -1,9 +1,6 @@
 #pragma once
 
-#include <functional>
-#include <string>
-#include <vector>
-#include <glm/glm.hpp>
+#include "../../pch.h"
 #include "Buffer.h"
 #include "RenderContext.h"
 #include "RenderView.h"

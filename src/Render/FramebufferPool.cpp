@@ -1,6 +1,5 @@
 #include "FramebufferPool.h"
 #include "Buffer.h"
-#include <sstream>
 
 namespace Engine
 {

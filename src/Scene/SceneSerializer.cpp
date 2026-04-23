@@ -3,7 +3,6 @@
 #include "../Asset/AssimpLoader.h"
 #include "Entity.h"
 #include "Components.h"
-#include <fstream>
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
 #include "../Asset/YamlArchive.h"

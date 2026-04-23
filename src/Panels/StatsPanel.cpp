@@ -2,7 +2,6 @@
 #include "StatsPanel.h"
 #include "../Render/Renderer.h"
 #include "../Core/Application.h"
-#include <imgui.h>
 
 namespace Engine {
     void StatsPanel::OnImGuiRender() {

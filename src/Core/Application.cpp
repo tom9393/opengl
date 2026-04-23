@@ -1,12 +1,10 @@
 #include "Application.h"
-//#include "TestLayer.h"
 #include "EditorLayer.h"
 #include "TimeStep.h"
 #include "Render/Renderer.h"
 #include "KeyCodes.h"
 #include "Events/EventBroker.h"
 #include "Asset/AssetManager.h"
-#include <thread>
 
 namespace Engine
 {

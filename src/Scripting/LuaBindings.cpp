@@ -5,7 +5,6 @@
 #include "../Core/KeyCodes.h"
 #include "../Scene/Components.h"
 #include "../Physics/RigidBody.h"
-#include <glm/glm.hpp>
 
 namespace Engine {
 

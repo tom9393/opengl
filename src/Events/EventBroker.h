@@ -1,7 +1,5 @@
 #pragma once
 
-#include <typeindex>
-#include <atomic>
 #include "../../pch.h"
 #include "Event.h"
 

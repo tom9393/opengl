@@ -1,7 +1,4 @@
 #include "PrimitiveBuilder.h"
-#include <vector>
-#include <cmath>
-#include <algorithm>
 
 namespace Engine {
 

@@ -1,7 +1,5 @@
-#include "../../pch.h"
 #include "MenubarPanel.h"
 #include "../Core/Application.h"
-#include <imgui.h>
 
 namespace Engine {
     void MenuBarPanel::SetSaveCallback(const std::function<void()>& callback) {

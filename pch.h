@@ -11,8 +11,10 @@
 #include <map>
 #include <vector>
 #include <math.h>
+#include <cmath>
 #include <list>
 #include <random>
+#include <future>
 #include <mutex>
 #include <functional>
 #include <algorithm>
@@ -22,6 +24,13 @@
 #include <filesystem>
 #include <initializer_list>
 #include <variant>
+#include <thread>
+#include <typeindex>
+#include <atomic>
+#include <queue>
+#include <chrono>
+#include <condition_variable>
+#include <stdexcept>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

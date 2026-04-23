@@ -1,4 +1,6 @@
 #pragma once
+
+#include "../pch.h"
 #include <sol2/sol.hpp>
 #include "../Scene/Components.h"
 #include "../Scene/Scene.h"

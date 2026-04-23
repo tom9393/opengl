@@ -2,7 +2,6 @@
 #include "../../pch.h"
 #include "Mesh.h"
 #include "AssetManager.h"
-#include <glm/glm.hpp>
 
 namespace Engine {
 

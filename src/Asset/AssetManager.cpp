@@ -1,3 +1,4 @@
+#include "../pch.h"
 #include "AssetManager.h"
 #include "Asset.h"
 #include "ModelImporter.h"
@@ -5,7 +6,6 @@
 #include "SceneImporter.h"
 #include "TextureImporter.h"
 #include "ScriptImporter.h"
-#include <filesystem>
 #include <yaml-cpp/yaml.h>
 
 namespace Engine {

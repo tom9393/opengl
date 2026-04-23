@@ -1,4 +1,3 @@
-#include "../../pch.h"
 #include "ViewportPanel.h"
 #include "../Asset/AssetManager.h"
 #include "../Asset/PrimitiveBuilder.h"
@@ -6,7 +5,6 @@
 #include "../Core/KeyCodes.h"
 #include "../Utils/ScopedImGuiStyle.h"
 #include "../Utils/GizmoManager.h"
-#include <imgui.h>
 #include "../Events/EventBroker.h"
 
 namespace Engine {
