@@ -1,6 +1,8 @@
 #include "Renderer.h"
 #include "../platform/OpenGL/OpenGLShader.h"
 #include "Buffer.h"
+#include "../Asset/Mesh.h"
+#include "../Asset/Material.h"
 #include "../Utils/MathTools.h"
 
 namespace Engine

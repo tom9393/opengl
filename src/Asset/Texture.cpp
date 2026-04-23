@@ -1,5 +1,6 @@
 #include "Texture.h"
 #include "Render/Renderer.h"
+#include "../platform/OpenGL/OpenGLTexture.h"
 
 namespace Engine
 {

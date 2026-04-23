@@ -5,9 +5,6 @@
 #include "RenderCommand.h"
 #include "RendererAPI.h"
 #include "Shader.h"
-#include "../Asset/Mesh.h"
-#include "../../platform/OpenGL/OpenGLTexture.h"
-#include "../Scene/Components.h"
 #include "Line.h"
 #include "RenderContext.h"
 
@@ -26,6 +23,9 @@ namespace Engine
     {
         Statistics statistics;
     };
+
+    class Mesh;
+    class Material;
 
     class Renderer
     {

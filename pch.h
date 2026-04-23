@@ -50,5 +50,7 @@
 
 #include <stb/stb_image.h>
 
+#include "lib/entt/single_include/entt/entt.hpp"
+
 #include "src/Utils/Instrumentor.h"
 #include "src/Core/Preprocessor.h"

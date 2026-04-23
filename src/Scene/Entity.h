@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../lib/entt/single_include/entt/entt.hpp"
+#include "../pch.h"
 #include "Components.h"
 #include "Scene.h"
 #include "../Core/UUID.h"

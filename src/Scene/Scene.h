@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../lib/entt/single_include/entt/entt.hpp"
+#include "../pch.h"
 #include "../Core/TimeStep.h"
 #include "SceneSerializer.h"
 #include "../Physics/PhysicsEngine.h"
