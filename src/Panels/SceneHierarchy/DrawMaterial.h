@@ -4,6 +4,7 @@
 #include "../../Scene/Components.h"
 #include "../../Scene/Entity.h"
 #include "../../Asset/AssetManager.h"
+#include "../../Asset/MatdefLoader.h"
 
 namespace Engine {
 
@@ -177,7 +178,29 @@ namespace Engine {
         }
         else
         {
-            ImGui::TextDisabled("No Material Assigned (Drag & Drop a Material Asset)");
+            ImGui::Spacing();
+            
+            if (ImGui::Button("Create New Material", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+            {
+                Shared<Material> newMaterial = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
+
+                newMaterial->Add({PropertyKey::AlbedoTint, glm::vec4(1.0f)});
+                newMaterial->Add({PropertyKey::Emission, 0.0f});
+                newMaterial->Add({PropertyKey::RoughnessMultiplier, 0.5f});
+                newMaterial->Add({PropertyKey::MetallicMultiplier, 0.0f});
+
+                AssetMetadata metadata;
+                metadata.Handle = UUID();
+                metadata.Name = "Material";
+                metadata.Type = AssetType::Material;
+                metadata.FilePath = "";
+
+                Shared<Asset> cast = newMaterial;
+
+                AssetManager::RegisterAsset(metadata, cast);
+
+                component.MaterialHandle = metadata.Handle;
+            }
         }
     };
 

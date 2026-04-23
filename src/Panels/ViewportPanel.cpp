@@ -122,23 +122,10 @@ namespace Engine {
                         metadata.Type = AssetType::Mesh;
 
                         Shared<Asset> primitive = PrimitiveBuilder::CreatePrimitive(spec, name);
-
-                        Shared<Material> material = MakeShared<Material>();
-                        material->TargetShader = ShaderLibrary::Get("Texture");
-
-                        AssetMetadata materialMeta;
-                        materialMeta.Handle = UUID();
-                        materialMeta.Name = "Primitive material";
-                        materialMeta.FilePath = "";
-                        materialMeta.IsMemoryAsset = true;
-                        materialMeta.Type = AssetType::Material;
-
                         UUID meshID = AssetManager::RegisterAsset(metadata, primitive);
-                        UUID materialID = AssetManager::RegisterAsset(materialMeta, primitive);
 
                         entity.AddComponent<MeshComponent>(meshID);
                         entity.AddComponent<TransformComponent>(); 
-                        entity.AddComponent<MaterialComponent>(materialID);
                     }
                 }
 
