@@ -182,4 +182,21 @@ namespace Engine
 			}
 		}
 	};
+
+	// Currently the assumption is that there is a single root node, that is this function is mostly used to find the root of an imported scene (e.g. .gltf/.fbx)
+	Entity Scene::FindRootEntity()
+	{
+		auto view = m_Registry.view<TagComponent>();
+		
+		for (auto e : view) 
+		{
+			Entity entity { e, this };
+			if (!entity.HasParent()) 
+			{
+				return entity; 
+			}
+		}
+		
+		return {};
+	}
 };

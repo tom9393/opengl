@@ -19,6 +19,39 @@ namespace Engine
 
 	}
 
+
+	Entity Entity::CloneEntity(Entity sourceEntity, Scene* targetScene, Entity targetParent)
+	{
+		std::string name = sourceEntity.GetComponent<TagComponent>().tag;
+		Entity newEntity = targetScene->CreateEntity(name);
+
+		if (targetParent) { 
+			newEntity.SetParent(targetParent);
+		}
+
+		if (sourceEntity.HasComponent<TransformComponent>()) {
+			newEntity.AddComponent<TransformComponent>(sourceEntity.GetComponent<TransformComponent>());
+		}
+		
+		if (sourceEntity.HasComponent<MeshComponent>()) {
+			newEntity.AddComponent<MeshComponent>(sourceEntity.GetComponent<MeshComponent>());
+		}
+
+		if (sourceEntity.HasComponent<MaterialComponent>()) {
+			newEntity.AddComponent<MaterialComponent>(sourceEntity.GetComponent<MaterialComponent>());
+		}
+		// Add other components as needed
+
+		auto children = sourceEntity.GetChildren(); 
+		for (auto& child : children) 
+		{ 
+			Entity e { child, sourceEntity.GetScene() };
+			CloneEntity(e, targetScene, newEntity);
+		}
+
+		return newEntity;
+	}
+
 	void Entity::SetParent(Entity &parent)
 	{
 		// 1. Prevent self-parenting

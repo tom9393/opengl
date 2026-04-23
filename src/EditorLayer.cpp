@@ -38,6 +38,9 @@ namespace Engine
 
         m_ToolbarPanel.SetPlayCallback([this]() { OnScenePlay();});
         m_ToolbarPanel.SetStopCallback([this]() { OnSceneStop();});
+
+        m_MenuBarPanel.SetSaveCallback([this]() { SaveScene(); });
+        m_MenuBarPanel.SetOpenCallback([this]() { OpenScene(); });
     };
 
     EditorLayer::~EditorLayer()

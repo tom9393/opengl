@@ -28,6 +28,8 @@ namespace Engine
 
         entt::registry& GetRegistry() { return m_Registry; }
 
+        Entity FindRootEntity();
+
         private:
         void OnMousePress(MouseButtonPressedEvent &e);
 

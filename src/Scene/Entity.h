@@ -135,6 +135,9 @@ namespace Engine
 
         Scene* GetScene() { return m_Scene; }
 
+
+	    static Entity CloneEntity(Entity sourceEntity, Scene* targetScene, Entity targetParent);
+
         void SetParent(Entity& parent);
         entt::entity GetParent();
         std::vector<entt::entity> GetChildren();

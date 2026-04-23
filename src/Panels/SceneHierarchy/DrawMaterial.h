@@ -7,6 +7,32 @@
 
 namespace Engine {
 
+	static std::string PropertyKeyToString(PropertyKey key)
+	{
+		switch (key)
+		{
+			case PropertyKey::AlbedoTint:          return "Albedo Tint";
+			case PropertyKey::Emission:            return "Emission";
+			case PropertyKey::RoughnessMultiplier: return "Roughness Multiplier";
+			case PropertyKey::MetallicMultiplier:  return "Metallic Multiplier";
+			default:                               return "Unknown Parameter";
+		}
+	}
+
+	static std::string TextureTypeToString(TextureType type)
+	{
+		switch (type)
+		{
+			case TextureType::Albedo:       return "Albedo Map";
+			case TextureType::Normal:       return "Normal Map";
+			case TextureType::Metallic:     return "Metallic Map";
+			case TextureType::Roughness:    return "Roughness Map";
+			case TextureType::AO:           return "Ambient Occlusion";
+			case TextureType::Emissive:     return "Emissive Map";
+			default:                        return "Texture Map";
+		}
+	}
+
     inline static void DrawMaterial(Entity &entity, MaterialComponent &component)
     {
         ImGui::Button("Material", ImVec2(100.0f, 0.0f));
@@ -153,7 +179,6 @@ namespace Engine {
         {
             ImGui::TextDisabled("No Material Assigned (Drag & Drop a Material Asset)");
         }
-    }
-    }
+    };
 
 }
