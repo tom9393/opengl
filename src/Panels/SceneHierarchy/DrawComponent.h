@@ -150,7 +150,7 @@ namespace Engine {
 
         DrawComponent<TransformComponent>("TransformComponent", entity, DrawTransform);
         DrawComponent<MeshComponent>("MeshComponent", entity, DrawMesh);
-        DrawComponent<MaterialComponent>("TransformComponent", entity, DrawMaterial);
+        DrawComponent<MaterialComponent>("MaterialComponent", entity, DrawMaterial);
         DrawComponent<SceneCameraComponent>("CameraComponent", entity, DrawCamera);
         DrawComponent<RigidBodyComponent>("RigidbodyComponent", entity, DrawRigidBody);
         DrawComponent<LightComponent>("LightComponent", entity, DrawLight);

@@ -5,48 +5,37 @@
 
 namespace Engine {
 
-    enum class TextureType
+    enum class MaterialType
     {
         None = 0,
-        Albedo,    // PBR: Base color
-        Normal,    // PBR: Surface detail
-        Metallic,  // PBR: Metalness
-        Roughness, // PBR: Micro-surface detail
-        AO,        // PBR: Ambient Occlusion
-        Height,    // Often used for parallax
-        Diffuse,   // Legacy
-        Specular,  // Legacy
+        
+        Albedo,
+        Normal,
+        Metallic,
+        Roughness,
+        AO,
+        Height,
         Emissive,
-        Transparency
-    };
 
-    enum class PropertyKey
-    {
+        Diffuse,
+        Specular,
+
+        Transparency,
+        
         AlbedoTint,
         Emission,
         RoughnessMultiplier,
-        MetallicMultiplier,
-
-        Map
+        MetallicMultiplier
     };
 
-    struct TextureMap
-    {
-        TextureType Type;
-        Shared<Texture2D> MapTexture;
-
-        TextureMap(TextureType type, const Shared<Texture2D> &texture) : Type(type), MapTexture(texture) {}
-    };
-
-    using PropertyValue = std::variant<float, int, glm::vec4, TextureMap>;
+    using PropertyValue = std::variant<float, int, glm::vec4, Shared<Texture2D>>;
 
     struct MaterialProperty
     {
-        public:
-        PropertyKey Type; 
+        MaterialType Type; 
         PropertyValue Value;
 
-        MaterialProperty(PropertyKey type, PropertyValue value) : Type(type), Value(value) {}
+        MaterialProperty(MaterialType type, PropertyValue value) : Type(type), Value(value) {}
     };
 
 }

@@ -8,29 +8,44 @@
 
 namespace Engine {
 
-	static std::string PropertyKeyToString(PropertyKey key)
-	{
-		switch (key)
-		{
-			case PropertyKey::AlbedoTint:          return "Albedo Tint";
-			case PropertyKey::Emission:            return "Emission";
-			case PropertyKey::RoughnessMultiplier: return "Roughness Multiplier";
-			case PropertyKey::MetallicMultiplier:  return "Metallic Multiplier";
-			default:                               return "Unknown Parameter";
-		}
-	}
+    static std::string MaterialTypeToString(MaterialType type)
+    {
+        switch (type)
+        {
+            case MaterialType::None:                return "None";
+            
+            case MaterialType::Albedo:              return "Albedo";
+            case MaterialType::Normal:              return "Normal";
+            case MaterialType::Metallic:            return "Metallic";
+            case MaterialType::Roughness:           return "Roughness";
+            case MaterialType::AO:                  return "Ambient Occlusion";
+            case MaterialType::Height:              return "Height";
+            case MaterialType::Emissive:            return "Emissive Map";
 
-	static std::string TextureTypeToString(TextureType type)
+            case MaterialType::Diffuse:             return "Diffuse";
+            case MaterialType::Specular:            return "Specular";
+            case MaterialType::Transparency:        return "Transparency";
+
+            case MaterialType::AlbedoTint:          return "Albedo Tint";
+            case MaterialType::Emission:            return "Emission Color";
+            case MaterialType::RoughnessMultiplier: return "Roughness Multiplier";
+            case MaterialType::MetallicMultiplier:  return "Metallic Multiplier";
+            
+            default:                                return "Unknown";
+        }
+    }
+
+	static std::string TextureTypeToString(MaterialType type)
 	{
 		switch (type)
 		{
-			case TextureType::Albedo:       return "Albedo Map";
-			case TextureType::Normal:       return "Normal Map";
-			case TextureType::Metallic:     return "Metallic Map";
-			case TextureType::Roughness:    return "Roughness Map";
-			case TextureType::AO:           return "Ambient Occlusion";
-			case TextureType::Emissive:     return "Emissive Map";
-			default:                        return "Texture Map";
+			case MaterialType::Albedo:       return "Albedo Map";
+			case MaterialType::Normal:       return "Normal Map";
+			case MaterialType::Metallic:     return "Metallic Map";
+			case MaterialType::Roughness:    return "Roughness Map";
+			case MaterialType::AO:           return "Ambient Occlusion";
+			case MaterialType::Emissive:     return "Emissive Map";
+			default:                         return "Texture Map";
 		}
 	}
 
@@ -53,7 +68,6 @@ namespace Engine {
             Shared<Material> material = AssetManager::GetAsset<Material>(handle);
             ImGui::Separator();
             
-            // --- 1. Core Material Settings ---
             if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen))
             {
                 const char* blendModes[] = { "Opaque", "Transparent", "Additive" };
@@ -66,90 +80,67 @@ namespace Engine {
                 ImGui::TreePop();
             }
 
-            // --- 2. Dynamic Parameters & Textures ---
             if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                // Track removals outside the loop to avoid iterator invalidation
-                bool removeProperty = false;
-                PropertyKey propToRemove;
+                MaterialType propToRemove = MaterialType::None;
+                bool shouldRemove = false;
                 
-                // Draw Scalar Properties
+                float contentWidth = ImGui::GetContentRegionAvail().x;
+
                 for (auto& [key, value] : material->m_Properties)
                 {
                     ImGui::PushID((int)key);
-                    std::string name = PropertyKeyToString(key);
+                    std::string name = MaterialTypeToString(key);
 
-                    // Use ImGui layout to put the remove button on the right
-                    float contentWidth = ImGui::GetContentRegionAvail().x;
-                    
                     if (std::holds_alternative<float>(value))
                     {
                         ImGui::SetNextItemWidth(contentWidth - 30.0f);
                         ImGui::DragFloat(name.c_str(), &std::get<float>(value), 0.01f);
+                        ImGui::SameLine(contentWidth - 20.0f);
                     }
                     else if (std::holds_alternative<glm::vec4>(value))
                     {
                         ImGui::SetNextItemWidth(contentWidth - 30.0f);
                         ImGui::ColorEdit4(name.c_str(), glm::value_ptr(std::get<glm::vec4>(value)));
+                        ImGui::SameLine(contentWidth - 20.0f);
                     }
-                    
-                    ImGui::SameLine(contentWidth - 20.0f);
+                    else if (std::holds_alternative<Shared<Texture2D>>(value))
+                    {
+                        auto& tex = std::get<Shared<Texture2D>>(value);
+                        ImGui::Text("%s", name.c_str());
+                        ImGui::SameLine(contentWidth - 90.0f); 
+                        
+                        void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
+                        if (tex) 
+                            ImGui::ImageButton("##tex", (ImTextureID)texID, ImVec2(64, 64), {0, 1}, {1, 0});
+                        else 
+                            ImGui::Button("Drop\nTexture", ImVec2(64, 64)); 
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
+                            {
+                                UUID texHandle = *(UUID*)payload->Data;
+                                material->Add({key, AssetManager::GetAsset<Texture2D>(texHandle)});
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+                        ImGui::SameLine(contentWidth - 20.0f);
+                    }
+
                     if (ImGui::Button("-"))
                     {
                         propToRemove = key;
-                        removeProperty = true;
+                        shouldRemove = true;
                     }
+                    
                     ImGui::PopID();
                 }
-                if (removeProperty) material->m_Properties.erase(propToRemove);
+
+                if (shouldRemove) material->Remove(propToRemove);
 
                 ImGui::Separator();
 
-                // Draw Texture Maps
-                bool removeTexture = false;
-                TextureType texToRemove;
-                
-                for (auto& [type, tex] : material->m_Textures)
-                {
-                    ImGui::PushID((int)type);
-                    std::string name = TextureTypeToString(type);
-                    
-                    ImGui::Text("%s", name.c_str());
-                    ImGui::SameLine(ImGui::GetContentRegionAvail().x - 90.0f); 
-                    
-                    void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
-                    if (tex) 
-                    {
-                        ImGui::ImageButton(name.c_str(), (ImTextureID)texID, ImVec2(64, 64), {0, 1}, {1, 0});
-                    }
-                    else 
-                    {
-                        ImGui::Button("Drop\nTexture", ImVec2(64, 64)); 
-                    }
-
-                    if (ImGui::BeginDragDropTarget())
-                    {
-                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
-                        {
-                            UUID texHandle = *(UUID*)payload->Data;
-                            material->m_Textures[type] = AssetManager::GetAsset<Texture2D>(texHandle);
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("-"))
-                    {
-                        texToRemove = type;
-                        removeTexture = true;
-                    }
-                    ImGui::PopID();
-                }
-                if (removeTexture) material->m_Textures.erase(texToRemove);
-
-                ImGui::Separator();
-
-                // --- 3. Adding New Parameters ---
                 if (ImGui::Button("Add Parameter/Map", ImVec2(-1, 0)))
                     ImGui::OpenPopup("AddParamPopup");
 
@@ -157,17 +148,19 @@ namespace Engine {
                 {
                     if (ImGui::BeginMenu("Textures"))
                     {
-                        if (ImGui::MenuItem("Albedo Map"))    material->m_Textures[TextureType::Albedo]    = nullptr;
-                        if (ImGui::MenuItem("Normal Map"))    material->m_Textures[TextureType::Normal]    = nullptr;
-                        if (ImGui::MenuItem("Metallic Map"))  material->m_Textures[TextureType::Metallic]  = nullptr;
-                        if (ImGui::MenuItem("Roughness Map")) material->m_Textures[TextureType::Roughness] = nullptr;
-                        if (ImGui::MenuItem("AO Map"))        material->m_Textures[TextureType::AO]        = nullptr;
+                        if (ImGui::MenuItem("Albedo Map"))    material->Add({MaterialType::Albedo, Shared<Texture2D>(nullptr)});
+                        if (ImGui::MenuItem("Normal Map"))    material->Add({MaterialType::Normal, Shared<Texture2D>(nullptr)});
+                        if (ImGui::MenuItem("Metallic Map"))  material->Add({MaterialType::Metallic, Shared<Texture2D>(nullptr)});
+                        if (ImGui::MenuItem("Roughness Map")) material->Add({MaterialType::Roughness, Shared<Texture2D>(nullptr)});
+                        if (ImGui::MenuItem("AO Map"))        material->Add({MaterialType::AO, Shared<Texture2D>(nullptr)});
                         ImGui::EndMenu();
                     }
-                    if (ImGui::BeginMenu("Scalars"))
+                    if (ImGui::BeginMenu("Properties"))
                     {
-                        if (ImGui::MenuItem("Albedo Tint")) material->m_Properties[PropertyKey::AlbedoTint] = glm::vec4(1.0f);
-                        if (ImGui::MenuItem("Emission"))    material->m_Properties[PropertyKey::Emission]   = 0.0f;
+                        if (ImGui::MenuItem("Albedo Tint"))          material->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
+                        if (ImGui::MenuItem("Emission Color"))       material->Add({MaterialType::Emission, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)});
+                        if (ImGui::MenuItem("Roughness Multiplier")) material->Add({MaterialType::RoughnessMultiplier, 1.0f});
+                        if (ImGui::MenuItem("Metallic Multiplier"))  material->Add({MaterialType::MetallicMultiplier, 1.0f});
                         ImGui::EndMenu();
                     }
                     ImGui::EndPopup();
@@ -184,10 +177,10 @@ namespace Engine {
             {
                 Shared<Material> newMaterial = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
-                newMaterial->Add({PropertyKey::AlbedoTint, glm::vec4(1.0f)});
-                newMaterial->Add({PropertyKey::Emission, 0.0f});
-                newMaterial->Add({PropertyKey::RoughnessMultiplier, 0.5f});
-                newMaterial->Add({PropertyKey::MetallicMultiplier, 0.0f});
+                newMaterial->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
+                newMaterial->Add({MaterialType::Emission, 0.0f});
+                newMaterial->Add({MaterialType::RoughnessMultiplier, 0.5f});
+                newMaterial->Add({MaterialType::MetallicMultiplier, 0.0f});
 
                 AssetMetadata metadata;
                 metadata.Handle = UUID();

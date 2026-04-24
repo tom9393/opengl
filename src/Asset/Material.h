@@ -18,14 +18,18 @@ namespace Engine {
         bool DepthWrite = true;
         bool DoubleSided = false;
 
+        std::unordered_map<MaterialType, PropertyValue> m_Properties;
+        std::unordered_map<MaterialType, std::string> m_PropertyBindings;
+        std::unordered_map<MaterialType, std::string> m_TextureBindings;
+
         void Add(const MaterialProperty& property)
         {
-            if (property.Type == PropertyKey::Map) {
-                const auto& texMap = std::get<TextureMap>(property.Value);
-                m_Textures[texMap.Type] = texMap.MapTexture;
-            } else {
-                m_Properties[property.Type] = property.Value;
-            }
+            m_Properties[property.Type] = property.Value;
+        }
+
+        void Remove(const MaterialType key)
+        {
+            m_Properties.erase(key);
         }
 
         void Bind() const
@@ -34,39 +38,46 @@ namespace Engine {
 
             for (const auto& [key, value] : m_Properties)
             {
-                auto bindingIt = PropertyBindings.find(key);
-                if (bindingIt == PropertyBindings.end()) continue;
+                auto bindingIt = m_PropertyBindings.find(key);
+                if (bindingIt == m_PropertyBindings.end()) continue;
 
-                std::string uniformName = bindingIt->second;
+                const std::string& uniformName = bindingIt->second;
 
-                if (std::holds_alternative<float>(value)) TargetShader->SetFloat(uniformName, std::get<float>(value));
-                else if (std::holds_alternative<int>(value)) TargetShader->SetInt(uniformName, std::get<int>(value));
-                else if (std::holds_alternative<glm::vec4>(value)) TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
+                if (std::holds_alternative<float>(value)) 
+                    TargetShader->SetFloat(uniformName, std::get<float>(value));
+                else if (std::holds_alternative<int>(value)) 
+                    TargetShader->SetInt(uniformName, std::get<int>(value));
+                else if (std::holds_alternative<glm::vec4>(value)) 
+                    TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
             }
 
             uint32_t slot = 0;
-            for (const auto& [type, uniformName] : TextureBindings)
+            for (const auto& [key, uniformName] : m_TextureBindings)
             {
-                auto it = m_Textures.find(type);
-                Shared<Texture2D> texture = (it != m_Textures.end() && it->second) ? it->second : GetDefaultFallback(type);
+                auto it = m_Properties.find(key);
+                Shared<Texture2D> texture = nullptr;
+
+                if (it != m_Properties.end() && std::holds_alternative<Shared<Texture2D>>(it->second)) {
+                    texture = std::get<Shared<Texture2D>>(it->second);
+                }
+
+                if (!texture) {
+                    texture = GetDefaultFallback(key);
+                }
+
                 texture->Bind(slot);
                 TargetShader->SetInt(uniformName, slot);
                 slot++;
             }
         }
 
-        Shared<Texture2D> GetDefaultFallback(TextureType type) const {
+        Shared<Texture2D> GetDefaultFallback(MaterialType type) const 
+        {
             switch(type) {
-                case TextureType::Normal: return DefaultTextures::GetNormalTexture();
-                case TextureType::Metallic: return DefaultTextures::GetBlackTexture();
-                default: return DefaultTextures::GetWhiteTexture();
+                case MaterialType::Normal:   return DefaultTextures::GetNormalTexture();
+                case MaterialType::Metallic: return DefaultTextures::GetBlackTexture();
+                default:                     return DefaultTextures::GetWhiteTexture();
             }
         }
-
-        std::unordered_map<PropertyKey, PropertyValue> m_Properties;
-        std::unordered_map<TextureType, Shared<Texture2D>> m_Textures;
-
-        std::unordered_map<TextureType, std::string> TextureBindings;
-        std::unordered_map<PropertyKey, std::string> PropertyBindings;
     };
 }

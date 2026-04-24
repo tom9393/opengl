@@ -139,35 +139,35 @@ namespace Engine
         public:
         TextureLayout()
         {
-            m_Texture_Keys[TextureType::Diffuse] = "pbr.albedoMap";
-            m_Texture_Keys[TextureType::Normal] = "pbr.normalMap";
-            m_Texture_Keys[TextureType::Metallic] = "pbr.metallicMap";
-            m_Texture_Keys[TextureType::Roughness] = "pbr.roughnessMap";
-            m_Texture_Keys[TextureType::AO] = "pbr.aoMap";
+            m_Texture_Keys[MaterialType::Diffuse] = "pbr.albedoMap";
+            m_Texture_Keys[MaterialType::Normal] = "pbr.normalMap";
+            m_Texture_Keys[MaterialType::Metallic] = "pbr.metallicMap";
+            m_Texture_Keys[MaterialType::Roughness] = "pbr.roughnessMap";
+            m_Texture_Keys[MaterialType::AO] = "pbr.aoMap";
         }
 
-        void AddTexture(TextureType type, Shared<Texture2D> texture)
+        void AddTexture(MaterialType type, Shared<Texture2D> texture)
         {
             m_Textures[type].emplace_back(texture);
         }
 
-        std::vector<Shared<Texture2D>> &GetByType(TextureType type)
+        std::vector<Shared<Texture2D>> &GetByType(MaterialType type)
         {
             return m_Textures[type];
         }
 
-        unsigned int GetCountByType(TextureType type)
+        unsigned int GetCountByType(MaterialType type)
         {
             return m_Textures[type].size();
         }
 
-        std::string &GetStringByType(TextureType type) { return m_Texture_Keys[type]; }
+        std::string &GetStringByType(MaterialType type) { return m_Texture_Keys[type]; }
 
-        std::unordered_map<TextureType, std::vector<Shared<Texture2D>>>::const_iterator begin() const { return m_Textures.begin(); }
-        std::unordered_map<TextureType, std::vector<Shared<Texture2D>>>::const_iterator end() const { return m_Textures.end(); }
+        std::unordered_map<MaterialType, std::vector<Shared<Texture2D>>>::const_iterator begin() const { return m_Textures.begin(); }
+        std::unordered_map<MaterialType, std::vector<Shared<Texture2D>>>::const_iterator end() const { return m_Textures.end(); }
 
         private:
-        std::unordered_map<TextureType, std::vector<Shared<Texture2D>>> m_Textures;
-        std::unordered_map<TextureType, std::string> m_Texture_Keys;
+        std::unordered_map<MaterialType, std::vector<Shared<Texture2D>>> m_Textures;
+        std::unordered_map<MaterialType, std::string> m_Texture_Keys;
     };
 };

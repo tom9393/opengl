@@ -48,56 +48,56 @@ namespace Engine
         aiTextureType_SHININESS
     };
 
-    static TextureType AssimpToTextureType(aiTextureType type)
+    static MaterialType AssimpToTextureType(aiTextureType type)
     {
         // Albedo / Diffuse
         if (type == aiTextureType_DIFFUSE || type == aiTextureType_BASE_COLOR) 
-            return TextureType::Albedo;
+            return MaterialType::Albedo;
         
         // Specular
         if (type == aiTextureType_SPECULAR) 
-            return TextureType::Specular;
+            return MaterialType::Specular;
 
         // Normals / Height (OBJ files often use Height for Normals)
         if (type == aiTextureType_NORMALS || type == aiTextureType_HEIGHT || type == aiTextureType_NORMAL_CAMERA) 
-            return TextureType::Normal;
+            return MaterialType::Normal;
 
         // Metallic / Shininess
         if (type == aiTextureType_METALNESS || type == aiTextureType_SHININESS) 
-            return TextureType::Metallic;
+            return MaterialType::Metallic;
 
         // Roughness
         if (type == aiTextureType_DIFFUSE_ROUGHNESS || type == aiTextureType_MAYA_SPECULAR_ROUGHNESS) 
-            return TextureType::Roughness;
+            return MaterialType::Roughness;
 
         // Ambient Occlusion / Lightmaps
         if (type == aiTextureType_AMBIENT_OCCLUSION || type == aiTextureType_LIGHTMAP || type == aiTextureType_AMBIENT) 
-            return TextureType::AO;
+            return MaterialType::AO;
 
         // Emissive
         if (type == aiTextureType_EMISSIVE || type == aiTextureType_EMISSION_COLOR) 
-            return TextureType::Emissive;
+            return MaterialType::Emissive;
 
         // Transparency / Opacity
         if (type == aiTextureType_OPACITY) 
-            return TextureType::Transparency;
+            return MaterialType::Transparency;
 
-        return TextureType::None;
+        return MaterialType::None;
     }
 
-    static aiTextureType TypeToAssimpType(TextureType type)
+    static aiTextureType TypeToAssimpType(MaterialType type)
     {
         switch (type)
         {
-            case TextureType::Diffuse:      return aiTextureType_BASE_COLOR;
-            case TextureType::Specular:     return aiTextureType_SPECULAR;
-            case TextureType::Normal:       return aiTextureType_NORMALS;
-            case TextureType::Metallic:     return aiTextureType_METALNESS;
-            case TextureType::Roughness:    return aiTextureType_DIFFUSE_ROUGHNESS;
-            case TextureType::AO:           return aiTextureType_AMBIENT_OCCLUSION;
-            case TextureType::Emissive:     return aiTextureType_EMISSION_COLOR;
-            case TextureType::Transparency: return aiTextureType_OPACITY;
-            default:                        return aiTextureType_NONE;
+            case MaterialType::Diffuse:      return aiTextureType_BASE_COLOR;
+            case MaterialType::Specular:     return aiTextureType_SPECULAR;
+            case MaterialType::Normal:       return aiTextureType_NORMALS;
+            case MaterialType::Metallic:     return aiTextureType_METALNESS;
+            case MaterialType::Roughness:    return aiTextureType_DIFFUSE_ROUGHNESS;
+            case MaterialType::AO:           return aiTextureType_AMBIENT_OCCLUSION;
+            case MaterialType::Emissive:     return aiTextureType_EMISSION_COLOR;
+            case MaterialType::Transparency: return aiTextureType_OPACITY;
+            default:                         return aiTextureType_NONE;
         }
     }
 
@@ -328,10 +328,10 @@ namespace Engine
         {
             Shared<Material> material = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
-            material->Add({PropertyKey::AlbedoTint, GetAlbedoTint(mat)});
-            material->Add({PropertyKey::Emission, GetEmission(mat)});
-            material->Add({PropertyKey::RoughnessMultiplier, GetRoughness(mat)});
-            material->Add({PropertyKey::MetallicMultiplier, GetMetallic(mat)});
+            material->Add({MaterialType::AlbedoTint, GetAlbedoTint(mat)});
+            material->Add({MaterialType::Emission, GetEmission(mat)});
+            material->Add({MaterialType::RoughnessMultiplier, GetRoughness(mat)});
+            material->Add({MaterialType::MetallicMultiplier, GetMetallic(mat)});
 
             for (auto& type : AssimpTextureTypes)
             {
@@ -352,9 +352,7 @@ namespace Engine
                         continue;
                     }
 
-                    TextureMap map = {AssimpToTextureType(type), texture};
-                    MaterialProperty materialMap = {PropertyKey::Map, map};
-                    material->Add(materialMap);
+                    material->Add({AssimpToTextureType(type), texture});
                 }
             }
 

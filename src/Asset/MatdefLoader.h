@@ -5,24 +5,26 @@
 
 namespace Engine {
 
-    static TextureType StringToTextureType(const std::string& typeStr)
+    static MaterialType StringToMaterialType(const std::string& typeStr)
     {
-        if (typeStr == "Albedo")    return TextureType::Albedo;
-        if (typeStr == "Normal")    return TextureType::Normal;
-        if (typeStr == "Metallic")  return TextureType::Metallic;
-        if (typeStr == "Roughness") return TextureType::Roughness;
-        if (typeStr == "AO")        return TextureType::AO;
-        return TextureType::None;
-    }
-
-    static PropertyKey StringToPropertyKey(const std::string& typeStr)
-    {
-        if (typeStr == "AlbedoTint")          return PropertyKey::AlbedoTint;
-        if (typeStr == "Emission")            return PropertyKey::Emission;
-        if (typeStr == "RoughnessMultiplier") return PropertyKey::RoughnessMultiplier;
-        if (typeStr == "MetallicMultiplier")  return PropertyKey::MetallicMultiplier;
+        if (typeStr == "Albedo")               return MaterialType::Albedo;
+        if (typeStr == "Normal")               return MaterialType::Normal;
+        if (typeStr == "Metallic")             return MaterialType::Metallic;
+        if (typeStr == "Roughness")            return MaterialType::Roughness;
+        if (typeStr == "AO")                   return MaterialType::AO;
+        if (typeStr == "Height")               return MaterialType::Height;
+        if (typeStr == "Emissive")             return MaterialType::Emissive;
         
-        return PropertyKey::Map; 
+        if (typeStr == "Diffuse")              return MaterialType::Diffuse;
+        if (typeStr == "Specular")             return MaterialType::Specular;
+        
+        if (typeStr == "Transparency")         return MaterialType::Transparency;
+        if (typeStr == "AlbedoTint")           return MaterialType::AlbedoTint;
+        if (typeStr == "Emission")             return MaterialType::Emission;
+        if (typeStr == "RoughnessMultiplier")  return MaterialType::RoughnessMultiplier;
+        if (typeStr == "MetallicMultiplier")   return MaterialType::MetallicMultiplier;
+
+        return MaterialType::None;
     }
 
     class MatdefLoader
@@ -56,16 +58,16 @@ namespace Engine {
             auto texBindings = matDef["TextureBindings"];
             if (texBindings) {
                 for (auto it = texBindings.begin(); it != texBindings.end(); ++it) {
-                    TextureType type = StringToTextureType(it->first.as<std::string>());
-                    material->TextureBindings[type] = it->second.as<std::string>();
+                    MaterialType type = StringToMaterialType(it->first.as<std::string>());
+                    material->m_TextureBindings[type] = it->second.as<std::string>();
                 }
             }
 
             auto propBindings = matDef["PropertyBindings"];
             if (propBindings) {
                 for (auto it = propBindings.begin(); it != propBindings.end(); ++it) {
-                    PropertyKey key = StringToPropertyKey(it->first.as<std::string>());
-                    material->PropertyBindings[key] = it->second.as<std::string>();
+                    MaterialType type = StringToMaterialType(it->first.as<std::string>());
+                    material->m_PropertyBindings[type] = it->second.as<std::string>();
                 }
             }
 
