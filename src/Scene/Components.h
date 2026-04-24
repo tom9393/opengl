@@ -121,7 +121,9 @@ namespace Engine
         BodyType type = BodyType::Static;
         float mass = 0;
         glm::vec3 inertia = glm::vec3(0, 0, 0);
-        
+
+        std::filesystem::path ShapePath;
+
         Shared<RigidBody> RuntimeBody = nullptr;
 
         RigidBodyComponent() = default;

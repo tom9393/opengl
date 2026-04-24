@@ -57,8 +57,7 @@ namespace Engine {
         public:
         RBComplexShape(const std::string &modelPath) : RBShape(new btCompoundShape)
         {
-            std::string bakePath = modelPath + ".pmcol";
-            std::ifstream in(bakePath, std::ios::binary);
+            std::ifstream in(modelPath, std::ios::binary);
 
             if (!in.is_open()) {
                 std::cerr << "[Physics] No bake file found for " << modelPath << std::endl;
@@ -90,8 +89,10 @@ namespace Engine {
     class RigidBody
     {
         public:
-        RigidBody(RBShape* shape, const glm::vec3 &translation = glm::vec3(0, 0, 0), const glm::vec3 &rotation = glm::vec3(0, 0, 0), const glm::vec3 &inertia = glm::vec3(0, 0, 0), float mass = 0.0f) : m_Shape(shape)
+        RigidBody(RBShape* shape, const glm::vec3 &translation = glm::vec3(0, 0, 0), const glm::vec3 &rotation = glm::vec3(0, 0, 0), const glm::vec3 &scale = glm::vec3(1, 1, 1), const glm::vec3 &inertia = glm::vec3(0, 0, 0), float mass = 0.0f) : m_Shape(shape)
         {
+            m_Shape->GetShape()->setLocalScaling(GlmToBullet(scale));
+            
             btVector3 localInertia = GlmToBullet(inertia);
             if (mass > 0.0f) {
                 m_Shape->GetShape()->calculateLocalInertia(mass, localInertia);
@@ -317,6 +318,11 @@ namespace Engine {
                 m_Body->setCollisionFlags(m_Body->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
                 m_Body->setActivationState(WANTS_DEACTIVATION);
             }
+        }
+
+        void SetUserPointer(void* ptr)
+        {
+			m_Body->setUserPointer(ptr);
         }
 
         private:

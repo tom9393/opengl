@@ -3,16 +3,34 @@
 #include "BulletCollision/CollisionShapes/btConvexHullShape.h"
 #include "BulletCollision/CollisionShapes/btShapeHull.h"
 #include "Mesh.h"
+#include "AssetManager.h"
+#include "../Scene/Entity.h"
+
 namespace Engine {
 
     class CollisionBaker
     {
     public:
     // Generates a simplified hull and saves it to disk
-        static void Bake(const std::string& modelPath, const std::vector<Shared<Mesh>>& meshes) {
-            std::string outputPath = modelPath + ".pmcol";
+        static std::string Bake(Entity &entity)
+        {
+            std::vector<Shared<Mesh>> meshes;
+            std::vector<Entity> meshEntities;
 
-            if (std::filesystem::exists(outputPath)) return;
+            if (entity.HasComponent<MeshComponent>()) meshEntities.emplace_back(entity);
+
+            entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
+            for (auto& e : meshEntities)
+            {
+                UUID handle = e.GetComponent<MeshComponent>().MeshHandle;
+                meshes.emplace_back(AssetManager::GetAsset<Mesh>(handle));
+            }
+
+            AssetMetadata metadata = AssetManager::GetMetadata(meshEntities.front().GetComponent<MeshComponent>().MeshHandle);
+
+            std::string outputPath = metadata.FilePath + ".pmcol";
+
+            if (std::filesystem::exists(outputPath)) return outputPath;
             std::ofstream out(outputPath, std::ios::binary);
 
             uint32_t meshCount = (uint32_t)meshes.size();
@@ -44,6 +62,7 @@ namespace Engine {
             }
             out.close();
             std::cout << "[Baker] Finished baking: " << outputPath << std::endl;
+            return outputPath;
         }
     };
 }

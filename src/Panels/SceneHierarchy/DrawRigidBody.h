@@ -32,26 +32,28 @@ namespace Engine {
 
             ImGui::EndCombo();
         }
+
         if (ImGui::Button("Re-Bake Collision Data"))
         {
-            std::vector<Shared<Mesh>> meshes;
-            std::vector<Entity> meshEntities;
-
-            if (entity.HasComponent<MeshComponent>()) meshEntities.emplace_back(entity);
-
-            entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
-            for (auto& e : meshEntities)
-            {
-                UUID handle = e.GetComponent<MeshComponent>().MeshHandle;
-                meshes.emplace_back(AssetManager::GetAsset<Mesh>(handle));
-            }
-
-            AssetMetadata metadata = AssetManager::GetMetadata(meshEntities[0].GetComponent<MeshComponent>().MeshHandle);
-
-            // 1. Ensure a bake exists (or bake it now if missing)
-            CollisionBaker::Bake(metadata.FilePath, meshes);
+            component.ShapePath = CollisionBaker::Bake(entity);
         }
-        // Add a small hint so the user knows what this does
+
+        bool fileExists = !component.ShapePath.empty() && std::filesystem::exists(component.ShapePath);
+
+        ImGui::SameLine();
+        if (fileExists)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 0.2f, 1.0f));
+            ImGui::Text("(Meshes baked)");
+            ImGui::PopStyleColor();
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+            ImGui::Text("(No bake found)");
+            ImGui::PopStyleColor();
+        }
+
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Recalculates the simplified physics hull from the high-poly mesh.");
 

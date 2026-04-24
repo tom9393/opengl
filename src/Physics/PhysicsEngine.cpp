@@ -120,30 +120,14 @@ namespace Engine {
 			Entity entity = { e, s_Scene };
 			auto& transformComponent = entity.GetComponent<TransformComponent>();
 			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
-            std::vector<Entity> meshEntities;
-            if (entity.HasComponent<MeshComponent>()) meshEntities.emplace_back(entity);
-            entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
-            if (meshEntities.empty()) continue;
 
-            std::vector<Shared<Mesh>> meshes;
+            if (rigidbodyComponent.ShapePath.empty()) continue;
 
-            for (auto& e : meshEntities)
-            {
-                UUID handle = e.GetComponent<MeshComponent>().MeshHandle;
-                meshes.emplace_back(AssetManager::GetAsset<Mesh>(handle));
-            }
-
-            AssetMetadata metadata = AssetManager::GetMetadata(meshEntities[0].GetComponent<MeshComponent>().MeshHandle);
-
-			// 1. Ensure a bake exists (or bake it now if missing)
-			CollisionBaker::Bake(metadata.FilePath, meshes);
-
-			RBComplexShape* shape = new RBComplexShape(metadata.FilePath);
-			Shared<RigidBody> body = MakeShared<RigidBody>(shape, transformComponent.translation, transformComponent.rotation, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-			if (!body) return;
+			RBComplexShape* shape = new RBComplexShape(rigidbodyComponent.ShapePath);
+			Shared<RigidBody> body = MakeShared<RigidBody>(shape, transformComponent.translation, transformComponent.rotation, transformComponent.scale, rigidbodyComponent.inertia, rigidbodyComponent.mass);
 
 			AddRigidBody(body);
-			body->GetBody()->setUserPointer((void*)(uintptr_t)entity.GetHandle());
+            body->SetUserPointer((void*)(uintptr_t)entity.GetHandle());
 			body->SetTransform(transformComponent.translation, transformComponent.rotation);
 
             rigidbodyComponent.RuntimeBody = body;
