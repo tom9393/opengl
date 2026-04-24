@@ -31,7 +31,7 @@ namespace Engine {
         m_EditorCamera = camera;
     }
 
-    void ViewportPanel::SetSceneDroppedCallback(const std::function<void(const std::string&)>& callback) {
+    void ViewportPanel::SetSceneDroppedCallback(const std::function<void(const UUID)>& callback) {
         m_SceneDroppedCallback = callback;
     }
 
@@ -83,11 +83,10 @@ namespace Engine {
 
     void ViewportPanel::DrawDragAndDrop() {
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Scene")) {
-                const char* path = (char*)payload->Data;
-                if (m_SceneDroppedCallback) {
-                    m_SceneDroppedCallback(path);
-                }
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Model"))
+			{
+				UUID handle = *(UUID*)payload->Data;
+                if (m_SceneDroppedCallback) m_SceneDroppedCallback(handle);
             }
             ImGui::EndDragDropTarget();
         }

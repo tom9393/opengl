@@ -19,7 +19,7 @@ namespace Engine {
         void SetCamera(Shared<EditorCamera> camera);
 
         // Callbacks for events the panel shouldn't handle directly
-        void SetSceneDroppedCallback(const std::function<void(const std::string&)>& callback);
+        void SetSceneDroppedCallback(const std::function<void(const UUID)>& callback);
 
         // Called every frame to draw the ImGui window
         void OnImGuiRender();
@@ -49,7 +49,7 @@ namespace Engine {
         glm::vec2 m_ViewportBounds[2] = { {0.0f, 0.0f}, {0.0f, 0.0f} };
         glm::vec2 m_MousePos = { 0.0f, 0.0f };
 
-        std::function<void(const std::string&)> m_SceneDroppedCallback;
+        std::function<void(const UUID)> m_SceneDroppedCallback;
     };
 
 }

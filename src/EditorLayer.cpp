@@ -34,7 +34,7 @@ namespace Engine
         m_ViewportPanel.SetContext(m_EditingScene);
         m_ViewportPanel.SetRenderer(m_SceneRenderer);
         m_ViewportPanel.SetCamera(m_EditorCamera);
-        m_ViewportPanel.SetSceneDroppedCallback([this](const std::string& path) { this->OpenScene(path.c_str()); });
+        m_ViewportPanel.SetSceneDroppedCallback([this](const UUID handle) { this->OpenScene(handle); });
 
         m_ToolbarPanel.SetPlayCallback([this]() { OnScenePlay();});
         m_ToolbarPanel.SetStopCallback([this]() { OnSceneStop();});
@@ -133,15 +133,15 @@ namespace Engine
         }
     };
 
-    void EditorLayer::OpenScene(const char* path)
+    void EditorLayer::OpenScene(const UUID handle)
     {
-        if (path != nullptr)
-        {
-            m_EditingScene = AssetManager::GetAsset<Scene>(AssetManager::ImportAsset(path));
-            SceneManager::SetContext(m_EditingScene.get());
+            Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
 
-            m_SceneRenderer->SetScene(m_EditingScene.get());
-        }
+            Entity rootEntity = modelScene->FindRootEntity();
+            if (rootEntity) 
+            {
+                Entity spawnedModel = Entity::CloneEntity(rootEntity, m_EditingScene.get(), Entity{});
+            }
     }
 
     void EditorLayer::SaveScene()

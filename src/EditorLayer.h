@@ -36,7 +36,7 @@ namespace Engine
         void UpdateHoveredEntity();
 
         void OpenScene();
-        void OpenScene(const char* path);
+        void OpenScene(const UUID handle);
         void SaveScene();
 
         void OnScenePlay();
