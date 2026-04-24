@@ -83,8 +83,7 @@ namespace Engine
         auto& tag = context->m_Registry.get<TagComponent>(entity.GetHandle());
         
         // Check if we have children to determine if we should render as a Leaf or a Tree Node
-        bool hasChildren = entity.HasComponent<RelationshipComponent>() && 
-                           !entity.GetComponent<RelationshipComponent>().Children.empty();
+        bool hasChildren = entity.HasComponent<RelationshipComponent>() && !entity.GetComponent<RelationshipComponent>().Children.empty();
 
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
         if (selected == entity) flags |= ImGuiTreeNodeFlags_Selected;

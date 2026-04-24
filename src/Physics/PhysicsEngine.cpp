@@ -121,6 +121,7 @@ namespace Engine {
 			auto& transformComponent = entity.GetComponent<TransformComponent>();
 			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
             std::vector<Entity> meshEntities;
+            if (entity.HasComponent<MeshComponent>()) meshEntities.emplace_back(entity);
             entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
             if (meshEntities.empty()) continue;
 

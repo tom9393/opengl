@@ -35,8 +35,10 @@ namespace Engine {
         if (ImGui::Button("Re-Bake Collision Data"))
         {
             std::vector<Shared<Mesh>> meshes;
-
             std::vector<Entity> meshEntities;
+
+            if (entity.HasComponent<MeshComponent>()) meshEntities.emplace_back(entity);
+
             entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
             for (auto& e : meshEntities)
             {

@@ -1,9 +1,9 @@
 #include "../pch.h"
 #include "Asset/AssetManager.h"
+#include "Core/KeyCodes.h"
 #include "Core/MouseButtonCodes.h"
 #include "EditorLayer.h"
 #include "Render/Renderer.h"
-#include "Core/KeyCodes.h"
 #include "Core/Application.h"
 #include "Scene/Entity.h"
 #include "Scene/SceneSerializer.h"
@@ -34,13 +34,23 @@ namespace Engine
         m_ViewportPanel.SetContext(m_EditingScene);
         m_ViewportPanel.SetRenderer(m_SceneRenderer);
         m_ViewportPanel.SetCamera(m_EditorCamera);
-        m_ViewportPanel.SetSceneDroppedCallback([this](const UUID handle) { this->OpenScene(handle); });
 
         m_ToolbarPanel.SetPlayCallback([this]() { OnScenePlay();});
         m_ToolbarPanel.SetStopCallback([this]() { OnSceneStop();});
 
         m_MenuBarPanel.SetSaveCallback([this]() { SaveScene(); });
         m_MenuBarPanel.SetOpenCallback([this]() { OpenScene(); });
+
+        m_Shortcuts[KEY_W] = []() { GizmoManager::SetOperation(ImGuizmo::OPERATION::TRANSLATE); };
+        m_Shortcuts[KEY_R] = []() { GizmoManager::SetOperation(ImGuizmo::OPERATION::ROTATE); };
+        m_Shortcuts[KEY_D] = []() { GizmoManager::SetOperation(ImGuizmo::OPERATION::SCALE); };
+        m_Shortcuts[KEY_F1] = [this]() { 
+            if (SceneManager::GetSceneState() == SceneState::Edit) OnScenePlay(); 
+            else OnSceneStop(); 
+        };
+        m_Shortcuts[KEY_F5] = [this]() { 
+            ScriptEngine::ReloadScripts();
+        };
     };
 
     EditorLayer::~EditorLayer()
@@ -60,8 +70,6 @@ namespace Engine
 
     void EditorLayer::OnUpdate(TimeStep ts)
     {
-        PROFILE_FUNCTION();
-
         switch (SceneManager::GetSceneState()) {
             case Engine::SceneState::Edit:
             {
@@ -97,24 +105,9 @@ namespace Engine
 
     bool EditorLayer::OnKeyEvent(KeyboardPressEvent &e)
     {
-        switch (e.getKeyCode())
-        {
-            case KEY_W:
-                GizmoManager::SetOperation(ImGuizmo::OPERATION::TRANSLATE);
-                break;
-            case KEY_R:
-                GizmoManager::SetOperation(ImGuizmo::OPERATION::ROTATE);
-                break;
-            case KEY_D:
-                GizmoManager::SetOperation(ImGuizmo::OPERATION::SCALE);
-                break;
-            case KEY_F1:
-                if (SceneManager::GetSceneState() == SceneState::Edit) OnScenePlay();
-                else OnSceneStop();
-                break;
-            case KEY_F5:
-                ScriptEngine::ReloadScripts();
-                break;
+        if (m_Shortcuts.find(e.getKeyCode()) != m_Shortcuts.end()) {
+            m_Shortcuts[e.getKeyCode()]();
+            return true;
         }
         return false;
     };
@@ -132,17 +125,6 @@ namespace Engine
             m_SceneRenderer->SetScene(m_EditingScene.get());
         }
     };
-
-    void EditorLayer::OpenScene(const UUID handle)
-    {
-            Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
-
-            Entity rootEntity = modelScene->FindRootEntity();
-            if (rootEntity) 
-            {
-                Entity spawnedModel = Entity::CloneEntity(rootEntity, m_EditingScene.get(), Entity{});
-            }
-    }
 
     void EditorLayer::SaveScene()
     {

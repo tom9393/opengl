@@ -18,18 +18,12 @@ namespace Engine {
         void SetRenderer(Shared<SceneRenderer> renderer);
         void SetCamera(Shared<EditorCamera> camera);
 
-        // Callbacks for events the panel shouldn't handle directly
-        void SetSceneDroppedCallback(const std::function<void(const UUID)>& callback);
-
-        // Called every frame to draw the ImGui window
         void OnImGuiRender();
 
-        // State getters
         bool IsHovered() const { return m_IsHovered; }
         bool IsFocused() const { return m_IsFocused; }
         glm::vec2 GetSize() const { return m_ViewportSize; }
         
-        // Handles raycasting and returns the selected entity ID (or entt::null)
         entt::entity RaycastSelection();
 
     private:

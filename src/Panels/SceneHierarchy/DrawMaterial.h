@@ -63,137 +63,132 @@ namespace Engine {
         }
         
         UUID handle = component.MaterialHandle;
-        if (AssetManager::IsAssetLoaded(handle))
+        if (!AssetManager::IsAssetLoaded(handle))
         {
-            Shared<Material> material = AssetManager::GetAsset<Material>(handle);
-            ImGui::Separator();
-            
-            if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                const char* blendModes[] = { "Opaque", "Transparent", "Additive" };
-                int currentMode = (int)material->mode;
-                if (ImGui::Combo("Blend Mode", &currentMode, blendModes, IM_ARRAYSIZE(blendModes)))
-                    material->mode = (BlendMode)currentMode;
+            Shared<Material> newMaterial = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
-                ImGui::Checkbox("Depth Write", &material->DepthWrite);
-                ImGui::Checkbox("Double Sided", &material->DoubleSided);
-                ImGui::TreePop();
-            }
+            newMaterial->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
+            newMaterial->Add({MaterialType::Emission, 0.0f});
+            newMaterial->Add({MaterialType::RoughnessMultiplier, 0.5f});
+            newMaterial->Add({MaterialType::MetallicMultiplier, 0.0f});
 
-            if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                MaterialType propToRemove = MaterialType::None;
-                bool shouldRemove = false;
-                
-                float contentWidth = ImGui::GetContentRegionAvail().x;
+            AssetMetadata metadata;
+            metadata.Handle = UUID();
+            metadata.Name = "Material";
+            metadata.Type = AssetType::Material;
+            metadata.IsMemoryAsset = true;
+            metadata.FilePath = "";
 
-                for (auto& [key, value] : material->m_Properties)
-                {
-                    ImGui::PushID((int)key);
-                    std::string name = MaterialTypeToString(key);
+            Shared<Asset> cast = newMaterial;
 
-                    if (std::holds_alternative<float>(value))
-                    {
-                        ImGui::SetNextItemWidth(contentWidth - 30.0f);
-                        ImGui::DragFloat(name.c_str(), &std::get<float>(value), 0.01f);
-                        ImGui::SameLine(contentWidth - 20.0f);
-                    }
-                    else if (std::holds_alternative<glm::vec4>(value))
-                    {
-                        ImGui::SetNextItemWidth(contentWidth - 30.0f);
-                        ImGui::ColorEdit4(name.c_str(), glm::value_ptr(std::get<glm::vec4>(value)));
-                        ImGui::SameLine(contentWidth - 20.0f);
-                    }
-                    else if (std::holds_alternative<Shared<Texture2D>>(value))
-                    {
-                        auto& tex = std::get<Shared<Texture2D>>(value);
-                        ImGui::Text("%s", name.c_str());
-                        ImGui::SameLine(contentWidth - 90.0f); 
-                        
-                        void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
-                        if (tex) 
-                            ImGui::ImageButton("##tex", (ImTextureID)texID, ImVec2(64, 64), {0, 1}, {1, 0});
-                        else 
-                            ImGui::Button("Drop\nTexture", ImVec2(64, 64)); 
+            AssetManager::RegisterAsset(metadata, cast);
 
-                        if (ImGui::BeginDragDropTarget())
-                        {
-                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
-                            {
-                                UUID texHandle = *(UUID*)payload->Data;
-                                material->Add({key, AssetManager::GetAsset<Texture2D>(texHandle)});
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-                        ImGui::SameLine(contentWidth - 20.0f);
-                    }
-
-                    if (ImGui::Button("-"))
-                    {
-                        propToRemove = key;
-                        shouldRemove = true;
-                    }
-                    
-                    ImGui::PopID();
-                }
-
-                if (shouldRemove) material->Remove(propToRemove);
-
-                ImGui::Separator();
-
-                if (ImGui::Button("Add Parameter/Map", ImVec2(-1, 0)))
-                    ImGui::OpenPopup("AddParamPopup");
-
-                if (ImGui::BeginPopup("AddParamPopup"))
-                {
-                    if (ImGui::BeginMenu("Textures"))
-                    {
-                        if (ImGui::MenuItem("Albedo Map"))    material->Add({MaterialType::Albedo, Shared<Texture2D>(nullptr)});
-                        if (ImGui::MenuItem("Normal Map"))    material->Add({MaterialType::Normal, Shared<Texture2D>(nullptr)});
-                        if (ImGui::MenuItem("Metallic Map"))  material->Add({MaterialType::Metallic, Shared<Texture2D>(nullptr)});
-                        if (ImGui::MenuItem("Roughness Map")) material->Add({MaterialType::Roughness, Shared<Texture2D>(nullptr)});
-                        if (ImGui::MenuItem("AO Map"))        material->Add({MaterialType::AO, Shared<Texture2D>(nullptr)});
-                        ImGui::EndMenu();
-                    }
-                    if (ImGui::BeginMenu("Properties"))
-                    {
-                        if (ImGui::MenuItem("Albedo Tint"))          material->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
-                        if (ImGui::MenuItem("Emission Color"))       material->Add({MaterialType::Emission, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)});
-                        if (ImGui::MenuItem("Roughness Multiplier")) material->Add({MaterialType::RoughnessMultiplier, 1.0f});
-                        if (ImGui::MenuItem("Metallic Multiplier"))  material->Add({MaterialType::MetallicMultiplier, 1.0f});
-                        ImGui::EndMenu();
-                    }
-                    ImGui::EndPopup();
-                }
-
-                ImGui::TreePop();
-            }
+            component.MaterialHandle = metadata.Handle;
+            handle = metadata.Handle;
         }
-        else
+
+        Shared<Material> material = AssetManager::GetAsset<Material>(handle);
+        ImGui::Separator();
+        
+        if (ImGui::TreeNodeEx("Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::Spacing();
+            const char* blendModes[] = { "Opaque", "Transparent", "Additive" };
+            int currentMode = (int)material->mode;
+            if (ImGui::Combo("Blend Mode", &currentMode, blendModes, IM_ARRAYSIZE(blendModes)))
+                material->mode = (BlendMode)currentMode;
+
+            ImGui::Checkbox("Depth Write", &material->DepthWrite);
+            ImGui::Checkbox("Double Sided", &material->DoubleSided);
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            MaterialType propToRemove = MaterialType::None;
+            bool shouldRemove = false;
             
-            if (ImGui::Button("Create New Material", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+            float contentWidth = ImGui::GetContentRegionAvail().x;
+
+            for (auto& [key, value] : material->m_Properties)
             {
-                Shared<Material> newMaterial = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
+                ImGui::PushID((int)key);
+                std::string name = MaterialTypeToString(key);
 
-                newMaterial->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
-                newMaterial->Add({MaterialType::Emission, 0.0f});
-                newMaterial->Add({MaterialType::RoughnessMultiplier, 0.5f});
-                newMaterial->Add({MaterialType::MetallicMultiplier, 0.0f});
+                if (std::holds_alternative<float>(value))
+                {
+                    ImGui::SetNextItemWidth(contentWidth - 30.0f);
+                    ImGui::DragFloat(name.c_str(), &std::get<float>(value), 0.01f);
+                    ImGui::SameLine(contentWidth - 20.0f);
+                }
+                else if (std::holds_alternative<glm::vec4>(value))
+                {
+                    ImGui::SetNextItemWidth(contentWidth - 30.0f);
+                    ImGui::ColorEdit4(name.c_str(), glm::value_ptr(std::get<glm::vec4>(value)));
+                    ImGui::SameLine(contentWidth - 20.0f);
+                }
+                else if (std::holds_alternative<Shared<Texture2D>>(value))
+                {
+                    auto& tex = std::get<Shared<Texture2D>>(value);
+                    ImGui::Text("%s", name.c_str());
+                    ImGui::SameLine(contentWidth - 90.0f); 
+                    
+                    void* texID = tex ? (void*)(uintptr_t)tex->GetID() : nullptr;
+                    if (tex) 
+                        ImGui::ImageButton("##tex", (ImTextureID)texID, ImVec2(64, 64), {0, 1}, {1, 0});
+                    else 
+                        ImGui::Button("Drop\nTexture", ImVec2(64, 64)); 
 
-                AssetMetadata metadata;
-                metadata.Handle = UUID();
-                metadata.Name = "Material";
-                metadata.Type = AssetType::Material;
-                metadata.FilePath = "";
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
+                        {
+                            UUID texHandle = *(UUID*)payload->Data;
+                            material->Add({key, AssetManager::GetAsset<Texture2D>(texHandle)});
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    ImGui::SameLine(contentWidth - 20.0f);
+                }
 
-                Shared<Asset> cast = newMaterial;
-
-                AssetManager::RegisterAsset(metadata, cast);
-
-                component.MaterialHandle = metadata.Handle;
+                if (ImGui::Button("-"))
+                {
+                    propToRemove = key;
+                    shouldRemove = true;
+                }
+                
+                ImGui::PopID();
             }
+
+            if (shouldRemove) material->Remove(propToRemove);
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Add Parameter/Map", ImVec2(-1, 0)))
+                ImGui::OpenPopup("AddParamPopup");
+
+            if (ImGui::BeginPopup("AddParamPopup"))
+            {
+                if (ImGui::BeginMenu("Textures"))
+                {
+                    if (ImGui::MenuItem("Albedo Map"))    material->Add({MaterialType::Albedo, Shared<Texture2D>(nullptr)});
+                    if (ImGui::MenuItem("Normal Map"))    material->Add({MaterialType::Normal, Shared<Texture2D>(nullptr)});
+                    if (ImGui::MenuItem("Metallic Map"))  material->Add({MaterialType::Metallic, Shared<Texture2D>(nullptr)});
+                    if (ImGui::MenuItem("Roughness Map")) material->Add({MaterialType::Roughness, Shared<Texture2D>(nullptr)});
+                    if (ImGui::MenuItem("AO Map"))        material->Add({MaterialType::AO, Shared<Texture2D>(nullptr)});
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Properties"))
+                {
+                    if (ImGui::MenuItem("Albedo Tint"))          material->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
+                    if (ImGui::MenuItem("Emission Color"))       material->Add({MaterialType::Emission, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)});
+                    if (ImGui::MenuItem("Roughness Multiplier")) material->Add({MaterialType::RoughnessMultiplier, 1.0f});
+                    if (ImGui::MenuItem("Metallic Multiplier"))  material->Add({MaterialType::MetallicMultiplier, 1.0f});
+                    ImGui::EndMenu();
+                }
+                ImGui::EndPopup();
+            }
+
+            ImGui::TreePop();
         }
     };
 

@@ -50,7 +50,10 @@ namespace Engine
         Shared<SceneRenderer> m_SceneRenderer;
         Shared<EditorCamera> m_EditorCamera;
 
-        // Panels
+        using Keycode = unsigned int;
+
+        std::unordered_map<Keycode, std::function<void()>> m_Shortcuts;
+
         SceneHierarchyPanel m_SceneHierarchyPanel;
         ContentBrowserPanel m_ContentBrowserPanel;
         SettingsPanel m_SettingsPanel;

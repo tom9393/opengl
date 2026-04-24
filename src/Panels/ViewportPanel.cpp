@@ -31,10 +31,6 @@ namespace Engine {
         m_EditorCamera = camera;
     }
 
-    void ViewportPanel::SetSceneDroppedCallback(const std::function<void(const UUID)>& callback) {
-        m_SceneDroppedCallback = callback;
-    }
-
     void ViewportPanel::OnImGuiRender() {
         ImGuiWindowFlags window_flags = 0;
         if (Input::IsKeyPressed(KEY_LEFT_CONTROL))
@@ -49,7 +45,6 @@ namespace Engine {
         if (m_EditorCamera)
             m_EditorCamera->SetViewportHovered(m_IsHovered);
 
-        // Calculate view bounds and mouse position
         auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
         auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
         auto viewportOffset = ImGui::GetWindowPos();
@@ -65,7 +60,6 @@ namespace Engine {
             m_SceneRenderer->OnViewportResize((unsigned int)m_ViewportSize.x, (unsigned int)m_ViewportSize.y);
         }
 
-        // Render Framebuffer
         unsigned int texID = m_SceneRenderer->GetRenderGraph().GetPassColorAttachmentRendererID("ScenePass", 0);
         if (texID != 0) {
             ImGui::Image((void*)(intptr_t)texID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
@@ -86,7 +80,13 @@ namespace Engine {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Model"))
 			{
 				UUID handle = *(UUID*)payload->Data;
-                if (m_SceneDroppedCallback) m_SceneDroppedCallback(handle);
+                Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
+
+                Entity rootEntity = modelScene->FindRootEntity();
+                if (rootEntity) 
+                {
+                    Entity spawnedModel = Entity::CloneEntity(rootEntity, m_Context.get(), Entity{});
+                }
             }
             ImGui::EndDragDropTarget();
         }
@@ -116,7 +116,7 @@ namespace Engine {
                         AssetMetadata metadata;
                         metadata.Handle = UUID();
                         metadata.Name = name;
-                        metadata.FilePath = "";
+                        metadata.FilePath = std::string("/home/tom/Coding/c++/opengl/assets/") + name;
                         metadata.IsMemoryAsset = true;
                         metadata.Type = AssetType::Mesh;
 
