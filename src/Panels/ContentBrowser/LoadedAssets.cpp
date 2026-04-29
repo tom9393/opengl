@@ -60,7 +60,7 @@ namespace Engine {
             if (ImGui::IsItemHovered())
 			{
 				ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
-                //AssetPreviewManager::UpdatePreview(asset.Handle); // Todo
+                AssetPreviewManager::UpdatePreview(asset.Handle);
 			}
 
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
