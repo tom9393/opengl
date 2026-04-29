@@ -37,7 +37,7 @@ namespace Engine {
     }
 
     void AssetPreviewManager::UpdatePreview(UUID assetHandle) {
-        if (s_Previews.find(assetHandle) != s_Previews.end())
+        if (s_Previews.find(assetHandle) == s_Previews.end())
         {
             Shared<Preview> previewTexture = GeneratePreview(assetHandle);
             if (previewTexture) {
@@ -49,12 +49,12 @@ namespace Engine {
         {
             case AssetType::Prefab: {
                 Shared<Asset> asset = AssetManager::GetAsset<Prefab>(assetHandle);
-                s_Previews[assetHandle]->UpdatePreview(asset);
+                s_Previews[assetHandle]->UpdatePreview();
                 break;
             }
             case AssetType::Material: {
                 Shared<Asset> asset = AssetManager::GetAsset<Material>(assetHandle);
-                s_Previews[assetHandle]->UpdatePreview(asset);
+                s_Previews[assetHandle]->UpdatePreview();
                 break;
             }
         }
@@ -67,13 +67,15 @@ namespace Engine {
             case AssetType::Prefab: {
                 Shared<Asset> prefab = AssetManager::GetAsset<Prefab>(assetHandle);
                 Shared<PrefabPreview> prev = MakeShared<PrefabPreview>();
-                prev->UpdatePreview(prefab);
+                prev->SetAsset(prefab);
+                prev->UpdatePreview();
                 return prev;
             }
             case AssetType::Material: {
                 Shared<Asset> material = AssetManager::GetAsset<Material>(assetHandle);
                 Shared<MaterialPreview> prev = MakeShared<MaterialPreview>();
-                prev->UpdatePreview(material);
+                prev->SetAsset(material);
+                prev->UpdatePreview();
                 return prev;
             }
         }

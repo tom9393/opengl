@@ -4,8 +4,6 @@
 #include "Preview.h"
 #include "Asset/Prefab.h"
 #include "Scene/Entity.h"
-#include "Render/Renderer.h"
-#include "../Scene/SceneExtractor.h"
 #include "../Asset/PrimitiveBuilder.h"
 #include "../Render/Passes/ShadowPass2D.h"
 #include "../Render/Passes/ShadowPass3D.h"
@@ -31,19 +29,17 @@ namespace Engine {
             return m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
         }
 
-        uint32_t UpdatePreview(Shared<Asset> &material) override
+        void SetAsset(Shared<Asset> &asset) override
         {
-            if (!material) return 0;
+            m_Scene = MakeShared<Scene>();
 
-            Shared<Prefab> materialPreviewScene = MakeShared<Prefab>();
-
-            Entity light = materialPreviewScene->CreateEntity("MaterialPreviewLight");
+            Entity light = m_Scene->CreateEntity("MaterialPreviewLight");
             LightComponent& lightComponent = light.AddComponent<LightComponent>();
             lightComponent.Type = LightComponent::LightType::Directional;
             lightComponent.Intensity = 25.0f;
             light.AddComponent<TransformComponent>(glm::vec3(-2, 3, 10));
 
-            Entity entity = materialPreviewScene->CreateEntity("MaterialPreviewSphere");
+            Entity entity = m_Scene->CreateEntity("MaterialPreviewSphere");
             PrimitiveSpecification spec;
             spec.Type = PrimitiveType::Sphere;
             spec.Segments[0] = 25;
@@ -63,32 +59,8 @@ namespace Engine {
 
             entity.AddComponent<MeshComponent>(meshID);
             entity.AddComponent<TransformComponent>(); 
-            entity.AddComponent<MaterialComponent>(material->Handle);
-
-            glm::vec3 position = glm::vec3(2.0f, 2.0f, 5.0f); 
-            glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
-            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-            glm::mat4 viewMatrix = glm::lookAt(position, target, up);
-
-            m_InstancePool->BeginFrame();
-
-            RenderContext ctx;
-            ctx.ViewProjection = glm::perspective(glm::radians(60.0f), 1.0f, 0.1f, 1000.0f) * viewMatrix;
-            ctx.CameraPosition = position;
-            ctx.InstancePool = m_InstancePool.get();
-
-            RenderView view = SceneExtractor::Extract(materialPreviewScene.get(), ctx);
-
-            Renderer::BeginScene();
-            m_RenderGraph.Execute(ctx, view);
-            Renderer::EndScene();
-
-            m_InstancePool->InsertFrameFence();
-
-            return m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
+            entity.AddComponent<MaterialComponent>(asset->Handle);
         }
-
     };
 
 }
