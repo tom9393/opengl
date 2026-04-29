@@ -35,6 +35,16 @@ namespace Engine
 
     };
 
+    std::shared_ptr<Texture2D> Texture2D::Create(uint32_t rendererID, uint32_t width, uint32_t height)
+    {
+        switch (Renderer::Get()) {
+            case RendererAPI::API::None: return nullptr;
+            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLTexture2D>(rendererID, width, height);
+            }
+        return nullptr;
+
+    };
+
     std::shared_ptr<BindlessTexture> BindlessTexture::Create()
     {
         switch (Renderer::Get()) {

@@ -419,6 +419,7 @@ namespace Engine
 
                 AssetMetadata metadata;
                 metadata.Name = std::string(str.C_Str());
+                metadata.FilePath = str.C_Str();
                 metadata.Type = AssetType::Texture2D;
                 metadata.IsMemoryAsset = true;
 

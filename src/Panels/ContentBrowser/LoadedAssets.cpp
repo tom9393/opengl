@@ -1,4 +1,5 @@
 #include "LoadedAssets.h"
+#include "AssetPreviewManager.h"
 #include "imgui.h"
 #include "../../Asset/AssetManager.h"
 
@@ -19,11 +20,6 @@ namespace Engine {
             default:                           return ImVec4(0.4f, 0.4f, 0.4f, 1.0f); // Grey
         }
     }
-
-    LoadedAssets::LoadedAssets()
-    {
-		m_FileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
-    };
 
     void LoadedAssets::OnImGuiRender()
     {
@@ -52,8 +48,10 @@ namespace Engine {
 
             ImVec4 bgColor = GetColorForAssetType(asset.Type);
 
+            uint32_t iconID = AssetPreviewManager::GetPreview(asset.Handle);
+
             ImGui::ImageButton("AssetIcon", 
-					(ImTextureID)m_FileIcon->GetID(), 
+					(ImTextureID)iconID, 
 					{ thumbnailSize, thumbnailSize }, 
 					{ 0, 1 }, { 1, 0 }, 
 					bgColor // Passing the background color here!
@@ -62,6 +60,7 @@ namespace Engine {
             if (ImGui::IsItemHovered())
 			{
 				ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
+                //AssetPreviewManager::UpdatePreview(asset.Handle); // Todo
 			}
 
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))

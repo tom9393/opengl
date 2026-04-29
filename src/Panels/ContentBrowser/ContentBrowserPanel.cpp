@@ -1,4 +1,5 @@
 #include "ContentBrowserPanel.h"
+#include "AssetPreviewManager.h"
 #include "../../Render/Renderer.h"
 
 namespace Engine
@@ -6,6 +7,7 @@ namespace Engine
 
 	ContentBrowserPanel::ContentBrowserPanel()
 	{
+		AssetPreviewManager::Init();
 	};
 
 	void ContentBrowserPanel::OnImGuiRender()

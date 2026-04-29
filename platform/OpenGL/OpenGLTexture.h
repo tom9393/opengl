@@ -10,6 +10,7 @@ namespace Engine
         OpenGLTexture2D(const std::filesystem::path &path);
         OpenGLTexture2D(void* data, size_t size); // Create from buffer
         OpenGLTexture2D(void* data, uint32_t width, uint32_t height); // Create from raw bytes
+        OpenGLTexture2D(uint32_t rendererID, uint32_t width, uint32_t height);
         virtual ~OpenGLTexture2D();
 
         unsigned int GetWidth() const override { return m_Width; }
