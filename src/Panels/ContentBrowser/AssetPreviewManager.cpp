@@ -69,7 +69,7 @@ namespace Engine {
             case AssetType::Texture2D: {
                 return AssetManager::GetAsset<Texture2D>(assetHandle);
             }
-            case AssetType::Model: {
+            case AssetType::Prefab: {
                 Shared<Scene> model = AssetManager::GetAsset<Scene>(assetHandle);
                 return GenerateModelPreview(model);
             }

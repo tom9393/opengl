@@ -12,7 +12,7 @@ namespace Engine {
             case Engine::AssetType::Texture2D: return ImVec4(0.8f, 0.2f, 0.2f, 1.0f); // Red
             case Engine::AssetType::Texture3D: return ImVec4(0.9f, 0.4f, 0.4f, 1.0f); // Light Red
             case Engine::AssetType::Scene:     return ImVec4(0.2f, 0.8f, 0.2f, 1.0f); // Green
-            case Engine::AssetType::Model:     return ImVec4(0.2f, 0.2f, 0.8f, 1.0f); // Blue
+            case Engine::AssetType::Prefab:     return ImVec4(0.2f, 0.2f, 0.8f, 1.0f); // Blue
             case Engine::AssetType::Mesh:      return ImVec4(0.4f, 0.4f, 0.9f, 1.0f); // Light Blue
             case Engine::AssetType::Material:  return ImVec4(0.8f, 0.8f, 0.2f, 1.0f); // Yellow
             case Engine::AssetType::LuaScript: return ImVec4(0.8f, 0.4f, 0.8f, 1.0f);

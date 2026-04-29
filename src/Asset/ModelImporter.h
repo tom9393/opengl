@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Model.h"
-
 namespace Engine {
 
     class Scene;

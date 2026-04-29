@@ -1,5 +1,4 @@
 #include "ModelImporter.h"
-#include "AssimpLoader.h"
 
 namespace Engine {
 

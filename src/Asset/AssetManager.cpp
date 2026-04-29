@@ -1,7 +1,6 @@
 #include "../pch.h"
 #include "AssetManager.h"
 #include "Asset.h"
-#include "ModelImporter.h"
 #include "AssimpLoader.h"
 #include "SceneImporter.h"
 #include "TextureImporter.h"
@@ -17,9 +16,9 @@ namespace Engine {
             { ".jpeg", AssetType::Texture2D },
             { ".ktx", AssetType::Texture2D },
             { ".ktx2", AssetType::Texture2D },
-            { ".assbin", AssetType::Model },
-            { ".obj", AssetType::Model },
-            { ".fbx", AssetType::Model },
+            { ".assbin", AssetType::Prefab },
+            { ".obj", AssetType::Prefab },
+            { ".fbx", AssetType::Prefab },
             { ".lua", AssetType::LuaScript }
     };
 
@@ -44,7 +43,7 @@ namespace Engine {
         metadata.Name = filepath.stem().string();
         
         std::string ext = filepath.extension().string();
-        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Model;
+        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Prefab;
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
         else metadata.Type = AssetType::None;
@@ -76,7 +75,7 @@ namespace Engine {
         switch (metadata.Type) {
             case AssetType::Texture2D: newAsset = TextureImporter::LoadTexture2D(metadata); break;
             case AssetType::Scene: newAsset = SceneImporter::LoadScene(metadata); break;
-            case AssetType::Model: newAsset = AssimpLoader::LoadModel(metadata); break;
+            case AssetType::Prefab: newAsset = AssimpLoader::LoadModel(metadata); break;
         }
 
         if (newAsset) {

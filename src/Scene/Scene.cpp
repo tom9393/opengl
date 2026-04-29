@@ -4,7 +4,6 @@
 #include "../Asset/CollisionBaker.h"
 #include "Components.h"
 #include "Entity.h"
-#include "../Asset/Model.h"
 #include "../Physics/RigidBody.h"
 #include "Scripting/ScriptEngine.h"
 #include "../Events/MouseEvent.h"

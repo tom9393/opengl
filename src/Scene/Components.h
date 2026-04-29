@@ -3,7 +3,6 @@
 #include "../../pch.h"
 #include "../../lib/entt/single_include/entt/entt.hpp"
 #include "../Core/Preprocessor.h"
-#include "../Asset/Model.h"
 #include "../Asset/Material.h"
 #include "../Scripting/NativeScript.h"
 #include "../Render/SceneCamera.h"

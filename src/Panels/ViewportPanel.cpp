@@ -1,4 +1,5 @@
 #include "ViewportPanel.h"
+#include "../Asset/Prefab.h"
 #include "../Asset/AssetManager.h"
 #include "../Asset/PrimitiveBuilder.h"
 #include "../Core/Input.h"
@@ -77,12 +78,12 @@ namespace Engine {
 
     void ViewportPanel::DrawDragAndDrop() {
         if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Model"))
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Prefab"))
 			{
 				UUID handle = *(UUID*)payload->Data;
-                Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
+                Shared<Prefab> prefab = AssetManager::GetAsset<Prefab>(handle);
 
-                Entity rootEntity = modelScene->FindRootEntity();
+                Entity rootEntity = prefab->FindRootEntity();
                 if (rootEntity) 
                 {
                     Entity spawnedModel = Entity::CloneEntity(rootEntity, m_Context.get(), Entity{});

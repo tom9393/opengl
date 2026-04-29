@@ -10,7 +10,7 @@ namespace Engine {
         Texture2D,
         Texture3D,
         Scene,
-        Model,
+        Prefab,
         Mesh,
         Material,
         LuaScript
@@ -26,10 +26,10 @@ namespace Engine {
         if (ext == ".jpeg")    return AssetType::Texture2D;
         if (ext == ".ktx")     return AssetType::Texture2D;
         if (ext == ".ktx2")    return AssetType::Texture2D;
-        if (ext == ".assbin")  return AssetType::Model;
-        if (ext == ".obj")     return AssetType::Model;
-        if (ext == ".fbx")     return AssetType::Model;
-        if (ext == ".gltf")    return AssetType::Model;
+        if (ext == ".assbin")  return AssetType::Prefab;
+        if (ext == ".obj")     return AssetType::Prefab;
+        if (ext == ".fbx")     return AssetType::Prefab;
+        if (ext == ".gltf")    return AssetType::Prefab;
         if (ext == ".lua")     return AssetType::LuaScript;
 
         return AssetType::None;
@@ -44,7 +44,7 @@ namespace Engine {
 			case AssetType::Mesh: return "AssetType::Mesh";
 			case AssetType::Texture2D: return "AssetType::Texture2D";
 			case AssetType::Material: return "AssetType::Material";
-			case AssetType::Model: return "AssetType::Model";
+			case AssetType::Prefab: return "AssetType::Prefab";
 			case AssetType::LuaScript: return "AssetType::LuaScript";
 		}
 
@@ -58,7 +58,7 @@ namespace Engine {
 		if (assetType == "AssetType::Mesh") return AssetType::Mesh;
 		if (assetType == "AssetType::Texture2D") return AssetType::Texture2D;
 		if (assetType == "AssetType::Material") return AssetType::Material;
-		if (assetType == "AssetType::Model") return AssetType::Model;
+		if (assetType == "AssetType::Prefab") return AssetType::Prefab;
 		if (assetType == "AssetType::LuaScript") return AssetType::LuaScript;
 
 		return AssetType::None;

@@ -2,7 +2,6 @@
 
 #include "../pch.h"
 #include "../Core/Application.h"
-#include "Model.h"
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>
@@ -13,7 +12,7 @@
 #include "Texture.h"
 #include "MaterialSpecification.h"
 #include "MatdefLoader.h"
-#include "../Scene/Scene.h"
+#include "../Asset/Prefab.h"
 #include "../Scene/Entity.h"
 #include "../Render/Renderer.h"
 #include <glm/gtc/quaternion.hpp>
@@ -104,7 +103,7 @@ namespace Engine
     class AssimpLoader
     {
         public:
-        static Shared<Scene> LoadModel(const AssetMetadata &metadata)
+        static Shared<Prefab> LoadModel(const AssetMetadata &metadata)
         {
             Assimp::Importer importer;
             std::filesystem::path path = metadata.FilePath;
@@ -116,8 +115,8 @@ namespace Engine
             }
 
             std::string modelName = metadata.Name;
-            Shared<Scene> targetScene = MakeShared<Scene>();
-            Entity rootEntity = targetScene->CreateEntity(modelName);
+            Shared<Prefab> prefab = MakeShared<Prefab>();
+            Entity rootEntity = prefab->CreateEntity(modelName);
             rootEntity.AddComponent<TransformComponent>();
 
             // 1. Process and Register all Materials
@@ -163,22 +162,22 @@ namespace Engine
             }
 
             // 3. Process the Hierarchy directly into the Scene
-            ProcessAiNodeToEntity(scene->mRootNode, scene, targetScene, rootEntity, meshHandles, materialHandles);
+            ProcessAiNodeToEntity(scene->mRootNode, scene, prefab, rootEntity, meshHandles, materialHandles);
 
-            Shared<Asset> castedScene = targetScene;
+            Shared<Asset> castedScene = prefab;
             AssetManager::RegisterAsset(metadata, castedScene);
 
             std::cout << "Successfully loaded and registered entire model: " << path.string() << std::endl;
-            return targetScene;
+            return prefab;
         }
 
     private:
-        static void ProcessAiNodeToEntity(aiNode* node, const aiScene* scene, Shared<Scene>& targetScene, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles)
+        static void ProcessAiNodeToEntity(aiNode* node, const aiScene* scene, Shared<Prefab>& prefab, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles)
         {
             std::string nodeName = node->mName.C_Str();
             if (nodeName.empty()) nodeName = "Unnamed_Node";
 
-            Entity currentEntity = targetScene->CreateEntity(nodeName);
+            Entity currentEntity = prefab->CreateEntity(nodeName);
             currentEntity.SetParent(parentEntity);
 
             // Extract and set Transform
@@ -198,7 +197,7 @@ namespace Engine
                 aiMesh* aiMesh = scene->mMeshes[meshIndex];
                 
                 // If a node has multiple meshes, we create sub-entities for them to keep the 1-Mesh-per-Entity standard
-                Entity meshEntity = (node->mNumMeshes == 1) ? currentEntity : targetScene->CreateEntity(aiMesh->mName.C_Str());
+                Entity meshEntity = (node->mNumMeshes == 1) ? currentEntity : prefab->CreateEntity(aiMesh->mName.C_Str());
                 if (node->mNumMeshes > 1) {
                     meshEntity.SetParent(currentEntity);
                     meshEntity.AddComponent<TransformComponent>();
@@ -217,7 +216,7 @@ namespace Engine
             // Recursively process children
             for (uint32_t i = 0; i < node->mNumChildren; i++) 
             {
-                ProcessAiNodeToEntity(node->mChildren[i], scene, targetScene, currentEntity, meshHandles, materialHandles);
+                ProcessAiNodeToEntity(node->mChildren[i], scene, prefab, currentEntity, meshHandles, materialHandles);
             }
         }
 
