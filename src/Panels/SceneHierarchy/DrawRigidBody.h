@@ -5,6 +5,7 @@
 #include "../../Scene/Entity.h"
 #include "../../Asset/AssetManager.h"
 #include "../../Asset/CollisionBaker.h"
+#include "Core/Application.h"
 
 namespace Engine {
 

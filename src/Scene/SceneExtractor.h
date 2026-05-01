@@ -132,7 +132,7 @@ namespace Engine {
             cmd.Transform = transform;
             cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialComponent.MaterialHandle);
             
-            if (IsAABBInFrustum(frustum, mesh->GetAABB(), transform)) {
+            if (IsAABBInFrustum(frustum, mesh->GetAABB(), transform)) { // Future: investigate regarding octree or bounding volume hierarchy culling
                 renderView.OpaqueItems.emplace_back(cmd);
             }
 
@@ -178,32 +178,32 @@ namespace Engine {
 			// Children will be updated automatically by their parents.
 			if (!entity.HasParent())
 			{
-				// Root entities have no parent, so their "parent matrix" is just Identity (1.0f)
-				UpdateTransformTree(e, scene, glm::mat4(1.0f));
+                TransformComponent& comp = entity.GetComponent<TransformComponent>();
+				UpdateTransformTree(e, scene, glm::mat4(1.0f), comp.IsDirty);
 			}
 		}
 	}
 
-	static void UpdateTransformTree(entt::entity handle, Scene* scene, const glm::mat4 &parentTransform)
+	static void UpdateTransformTree(entt::entity handle, Scene* scene, const glm::mat4 &parentTransform, bool isParentDirty = false)
 	{
 		Entity entity{ handle, scene };
 		if (!entity.HasComponent<TransformComponent>()) return;
 
 		auto& transformComp = entity.GetComponent<TransformComponent>();
-		
-		// 1. Get the local offset (translation, rotation, scale)
-		glm::mat4 localTransform = transformComp.GetTransform();
-		
-		// 2. CACHE THE RESULT: Parent's World Matrix * My Local Matrix = My World Matrix
-		transformComp.WorldTransform = parentTransform * localTransform;
+        bool isDirty = false;
 
-		// 3. Cascade down to children, passing MY new World Matrix as THEIR Parent Matrix
+        if (transformComp.IsDirty || isParentDirty)
+        {
+            transformComp.UpdateWorldTransform(parentTransform);
+            isDirty = true;
+        }
+
 		if (entity.HasComponent<RelationshipComponent>())
 		{
 			auto& relComp = entity.GetComponent<RelationshipComponent>();
 			for (auto childHandle : relComp.Children)
 			{
-				UpdateTransformTree(childHandle, scene, transformComp.WorldTransform);
+				UpdateTransformTree(childHandle, scene, transformComp.WorldTransform, isDirty);
 			}
 		}
 	}

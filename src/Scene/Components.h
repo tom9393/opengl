@@ -41,6 +41,8 @@ namespace Engine
 
         glm::mat4 WorldTransform = glm::mat4(1.0f);
 
+        bool IsDirty = true;
+
         TransformComponent() = default;
         TransformComponent(const TransformComponent&) = default;
         TransformComponent(const glm::vec3 &translation, const glm::vec3 &rotation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::vec3 &scale = glm::vec3(1.0f, 1.0f, 1.0f)) : translation(translation), rotation(rotation), scale(scale) {}
@@ -61,9 +63,31 @@ namespace Engine
             return glm::translate(glm::mat4(1.0f), translation) * rot * glm::scale(glm::mat4(1.0f), scale);
         }
 
+        void SetPosition(const glm::vec3& position) {
+            translation = position;
+            IsDirty = true;
+        }
+
+        void SetRotation(const glm::vec3& rot) {
+            rotation = rot;
+            IsDirty = true;
+        }
+
+        void SetScale(const glm::vec3& sc) {
+            scale = sc;
+            IsDirty = true;
+        }
+
         void ApplyMatrix(const glm::mat4 &matrix)
         {
             MathTools::DecomposeMatrix(matrix, translation, rotation, scale);
+            IsDirty = true;
+        }
+
+        void UpdateWorldTransform(const glm::mat4 &parent)
+        {
+            WorldTransform = parent * GetTransform();
+            IsDirty = true;
         }
     };
 

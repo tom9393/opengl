@@ -300,7 +300,6 @@ namespace Engine
     // ------------------------------------------------------------------------
     void OpenGLShader::SetVec4(const std::string &name, const glm::vec4 &value) const
     { 
-        PROFILE_FUNCTION();
         glUniform4fv(GetUniformLocation(name.c_str()), 1, &value[0]); 
     }
     // ------------------------------------------------------------------------
@@ -316,7 +315,6 @@ namespace Engine
     // ------------------------------------------------------------------------
     void OpenGLShader::SetMat4(const std::string &name, const glm::mat4 &mat) const
     {
-        PROFILE_FUNCTION();
         glUniformMatrix4fv(GetUniformLocation(name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
 

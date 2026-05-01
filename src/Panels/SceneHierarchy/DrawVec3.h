@@ -4,8 +4,10 @@
 
 namespace Engine {
 
-	inline static void DrawVec3(const std::string &label, glm::vec3 &values, float resetValue = 1.0f, float columnWidth = 100.0f)
+	inline static bool DrawVec3(const std::string &label, glm::vec3 &values, float resetValue = 1.0f, float columnWidth = 100.0f)
 	{
+		bool modified = false;
+
 		ImGuiIO &io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
 
@@ -42,47 +44,54 @@ namespace Engine {
 		// Render three inline axis controls: [Button(X)] [DragFloat]
 		for (int i = 0; i < 3; ++i)
 		{
-		ImGui::PushID(i);
+			ImGui::PushID(i);
 
-		bool isSelected = (selected == i);
+			bool isSelected = (selected == i);
 
-		// color the button if selected (and slightly darker when not)
-		ImVec4 baseBtnColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
-		ImVec4 btnColor = isSelected ? axisColors[i] : ImVec4(baseBtnColor.x * 0.7f, baseBtnColor.y * 0.7f, baseBtnColor.z * 0.7f, baseBtnColor.w);
+			// color the button if selected (and slightly darker when not)
+			ImVec4 baseBtnColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+			ImVec4 btnColor = isSelected ? axisColors[i] : ImVec4(baseBtnColor.x * 0.7f, baseBtnColor.y * 0.7f, baseBtnColor.z * 0.7f, baseBtnColor.w);
 
-		ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(btnColor.x + 0.08f, btnColor.y + 0.08f, btnColor.z + 0.08f, btnColor.w));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(btnColor.x - 0.08f, btnColor.y - 0.08f, btnColor.z - 0.08f, btnColor.w));
-		ImGui::PushFont(boldFont);
+			ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(btnColor.x + 0.08f, btnColor.y + 0.08f, btnColor.z + 0.08f, btnColor.w));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(btnColor.x - 0.08f, btnColor.y - 0.08f, btnColor.z - 0.08f, btnColor.w));
+			ImGui::PushFont(boldFont);
 
-		if (ImGui::Button(axisNames[i], buttonSize))
-		{
-		    // toggle selection (click same axis again to deselect)
-		    selected = (isSelected ? -1 : i);
-		    // optional: reset when selecting
-		    if (!isSelected) *axisVals[i] = resetValue;
-		}
+			if (ImGui::Button(axisNames[i], buttonSize))
+			{
+				// toggle selection (click same axis again to deselect)
+				selected = (isSelected ? -1 : i);
+				// optional: reset when selecting
+				if (!isSelected)
+				{
+					*axisVals[i] = resetValue;
+					modified = true;
+				}
+			}
 
-		ImGui::PopFont();
-		ImGui::PopStyleColor(3);
+			ImGui::PopFont();
+			ImGui::PopStyleColor(3);
 
-		ImGui::SameLine();
+			ImGui::SameLine();
 
-		// unique ID for the DragFloat. Use hidden label with the main label to avoid collisions.
-		char dragLabel[64];
-		std::snprintf(dragLabel, sizeof(dragLabel), "##%s_%c", label.c_str(), 'X' + i);
+			// unique ID for the DragFloat. Use hidden label with the main label to avoid collisions.
+			char dragLabel[64];
+			std::snprintf(dragLabel, sizeof(dragLabel), "##%s_%c", label.c_str(), 'X' + i);
 
-		// set width and render DragFloat
-		ImGui::SetNextItemWidth(120.0f);
-		ImGui::DragFloat(dragLabel, axisVals[i], 0.1f);
+			// set width and render DragFloat
+			ImGui::SetNextItemWidth(120.0f);
+			if (ImGui::DragFloat(dragLabel, axisVals[i], 0.1f))
+				modified = true;
 
-		ImGui::PopID();
+			ImGui::PopID();
 
-		if (i < 2) ImGui::SameLine();
+			if (i < 2) ImGui::SameLine();
 		}
 
 		ImGui::PopStyleVar(); // ItemSpacing
 		ImGui::Columns(1);
 		ImGui::PopID();
+
+		return modified;
 	}
 }
