@@ -6,6 +6,7 @@
 #include "../Scene/SceneRenderer.h"
 #include "../Render/EditorCamera.h"
 #include "../Utils/SceneManager.h"
+#include "PassPanel.h"
 
 namespace Engine {
 
@@ -42,6 +43,8 @@ namespace Engine {
         glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
         glm::vec2 m_ViewportBounds[2] = { {0.0f, 0.0f}, {0.0f, 0.0f} };
         glm::vec2 m_MousePos = { 0.0f, 0.0f };
+
+        PassPanel m_PassPanel;
 
         std::function<void(const UUID)> m_SceneDroppedCallback;
     };

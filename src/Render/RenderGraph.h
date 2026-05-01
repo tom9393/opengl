@@ -31,6 +31,11 @@ namespace Engine
             return *m_Passes.back();
         }
 
+        std::unordered_map<std::string, Shared<FramebufferHandle>> &GetFramebuffers()
+        {
+            return m_PassFramebuffers;
+        }
+
         // Execute all passes in order for the given timestep
         void Execute(RenderContext &context, const RenderView &view);
 

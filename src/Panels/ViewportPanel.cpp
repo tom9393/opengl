@@ -7,6 +7,7 @@
 #include "../Utils/ScopedImGuiStyle.h"
 #include "../Utils/GizmoManager.h"
 #include "../Events/EventBroker.h"
+#include "PassPanel.h"
 
 namespace Engine {
 
@@ -26,6 +27,7 @@ namespace Engine {
 
     void ViewportPanel::SetRenderer(Shared<SceneRenderer> renderer) {
         m_SceneRenderer = renderer;
+        m_PassPanel.SetRenderer(renderer);
     }
 
     void ViewportPanel::SetCamera(Shared<EditorCamera> camera) {
@@ -38,6 +40,9 @@ namespace Engine {
             window_flags |= ImGuiWindowFlags_NoMove;
 
         ScopedImGuiStyle noPadding(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+
+        m_PassPanel.OnImGuiRender();
+
         ImGui::Begin("Viewport", nullptr, window_flags);
 
         m_IsHovered = ImGui::IsWindowHovered();
@@ -61,7 +66,7 @@ namespace Engine {
             m_SceneRenderer->OnViewportResize((unsigned int)m_ViewportSize.x, (unsigned int)m_ViewportSize.y);
         }
 
-        unsigned int texID = m_SceneRenderer->GetRenderGraph().GetPassColorAttachmentRendererID("ScenePass", 0);
+        unsigned int texID = m_PassPanel.GetSelectedAttachment();
         if (texID != 0) {
             ImGui::Image((void*)(intptr_t)texID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
         }
