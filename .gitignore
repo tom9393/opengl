@@ -14,10 +14,13 @@
 **/*.obj
 
 # 2. Specifically allow .obj files in the asset folder
-!assets/**/*.obj
+# !assets/**/*.obj
 
 # 3. Ignore all .pmcol files everywhere
 **/*.pmcol
+
+# Ignore assets
+assets/
 
 # Precompiled Headers
 *.gch
