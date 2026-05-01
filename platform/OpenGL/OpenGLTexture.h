@@ -1,5 +1,6 @@
 #include "../../pch.h"
 #include "../../src/Asset/Texture.h"
+#include "Asset/TextureImporter.h"
 
 namespace Engine
 {
@@ -8,8 +9,7 @@ namespace Engine
     {
         public:
         OpenGLTexture2D(const std::filesystem::path &path);
-        OpenGLTexture2D(void* data, size_t size); // Create from buffer
-        OpenGLTexture2D(void* data, uint32_t width, uint32_t height); // Create from raw bytes
+        OpenGLTexture2D(const TextureLoadData &data);
         OpenGLTexture2D(uint32_t rendererID, uint32_t width, uint32_t height);
         virtual ~OpenGLTexture2D();
 

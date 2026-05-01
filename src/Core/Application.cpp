@@ -5,6 +5,7 @@
 #include "KeyCodes.h"
 #include "Events/EventBroker.h"
 #include "Asset/AssetManager.h"
+#include "Asset/AssetUploadQueue.h"
 
 namespace Engine
 {
@@ -53,6 +54,8 @@ namespace Engine
         {
             m_Window->UpdateFrameTime();
             TimeStep ts = m_Window->GetFrameTime();
+
+            AssetUploadQueue::Process();
 
             if (!m_Minimized)
             {

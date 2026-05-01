@@ -39,6 +39,8 @@ namespace Engine {
             // You can format this string to show the file path if your metadata structure supports it
             std::string displayName = asset.Name;
 
+            if (asset.Type == AssetType::Mesh) continue;
+
             if (displayName.length() > 20)
             {
                 displayName = displayName.substr(0, 17) + "...";

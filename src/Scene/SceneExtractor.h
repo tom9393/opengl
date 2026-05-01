@@ -123,14 +123,18 @@ namespace Engine {
             auto [meshComponent, transformComponent, materialComponent] = view.get<MeshComponent, TransformComponent, MaterialComponent>(e);
             if (meshComponent.MeshHandle == 0) continue;
 
-            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshComponent.MeshHandle);
+            Shared<Mesh> mesh = AssetManager::GetAssetAsync<Mesh>(meshComponent.MeshHandle);
+            Shared<Material> material = AssetManager::GetAssetAsync<Material>(materialComponent.MaterialHandle);
+
+            if (!mesh || !material) continue;
+
             glm::mat4 transform = transformComponent.WorldTransform;
 
             // Build Command
             DrawCommand cmd;
             cmd.TargetMesh = mesh;
             cmd.Transform = transform;
-            cmd.TargetMaterial = AssetManager::GetAsset<Material>(materialComponent.MaterialHandle);
+            cmd.TargetMaterial = material;
             
             if (IsAABBInFrustum(frustum, mesh->GetAABB(), transform)) { // Future: investigate regarding octree or bounding volume hierarchy culling
                 renderView.OpaqueItems.emplace_back(cmd);

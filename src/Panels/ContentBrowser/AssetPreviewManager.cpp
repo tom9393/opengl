@@ -9,11 +9,13 @@ namespace Engine {
     Shared<Texture2D> AssetPreviewManager::s_DefaultFileIcon;
     Shared<Texture2D> AssetPreviewManager::s_DefaultFolderIcon;
     Shared<Texture2D> AssetPreviewManager::s_LuaIcon;
+    Shared<Texture2D> AssetPreviewManager::s_ModelIcon;
 
     void AssetPreviewManager::Init() {
 		s_DefaultFileIcon = Texture2D::Create("../assets/icons/documentIcon.png");
 		s_DefaultFolderIcon = Texture2D::Create("../assets/icons/folderIcon.png");
 		s_LuaIcon = Texture2D::Create("../assets/icons/luaIcon.png");
+		s_ModelIcon = Texture2D::Create("../assets/icons/modelIcon.png");
     }
 
     void AssetPreviewManager::Shutdown() {
@@ -44,6 +46,8 @@ namespace Engine {
                 s_Previews[assetHandle] = previewTexture;
             }
         }
+        if (AssetManager::GetAssetState(assetHandle) != AssetState::Ready) return;
+
         const AssetMetadata& metadata = AssetManager::GetMetadata(assetHandle);
         switch (metadata.Type)
         {
@@ -65,7 +69,8 @@ namespace Engine {
         
         switch (metadata.Type) {
             case AssetType::Prefab: {
-                Shared<Asset> prefab = AssetManager::GetAsset<Prefab>(assetHandle);
+                Shared<Asset> prefab = AssetManager::GetAssetAsync<Prefab>(assetHandle);
+                if (!prefab) return nullptr;
                 Shared<PrefabPreview> prev = MakeShared<PrefabPreview>();
                 prev->SetAsset(prefab);
                 prev->UpdatePreview();

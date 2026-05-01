@@ -1,5 +1,6 @@
 #pragma once
 #include "Texture.h"
+#include "TextureImporter.h"
 
 namespace Engine {
     class DefaultTextures {
@@ -9,7 +10,11 @@ namespace Engine {
             
             if (!whiteTexture) {
                 unsigned char data[4] = { 255, 255, 255, 255 };
-                whiteTexture = Texture2D::Create(data, 1, 1);
+                TextureLoadData loadData;
+                loadData.Pixels = data;
+                loadData.Height = 1;
+                loadData.Width = 1;
+                whiteTexture = Texture2D::Create(loadData);
             }
             
             return whiteTexture;
@@ -19,7 +24,11 @@ namespace Engine {
             static Shared<Texture2D> blackTexture = nullptr;
             if (!blackTexture) {
                 unsigned char data[4] = { 0, 0, 0, 255 };
-                blackTexture = Texture2D::Create(data, 1, 1);
+                TextureLoadData loadData;
+                loadData.Pixels = data;
+                loadData.Height = 1;
+                loadData.Width = 1;
+                blackTexture = Texture2D::Create(loadData);
             }
             return blackTexture;
         }
@@ -29,7 +38,11 @@ namespace Engine {
             
             if (!normalTexture) {
                 unsigned char data[4] = { 255, 128, 128, 255 };
-                normalTexture = Texture2D::Create(data, 1, 1);
+                TextureLoadData loadData;
+                loadData.Pixels = data;
+                loadData.Height = 1;
+                loadData.Width = 1;
+                normalTexture = Texture2D::Create(loadData);
             }
             
             return normalTexture;

@@ -20,13 +20,13 @@ namespace Engine
         std::vector<unsigned int> &GetIndices() { return m_Indices; }
 
         Shared<VertexArray> &GetVAO() { return m_VAO; }
-        void SetVAO(Shared<VertexArray> &VAO) { m_VAO = VAO; }
+        void SetVAO(const Shared<VertexArray> &VAO) { m_VAO = VAO; }
 
         std::vector<Shared<VertexBuffer>> &GetVBOs() { return m_VBOs; }
-        void SetVBOs(std::vector<Shared<VertexBuffer>> &VBOs) { m_VBOs = VBOs; }
+        void SetVBOs(const std::vector<Shared<VertexBuffer>> &VBOs) { m_VBOs = VBOs; }
 
         Shared<IndexBuffer> &GetEBO() { return m_EBO; }
-        void SetEBO(Shared<IndexBuffer> &EBO) { m_EBO = EBO; }
+        void SetEBO(const Shared<IndexBuffer> &EBO) { m_EBO = EBO; }
 
         const AABB& GetAABB() const { return m_AABB; }
         void SetAABB(const AABB &aabb) { m_AABB = aabb; }

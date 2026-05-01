@@ -1,6 +1,7 @@
 #include "Texture.h"
 #include "Render/Renderer.h"
 #include "../platform/OpenGL/OpenGLTexture.h"
+#include "TextureImporter.h"
 
 namespace Engine
 {
@@ -15,21 +16,11 @@ namespace Engine
 
     };
 
-    std::shared_ptr<Texture2D> Texture2D::Create(void* data, size_t size)
+    std::shared_ptr<Texture2D> Texture2D::Create(const TextureLoadData &data)
     {
         switch (Renderer::Get()) {
             case RendererAPI::API::None: return nullptr;
-            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLTexture2D>(data, size);
-            }
-        return nullptr;
-
-    };
-
-    std::shared_ptr<Texture2D> Texture2D::Create(void* data, uint32_t width, uint32_t height)
-    {
-        switch (Renderer::Get()) {
-            case RendererAPI::API::None: return nullptr;
-            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLTexture2D>(data, width, height);
+            case RendererAPI::API::OpenGL: return std::make_shared<OpenGLTexture2D>(data);
             }
         return nullptr;
 
