@@ -121,45 +121,17 @@ namespace Engine
         glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
         glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
 
+        unsigned int clamped = data.clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT;
+
         glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, clamped);
+        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, clamped);
 
         if (data.Pixels)
         {
             glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.Pixels);
         }
-    }
-
-    OpenGLTexture2D::OpenGLTexture2D(uint32_t rendererID, uint32_t width, uint32_t height)
-    {
-        m_Width = width;
-        m_Height = height;
-
-        m_InternalFormat = GL_RGBA8; 
-        m_DataFormat = GL_RGBA;
-        m_Loaded = true;
-
-        // Allocate a brand new texture on the GPU
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-        glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height); 
-
-        // Configure basic parameters
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        // Perform an ultra-fast GPU-to-GPU copy
-        // (source ID, source type, source mip level, x, y, z, 
-        //  dest ID, dest type, dest mip level, x, y, z, 
-        //  width, height, depth)
-        glCopyImageSubData(
-            rendererID, GL_TEXTURE_2D, 0, 0, 0, 0,
-            m_RendererID, GL_TEXTURE_2D, 0, 0, 0, 0,
-            width, height, 1
-        );
     }
 
     void OpenGLTexture2D::Copy(uint32_t rendererID, uint32_t width, uint32_t height)
@@ -169,6 +141,27 @@ namespace Engine
             m_RendererID, GL_TEXTURE_2D, 0, 0, 0, 0,
             width, height, 1
         );
+    }
+
+    void OpenGLTexture2D::ResizeCopy(uint32_t srcRendererID, uint32_t srcWidth, uint32_t srcHeight)
+    {
+        GLuint readFBO, drawFBO;
+        glCreateFramebuffers(1, &readFBO);
+        glCreateFramebuffers(1, &drawFBO);
+
+        glNamedFramebufferTexture(readFBO, GL_COLOR_ATTACHMENT0, srcRendererID, 0);
+        glNamedFramebufferTexture(drawFBO, GL_COLOR_ATTACHMENT0, m_RendererID, 0);
+
+        glBlitNamedFramebuffer(
+            readFBO, drawFBO,
+            0, 0, srcWidth, srcHeight,
+            0, 0, m_Width, m_Height,
+            GL_COLOR_BUFFER_BIT,
+            GL_LINEAR
+        );
+
+        glDeleteFramebuffers(1, &readFBO);
+        glDeleteFramebuffers(1, &drawFBO);
     }
 
     OpenGLTexture2D::~OpenGLTexture2D()

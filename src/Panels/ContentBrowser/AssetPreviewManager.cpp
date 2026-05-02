@@ -2,6 +2,7 @@
 #include "../Asset/AssetManager.h"
 #include "PrefabPreview.h"
 #include "MaterialPreview.h"
+#include "Texture2DPreview.h"
 #include "Render/Passes/ShadowPass2D.h"
 #include "Render/Passes/ShadowPass3D.h"
 #include "Render/Passes/GeometryPass.h"
@@ -41,7 +42,6 @@ namespace Engine {
 
     uint32_t AssetPreviewManager::GetPreview(UUID assetHandle) {
         AssetMetadata metadata = AssetManager::GetMetadata(assetHandle);
-        if (metadata.Type == AssetType::Mesh || metadata.Type == AssetType::None || metadata.Type == AssetType::Scene || metadata.Type == AssetType::Texture2D || metadata.Type == AssetType::Texture3D) return s_DefaultFileIcon->GetID();
         if (metadata.Type == AssetType::LuaScript) return s_LuaIcon->GetID();
 
         if (s_Previews.find(assetHandle) != s_Previews.end()) {
@@ -60,6 +60,13 @@ namespace Engine {
                     }
                     case AssetType::Material: {
                         Shared<MaterialPreview> prev = MakeShared<MaterialPreview>();
+                        prev->SetAsset(asset);
+                        prev->UpdatePreview(*s_PreviewGraph, s_PreviewPool.get());
+                        s_Previews[assetHandle] = prev;
+                        break;
+                    }
+                    case AssetType::Texture2D: {
+                        Shared<Texture2DPreview> prev = MakeShared<Texture2DPreview>();
                         prev->SetAsset(asset);
                         prev->UpdatePreview(*s_PreviewGraph, s_PreviewPool.get());
                         s_Previews[assetHandle] = prev;

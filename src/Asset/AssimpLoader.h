@@ -407,7 +407,8 @@ namespace Engine
                     TextureImporter::FreeTextureData(loadData);
                     
                     AssetMetadata metadata;
-                    metadata.Name = "Temp";
+                    metadata.Handle = UUID();
+                    metadata.Name = "EmbeddedTexture";
                     metadata.FilePath = "Temp";
                     metadata.Type = AssetType::Texture2D;
                     metadata.IsMemoryAsset = true;
@@ -468,15 +469,9 @@ namespace Engine
             // 3. Build ECS Hierarchy
             BuildEntityHierarchy(data.RootNode, prefab, rootEntity, meshHandles, materialHandles, data);
 
-            AssetMetadata modelMeta;
-            modelMeta.Handle = UUID();
-            modelMeta.Name = data.Name + "_" + data.Name;
-            modelMeta.Type = AssetType::Prefab;
-            modelMeta.IsMemoryAsset = true;
-
             // 4. Mark Complete!
             Shared<Asset> prefabCast = prefab;
-            AssetManager::RegisterAsset(modelMeta, prefabCast);
+            AssetManager::RegisterAsset(metadata, prefabCast);
             std::cout << "Successfully loaded async model: " << metadata.FilePath << std::endl;
             return prefab;
         }

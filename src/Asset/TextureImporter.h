@@ -7,6 +7,7 @@ namespace Engine {
     struct TextureLoadData {
         unsigned char* Pixels = nullptr;
         int Width = 0, Height = 0, Channels = 0;
+        bool clamp = false;
     };
 
     class TextureImporter
