@@ -87,27 +87,25 @@ namespace Engine {
         return newAsset;
     }
 
-    Shared<Asset> AssetManager::GetAssetInternalAsync(UUID handle) {
-        if (handle == 0) return nullptr;
+    void AssetManager::GetAssetInternalAsync(UUID handle, std::function<void(Shared<Asset>)> cb) {
+        if (handle == 0) return;
+
+        if (m_AssetStates[handle] == AssetState::Loading) return;
 
         if (m_AssetStates[handle] == AssetState::Ready && IsAssetLoaded(handle)) {
-            return m_LoadedAssets[handle];
-        }
-
-        if (m_AssetStates[handle] == AssetState::Loading) {
-            return nullptr; // In the future, return a default "Loading" texture/mesh here
+            cb(m_LoadedAssets[handle]);
+            return;
         }
 
         const AssetMetadata& metadata = GetMetadata(handle);
         m_AssetStates[handle] = AssetState::Loading;
 
         switch (metadata.Type) {
-            case AssetType::Prefab: AssimpLoader::LoadModelAsync(metadata); break; // Only prefab for now
+            case AssetType::Texture2D: TextureImporter::LoadTexture2DAsync(metadata, cb); break;
+            case AssetType::Scene: SceneImporter::LoadSceneAsync(metadata, cb); break;
+            case AssetType::Prefab: AssimpLoader::LoadModelAsync(metadata, cb); break;
         }
-
-        return nullptr;
     }
-
 
     const AssetMetadata& AssetManager::GetMetadata(UUID handle) {
         auto it = m_AssetRegistry.find(handle);

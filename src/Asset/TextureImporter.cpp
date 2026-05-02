@@ -46,40 +46,39 @@ namespace Engine {
         }
     }
 
-    void TextureImporter::LoadTexture2DAsync(const AssetMetadata metadata, std::function<void()> cb)
+    void TextureImporter::LoadTexture2DAsync(const AssetMetadata metadata, std::function<void(Shared<Asset>)> cb)
     {
         PROFILE_FUNCTION();
         Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
-        
-        // --- THIS RUNS ON A WORKER THREAD ---
-        TextureLoadData data;
-        // e.g., using stbi_load
-        stbi_set_flip_vertically_on_load(1);
-        data.Pixels = stbi_load(metadata.FilePath.c_str(), &data.Width, &data.Height, &data.Channels, 4);
+            // --- THIS RUNS ON A WORKER THREAD ---
+            TextureLoadData data;
+            // e.g., using stbi_load
+            stbi_set_flip_vertically_on_load(1);
+            data.Pixels = stbi_load(metadata.FilePath.c_str(), &data.Width, &data.Height, &data.Channels, 4);
 
-        if (!data.Pixels) {
-            std::cerr << "Failed to load texture: " << metadata.FilePath << std::endl;
-            return; // Handle failure state appropriately
-        }
+            if (!data.Pixels) {
+                std::cerr << "Failed to load texture: " << metadata.FilePath << std::endl;
+                return; // Handle failure state appropriately
+            }
 
-        // 2. Submit the GPU upload back to the main thread
-        AssetUploadQueue::Submit([metadata, data, cb]() {
-            // --- THIS RUNS ON THE MAIN THREAD ---
-            
-            // Now it is safe to make OpenGL calls!
-            Shared<Texture2D> texture = Texture2D::Create(data);
-            
-            // Clean up the CPU memory now that it's on the GPU
-            stbi_image_free(data.Pixels);
+            // 2. Submit the GPU upload back to the main thread
+            AssetUploadQueue::Submit([metadata, data, cb]() {
+                // --- THIS RUNS ON THE MAIN THREAD ---
+                
+                // Now it is safe to make OpenGL calls!
+                Shared<Texture2D> texture = Texture2D::Create(data);
+                
+                // Clean up the CPU memory now that it's on the GPU
+                stbi_image_free(data.Pixels);
 
-            Shared<Asset> cast = texture;
+                Shared<Asset> cast = texture;
 
-            // Register the finalized asset
-            AssetManager::RegisterAsset(metadata, cast); 
+                // Register the finalized asset
+                AssetManager::RegisterAsset(metadata, cast); 
 
-            if (cb) cb();
+                if (cb) cb(texture);
+            });
         });
-    });
     }
 
     Shared<AssetMetadata> TextureImporter::ImportTexture2D(const std::filesystem::path &path)

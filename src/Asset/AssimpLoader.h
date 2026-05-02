@@ -209,8 +209,8 @@ namespace Engine
             return prefab;
         }
 
-        static void LoadModelAsync(const AssetMetadata& metadata) {
-            Application::Get().GetThreadPool().Enqueue([metadata]() {
+        static void LoadModelAsync(const AssetMetadata& metadata, std::function<void(Shared<Asset>)> cb) {
+            Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
                 
                 // --- PHASE 1: WORKER THREAD ---
                 Assimp::Importer importer;
@@ -239,15 +239,14 @@ namespace Engine
                 modelData.RootNode = ParseNodeData(scene->mRootNode);
 
                 // --- SEND TO MAIN THREAD ---
-                AssetUploadQueue::Submit([metadata, modelData]() {
-                    FinalizeModelOnMainThread(metadata, modelData);
+                AssetUploadQueue::Submit([metadata, modelData, cb]() {
+                    Shared<Prefab> model = FinalizeModelOnMainThread(metadata, modelData);
+                    if (cb) cb(model);
                 });
             });
         }
 
     private:
-
-
         static ParsedNode ParseNodeData(aiNode* node) {
             ParsedNode parsedNode;
             parsedNode.Name = node->mName.C_Str();
@@ -368,7 +367,7 @@ namespace Engine
             return parsedMat;
         }
 
-        static void FinalizeModelOnMainThread(const AssetMetadata& metadata, const ParsedModelData& data) {
+        static Shared<Prefab> FinalizeModelOnMainThread(const AssetMetadata& metadata, const ParsedModelData& data) {
             PROFILE_FUNCTION();
             Shared<Prefab> prefab = MakeShared<Prefab>();
             Entity rootEntity = prefab->CreateEntity(data.Name);
@@ -393,8 +392,9 @@ namespace Engine
                     UUID texHandle = AssetManager::ImportAsset(texturePath);
                     AssetMetadata metadata = AssetManager::GetMetadata(texHandle);
 
-                    TextureImporter::LoadTexture2DAsync(metadata, [material, type, texHandle]() {
-                        material->Add({type, AssetManager::GetAsset<Texture2D>(texHandle)}); 
+                    TextureImporter::LoadTexture2DAsync(metadata, [material, type, texHandle](Shared<Asset> asset) {
+                        Shared<Texture2D> img = std::static_pointer_cast<Texture2D>(asset);
+                        material->Add({type, img}); 
                     });
                 }
 
@@ -478,6 +478,7 @@ namespace Engine
             Shared<Asset> prefabCast = prefab;
             AssetManager::RegisterAsset(modelMeta, prefabCast);
             std::cout << "Successfully loaded async model: " << metadata.FilePath << std::endl;
+            return prefab;
         }
 
         static void BuildEntityHierarchy(const ParsedNode& nodeData, Shared<Prefab>& prefab, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles, const ParsedModelData& fullData) {
@@ -509,13 +510,6 @@ namespace Engine
                 BuildEntityHierarchy(childNode, prefab, currentEntity, meshHandles, materialHandles, fullData);
             }
         }
-
-
-
-
-
-
-
 
         static void ProcessAiNodeToEntity(aiNode* node, const aiScene* scene, Shared<Prefab>& prefab, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles)
         {

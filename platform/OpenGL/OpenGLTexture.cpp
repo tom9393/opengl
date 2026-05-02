@@ -126,7 +126,10 @@ namespace Engine
         glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-        glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.Pixels);
+        if (data.Pixels)
+        {
+            glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.Pixels);
+        }
     }
 
     OpenGLTexture2D::OpenGLTexture2D(uint32_t rendererID, uint32_t width, uint32_t height)
@@ -152,6 +155,15 @@ namespace Engine
         // (source ID, source type, source mip level, x, y, z, 
         //  dest ID, dest type, dest mip level, x, y, z, 
         //  width, height, depth)
+        glCopyImageSubData(
+            rendererID, GL_TEXTURE_2D, 0, 0, 0, 0,
+            m_RendererID, GL_TEXTURE_2D, 0, 0, 0, 0,
+            width, height, 1
+        );
+    }
+
+    void OpenGLTexture2D::Copy(uint32_t rendererID, uint32_t width, uint32_t height)
+    {
         glCopyImageSubData(
             rendererID, GL_TEXTURE_2D, 0, 0, 0, 0,
             m_RendererID, GL_TEXTURE_2D, 0, 0, 0, 0,

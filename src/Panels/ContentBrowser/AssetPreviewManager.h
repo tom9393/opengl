@@ -29,6 +29,9 @@ namespace Engine {
         static Shared<Texture2D> s_DefaultFolderIcon;
         static Shared<Texture2D> s_LuaIcon;
         static Shared<Texture2D> s_ModelIcon;
+
+        static Unique<RenderGraph> s_PreviewGraph;
+        static Shared<DynamicBufferPool> s_PreviewPool;
     };
 
 }

@@ -5,30 +5,12 @@
 #include "Asset/Prefab.h"
 #include "Scene/Entity.h"
 #include "../Asset/PrimitiveBuilder.h"
-#include "../Render/Passes/ShadowPass2D.h"
-#include "../Render/Passes/ShadowPass3D.h"
-#include "../Render/Passes/GeometryPass.h"
-#include "../Render/Passes/ScenePass.h"
 
 namespace Engine {
 
     class MaterialPreview : public Preview
     {
         public:
-        MaterialPreview()
-        {
-            m_InstancePool = MakeShared<DynamicBufferPool>(1024 * 1024); // 1MB
-            m_RenderGraph.AddPass<ShadowPass2D>("ShadowPass2D");
-            m_RenderGraph.AddPass<ShadowPass3D>("PointShadowPass");
-            m_RenderGraph.AddPass<GeometryPass>("GeometryPass");
-            m_RenderGraph.AddPass<ScenePass>("ScenePass");
-        }
-
-        uint32_t GetPreview() override
-        {
-            return m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
-        }
-
         void SetAsset(Shared<Asset> &asset) override
         {
             m_Scene = MakeShared<Scene>();

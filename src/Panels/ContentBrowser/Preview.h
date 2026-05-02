@@ -12,16 +12,21 @@ namespace Engine {
 
         public:
         virtual ~Preview() = default;
-        virtual uint32_t GetPreview() = 0;
         virtual void SetAsset(Shared<Asset> &asset) = 0;
 
-        RenderGraph& GetRenderGraph() { return m_RenderGraph; }
+        uint32_t GetCachedTextureID() const { return m_Texture ? m_Texture->GetID() : 0; }
 
-        uint32_t UpdatePreview()
+        uint32_t UpdatePreview(RenderGraph &graph, DynamicBufferPool *pool)
         {
             if (!m_Scene) return 0;
 
             float time = (float)glfwGetTime();
+            if (time - m_LastRenderTime < (1.0f / 60.0f)) {
+                // Return the cached framebuffer texture if it's not time to render yet
+                return m_Texture->GetID();
+            }
+            m_LastRenderTime = time;
+
             float speed = 1.0f; 
             float radius = 10.0f;
             float camX = sin(time * speed) * radius;
@@ -34,28 +39,42 @@ namespace Engine {
 
             glm::mat4 viewMatrix = glm::lookAt(position, target, up);
 
-            m_InstancePool->BeginFrame();
+            pool->BeginFrame();
 
             RenderContext ctx;
             ctx.ViewProjection = glm::perspective(glm::radians(60.0f), 1.0f, 0.1f, 1000.0f) * viewMatrix;
             ctx.CameraPosition = position;
-            ctx.InstancePool = m_InstancePool.get();
+            ctx.InstancePool = pool;
 
             RenderView view = SceneExtractor::Extract(m_Scene.get(), ctx);
 
             Renderer::BeginScene();
-            m_RenderGraph.Execute(ctx, view);
+            graph.Execute(ctx, view);
             Renderer::EndScene();
 
-            m_InstancePool->InsertFrameFence();
+            pool->InsertFrameFence();
 
-            return m_RenderGraph.GetPassColorAttachmentRendererID("ScenePass", 0);
+            uint32_t sharedTexID = graph.GetPassColorAttachmentRendererID("ScenePass", 0);
+
+            if (!m_Texture)
+            {
+                TextureLoadData data;
+                data.Height = 256;
+                data.Width = 256;
+                m_Texture = Texture2D::Create(data);
+            }
+
+            m_Texture->Copy(sharedTexID, 256, 256);
+
+            return m_Texture->GetID();
         }
 
         protected:
-        RenderGraph m_RenderGraph{256, 256};
-        Shared<DynamicBufferPool> m_InstancePool;
         Shared<Scene> m_Scene;
+
+        private:
+        Shared<Texture2D> m_Texture;
+        float m_LastRenderTime = 0.0f;
     };
 
 }

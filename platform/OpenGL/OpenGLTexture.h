@@ -13,6 +13,8 @@ namespace Engine
         OpenGLTexture2D(uint32_t rendererID, uint32_t width, uint32_t height);
         virtual ~OpenGLTexture2D();
 
+        void Copy(uint32_t rendererID, uint32_t width, uint32_t height) override;
+
         unsigned int GetWidth() const override { return m_Width; }
         unsigned int GetHeight() const override { return m_Height; }
 

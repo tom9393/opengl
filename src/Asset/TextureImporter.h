@@ -13,7 +13,7 @@ namespace Engine {
     {
         public:
         static Shared<Texture2D> LoadTexture2D(const AssetMetadata &metadata);
-        static void LoadTexture2DAsync(const AssetMetadata metadata, std::function<void()> cb);
+        static void LoadTexture2DAsync(const AssetMetadata metadata, std::function<void(Shared<Asset>)> cb);
 
         static Shared<AssetMetadata> ImportTexture2D(const std::filesystem::path &path);
 

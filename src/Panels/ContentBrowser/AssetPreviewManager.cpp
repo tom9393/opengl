@@ -2,6 +2,10 @@
 #include "../Asset/AssetManager.h"
 #include "PrefabPreview.h"
 #include "MaterialPreview.h"
+#include "Render/Passes/ShadowPass2D.h"
+#include "Render/Passes/ShadowPass3D.h"
+#include "Render/Passes/GeometryPass.h"
+#include "Render/Passes/ScenePass.h"
 
 namespace Engine {
 
@@ -11,11 +15,22 @@ namespace Engine {
     Shared<Texture2D> AssetPreviewManager::s_LuaIcon;
     Shared<Texture2D> AssetPreviewManager::s_ModelIcon;
 
+    Unique<RenderGraph> AssetPreviewManager::s_PreviewGraph;
+    Shared<DynamicBufferPool> AssetPreviewManager::s_PreviewPool;
+
     void AssetPreviewManager::Init() {
 		s_DefaultFileIcon = Texture2D::Create("../assets/icons/documentIcon.png");
 		s_DefaultFolderIcon = Texture2D::Create("../assets/icons/folderIcon.png");
 		s_LuaIcon = Texture2D::Create("../assets/icons/luaIcon.png");
 		s_ModelIcon = Texture2D::Create("../assets/icons/modelIcon.png");
+
+        s_PreviewGraph = MakeUnique<RenderGraph>(256, 256);
+        s_PreviewGraph->AddPass<ShadowPass2D>("ShadowPass2D");
+        s_PreviewGraph->AddPass<ShadowPass3D>("PointShadowPass");
+        s_PreviewGraph->AddPass<GeometryPass>("GeometryPass");
+        s_PreviewGraph->AddPass<ScenePass>("ScenePass");
+
+        s_PreviewPool = MakeShared<DynamicBufferPool>(1024 * 1024);
     }
 
     void AssetPreviewManager::Shutdown() {
@@ -25,66 +40,42 @@ namespace Engine {
     }
 
     uint32_t AssetPreviewManager::GetPreview(UUID assetHandle) {
-        if (s_Previews.find(assetHandle) != s_Previews.end()) {
-            return s_Previews[assetHandle]->GetPreview();
-        }
+        AssetMetadata metadata = AssetManager::GetMetadata(assetHandle);
+        if (metadata.Type == AssetType::Mesh || metadata.Type == AssetType::None || metadata.Type == AssetType::Scene || metadata.Type == AssetType::Texture2D || metadata.Type == AssetType::Texture3D) return s_DefaultFileIcon->GetID();
+        if (metadata.Type == AssetType::LuaScript) return s_LuaIcon->GetID();
 
-        Shared<Preview> previewTexture = GeneratePreview(assetHandle);
-        if (previewTexture) {
-            s_Previews[assetHandle] = previewTexture;
-            return previewTexture->GetPreview();
+        if (s_Previews.find(assetHandle) != s_Previews.end()) {
+            uint32_t texID = s_Previews[assetHandle]->GetCachedTextureID();
+            return texID != 0 ? texID : s_DefaultFileIcon->GetID();
+        } else {
+            AssetManager::GetAssetAsync(assetHandle, [&](Shared<Asset> asset){
+
+                switch (metadata.Type) {
+                    case AssetType::Prefab: {
+                        Shared<PrefabPreview> prev = MakeShared<PrefabPreview>();
+                        prev->SetAsset(asset);
+                        prev->UpdatePreview(*s_PreviewGraph, s_PreviewPool.get());
+                        s_Previews[assetHandle] = prev;
+                        break;
+                    }
+                    case AssetType::Material: {
+                        Shared<MaterialPreview> prev = MakeShared<MaterialPreview>();
+                        prev->SetAsset(asset);
+                        prev->UpdatePreview(*s_PreviewGraph, s_PreviewPool.get());
+                        s_Previews[assetHandle] = prev;
+                        break;
+                    }
+                }
+            });
         }
 
         return s_DefaultFileIcon->GetID();
     }
 
     void AssetPreviewManager::UpdatePreview(UUID assetHandle) {
-        if (s_Previews.find(assetHandle) == s_Previews.end())
-        {
-            Shared<Preview> previewTexture = GeneratePreview(assetHandle);
-            if (previewTexture) {
-                s_Previews[assetHandle] = previewTexture;
-            }
+        if (s_Previews.find(assetHandle) != s_Previews.end()) {
+            s_Previews[assetHandle]->UpdatePreview(*s_PreviewGraph, s_PreviewPool.get());
         }
-        if (AssetManager::GetAssetState(assetHandle) != AssetState::Ready) return;
-
-        const AssetMetadata& metadata = AssetManager::GetMetadata(assetHandle);
-        switch (metadata.Type)
-        {
-            case AssetType::Prefab: {
-                Shared<Asset> asset = AssetManager::GetAsset<Prefab>(assetHandle);
-                s_Previews[assetHandle]->UpdatePreview();
-                break;
-            }
-            case AssetType::Material: {
-                Shared<Asset> asset = AssetManager::GetAsset<Material>(assetHandle);
-                s_Previews[assetHandle]->UpdatePreview();
-                break;
-            }
-        }
-    }
-
-    Shared<Preview> AssetPreviewManager::GeneratePreview(UUID assetHandle) {
-        const AssetMetadata& metadata = AssetManager::GetMetadata(assetHandle);
-        
-        switch (metadata.Type) {
-            case AssetType::Prefab: {
-                Shared<Asset> prefab = AssetManager::GetAssetAsync<Prefab>(assetHandle);
-                if (!prefab) return nullptr;
-                Shared<PrefabPreview> prev = MakeShared<PrefabPreview>();
-                prev->SetAsset(prefab);
-                prev->UpdatePreview();
-                return prev;
-            }
-            case AssetType::Material: {
-                Shared<Asset> material = AssetManager::GetAsset<Material>(assetHandle);
-                Shared<MaterialPreview> prev = MakeShared<MaterialPreview>();
-                prev->SetAsset(material);
-                prev->UpdatePreview();
-                return prev;
-            }
-        }
-        return nullptr;
     }
 
 }

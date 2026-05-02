@@ -123,8 +123,16 @@ namespace Engine {
             auto [meshComponent, transformComponent, materialComponent] = view.get<MeshComponent, TransformComponent, MaterialComponent>(e);
             if (meshComponent.MeshHandle == 0) continue;
 
-            Shared<Mesh> mesh = AssetManager::GetAssetAsync<Mesh>(meshComponent.MeshHandle);
-            Shared<Material> material = AssetManager::GetAssetAsync<Material>(materialComponent.MaterialHandle);
+            Shared<Mesh> mesh;
+            Shared<Material> material;
+
+            AssetManager::GetAssetAsync(meshComponent.MeshHandle, [&](Shared<Asset> asset){
+                mesh = std::static_pointer_cast<Mesh>(asset);
+
+            });
+            AssetManager::GetAssetAsync(materialComponent.MaterialHandle, [&](Shared<Asset> asset){
+                material = std::static_pointer_cast<Material>(asset);
+            });
 
             if (!mesh || !material) continue;
 

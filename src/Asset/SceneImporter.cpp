@@ -11,6 +11,20 @@ namespace Engine {
         return scene;
     }
 
+    void SceneImporter::LoadSceneAsync(const AssetMetadata &metadata, std::function<void(Shared<Asset>)> cb)
+    {
+        Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
+            Shared<Scene> scene = MakeShared<Scene>();
+            SceneSerializer serializer(scene);
+            serializer.Deserialize(metadata.FilePath);
+            AssetUploadQueue::Submit([metadata, scene, cb]() {
+                // --- THIS RUNS ON THE MAIN THREAD ---
+
+                if (cb) cb(scene);
+            });
+        });
+    }
+
     Shared<AssetMetadata> SceneImporter::ImportScene(const std::filesystem::path &path)
     {
         Shared<AssetMetadata> metadata = MakeShared<AssetMetadata>();

@@ -27,11 +27,9 @@ namespace Engine {
             return std::static_pointer_cast<T>(asset);
         }
 
-        template <typename T>
-        static Shared<T> GetAssetAsync(UUID handle)
+        static void GetAssetAsync(UUID handle, std::function<void(Shared<Asset>)> cb)
         {
-            Shared<Asset> asset = GetAssetInternalAsync(handle);
-            return std::static_pointer_cast<T>(asset);
+            GetAssetInternalAsync(handle, cb);
         }
 
         static bool IsAssetLoaded(UUID handle) { return m_LoadedAssets.find(handle) != m_LoadedAssets.end(); }
@@ -40,7 +38,7 @@ namespace Engine {
 
     private:
         static Shared<Asset> GetAssetInternal(UUID handle);
-        static Shared<Asset> GetAssetInternalAsync(UUID handle);
+        static void GetAssetInternalAsync(UUID handle, std::function<void(Shared<Asset>)> cb);
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();
 
