@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../../pch.h"
-#include "../../Scene/Components.h"
-#include "../../Scene/Entity.h"
-#include "../../Asset/AssetManager.h"
-#include "../../Asset/CollisionBaker.h"
+#include "pch.h"
+#include "Asset/AssetManager.h"
+#include "Asset/CollisionBaker.h"
 #include "Core/Application.h"
+#include "Scene/Components.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 

@@ -1,5 +1,5 @@
-#include "../../pch.h"
-#include "OpenGLRendererAPI.h"
+#include "pch.h"
+#include "OpenGL/OpenGLRendererAPI.h"
 
 namespace Engine
 {

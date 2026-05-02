@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Asset.h"
-#include "../Core/UUID.h"
-#include <yaml-cpp/yaml.h>
 
 namespace Engine {
 

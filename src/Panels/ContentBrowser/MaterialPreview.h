@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../pch.h"
-#include "Preview.h"
+#include "pch.h"
 #include "Asset/Prefab.h"
+#include "Asset/PrimitiveBuilder.h"
+#include "Preview.h"
 #include "Scene/Entity.h"
-#include "../Asset/PrimitiveBuilder.h"
 #include "Scene/SceneExtractor.h"
 
 namespace Engine {

@@ -1,5 +1,5 @@
 #include "MenubarPanel.h"
-#include "../Core/Application.h"
+#include "Core/Application.h"
 
 namespace Engine {
     void MenuBarPanel::SetSaveCallback(const std::function<void()>& callback) {

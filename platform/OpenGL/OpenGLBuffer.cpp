@@ -1,5 +1,5 @@
+#include "pch.h"
 #include "OpenGLBuffer.h"
-#include "../../pch.h"
 
 namespace Engine
 {

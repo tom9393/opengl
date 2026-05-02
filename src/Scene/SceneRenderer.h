@@ -1,11 +1,11 @@
 #pragma once
 
+#include "pch.h"
 #include "Scene.h"
-#include "../Render/RenderGraph.h"
-#include "../Render/RenderContext.h"
-#include "../Render/DynamicBufferPool.h"
-#include "../Utils/MathTools.h"
-#include <glm/glm.hpp>
+#include "Render/RenderGraph.h"
+#include "Render/RenderContext.h"
+#include "Render/DynamicBufferPool.h"
+#include "Utils/MathTools.h"
 
 namespace Engine {
 

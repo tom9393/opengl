@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../../pch.h"
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
+
+#include "pch.h"
 
 namespace YAML
 {

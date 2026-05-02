@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../pch.h"
-#include "../Core/TimeStep.h"
+#include "pch.h"
+#include "Core/TimeStep.h"
+#include "Core/UUID.h"
+#include "Events/MouseEvent.h"
+#include "Physics/PhysicsEngine.h"
 #include "SceneSerializer.h"
-#include "../Physics/PhysicsEngine.h"
-#include "../Core/UUID.h"
-#include "../Events/MouseEvent.h"
 
 namespace Engine
 {

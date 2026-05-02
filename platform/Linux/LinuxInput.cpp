@@ -1,6 +1,7 @@
-#include "../../src/Core/Application.h"
-#include "../../src/Core/Input.h"
 #include <GLFW/glfw3.h>
+
+#include "Core/Application.h"
+#include "Core/Input.h"
 
 namespace Engine
 {

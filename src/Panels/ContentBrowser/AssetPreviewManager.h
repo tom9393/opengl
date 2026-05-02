@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../pch.h"
-#include "Core/UUID.h"
+#include "pch.h"
 #include "Asset/Texture.h"
+#include "Core/UUID.h"
 #include "Preview.h"
 
 namespace Engine {

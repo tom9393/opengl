@@ -1,5 +1,5 @@
-#include "../../pch.h"
-#include "../../src/Utils/PlatformUtils.h"
+#include "pch.h"
+#include "Utils/PlatformUtils.h"
 
 namespace Engine
 {

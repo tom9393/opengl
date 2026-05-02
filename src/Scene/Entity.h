@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../pch.h"
+#include "pch.h"
+#include "Core/UUID.h"
 #include "Components.h"
 #include "Scene.h"
-#include "../Core/UUID.h"
 
 namespace Engine
 {

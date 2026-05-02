@@ -31,6 +31,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <stdexcept>
+#include <cstdio>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -40,6 +41,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/fwd.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../pch.h"
-#include "Preview.h"
+#include "pch.h"
 #include "Asset/Prefab.h"
+#include "Preview.h"
 #include "Scene/Entity.h"
 #include "Scene/SceneExtractor.h"
 

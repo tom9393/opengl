@@ -1,11 +1,12 @@
 #include "SceneSerializer.h"
-#include "../Asset/AssetManager.h"
-#include "../Asset/AssimpLoader.h"
-#include "Entity.h"
 #include "Components.h"
+#include "Asset/AssetManager.h"
+#include "Asset/AssimpLoader.h"
+#include "Asset/YamlArchive.h"
+#include "Entity.h"
+
 #include <yaml-cpp/emittermanip.h>
 #include <yaml-cpp/yaml.h>
-#include "../Asset/YamlArchive.h"
 
 namespace Engine
 {

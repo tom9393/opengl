@@ -1,5 +1,5 @@
-#include "OpenGLTexture.h"
-#include "../../pch.h"
+#include "OpenGL/OpenGLTexture.h"
+#include "pch.h"
 #include "ktx.h"
 
 namespace Engine

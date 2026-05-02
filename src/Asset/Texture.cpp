@@ -1,7 +1,7 @@
-#include "Texture.h"
-#include "Render/Renderer.h"
-#include "../platform/OpenGL/OpenGLTexture.h"
+#include "OpenGL/OpenGLTexture.h"
 #include "TextureImporter.h"
+#include "Render/Renderer.h"
+#include "Texture.h"
 
 namespace Engine
 {

@@ -1,6 +1,6 @@
 #include "ContentBrowserPanel.h"
 #include "AssetPreviewManager.h"
-#include "../../Render/Renderer.h"
+#include "Render/Renderer.h"
 
 namespace Engine
 {

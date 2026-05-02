@@ -1,7 +1,7 @@
 #include "ScriptEngine.h"
-#include "../Core/Input.h"
-#include "../Scene/Components.h"
+#include "Core/Input.h"
 #include "LuaBindings.h"
+#include "Scene/Components.h"
 
 namespace Engine {
 

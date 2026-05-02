@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../../pch.h"
+#include "pch.h"
 
+#include "Events/ApplicationEvent.h"
+#include "Events/KeyboardEvent.h"
+#include "Events/MouseEvent.h"
 #include "ImGuiLayer.h"
 #include "LayerStack.h"
 #include "Utils/ThreadPool.h"
 #include "Window.h"
-#include "Events/ApplicationEvent.h"
-#include "Events/KeyboardEvent.h"
-#include "Events/MouseEvent.h"
 
 namespace Engine
 {

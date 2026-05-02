@@ -1,6 +1,6 @@
 #include "Buffer.h"
 #include "Render/Renderer.h"
-#include "../platform/OpenGL/OpenGLBuffer.h"
+#include "OpenGL/OpenGLBuffer.h"
 
 namespace Engine
 {

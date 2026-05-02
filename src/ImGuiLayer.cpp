@@ -1,8 +1,8 @@
-#include "../pch.h"
+#include "pch.h"
 #include "ImGuiLayer.h"
 #include "Core/Application.h"
-#include "../lib/imguizmo/ImGuizmo.h"
 #include "Events/EventBroker.h"
+#include "imguizmo/ImGuizmo.h"
 
 namespace Engine
 {

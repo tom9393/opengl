@@ -1,13 +1,13 @@
 #include "ViewportPanel.h"
-#include "../Asset/Prefab.h"
-#include "../Asset/AssetManager.h"
-#include "../Asset/PrimitiveBuilder.h"
-#include "../Core/Input.h"
-#include "../Core/KeyCodes.h"
-#include "../Utils/ScopedImGuiStyle.h"
-#include "../Utils/GizmoManager.h"
-#include "../Events/EventBroker.h"
+#include "Asset/Prefab.h"
+#include "Asset/AssetManager.h"
+#include "Asset/PrimitiveBuilder.h"
+#include "Core/Input.h"
+#include "Core/KeyCodes.h"
+#include "Events/EventBroker.h"
 #include "PassPanel.h"
+#include "Utils/ScopedImGuiStyle.h"
+#include "Utils/GizmoManager.h"
 
 namespace Engine {
 

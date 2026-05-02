@@ -1,10 +1,11 @@
-#include "../../src/Events/ApplicationEvent.h"
-#include "../../src/Events/MouseEvent.h"
-#include "../../src/Events/KeyboardEvent.h"
-#include "../Asset/DefaultTextures.h"
-#include "LinuxWindow.h"
-#include "../OpenGL/OpenGLContext.h"
 #include <GLFW/glfw3.h>
+
+#include "LinuxWindow.h"
+#include "OpenGL/OpenGLContext.h"
+#include "Asset/DefaultTextures.h"
+#include "Events/ApplicationEvent.h"
+#include "Events/MouseEvent.h"
+#include "Events/KeyboardEvent.h"
 
 namespace Engine
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../pch.h"
-#include "../Render/EditorCamera.h"
+#include "pch.h"
+#include "Render/EditorCamera.h"
 
 namespace Engine {
 

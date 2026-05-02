@@ -1,5 +1,5 @@
 #include "RenderCommand.h"
-#include "../platform/OpenGL/OpenGLRendererAPI.h"
+#include "OpenGL/OpenGLRendererAPI.h"
 
 namespace Engine
 {

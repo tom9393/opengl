@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../pch.h"
+#include "pch.h"
+#include "Core/TimeStep.h"
 #include "LinearMath/btVector3.h"
 #include "RigidBody.h"
 #include <bullet/src/btBulletDynamicsCommon.h>
 #include <entt/src/entt/entt.hpp>
-#include "../Core/TimeStep.h"
 
 namespace Engine {
 

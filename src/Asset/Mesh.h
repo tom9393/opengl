@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../pch.h"
-
-#include "../Utils/MathTools.h"
-#include "../Core/Preprocessor.h"
-#include "../Render/BufferLayout.h"
-#include "../Render/Buffer.h"
+#include "pch.h"
+#include "Core/Preprocessor.h"
+#include "Render/BufferLayout.h"
+#include "Render/Buffer.h"
+#include "Utils/MathTools.h"
 
 namespace Engine
 {

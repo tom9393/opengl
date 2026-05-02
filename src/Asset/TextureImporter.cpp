@@ -1,7 +1,7 @@
 #include "TextureImporter.h"
+#include "AssetManager.h"
 #include "AssetUploadQueue.h"
 #include "Core/Application.h"
-#include "AssetManager.h"
 
 namespace Engine {
 

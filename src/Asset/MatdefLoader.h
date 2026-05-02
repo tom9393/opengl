@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../pch.h"
+#include <yaml-cpp/yaml.h>
+
+#include "pch.h"
 #include "Material.h"
 
 namespace Engine {

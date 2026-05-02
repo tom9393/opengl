@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../pch.h"
-#include "../Scene/Scene.h"
-#include "../Scene/Entity.h"
-#include "../Scene/SceneRenderer.h"
-#include "../Render/EditorCamera.h"
-#include "../Utils/SceneManager.h"
+#include "pch.h"
+#include "Scene/Scene.h"
+#include "Scene/Entity.h"
+#include "Scene/SceneRenderer.h"
+#include "Render/EditorCamera.h"
 #include "PassPanel.h"
+#include "Utils/SceneManager.h"
 
 namespace Engine {
 

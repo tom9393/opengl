@@ -1,7 +1,7 @@
-#include "../../pch.h"
 #include "StatsPanel.h"
-#include "../Render/Renderer.h"
-#include "../Core/Application.h"
+#include "pch.h"
+#include "Core/Application.h"
+#include "Render/Renderer.h"
 
 namespace Engine {
     void StatsPanel::OnImGuiRender() {

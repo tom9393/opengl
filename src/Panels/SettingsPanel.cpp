@@ -1,6 +1,6 @@
 #include "SettingsPanel.h"
-#include "../Render/Renderer.h"
-#include "../Physics/PhysicsEngine.h"
+#include "Render/Renderer.h"
+#include "Physics/PhysicsEngine.h"
 
 namespace Engine {
 

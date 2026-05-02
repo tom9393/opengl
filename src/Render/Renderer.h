@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Buffer.h"
-#include "../Utils/MathTools.h"
+#include "Line.h"
 #include "RenderCommand.h"
 #include "RendererAPI.h"
-#include "Shader.h"
-#include "Line.h"
 #include "RenderContext.h"
+#include "Shader.h"
+#include "Utils/MathTools.h"
 
 namespace Engine
 {

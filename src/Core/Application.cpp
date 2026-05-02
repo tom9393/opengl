@@ -1,11 +1,11 @@
 #include "Application.h"
-#include "EditorLayer.h"
-#include "TimeStep.h"
-#include "Render/Renderer.h"
-#include "KeyCodes.h"
-#include "Events/EventBroker.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUploadQueue.h"
+#include "EditorLayer.h"
+#include "Events/EventBroker.h"
+#include "KeyCodes.h"
+#include "Render/Renderer.h"
+#include "TimeStep.h"
 
 namespace Engine
 {

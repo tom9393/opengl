@@ -1,18 +1,19 @@
 #pragma once
 
-#include "../../pch.h"
-#include "../../lib/entt/single_include/entt/entt.hpp"
-#include "../Core/Preprocessor.h"
-#include "../Asset/Material.h"
-#include "../Scripting/NativeScript.h"
-#include "../Render/SceneCamera.h"
-#include "../Utils/MathTools.h"
-#include "../Core/UUID.h"
-#include "../Physics/RigidBody.h"
+#include <sol2/sol.hpp>
+
+#include "pch.h"
+#include "Asset/Material.h"
+#include "Core/Preprocessor.h"
+#include "Core/UUID.h"
+#include "Physics/RigidBody.h"
+#include "Render/SceneCamera.h"
+#include "single_include/entt/entt.hpp"
+#include "Scripting/NativeScript.h"
+#include "Utils/MathTools.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
-#include <sol2/sol.hpp>
 
 namespace Engine
 {

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <LinearMath/btIDebugDraw.h>
-#include "../Render/Renderer.h"
+
+#include "Render/Renderer.h"
 
 namespace Engine {
     class PhysicsDebugDrawer : public btIDebugDraw {

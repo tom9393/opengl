@@ -1,27 +1,23 @@
 #pragma once
 
-#include "../pch.h"
-#include "../Core/Application.h"
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#include "pch.h"
+#include "Core/Application.h"
 #include "AssetManager.h"
-#include "Mesh.h"
-#include "../Render/BufferLayout.h"
-#include "Texture.h"
+#include "Asset/Prefab.h"
+#include "Asset/AssetUploadQueue.h"
+#include "Render/BufferLayout.h"
 #include "MaterialSpecification.h"
 #include "MatdefLoader.h"
-#include "../Asset/Prefab.h"
-#include "../Scene/Entity.h"
-#include "../Render/Renderer.h"
-#include <glm/gtc/quaternion.hpp>
-#include "Asset/AssetUploadQueue.h"
+#include "Mesh.h"
+#include "Render/Renderer.h"
+#include "Scene/Entity.h"
+#include "Texture.h"
 #include "TextureImporter.h"
-
-#include "YamlArchive.h"
-#include <yaml-cpp/yaml.h>
-#include <fstream>
 
 namespace Engine
 {

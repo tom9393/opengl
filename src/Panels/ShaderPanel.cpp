@@ -1,6 +1,6 @@
 #include "ShaderPanel.h"
-#include "../Render/Shader.h"
-#include "../pch.h"
+#include "Render/Shader.h"
+#include "pch.h"
 
 namespace Engine {
 

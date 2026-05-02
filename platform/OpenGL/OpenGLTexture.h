@@ -1,5 +1,5 @@
-#include "../../pch.h"
-#include "../../src/Asset/Texture.h"
+#include "pch.h"
+#include "Asset/Texture.h"
 #include "Asset/TextureImporter.h"
 
 namespace Engine

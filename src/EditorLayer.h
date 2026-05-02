@@ -1,12 +1,9 @@
 #pragma once
 
 #include "Core/Application.h"
-#include "Render/EditorCamera.h"
-#include "Events/KeyboardEvent.h"
 #include "Core/Layer.h"
-#include "Scene/Scene.h"
-#include "SceneRenderer.h"
 #include "Core/TimeStep.h"
+#include "Events/KeyboardEvent.h"
 #include "Events/MouseEvent.h"
 #include "Panels/SceneHierarchy/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowser/ContentBrowserPanel.h"
@@ -16,6 +13,9 @@
 #include "Panels/ToolbarPanel.h"
 #include "Panels/MenubarPanel.h"
 #include "Panels/ShaderPanel.h"
+#include "Render/EditorCamera.h"
+#include "Scene/Scene.h"
+#include "SceneRenderer.h"
 
 namespace Engine
 {

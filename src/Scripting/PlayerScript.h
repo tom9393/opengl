@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../Core/Application.h"
-#include "../Asset/AssetManager.h"
-#include "../Asset/CollisionBaker.h"
-#include "../Scene/Components.h"
-#include "../Scene/Entity.h"
-#include "../Events/EventBroker.h"
-#include "../Core/Input.h"
+#include "Asset/AssetManager.h"
+#include "Asset/CollisionBaker.h"
+#include "Core/Application.h"
+#include "Core/TimeStep.h"
+#include "Core/Input.h"
+#include "Events/EventBroker.h"
 #include "NativeScript.h"
-#include "../Core/TimeStep.h"
+#include "Scene/Components.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 

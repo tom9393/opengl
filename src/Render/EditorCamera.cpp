@@ -1,6 +1,5 @@
 #include "EditorCamera.h"
 #include "Events/EventBroker.h"
-#include <glm/ext/matrix_transform.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>

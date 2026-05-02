@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Render/RenderView.h"
-#include "Scene.h"
+#include "Asset/AssetManager.h"
 #include "Entity.h"
-#include "../Render/Camera.h"
-#include "../Asset/AssetManager.h"
+#include "Render/RenderView.h"
+#include "Render/Camera.h"
+#include "Scene.h"
 
 namespace Engine {
 

@@ -1,10 +1,10 @@
 #include "LuaBindings.h"
+#include "Asset/AssetManager.h"
+#include "Core/Input.h"
+#include "Core/KeyCodes.h"
+#include "Physics/RigidBody.h"
+#include "Scene/Components.h"
 #include "ScriptEngine.h"
-#include "../Asset/AssetManager.h"
-#include "../Core/Input.h"
-#include "../Core/KeyCodes.h"
-#include "../Scene/Components.h"
-#include "../Physics/RigidBody.h"
 
 namespace Engine {
 

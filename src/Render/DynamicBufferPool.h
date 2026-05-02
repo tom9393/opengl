@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../pch.h"
-#include "../Core/Application.h"
+#include "pch.h"
+#include "Core/Application.h"
 
 namespace Engine {
 

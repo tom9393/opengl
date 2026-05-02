@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../pch.h"
-#include "../../Scene/Entity.h"
+#include "pch.h"
 #include "DrawTransform.h"
 #include "DrawMesh.h"
 #include "DrawMaterial.h"
@@ -9,6 +8,7 @@
 #include "DrawRigidBody.h"
 #include "DrawLight.h"
 #include "DrawLua.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 

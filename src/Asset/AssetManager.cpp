@@ -1,11 +1,12 @@
-#include "../pch.h"
-#include "AssetManager.h"
-#include "Asset.h"
-#include "AssimpLoader.h"
-#include "SceneImporter.h"
-#include "TextureImporter.h"
-#include "ScriptImporter.h"
 #include <yaml-cpp/yaml.h>
+
+#include "pch.h"
+#include "AssetManager.h"
+#include "AssimpLoader.h"
+#include "Asset.h"
+#include "SceneImporter.h"
+#include "ScriptImporter.h"
+#include "TextureImporter.h"
 
 namespace Engine {
 

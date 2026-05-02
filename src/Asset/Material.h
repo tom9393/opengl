@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Texture.h"
-#include "Shader.h"
 #include "MaterialSpecification.h"
 #include "DefaultTextures.h"
+#include "Shader.h"
+#include "Texture.h"
 
 namespace Engine {
 

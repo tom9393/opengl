@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../pch.h"
+#include "pch.h"
+#include "Asset/AssetManager.h"
 #include "DrawVec3.h"
-#include "../../Scene/Components.h"
-#include "../../Scene/Entity.h"
-#include "../../Asset/AssetManager.h"
+#include "Scene/Components.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 

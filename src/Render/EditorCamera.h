@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Core/TimeStep.h"
-#include "../Core/Input.h"
-#include "../Core/KeyCodes.h"
+#include "pch.h"
 #include "Camera.h"
+#include "Core/TimeStep.h"
+#include "Core/Input.h"
+#include "Core/KeyCodes.h"
 #include "Events/MouseEvent.h"
-#include "../pch.h"
 
 namespace Engine
 {

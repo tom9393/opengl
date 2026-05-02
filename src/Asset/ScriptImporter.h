@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../../pch.h"
+#include "pch.h"
 #include "Asset.h"
+
 namespace Engine {
     
     class ScriptImporter

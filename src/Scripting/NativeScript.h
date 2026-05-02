@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/TimeStep.h"
-#include "../../lib/entt/single_include/entt/entt.hpp"
+#include "Core/TimeStep.h"
+#include "single_include/entt/entt.hpp"
 
 namespace Engine {
 

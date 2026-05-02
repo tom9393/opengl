@@ -1,5 +1,5 @@
+#include "pch.h"
 #include "OpenGLShader.h"
-#include <cstdio>
 
 namespace Engine
 {

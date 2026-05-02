@@ -1,14 +1,14 @@
 #include "SceneRenderer.h"
-#include "Render/Renderer.h"
-#include "Scene/Components.h"
-#include "Scene/SceneExtractor.h"
+#include "Asset/AssetManager.h"
 #include "Scene/Entity.h"
-#include "../Asset/AssetManager.h"
 #include "Passes/ShadowPass2D.h"
 #include "Passes/ShadowPass3D.h"
 #include "Passes/GeometryPass.h"
 #include "Passes/ScenePass.h"
+#include "Render/Renderer.h"
 #include "RenderView.h"
+#include "Scene/Components.h"
+#include "Scene/SceneExtractor.h"
 
 namespace Engine {
 

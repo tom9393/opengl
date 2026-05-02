@@ -1,13 +1,13 @@
 #include "PhysicsEngine.h"
+#include "Asset/AssetManager.h"
+#include "Asset/CollisionBaker.h"
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
-#include "RigidBody.h"
-#include "../Core/Application.h"
-#include "../Scene/Entity.h"
-#include "../Utils/ThreadPool.h"
-#include "../Asset/AssetManager.h"
-#include "../Asset/CollisionBaker.h"
+#include "Core/Application.h"
 #include "PhysicsDebugDrawer.h"
+#include "RigidBody.h"
+#include "Scene/Entity.h"
+#include "Utils/ThreadPool.h"
 
 namespace Engine {
 

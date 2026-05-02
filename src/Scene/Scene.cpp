@@ -1,13 +1,13 @@
 #include "Scene.h"
-#include "../Render/Renderer.h"
-#include "../Asset/AssetManager.h"
-#include "../Asset/CollisionBaker.h"
+#include "Asset/AssetManager.h"
+#include "Asset/CollisionBaker.h"
 #include "Components.h"
 #include "Entity.h"
-#include "../Physics/RigidBody.h"
+#include "Events/MouseEvent.h"
+#include "Events/EventBroker.h"
+#include "Physics/RigidBody.h"
+#include "Render/Renderer.h"
 #include "Scripting/ScriptEngine.h"
-#include "../Events/MouseEvent.h"
-#include "../Events/EventBroker.h"
 
 namespace Engine
 {

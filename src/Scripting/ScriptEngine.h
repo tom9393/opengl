@@ -1,9 +1,10 @@
 #pragma once
 
 #include <sol2/sol.hpp>
-#include "../Scene/Scene.h"
-#include "../Scene/Entity.h"
-#include "../Core/TimeStep.h"
+
+#include "Core/TimeStep.h"
+#include "Scene/Scene.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 

@@ -1,12 +1,12 @@
 #include "AssetPreviewManager.h"
-#include "../Asset/AssetManager.h"
-#include "PrefabPreview.h"
+#include "Asset/AssetManager.h"
 #include "MaterialPreview.h"
-#include "Texture2DPreview.h"
+#include "PrefabPreview.h"
 #include "Render/Passes/ShadowPass2D.h"
 #include "Render/Passes/ShadowPass3D.h"
 #include "Render/Passes/GeometryPass.h"
 #include "Render/Passes/ScenePass.h"
+#include "Texture2DPreview.h"
 
 namespace Engine {
 

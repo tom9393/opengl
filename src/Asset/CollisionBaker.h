@@ -2,9 +2,10 @@
 
 #include "BulletCollision/CollisionShapes/btConvexHullShape.h"
 #include "BulletCollision/CollisionShapes/btShapeHull.h"
-#include "Mesh.h"
+
 #include "AssetManager.h"
-#include "../Scene/Entity.h"
+#include "Mesh.h"
+#include "Scene/Entity.h"
 
 namespace Engine {
 

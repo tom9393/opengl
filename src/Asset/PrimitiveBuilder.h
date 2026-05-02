@@ -1,7 +1,8 @@
 #pragma once
-#include "../../pch.h"
-#include "Mesh.h"
+
+#include "pch.h"
 #include "AssetManager.h"
+#include "Mesh.h"
 
 namespace Engine {
 

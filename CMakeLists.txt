@@ -61,12 +61,12 @@ target_include_directories(imguizmo
 )
 
 target_include_directories(${PROJECT_NAME}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 	PUBLIC src
 	PUBLIC src/Scene
 	PUBLIC src/Panels
 	PUBLIC src/Render
-	PUBLIC platform/Linux
-	PUBLIC platform/OpenGL
+	PUBLIC platform
 	PUBLIC ${LUA_INCLUDE_DIR} # Must be included before lua or otherwise it tries to use 5.5
 	
 	PUBLIC lib/entt # Entt is a single header library

@@ -1,7 +1,7 @@
 #include "LoadedAssets.h"
 #include "AssetPreviewManager.h"
 #include "imgui.h"
-#include "../../Asset/AssetManager.h"
+#include "Asset/AssetManager.h"
 
 namespace Engine {
 
