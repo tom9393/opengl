@@ -148,16 +148,6 @@ namespace Engine
             return false;
         }
 
-        glValidateProgram(id);
-
-        glGetProgramiv(id, GL_VALIDATE_STATUS, &Success);
-
-        if (Success == 0) {
-            glGetProgramInfoLog(id, sizeof(ErrorLog), NULL, ErrorLog);
-            fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
-            return false;
-        }
-
         // Delete the intermediate shader objects that have been added to the program
         for (std::list<GLuint>::iterator it = shaderObjList.begin() ; it != shaderObjList.end() ; it++) {
             glDeleteShader(*it);

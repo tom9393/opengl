@@ -88,7 +88,7 @@ namespace Engine
         void UpdateWorldTransform(const glm::mat4 &parent)
         {
             WorldTransform = parent * GetTransform();
-            IsDirty = true;
+            IsDirty = false;
         }
     };
 

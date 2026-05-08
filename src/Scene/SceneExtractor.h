@@ -55,8 +55,6 @@ namespace Engine {
             float typeFloat = static_cast<float>(light.Type);
             glm::vec3 direction = transform.GetForward();
 
-            if (!light.CastShadows) continue;
-        
             switch (light.Type)
             {
                 case LightComponent::LightType::Point:
