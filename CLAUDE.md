@@ -1,0 +1,114 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Build & Run
+
+```bash
+./configure.sh   # cmake -S . -B build (regenerate build files)
+./build.sh       # make in build/ directory
+./run.sh         # execute the compiled binary
+```
+
+System dependencies (Arch Linux): `pacman -Syu assimp yaml-cpp glfw`
+Lua 5.4 required exactly — 5.5 is not supported.
+
+There are no automated tests; validation is done through interactive editor/runtime use.
+
+## Architecture
+
+### Application Structure
+
+The entry point (`main.cpp`) instantiates either `Editor` or `Runtime` and calls `Run()`. Both inherit from `Application`, which manages a `LayerStack`. The two key layers are `EditorLayer` (full UI + viewport) and `ImGuiLayer` (UI rendering). The platform layer (`platform/Linux/`, `platform/OpenGL/`) implements window management and the OpenGL rendering API behind abstract interfaces.
+
+### ECS & Scene
+
+Scenes are built on **EnTT**. `Scene` owns the registry; `Entity` is a thin handle into it. All data lives in components defined in `src/Scene/Components.h` — `TransformComponent`, `MeshComponent`, `CameraComponent`, `RigidBodyComponent`, `ScriptComponent`, and `RelationshipComponent` (parent/child hierarchy). `SceneRenderer` bridges the scene to the render graph.
+
+### Render Graph
+
+The rendering pipeline uses a true render graph (`src/Render/RenderGraph.h`) with named input/output resources, automatic dependency resolution via topological sort, and unused-pass culling. The main passes are:
+
+- **GeometryPass** — deferred G-buffer generation
+- **ShadowPass2D / ShadowPass3D** — directional and point light shadows
+- **ScenePass** — lighting composition and forward rendering
+
+`Renderer` is a static low-level API; `RendererAPI` is the abstract interface implemented by `platform/OpenGL/OpenGLRendererAPI`.
+
+### Asset System
+
+`AssetManager` (static singleton) maintains a central registry and handles async loading via `ThreadPool`. All resource types (`Mesh`, `Texture2D`, `Material`, `Scene`, `Prefab`) inherit from `Asset`. GPU uploads are batched through `AssetUploadQueue`. Asset metadata is stored in `assets/AssetRegistry.yaml`. Model import uses Assimp; textures support KTX format via the `lib/ktx` submodule.
+
+### Material System
+
+`Material` (`src/Asset/Material.h`) is PBR-based, with blend modes and shader property binding. Properties are declared in `.matdef` files in `shaders/` and bound to shader uniforms/SSBOs automatically via reflection in `Shader`.
+
+### Physics & Scripting
+
+`PhysicsEngine` wraps Bullet3. `CollisionBaker` converts mesh geometry to collision shapes. The scripting system uses **Sol2** bindings over Lua 5.4 — `ScriptEngine` manages the VM, `LuaBindings` exposes the C++ API, and `ScriptComponent` attaches scripts to entities.
+
+### Event System
+
+`EventBroker` implements publish-subscribe. Events are categorized (Keyboard, Mouse, Application, Window) and typed via `EventType` enum. Dispatch is type-safe.
+
+## Key Dependencies (all in `lib/` as git submodules)
+
+| Library | Role |
+|---------|------|
+| EnTT | Entity-component system |
+| GLM | Math (vec, mat, quat) |
+| ImGui + ImGuizmo | Editor UI and 3D gizmos |
+| Bullet3 | Physics simulation |
+| Sol2 | Lua C++ bindings |
+| glad / GLFW | OpenGL loader / window & input |
+| yaml-cpp | Scene serialization |
+| stb_image / ktx | Texture loading |
+
+Precompiled headers are in `pch.h` — include it rather than re-including common headers.
+
+## Shaders
+
+GLSL shaders live in `shaders/`. `.matdef` files define material property layouts. Shader introspection (uniforms, UBOs, SSBOs) is performed at load time by `Shader`.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- Avoid clever one liners and other hacky solutions. Write code that is easy to understand and simple.
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Do not manually compile
+
+**When done, tell the user so they can test whether the program compiles manually**

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Asset/AssetManager.h"
 #include "Entity.h"
+#include "LightExtractor.h"
+#include "MeshExtractor.h"
 #include "Render/RenderView.h"
 #include "Render/Camera.h"
 #include "Scene.h"
@@ -17,7 +18,7 @@ namespace Engine {
         UpdateWorldTransforms(scene);
 
         // 1. Extract Lights
-        ExtractLights(scene, frustum, view);
+        LightExtractor::Extract(scene, frustum, view);
 
         CameraData cameraData;
         cameraData.CameraPosition = ctx.CameraPosition;
@@ -32,7 +33,7 @@ namespace Engine {
         ctx.InstancePool->BindAsUBO(1, lightAlloc.Offset, lightAlloc.Size);
 
         // 2. Extract and Cull Meshes
-        ExtractMeshes(scene, frustum, view);
+        MeshExtractor::Extract(scene, frustum, view);
 
         // 3. Sort
         SortDrawCommands(view);
@@ -41,129 +42,6 @@ namespace Engine {
     }
 
     private:
-
-    static void ExtractLights(Scene* scene, Frustum &frustum, RenderView &renderView)
-    {
-        auto view = scene->GetRegistry().view<LightComponent, TransformComponent>();
-        for (auto& e : view)
-        {
-            if (renderView.LightData.LightCount >= 64) break;
-            auto [light, transform] = view.get<LightComponent, TransformComponent>(e);
-
-            int idx = renderView.LightData.LightCount;
-            int shadowIndex = -1; // Default to no shadow
-            float typeFloat = static_cast<float>(light.Type);
-            glm::vec3 direction = transform.GetForward();
-
-            switch (light.Type)
-            {
-                case LightComponent::LightType::Point:
-                {
-                    renderView.LightData.Lights[idx].PositionType = glm::vec4(transform.translation, typeFloat);
-                    renderView.LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
-                    renderView.LightData.Lights[idx].DirectionOuter = glm::vec4(0.0f);
-                    renderView.LightData.Lights[idx].LightSpaceMatrix = glm::mat4(1.0f);
-                    
-                    if (light.CastShadows) {
-                        shadowIndex = renderView.PointShadowCasters.size();
-                        renderView.PointShadowCasters.push_back({ transform.translation, {} });
-                    }
-                    break;
-                }
-                case LightComponent::LightType::Directional:
-                {
-                    renderView.LightData.Lights[idx].PositionType = glm::vec4(0.0f, 0.0f, 0.0f, typeFloat);
-                    renderView.LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, 0.0f);
-                    renderView.LightData.Lights[idx].DirectionOuter = glm::vec4(direction, 0.0f);
-
-                    float orthoRange = 40.0f; 
-                    glm::mat4 lightProjection = glm::ortho(-orthoRange, orthoRange, -orthoRange, orthoRange, 1.0f, 400.0f);
-                    glm::vec3 up = glm::abs(direction.y) > 0.999f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-                    glm::vec3 shadowCameraPos = transform.translation - (direction * 300.0f);
-                    
-                    glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
-                    renderView.LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
-                    
-                    if (light.CastShadows) {
-                        shadowIndex = renderView.DirectionalShadowCasters.size();
-                        renderView.DirectionalShadowCasters.push_back({ renderView.LightData.Lights[idx].LightSpaceMatrix, {} });
-                    }
-                    break;
-                }
-                case LightComponent::LightType::Cone:
-                {
-                    renderView.LightData.Lights[idx].PositionType = glm::vec4(transform.translation, typeFloat);
-                    renderView.LightData.Lights[idx].ColorInner   = glm::vec4(light.Color * light.Intensity, light.InnerCutOff);
-                    renderView.LightData.Lights[idx].DirectionOuter = glm::vec4(direction, light.OuterCutOff);
-                    
-                    float fov = glm::acos(light.OuterCutOff) * 2.0f;
-                    glm::mat4 lightProjection = glm::perspective(fov, 1.0f, 0.1f, 100.0f);
-                    glm::mat4 lightViewMat = glm::lookAt(transform.translation, transform.translation + direction, glm::vec3(0.0f, 1.0f, 0.0f));
-                    renderView.LightData.Lights[idx].LightSpaceMatrix = lightProjection * lightViewMat;
-                    
-                    if (light.CastShadows) {
-                        shadowIndex = renderView.DirectionalShadowCasters.size();
-                        renderView.DirectionalShadowCasters.push_back({ renderView.LightData.Lights[idx].LightSpaceMatrix, {} });
-                    }
-                    break;
-                }
-            }
-            renderView.LightData.Lights[idx].Params = glm::ivec4(shadowIndex, 0, 0, 0);
-            renderView.LightData.LightCount++;
-        }
-    }
-
-    static void ExtractMeshes(Scene* scene, Frustum &frustum, RenderView &renderView)
-    {
-        auto view = scene->GetRegistry().view<MeshComponent, TransformComponent, MaterialComponent>();
-        for (auto& e : view)
-        {
-            auto [meshComponent, transformComponent, materialComponent] = view.get<MeshComponent, TransformComponent, MaterialComponent>(e);
-            if (meshComponent.MeshHandle == 0) continue;
-
-            Shared<Mesh> mesh;
-            Shared<Material> material;
-
-            AssetManager::GetAssetAsync(meshComponent.MeshHandle, [&](Shared<Asset> asset){
-                mesh = std::static_pointer_cast<Mesh>(asset);
-
-            });
-            AssetManager::GetAssetAsync(materialComponent.MaterialHandle, [&](Shared<Asset> asset){
-                material = std::static_pointer_cast<Material>(asset);
-            });
-
-            if (!mesh || !material) continue;
-
-            glm::mat4 transform = transformComponent.WorldTransform;
-
-            // Build Command
-            DrawCommand cmd;
-            cmd.TargetMesh = mesh;
-            cmd.Transform = transform;
-            cmd.TargetMaterial = material;
-            
-            if (IsAABBInFrustum(frustum, mesh->GetAABB(), transform)) { // Future: investigate regarding octree or bounding volume hierarchy culling
-                renderView.OpaqueItems.emplace_back(cmd);
-            }
-
-            for (auto& caster : renderView.DirectionalShadowCasters) {
-                Frustum lightFrustum = CreateFrustumFromMatrix(caster.LightSpaceMatrix);
-                if (IsAABBInFrustum(lightFrustum, mesh->GetAABB(), transform)) {
-                    caster.RenderItems.emplace_back(cmd);
-                }
-            }
-
-            for (auto& caster : renderView.PointShadowCasters) {
-                // Simple distance check (fallback since we don't have a specific Sphere vs AABB function)
-                // You can refine this radius check based on your mesh sizes!
-                float distanceToLight = glm::distance(caster.Position, glm::vec3(transform[3]));
-                if (distanceToLight < 40.0f) {
-                    caster.RenderItems.emplace_back(cmd);
-                }
-            }
-        }
-
-    }
 
     static void SortDrawCommands(RenderView &renderView)
     {
