@@ -23,6 +23,7 @@ namespace Engine
         
         IDComponent() = default;
         IDComponent(const IDComponent&) = default;
+        IDComponent(UUID id) : id(id) {};
     };
 
     struct TagComponent
