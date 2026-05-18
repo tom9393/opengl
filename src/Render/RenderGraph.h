@@ -12,49 +12,96 @@ namespace Engine
 
     class RenderPass;
 
-    // Simple RenderGraph: linear list of passes that execute in order.
-    // Each pass has attachments; after Execute() you can query the framebuffer handle used by a pass
-    // (useful to fetch the resolved color texture ID for ImGui::Image or ReadPixel).
+    // A true render graph: passes declare named input and output resources, and the graph
+    // resolves their dependencies into a topologically sorted execution order. Passes that
+    // do not transitively contribute to a presented resource are culled. Each pass can also
+    // attach a runtime predicate that skips its execution for a given frame.
     class RenderGraph
     {
     public:
         RenderGraph(unsigned int width, unsigned int height);
         ~RenderGraph();
 
-        // Add a pass (returns reference to configure)
+        // Add a pass. Setup() is invoked immediately so the pass can declare its
+        // inputs/outputs/condition. The compiled state is invalidated.
         template <typename Pass>
         RenderPass& AddPass(const std::string& name)
         {
             std::unique_ptr<RenderPass> pass = std::make_unique<Pass>(name);
             pass->Setup(*this);
             m_Passes.push_back(std::move(pass));
+            m_Dirty = true;
             return *m_Passes.back();
         }
 
-        std::unordered_map<std::string, Shared<FramebufferHandle>> &GetFramebuffers()
-        {
-            return m_PassFramebuffers;
-        }
+        // Mark a named output as a presented (external) resource. The producing pass and
+        // every transitive dependency survive culling. When no resource is marked, the
+        // graph keeps all passes (insertion-time topological order).
+        void MarkPresent(const std::string& resourceName);
 
-        // Execute all passes in order for the given timestep
-        void Execute(RenderContext &context, const RenderView &view);
+        // Resolve inputs to producers, validate, detect cycles, topologically sort, and
+        // cull passes not contributing to a presented resource. Idempotent; runs on the
+        // next Execute when dirty.
+        void Compile();
 
-        // Resize invalidates pool resources where necessary
+        // Execute the compiled graph for the given view. Conditions are evaluated per pass.
+        void Execute(RenderContext& context, const RenderView& view);
+
         void Resize(unsigned int width, unsigned int height);
 
-        // After Execute, get the framebuffer handle used by a pass name. Returns nullptr if not found.
-        Shared<FramebufferHandle> GetPassFramebuffer(const std::string& passName) const;
+        // ---- Pass / resource lookup ----
 
-        // Convenience: get color attachment renderer ID for pass output
+        std::unordered_map<std::string, Shared<FramebufferHandle>>& GetFramebuffers() { return m_PassFramebuffers; }
+
+        Shared<FramebufferHandle> GetPassFramebuffer(const std::string& passName) const;
         unsigned int GetPassColorAttachmentRendererID(const std::string& passName, unsigned int idx = 0) const;
 
+        // Resolve a resource name to the framebuffer of its producing pass. Returns null
+        // when the resource isn't declared, hasn't run yet this frame, or its producer was
+        // skipped by its condition.
+        Shared<FramebufferHandle> GetResource(const std::string& resourceName) const;
+
+        // True when a declared input resource is available this frame.
+        bool HasInput(const std::string& resourceName) const;
+
+        // Bind a declared input resource to a texture slot. Picks color or depth binding
+        // from the producer's declaration. No-op when the resource isn't available.
+        void BindInput(const std::string& resourceName, unsigned int slot) const;
+
+        // ---- Debugging ----
+
+        // Emit the compiled graph as Graphviz DOT. Culled passes are shown dashed in gray;
+        // presented resources are highlighted.
+        std::string ExportDot() const;
+
     private:
+        struct ResourceInfo
+        {
+            RenderPass* producer = nullptr;
+            unsigned int colorAttachmentIndex = 0;
+            FramebufferTextureFormat format = FramebufferTextureFormat::None;
+            bool isDepth = false;
+        };
+
+        void BuildResourceMap();
+        bool IsDepthFormat(FramebufferTextureFormat fmt) const
+        {
+            return fmt == FramebufferTextureFormat::DEPTH24STENCIL8 || fmt == FramebufferTextureFormat::Depth;
+        }
+
         unsigned int m_Width, m_Height;
         std::vector<std::unique_ptr<RenderPass>> m_Passes;
         FramebufferPool m_Pool;
 
-        // Map of last used framebuffer handle per pass name (populated during Execute)
+        // Compiled state.
+        std::vector<RenderPass*> m_ExecutionOrder;
+        std::unordered_map<std::string, ResourceInfo> m_Resources;
+        std::unordered_set<std::string> m_Presented;
+        bool m_Dirty = true;
+
+        // Per-frame state.
         std::unordered_map<std::string, Shared<FramebufferHandle>> m_PassFramebuffers;
+        std::unordered_set<std::string> m_AvailableResources;
     };
 
 };

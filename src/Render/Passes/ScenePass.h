@@ -11,48 +11,41 @@ namespace Engine {
 
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
-            SetAttachments({ FramebufferTextureFormat::RGBA8 }, BufferTextureType::Texture2D );
+            SetTargetType(BufferTextureType::Texture2D);
+            Output("SceneColor", FramebufferTextureFormat::RGBA8);
+            Input("GBuffer.Position");
+            Input("GBuffer.Normal");
+            Input("GBuffer.Albedo");
+            Input("GBuffer.PBR");
+            Input("ShadowMap2D");
+            Input("PointShadowMap");
             SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
             Shared<Shader> deferredShader = ShaderLibrary::Get("DeferredLighting");
             deferredShader->Bind();
 
-            // Note: In your actual engine, get these texture IDs from the G-Buffer Pass Framebuffer
             deferredShader->SetInt("gPosition", 0);
             deferredShader->SetInt("gNormal", 1);
             deferredShader->SetInt("gAlbedo", 2);
             deferredShader->SetInt("gPBR", 3);
-            
-            // Set Shadow Maps
-            deferredShader->SetInt("u_DirSpotShadowMaps", 4);    // Updated to array
-            deferredShader->SetInt("u_PointShadowCubemaps", 5);  // Updated to array
+
+            deferredShader->SetInt("u_DirSpotShadowMaps", 4);
+            deferredShader->SetInt("u_PointShadowCubemaps", 5);
             deferredShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
 
-            auto gBufferFB = m_RenderGraph->GetPassFramebuffer("GeometryPass");
-            auto shadow2DFB = m_RenderGraph->GetPassFramebuffer("ShadowPass2D");
-            auto shadowCubeFB = m_RenderGraph->GetPassFramebuffer("PointShadowPass");
+            m_RenderGraph->BindInput("GBuffer.Position", 0);
+            m_RenderGraph->BindInput("GBuffer.Normal",   1);
+            m_RenderGraph->BindInput("GBuffer.Albedo",   2);
+            m_RenderGraph->BindInput("GBuffer.PBR",      3);
 
-            if (gBufferFB)
-            {
-                gBufferFB->AttachToTextureSlot(0, 0);
-                gBufferFB->AttachToTextureSlot(1, 1);
-                gBufferFB->AttachToTextureSlot(2, 2);
-                gBufferFB->AttachToTextureSlot(3, 3);
-            }
+            if (m_RenderGraph->HasInput("ShadowMap2D"))
+                m_RenderGraph->BindInput("ShadowMap2D", 4);
+            if (m_RenderGraph->HasInput("PointShadowMap"))
+                m_RenderGraph->BindInput("PointShadowMap", 5);
 
-            if (shadow2DFB)
-            {
-                shadow2DFB->AttachToTextureSlotDepth(4);
-            }
+            Renderer::DrawFullscreenQuad();
 
-            if (shadowCubeFB)
-            {
-                shadowCubeFB->AttachToTextureSlotDepth(5);
-            }
-
-            Renderer::DrawFullscreenQuad(); 
-            
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         }
 

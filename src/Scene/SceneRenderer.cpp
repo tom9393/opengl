@@ -21,6 +21,10 @@ namespace Engine {
         m_RenderGraph.AddPass<ShadowPass3D>("PointShadowPass");
         m_RenderGraph.AddPass<GeometryPass>("GeometryPass");
         m_RenderGraph.AddPass<ScenePass>("ScenePass");
+
+        // SceneColor is the final viewport texture; this drives culling.
+        m_RenderGraph.MarkPresent("SceneColor");
+        m_RenderGraph.Compile();
     }
 
     void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos)

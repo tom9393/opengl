@@ -11,16 +11,15 @@ namespace Engine {
 
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
-            SetAttachments({ 
-                FramebufferTextureFormat::RGBA16F,     // 0: Position
-                FramebufferTextureFormat::RGBA16F,     // 1: Normal
-                FramebufferTextureFormat::RGBA8,       // 2: Albedo
-                FramebufferTextureFormat::RGBA8,       // 3: PBR (Metallic, Roughness, AO)
-                FramebufferTextureFormat::RED_INTEGER, // 4: Entity ID
-                FramebufferTextureFormat::DEPTH24STENCIL8 
-            }, BufferTextureType::Texture2D);
+            SetTargetType(BufferTextureType::Texture2D);
+            Output("GBuffer.Position", FramebufferTextureFormat::RGBA16F);
+            Output("GBuffer.Normal",   FramebufferTextureFormat::RGBA16F);
+            Output("GBuffer.Albedo",   FramebufferTextureFormat::RGBA8);
+            Output("GBuffer.PBR",      FramebufferTextureFormat::RGBA8);
+            unsigned int entityIdx = Output("GBuffer.EntityID", FramebufferTextureFormat::RED_INTEGER);
+            Output("GBuffer.Depth",    FramebufferTextureFormat::DEPTH24STENCIL8);
             SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
-            SetClearInt(4, -1);
+            SetClearInt(entityIdx, -1);
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
             Shared<Shader> gBufferShader = ShaderLibrary::Get("GBufferShader");
@@ -31,9 +30,9 @@ namespace Engine {
                 auto& base = view.OpaqueItems[i];
                 size_t batchSize = 0;
 
-                while (i + batchSize < view.OpaqueItems.size() && 
-                    view.OpaqueItems[i + batchSize].TargetMesh == base.TargetMesh && 
-                    view.OpaqueItems[i + batchSize].TargetMaterial == base.TargetMaterial) 
+                while (i + batchSize < view.OpaqueItems.size() &&
+                    view.OpaqueItems[i + batchSize].TargetMesh == base.TargetMesh &&
+                    view.OpaqueItems[i + batchSize].TargetMaterial == base.TargetMaterial)
                 {
                     batchSize++;
                 }
