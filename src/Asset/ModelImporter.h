@@ -1,12 +1,13 @@
 #pragma once
 
-namespace Engine {
+#include "Asset.h"
 
-    class Scene;
+namespace Engine {
 
     class ModelImporter
     {
         public:
-        //static Shared<Scene> LoadModel(const std::filesystem::path &path);
+        static Shared<Asset> LoadModel(const AssetMetadata &metadata);
+        static void LoadModelAsync(const AssetMetadata metadata, std::function<void(Shared<Asset>)> cb);
     };
 }

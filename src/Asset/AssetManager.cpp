@@ -5,6 +5,7 @@
 #include "AssimpLoader.h"
 #include "Asset.h"
 #include "SceneImporter.h"
+#include "ModelImporter.h"
 #include "ScriptImporter.h"
 #include "TextureImporter.h"
 
@@ -77,7 +78,7 @@ namespace Engine {
         switch (metadata.Type) {
             case AssetType::Texture2D: newAsset = TextureImporter::LoadTexture2D(metadata); break;
             case AssetType::Scene: newAsset = SceneImporter::LoadScene(metadata); break;
-            case AssetType::Prefab: newAsset = AssimpLoader::LoadModel(metadata); break;
+            case AssetType::Prefab: newAsset = ModelImporter::LoadModel(metadata); break;
         }
 
         if (newAsset) {
@@ -104,7 +105,7 @@ namespace Engine {
         switch (metadata.Type) {
             case AssetType::Texture2D: TextureImporter::LoadTexture2DAsync(metadata, cb); break;
             case AssetType::Scene: SceneImporter::LoadSceneAsync(metadata, cb); break;
-            case AssetType::Prefab: AssimpLoader::LoadModelAsync(metadata, cb); break;
+            case AssetType::Prefab: ModelImporter::LoadModelAsync(metadata, cb); break;
         }
     }
 
