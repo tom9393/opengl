@@ -55,31 +55,29 @@ namespace Engine
 		CopyComponent<LuaScriptComponent>(destination, source, map);
 		CopyComponent<LightComponent>(destination, source, map);
 
-		auto relView = source.view<RelationshipComponent>();
-		for (auto& e : relView)
+		auto parentView = source.view<ParentComponent>();
+		for (auto& e : parentView)
 		{
 			UUID entityUUID = source.get<IDComponent>(e).id;
 			entt::entity newEntityId = map.at(entityUUID);
-			auto& oldRel = source.get<RelationshipComponent>(e);
+			UUID parentUUID = source.get<IDComponent>(source.get<ParentComponent>(e).Parent).id;
+			ParentComponent newParent;
+			newParent.Parent = map.at(parentUUID);
+			destination.emplace_or_replace<ParentComponent>(newEntityId, newParent);
+		}
 
-			RelationshipComponent newRel;
-			
-			// 1. Translate the Parent handle
-			if (oldRel.Parent != entt::null)
-			{
-				// Find the parent's UUID in the old scene, then get its new handle in the new scene
-				UUID parentUUID = source.get<IDComponent>(oldRel.Parent).id;
-				newRel.Parent = map.at(parentUUID);
-			}
-
-			// 2. Translate all Children handles
-			for (auto childHandle : oldRel.Children)
+		auto childrenView = source.view<ChildrenComponent>();
+		for (auto& e : childrenView)
+		{
+			UUID entityUUID = source.get<IDComponent>(e).id;
+			entt::entity newEntityId = map.at(entityUUID);
+			ChildrenComponent newChildren;
+			for (auto childHandle : source.get<ChildrenComponent>(e).Children)
 			{
 				UUID childUUID = source.get<IDComponent>(childHandle).id;
-				newRel.Children.push_back(map.at(childUUID));
+				newChildren.Children.push_back(map.at(childUUID));
 			}
-
-			destination.emplace_or_replace<RelationshipComponent>(newEntityId, newRel);
+			destination.emplace_or_replace<ChildrenComponent>(newEntityId, newChildren);
 		}
 
 		return newScene;
@@ -152,9 +150,9 @@ namespace Engine
 		Entity nullparent {};
 		entity.SetParent(nullparent);
 
-		if (entity.HasComponent<RelationshipComponent>())
+		if (entity.HasComponent<ChildrenComponent>())
 		{
-			auto children = entity.GetComponent<RelationshipComponent>().Children;
+			auto children = entity.GetComponent<ChildrenComponent>().Children;
 			for (auto childHandle : children)
 			{
 				Entity child{ childHandle, this };
@@ -185,17 +183,9 @@ namespace Engine
 	// Currently the assumption is that there is a single root node, that is this function is mostly used to find the root of an imported scene (e.g. .gltf/.fbx)
 	Entity Scene::FindRootEntity()
 	{
-		auto view = m_Registry.view<TagComponent>();
-		
-		for (auto e : view) 
-		{
-			Entity entity { e, this };
-			if (!entity.HasParent()) 
-			{
-				return entity; 
-			}
-		}
-		
+		auto view = m_Registry.view<TagComponent>(entt::exclude<ParentComponent>);
+		for (auto e : view)
+			return Entity{ e, this };
 		return {};
 	}
 };

@@ -93,13 +93,20 @@ namespace Engine
         }
     };
 
-    struct RelationshipComponent
+    struct ParentComponent
     {
         entt::entity Parent = entt::null;
+
+        ParentComponent() = default;
+        ParentComponent(const ParentComponent&) = default;
+    };
+
+    struct ChildrenComponent
+    {
         std::vector<entt::entity> Children;
 
-        RelationshipComponent() = default;
-        RelationshipComponent(const RelationshipComponent&) = default;
+        ChildrenComponent() = default;
+        ChildrenComponent(const ChildrenComponent&) = default;
     };
 
     struct MeshComponent

@@ -8,15 +8,14 @@ namespace Engine
 
 	entt::entity Entity::GetParent()
 	{
-		if (!HasComponent<RelationshipComponent>()) return entt::null;
-		return GetComponent<RelationshipComponent>().Parent;
+		if (!HasComponent<ParentComponent>()) return entt::null;
+		return GetComponent<ParentComponent>().Parent;
 	}
 
 	std::vector<entt::entity> Entity::GetChildren()
 	{
-		if (!HasComponent<RelationshipComponent>()) return std::vector<entt::entity>();
-		return GetComponent<RelationshipComponent>().Children;
-
+		if (!HasComponent<ChildrenComponent>()) return {};
+		return GetComponent<ChildrenComponent>().Children;
 	}
 
 
@@ -54,60 +53,44 @@ namespace Engine
 
 	void Entity::SetParent(Entity &parent)
 	{
-		// 1. Prevent self-parenting
 		if (*this == parent)
 		{
 			std::cout << "Warning: Cannot parent an entity to itself!" << std::endl;
 			return;
 		}
 
-		// Ensure this entity has a relationship component to store the link
-		if (!HasComponent<RelationshipComponent>()) 
+		// Detach from current parent if we have one
+		if (HasComponent<ParentComponent>())
 		{
-			AddComponent<RelationshipComponent>();
-		}
-		auto& myRelationship = GetComponent<RelationshipComponent>();
+			Entity oldParent{ GetComponent<ParentComponent>().Parent, m_Scene };
+			RemoveComponent<ParentComponent>();
 
-		// 2. Detach from current parent (if we have one)
-		if (myRelationship.Parent != entt::null)
-		{
-			Entity oldParent{ myRelationship.Parent, m_Scene };
-			if (oldParent && oldParent.HasComponent<RelationshipComponent>())
+			if (oldParent && oldParent.HasComponent<ChildrenComponent>())
 			{
-				auto& oldParentRel = oldParent.GetComponent<RelationshipComponent>();
-				
-				// Find and remove ourselves from the old parent's children list
-				auto it = std::find(oldParentRel.Children.begin(), oldParentRel.Children.end(), m_Handle);
-				if (it != oldParentRel.Children.end())
-				{
-					oldParentRel.Children.erase(it);
-				}
+				auto& children = oldParent.GetComponent<ChildrenComponent>().Children;
+				auto it = std::find(children.begin(), children.end(), m_Handle);
+				if (it != children.end())
+					children.erase(it);
+
+				if (children.empty())
+					oldParent.RemoveComponent<ChildrenComponent>();
 			}
 		}
 
-		// 3. Attach to new parent
-		if (parent) // Assuming your Entity has an `operator bool()` to check if it's a valid handle
+		// Attach to new parent
+		if (parent)
 		{
-			if (!parent.HasComponent<RelationshipComponent>()) 
-			{
-				parent.AddComponent<RelationshipComponent>();
-			}
-			auto& parentRelationship = parent.GetComponent<RelationshipComponent>();
+			AddComponent<ParentComponent>().Parent = parent.m_Handle;
 
-			myRelationship.Parent = parent.m_Handle;
-			parentRelationship.Children.push_back(m_Handle);
-		}
-		else
-		{
-			// If the passed parent is an empty entity, it means we are un-parenting this entity.
-			myRelationship.Parent = entt::null;
+			if (!parent.HasComponent<ChildrenComponent>())
+				parent.AddComponent<ChildrenComponent>();
+			parent.GetComponent<ChildrenComponent>().Children.push_back(m_Handle);
 		}
 	}
 
 	bool Entity::HasParent()
 	{
-		if (!HasComponent<RelationshipComponent>()) return false;
-		return GetComponent<RelationshipComponent>().Parent != entt::null;
+		return HasComponent<ParentComponent>();
 	}
 
 };

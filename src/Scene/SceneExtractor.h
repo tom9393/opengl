@@ -48,18 +48,11 @@ namespace Engine {
 
 	static void UpdateWorldTransforms(Scene* scene)
 	{
-		auto view = scene->GetRegistry().view<TransformComponent>();
+		auto view = scene->GetRegistry().view<TransformComponent>(entt::exclude<ParentComponent>);
 		for (auto e : view)
 		{
-			Entity entity{ e, scene };
-			
-			// We only want to start the cascade from ROOT entities. 
-			// Children will be updated automatically by their parents.
-			if (!entity.HasParent())
-			{
-                TransformComponent& comp = entity.GetComponent<TransformComponent>();
-				UpdateTransformTree(e, scene, glm::mat4(1.0f), comp.IsDirty);
-			}
+			TransformComponent& comp = scene->GetRegistry().get<TransformComponent>(e);
+			UpdateTransformTree(e, scene, glm::mat4(1.0f), comp.IsDirty);
 		}
 	}
 
@@ -77,13 +70,10 @@ namespace Engine {
             isDirty = true;
         }
 
-		if (entity.HasComponent<RelationshipComponent>())
+		if (entity.HasComponent<ChildrenComponent>())
 		{
-			auto& relComp = entity.GetComponent<RelationshipComponent>();
-			for (auto childHandle : relComp.Children)
-			{
+			for (auto childHandle : entity.GetComponent<ChildrenComponent>().Children)
 				UpdateTransformTree(childHandle, scene, transformComp.WorldTransform, isDirty);
-			}
 		}
 	}
 };

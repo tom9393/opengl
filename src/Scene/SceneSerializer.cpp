@@ -113,17 +113,13 @@ namespace Engine
             out << YAML::Key << "OuterCutOff" << YAML::Value << lc.OuterCutOff;
 		});
 
-		if (e.HasComponent<RelationshipComponent>())
+		if (e.HasComponent<ParentComponent>())
         {
-            auto& rc = e.GetComponent<RelationshipComponent>();
-            if (rc.Parent != entt::null)
-            {
-                Entity parent{ rc.Parent, e.GetScene() };
-                out << YAML::Key << "RelationshipComponent";
-                out << YAML::BeginMap;
-                out << YAML::Key << "Parent" << YAML::Value << parent.GetUUID();
-                out << YAML::EndMap;
-            }
+            Entity parent{ e.GetComponent<ParentComponent>().Parent, e.GetScene() };
+            out << YAML::Key << "RelationshipComponent";
+            out << YAML::BeginMap;
+            out << YAML::Key << "Parent" << YAML::Value << parent.GetUUID();
+            out << YAML::EndMap;
         }
 
 		out << YAML::EndMap;
