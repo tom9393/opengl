@@ -15,7 +15,8 @@ namespace Engine {
             Output("ShadowMap2D", FramebufferTextureFormat::DEPTH24STENCIL8);
             SetViewportSize(1024, 1024);
             SetCondition([](const RenderView& view) {
-                return !view.DirectionalShadowCasters.empty();
+                return HasFlag(view.Flags, RenderFlags::Shadows) &&
+                       (!view.DirectionalShadowCasters.empty() || !view.ConeShadowCasters.empty());
             });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
@@ -24,38 +25,34 @@ namespace Engine {
 
             auto fb = m_RenderGraph->GetPassFramebuffer(GetName());
 
-            for (size_t layer = 0; layer < view.DirectionalShadowCasters.size(); ++layer) {
-                auto& caster = view.DirectionalShadowCasters[layer];
-                fb->GetFramebuffer()->AttachLayer(layer);
-
+            size_t layer = 0;
+            auto renderCaster = [&](const auto& caster) {
+                fb->GetFramebuffer()->AttachLayer(layer++);
                 shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
 
                 size_t i = 0;
                 while (i < caster.RenderItems.size()) {
                     size_t batchSize = 0;
-                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh) {
+                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh)
                         batchSize++;
-                    }
 
                     m_Transforms.clear();
                     m_Transforms.reserve(batchSize);
                     for (size_t j = 0; j < batchSize; j++)
                         m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
 
-
-                    size_t dataSize = m_Transforms.size() * sizeof(glm::mat4);
-
-                    // -- THE MAGIC HAPPENS HERE --
-                    // 1. Get memory from the shared pool
-                    Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), dataSize);
-
-                    // 2. Bind the exact offset to SSBO slot 0
+                    Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
                     ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-
                     Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size());
                     i += batchSize;
                 }
-            }
+            };
+
+            for (auto& caster : view.DirectionalShadowCasters)
+                renderCaster(caster);
+
+            for (auto& caster : view.ConeShadowCasters)
+                renderCaster(caster);
         }
 
         float m_PointLightFarPlane = 35.0f;

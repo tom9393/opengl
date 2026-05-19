@@ -6,6 +6,7 @@
 #include "Passes/GeometryPass.h"
 #include "Passes/ScenePass.h"
 #include "Render/Renderer.h"
+#include "Render/SceneCamera.h"
 #include "RenderView.h"
 #include "Scene/Components.h"
 #include "Scene/SceneExtractor.h"
@@ -27,7 +28,7 @@ namespace Engine {
         m_RenderGraph.Compile();
     }
 
-    void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos)
+    void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos, float nearPlane, float farPlane)
     {
         m_InstancePool->BeginFrame();
 
@@ -37,6 +38,9 @@ namespace Engine {
         ctx.InstancePool = m_InstancePool.get();
 
         RenderView view = SceneExtractor::Extract(m_Scene, ctx);
+        view.NearPlane = nearPlane;
+        view.FarPlane = farPlane;
+        view.ViewportSize = { m_ViewportWidth, m_ViewportHeight };
 
         Renderer::BeginScene();
         m_RenderGraph.Execute(ctx, view);
@@ -60,10 +64,13 @@ namespace Engine {
                 ctx.CameraPosition = transform.translation;
                 ctx.InstancePool = m_InstancePool.get();
 
-                RenderView view = SceneExtractor::Extract(m_Scene, ctx);
-                
+                RenderView renderView = SceneExtractor::Extract(m_Scene, ctx);
+                renderView.ViewportSize = { m_ViewportWidth, m_ViewportHeight };
+                renderView.NearPlane = camera.sceneCamera->GetNearClip();
+                renderView.FarPlane  = camera.sceneCamera->GetFarClip();
+
                 Renderer::BeginScene();
-                m_RenderGraph.Execute(ctx, view);
+                m_RenderGraph.Execute(ctx, renderView);
                 Renderer::EndScene();
 
                 m_InstancePool->InsertFrameFence();

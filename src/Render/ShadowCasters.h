@@ -4,7 +4,12 @@
 
 namespace Engine {
 
-    struct ShadowCaster2D {
+    struct ShadowCasterDirectional {
+        glm::mat4 LightSpaceMatrix;
+        std::vector<DrawCommand> RenderItems;
+    };
+
+    struct ShadowCasterCone {
         glm::mat4 LightSpaceMatrix;
         std::vector<DrawCommand> RenderItems;
     };

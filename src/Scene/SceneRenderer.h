@@ -19,7 +19,7 @@ namespace Engine {
 
         void SetScene(Scene* scene) { m_Scene = scene; }
 
-        void RenderEditor(const glm::mat4& viewProjection, const glm::vec3& cameraPosition);
+        void RenderEditor(const glm::mat4& viewProjection, const glm::vec3& cameraPosition, float nearPlane, float farPlane);
         void RenderRuntime();
 
         void OnViewportResize(unsigned int width, unsigned int height);

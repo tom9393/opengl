@@ -74,7 +74,7 @@ namespace Engine
             case Engine::SceneState::Edit:
             {
                 m_EditorCamera->OnUpdate();
-                m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition());
+                m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition(), m_EditorCamera->GetNearClip(), m_EditorCamera->GetFarClip());
                 break;
             }
             case Engine::SceneState::Play:

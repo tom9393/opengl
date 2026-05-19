@@ -168,6 +168,12 @@ namespace Engine
 	    m_PassFramebuffers.clear();
 	    m_AvailableResources.clear();
 
+	    auto camAlloc = context.InstancePool->Allocate(&renderView.Camera, sizeof(CameraData));
+	    context.InstancePool->BindAsUBO(0, camAlloc.Offset, camAlloc.Size);
+
+	    auto lightAlloc = context.InstancePool->Allocate(&renderView.LightData, sizeof(SceneLightData));
+	    context.InstancePool->BindAsUBO(1, lightAlloc.Offset, lightAlloc.Size);
+
 	    for (RenderPass* pass : m_ExecutionOrder)
 	    {
 	        if (!pass->EvaluateCondition(renderView)) continue;

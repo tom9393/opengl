@@ -46,6 +46,13 @@ public:
                 }
             }
 
+            for (auto& caster : renderView.ConeShadowCasters) {
+                Frustum lightFrustum = CreateFrustumFromMatrix(caster.LightSpaceMatrix);
+                if (IsAABBInFrustum(lightFrustum, mesh->GetAABB(), transform)) {
+                    caster.RenderItems.emplace_back(cmd);
+                }
+            }
+
             for (auto& caster : renderView.PointShadowCasters) {
                 float distanceToLight = glm::distance(caster.Position, glm::vec3(transform[3]));
                 if (distanceToLight < 40.0f) {

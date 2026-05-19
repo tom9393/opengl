@@ -33,6 +33,9 @@ namespace Engine
                 float GetOrthographicFarClip() const { return m_OrthographicFar; }
                 void SetOrthographicFarClip(float far) { m_OrthographicFar = far; RecalculateProjection(); }
 
+                float GetNearClip() const { return m_ProjectionType == ProjectionType::Perspective ? m_PerspectiveNear : m_OrthographicNear; }
+                float GetFarClip()  const { return m_ProjectionType == ProjectionType::Perspective ? m_PerspectiveFar  : m_OrthographicFar;  }
+
                 ProjectionType GetProjectionType() const { return m_ProjectionType; }
                 void SetProjectionType(ProjectionType type) { m_ProjectionType = type; RecalculateProjection(); }
 

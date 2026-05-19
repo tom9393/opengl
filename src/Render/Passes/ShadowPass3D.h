@@ -15,7 +15,7 @@ namespace Engine {
             Output("PointShadowMap", FramebufferTextureFormat::DEPTH24STENCIL8);
             SetViewportSize(128, 128);
             SetCondition([](const RenderView& view) {
-                return !view.PointShadowCasters.empty();
+                return HasFlag(view.Flags, RenderFlags::Shadows) && !view.PointShadowCasters.empty();
             });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {

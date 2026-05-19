@@ -20,17 +20,8 @@ namespace Engine {
         // 1. Extract Lights
         LightExtractor::Extract(scene, frustum, view);
 
-        CameraData cameraData;
-        cameraData.CameraPosition = ctx.CameraPosition;
-        cameraData.ViewProjection = ctx.ViewProjection;
-
-        // Camera binding 1 UBO
-        auto camAlloc = ctx.InstancePool->Allocate(&cameraData, sizeof(CameraData));
-        ctx.InstancePool->BindAsUBO(0, camAlloc.Offset, camAlloc.Size);
-
-        // Lights binding 2 UBO
-        auto lightAlloc = ctx.InstancePool->Allocate(&view.LightData, sizeof(SceneLightData));
-        ctx.InstancePool->BindAsUBO(1, lightAlloc.Offset, lightAlloc.Size);
+        view.Camera.CameraPosition = ctx.CameraPosition;
+        view.Camera.ViewProjection = ctx.ViewProjection;
 
         // 2. Extract and Cull Meshes
         MeshExtractor::Extract(scene, frustum, view);
