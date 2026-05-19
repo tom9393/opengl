@@ -28,45 +28,38 @@ namespace Engine {
                 auto& caster = view.PointShadowCasters[layer];
                 const glm::vec3& lightPos = caster.Position;
 
-                std::vector<glm::mat4> shadowTransforms;
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)));
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)));
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
-                shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+                static constexpr glm::vec3 dirs[6] = { { 1,0,0}, {-1,0,0}, {0, 1,0}, {0,-1,0}, {0,0, 1}, {0,0,-1} };
+                static constexpr glm::vec3 ups[6] = { {0,-1,0}, {0,-1,0}, {0,0, 1}, {0,0,-1}, {0,-1,0}, {0,-1,0} };
 
-                for (int i = 0; i < 6; ++i) {
-                    pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-                }
+                std::array<glm::mat4, 6> shadowTransforms;
+                for (int i = 0; i < 6; ++i) shadowTransforms[i] = shadowProj * glm::lookAt(lightPos, lightPos + dirs[i], ups[i]);
+                for (int i = 0; i < 6; ++i) pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+
                 pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
                 pointshadowShader->SetVec3("u_LightPos", lightPos);
                 pointshadowShader->SetInt("u_BaseLayer", layer);
 
-                size_t i = 0;
-                while (i < caster.RenderItems.size()) {
-                    size_t batchSize = 0;
-                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh) {
-                        batchSize++;
-                    }
-                    m_Transforms.reserve(batchSize);
-                    for (size_t j = 0; j < batchSize; j++)
-                        m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
+                DrawBatched(ctx, caster.RenderItems);
+            }
+        }
 
+    private:
+        void DrawBatched(RenderContext& ctx, const auto& renderItems) {
+            size_t i = 0;
+            while (i < renderItems.size()) {
+                size_t batchSize = 0;
+                while (i + batchSize < renderItems.size() && renderItems[i + batchSize].TargetMesh == renderItems[i].TargetMesh)
+                    batchSize++;
 
-                    size_t dataSize = m_Transforms.size() * sizeof(glm::mat4);
+                m_Transforms.clear();
+                m_Transforms.reserve(batchSize);
+                for (size_t j = 0; j < batchSize; j++)
+                    m_Transforms.emplace_back(renderItems[i + j].Transform);
 
-                    // -- THE MAGIC HAPPENS HERE --
-                    // 1. Get memory from the shared pool
-                    Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), dataSize);
-
-                    // 2. Bind the exact offset to SSBO slot 0
-                    ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-
-                    Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size());
-                    i += batchSize;
-                    m_Transforms.clear();
-                }
+                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
+                ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
+                Renderer::SubmitInstancedMesh(renderItems[i].TargetMesh, nullptr, m_Transforms.size());
+                i += batchSize;
             }
         }
 

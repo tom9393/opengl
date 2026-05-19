@@ -30,22 +30,7 @@ namespace Engine {
                 fb->GetFramebuffer()->AttachLayer(layer++);
                 shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
 
-                size_t i = 0;
-                while (i < caster.RenderItems.size()) {
-                    size_t batchSize = 0;
-                    while (i + batchSize < caster.RenderItems.size() && caster.RenderItems[i + batchSize].TargetMesh == caster.RenderItems[i].TargetMesh)
-                        batchSize++;
-
-                    m_Transforms.clear();
-                    m_Transforms.reserve(batchSize);
-                    for (size_t j = 0; j < batchSize; j++)
-                        m_Transforms.emplace_back(caster.RenderItems[i + j].Transform);
-
-                    Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                    ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-                    Renderer::SubmitInstancedMesh(caster.RenderItems[i].TargetMesh, nullptr, m_Transforms.size());
-                    i += batchSize;
-                }
+                DrawBatched(ctx, caster.RenderItems);
             };
 
             for (auto& caster : view.DirectionalShadowCasters)
@@ -55,7 +40,26 @@ namespace Engine {
                 renderCaster(caster);
         }
 
-        float m_PointLightFarPlane = 35.0f;
+    private:
+        void DrawBatched(RenderContext& ctx, const auto& renderItems) {
+            size_t i = 0;
+            while (i < renderItems.size()) {
+                size_t batchSize = 0;
+                while (i + batchSize < renderItems.size() && renderItems[i + batchSize].TargetMesh == renderItems[i].TargetMesh)
+                    batchSize++;
+
+                m_Transforms.clear();
+                m_Transforms.reserve(batchSize);
+                for (size_t j = 0; j < batchSize; j++)
+                    m_Transforms.emplace_back(renderItems[i + j].Transform);
+
+                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
+                ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
+                Renderer::SubmitInstancedMesh(renderItems[i].TargetMesh, nullptr, m_Transforms.size());
+                i += batchSize;
+            }
+        }
+
         std::vector<glm::mat4> m_Transforms;
     };
 

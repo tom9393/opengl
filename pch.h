@@ -10,6 +10,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <array>
 #include <math.h>
 #include <cmath>
 #include <list>

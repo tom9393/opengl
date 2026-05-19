@@ -25,32 +25,26 @@ namespace Engine {
             Shared<Shader> gBufferShader = ShaderLibrary::Get("GBufferShader");
             gBufferShader->Bind();
 
+            DrawBatched(ctx, view.OpaqueItems);
+        }
+
+    private:
+        void DrawBatched(RenderContext& ctx, const auto& renderItems) {
             size_t i = 0;
-            while (i < view.OpaqueItems.size()) {
-                auto& base = view.OpaqueItems[i];
+            while (i < renderItems.size()) {
+                auto& base = renderItems[i];
                 size_t batchSize = 0;
 
-                while (i + batchSize < view.OpaqueItems.size() &&
-                    view.OpaqueItems[i + batchSize].TargetMesh == base.TargetMesh &&
-                    view.OpaqueItems[i + batchSize].TargetMaterial == base.TargetMaterial)
-                {
+                while (i + batchSize < renderItems.size() && renderItems[i + batchSize].TargetMesh == base.TargetMesh && renderItems[i + batchSize].TargetMaterial == base.TargetMaterial)
                     batchSize++;
-                }
 
                 m_Transforms.clear();
                 m_Transforms.reserve(batchSize);
                 for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(view.OpaqueItems[i + j].Transform);
+                    m_Transforms.emplace_back(renderItems[i + j].Transform);
 
-                size_t dataSize = m_Transforms.size() * sizeof(glm::mat4);
-
-                // -- THE MAGIC HAPPENS HERE --
-                // 1. Get memory from the shared pool
-                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), dataSize);
-
-                // 2. Bind the exact offset to SSBO slot 0
+                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
                 ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-
                 Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
                 i += batchSize;
             }
