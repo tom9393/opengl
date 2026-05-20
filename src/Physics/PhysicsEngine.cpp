@@ -176,8 +176,9 @@ namespace Engine {
 		for (auto& e : physics)
 		{
 			auto [rb, transform] = physics.get<RigidBodyComponent, TransformComponent>(e);
-            if (!rb.RuntimeBody) return;
+            if (!rb.RuntimeBody) continue;
             rb.RuntimeBody->GetTransform(transform.translation, transform.rotation);
+            transform.IsDirty = true;
 		}
     }
 
