@@ -72,7 +72,7 @@ namespace Engine {
                 uint32_t vCount;
                 in.read((char*)&vCount, sizeof(uint32_t));
                 
-                btConvexHullShape* hull = new btConvexHullShape();
+                auto hull = std::make_unique<btConvexHullShape>();
                 for (uint32_t j = 0; j < vCount; j++) {
                     glm::vec3 v;
                     in.read((char*)&v, sizeof(glm::vec3));
@@ -81,9 +81,13 @@ namespace Engine {
 
                 btTransform localTrans;
                 localTrans.setIdentity();
-                compound->addChildShape(localTrans, hull);
+                compound->addChildShape(localTrans, hull.get());
+                m_ChildShapes.push_back(std::move(hull));
             }
         }
+
+        private:
+        std::vector<std::unique_ptr<btConvexHullShape>> m_ChildShapes;
     };
 
     class RigidBody
@@ -106,9 +110,9 @@ namespace Engine {
             btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
             btTrans.setRotation(btRot);
 
-            btDefaultMotionState* motionState = new btDefaultMotionState(btTrans); // Have to use normal pointer, unique causes crash
+            m_MotionState = std::make_unique<btDefaultMotionState>(btTrans);
 
-            btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, m_Shape->GetShape(), localInertia);
+            btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, m_MotionState.get(), m_Shape->GetShape(), localInertia);
             m_Body = std::make_unique<btRigidBody>(rbInfo);
             
             m_Body->setFriction(0.8f);
@@ -327,6 +331,7 @@ namespace Engine {
 
         private:
         std::unique_ptr<RBShape> m_Shape;
+        std::unique_ptr<btDefaultMotionState> m_MotionState;
         std::unique_ptr<btRigidBody> m_Body;
     };
 
