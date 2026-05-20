@@ -2,58 +2,42 @@
 
 namespace Engine {
 
-    // The constructor launches the worker threads
-    ThreadPool::ThreadPool(size_t threads) : m_Stop(false)
+ThreadPool::ThreadPool(size_t threadCount) : m_Stop(false)
+{
+    for (size_t i = 0; i < threadCount; ++i)
     {
-        for(size_t i = 0; i < threads; ++i)
+        m_Workers.emplace_back([this]
         {
-            m_Workers.emplace_back(
-                [this]
+            while (true)
+            {
+                std::function<void()> task;
                 {
-                    while(true)
-                    {
-                        std::function<void()> task;
+                    std::unique_lock<std::mutex> lock(m_QueueMutex);
+                    m_Condition.wait(lock, [this] { return m_Stop || !m_Tasks.empty(); });
 
-                        {
-                            // Wait until there is a task or the pool is stopped
-                            std::unique_lock<std::mutex> lock(this->m_QueueMutex);
-                            this->m_Condition.wait(lock,
-                                [this]{ return this->m_Stop || !this->m_Tasks.empty(); });
-                            
-                            // If stopping and no more tasks, exit the thread
-                            if(this->m_Stop && this->m_Tasks.empty())
-                                return;
-                            
-                            // Grab the next task
-                            task = std::move(this->m_Tasks.front());
-                            this->m_Tasks.pop();
-                        }
+                    if (m_Stop && m_Tasks.empty())
+                        return;
 
-                        // Execute the task outside the mutex lock!
-                        task();
-                    }
+                    task = std::move(m_Tasks.front());
+                    m_Tasks.pop();
                 }
-            );
-        }
-    }
 
-    // The destructor joins all threads
-    ThreadPool::~ThreadPool()
-    {
-        {
-            std::unique_lock<std::mutex> lock(m_QueueMutex);
-            m_Stop = true;
-        }
-        
-        // Wake up all threads so they can finish and exit
-        m_Condition.notify_all();
-        
-        for(std::thread &worker: m_Workers)
-        {
-            if (worker.joinable()) {
-                worker.join();
+                // Execute outside the lock so other threads can pick up tasks concurrently
+                task();
             }
-        }
+        });
     }
+}
+
+ThreadPool::~ThreadPool()
+{
+    {
+        std::unique_lock<std::mutex> lock(m_QueueMutex);
+        m_Stop = true;
+    }
+    m_Condition.notify_all();
+    for (auto& worker : m_Workers)
+        worker.join();
+}
 
 }
