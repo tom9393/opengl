@@ -25,7 +25,7 @@ namespace Engine {
 
         void Init() {
             LineVertexArray = VertexArray::Create();
-            LineVertexBuffer = VertexBuffer::Create(MaxLines * sizeof(LineVertex));
+            LineVertexBuffer = VertexBuffer::Create(MaxVertices * sizeof(LineVertex));
 
             LineVertexBuffer->SetLayout({
                 { ShaderDataType::Float3, "a_Position" },

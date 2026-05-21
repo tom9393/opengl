@@ -11,17 +11,18 @@ namespace Engine
     Renderer::SceneData Renderer::s_SceneData;
     RenderStorage Renderer::s_Data;
     LineData Renderer::s_LineData;
+    PointData Renderer::s_PointData;
 
-    void Renderer::BeginScene()
+    void Renderer::BeginScene(const RenderContext &context)
     {
-        // s_SceneData.ViewProjectionMatrix = data.ViewProjection;
-	    // s_SceneData.cameraFrustum = CreateFrustumFromMatrix(data.ViewProjection);
+        s_SceneData.context = context;
         s_SceneData.s_LastBoundMaterial = 0;
     };
 
     void Renderer::EndScene()
     {
         FlushLines();
+        FlushPoints();
     };
 
     void Renderer::Init()
@@ -32,20 +33,16 @@ namespace Engine
         ShaderLibrary::Init();
 
         s_LineData.Init();
+        s_PointData.Init();
 
         switch (Renderer::Get())
         {
             case RendererAPI::API::None:
                 break;
-
             case RendererAPI::API::OpenGL:
-            {
                 break;
-            }
             case RendererAPI::API::Vulkan:
-            {
                 break;
-            }
             default:
                 break;
         }
@@ -54,6 +51,7 @@ namespace Engine
     void Renderer::Shutdown()
     {
         s_LineData.Shutdown();
+        s_PointData.Shutdown();
         ShaderLibrary::Shutdown();
     }
 
@@ -72,17 +70,32 @@ namespace Engine
 
     void Renderer::FlushLines()
     {
-        // if (s_LineData.VertexCount == 0) return; // Fix this later
+        if (s_LineData.VertexCount == 0) return;
 
-        // s_LineData.LineVertexBuffer->SetData(s_LineData.VertexBufferBase, s_LineData.GetDataSize());
+        s_LineData.LineVertexBuffer->SetData(s_LineData.VertexBufferBase, s_LineData.GetDataSize());
 
-        // s_LineData.LineShader->Bind();
-        // s_LineData.LineShader->SetMat4("u_ViewProjection", s_SceneData.ViewProjectionMatrix);
+        s_LineData.LineShader->Bind();
+        s_LineData.LineShader->SetMat4("u_ViewProjection", s_SceneData.context.ViewProjection);
 
-        // RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.VertexCount);
+        RenderCommand::DrawLines(s_LineData.LineVertexArray, s_LineData.VertexCount);
 
-        // s_LineData.ResetBatch();
-        // s_Data.statistics.DrawCalls++;
+        s_LineData.ResetBatch();
+        s_Data.statistics.DrawCalls++;
+    }
+
+    void Renderer::FlushPoints()
+    {
+        if (s_PointData.VertexCount == 0) return;
+
+        s_PointData.PointVertexBuffer->SetData(s_PointData.VertexBufferBase, s_PointData.GetDataSize());
+
+        s_PointData.PointShader->Bind();
+        s_PointData.PointShader->SetMat4("u_ViewProjection", s_SceneData.context.ViewProjection);
+
+        RenderCommand::DrawPoints(s_PointData.PointVertexArray, s_PointData.VertexCount);
+
+        s_PointData.ResetBatch();
+        s_Data.statistics.DrawCalls++;
     }
 
     void Renderer::DrawLine(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec4 &color)
@@ -95,52 +108,50 @@ namespace Engine
         s_LineData.AddVertex(p1, color);
     }
 
-    static uint32_t s_QuadVAO = 0;
-    static uint32_t s_QuadVBO = 0;
+    void Renderer::DrawDot(const glm::vec3 &position, const glm::vec4 &color, float size)
+    {
+        if (s_PointData.IsFull()) {
+            FlushPoints();
+        }
+
+        s_PointData.AddVertex(position, color, size);
+    }
+
+    void Renderer::DrawCircle(const glm::vec3 &center, float radius, const glm::vec4 &color, uint32_t segments)
+    {
+        // Screen-facing: derive world-space screen right/up from the view-projection
+        // so the circle outline always lies parallel to the camera plane.
+        glm::mat4 invViewProj = glm::inverse(s_SceneData.context.ViewProjection);
+        auto unproject = [&](float x, float y) {
+            glm::vec4 p = invViewProj * glm::vec4(x, y, 0.0f, 1.0f);
+            return glm::vec3(p) / p.w;
+        };
+        glm::vec3 origin = unproject(0.0f, 0.0f);
+        glm::vec3 right = glm::normalize(unproject(1.0f, 0.0f) - origin);
+        glm::vec3 up = glm::normalize(unproject(0.0f, 1.0f) - origin);
+
+        const float step = 6.28318530718f / (float)segments;
+        glm::vec3 prev = center + right * radius;
+        for (uint32_t i = 1; i <= segments; i++) {
+            float angle = step * (float)i;
+            glm::vec3 curr = center + (right * cosf(angle) + up * sinf(angle)) * radius;
+            DrawLine(prev, curr, color);
+            prev = curr;
+        }
+    }
 
     void Renderer::DrawFullscreenQuad()
     {
-        if (s_QuadVAO == 0)
-        {
-            // A fullscreen quad defined in Normalized Device Coordinates (NDC)
-            // spanning from -1 to 1 on both X and Y axes.
-            float quadVertices[] = {
-                // positions        // texture Coords
-                -1.0f,  1.0f, 0.0f,  0.0f, 1.0f,
-                -1.0f, -1.0f, 0.0f,  0.0f, 0.0f,
-                 1.0f,  1.0f, 0.0f,  1.0f, 1.0f,
-                 1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
-            };
-            
-            glGenVertexArrays(1, &s_QuadVAO);
-            glGenBuffers(1, &s_QuadVBO);
-            
-            glBindVertexArray(s_QuadVAO);
-            
-            glBindBuffer(GL_ARRAY_BUFFER, s_QuadVBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-            
-            // Layout location 0: a_Position (vec3)
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-            
-            // Layout location 1: a_TexCoords (vec2)
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        }
-        
-        // Bind the VAO and draw the quad as a triangle strip
-        glBindVertexArray(s_QuadVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glBindVertexArray(0);
+        RenderCommand::DrawFullscreenQuad();
     }
 
-    void Renderer::SubmitMesh(const Shared<Mesh> &mesh, const glm::mat4 &transform)
+    void Renderer::SubmitMesh(const Shared<Mesh> &mesh, const Shared<Material> &material, const glm::mat4 &transform)
     {
-        uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(mesh.get());
-        if (currentMaterialKey != s_SceneData.s_LastBoundMaterial)
-        {
-            //SetTexture(mesh->GetTextureLayout()); 
+        if (!mesh->GetVAO()) return;
+
+        uintptr_t currentMaterialKey = reinterpret_cast<uintptr_t>(material.get());
+        if (currentMaterialKey != s_SceneData.s_LastBoundMaterial) {
+            SetMaterial(material);
             
             s_SceneData.s_LastBoundMaterial = currentMaterialKey;
             s_Data.statistics.MaterialSwitches++;

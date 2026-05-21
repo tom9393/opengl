@@ -16,6 +16,8 @@ namespace Engine
         void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) override;
         void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) override;
         void DrawLines(const std::shared_ptr<VertexArray> &lines, uint32_t size) override;
+        void DrawPoints(const std::shared_ptr<VertexArray> &points, uint32_t size) override;
+        void DrawFullscreenQuad() override;
 
         void ToggleWireframe() override;
 

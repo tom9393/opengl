@@ -21,9 +21,18 @@ There are no automated tests; validation is done through interactive editor/runt
 
 The entry point (`main.cpp`) instantiates either `Editor` or `Runtime` and calls `Run()`. Both inherit from `Application`, which manages a `LayerStack`. The two key layers are `EditorLayer` (full UI + viewport) and `ImGuiLayer` (UI rendering). The platform layer (`platform/Linux/`, `platform/OpenGL/`) implements window management and the OpenGL rendering API behind abstract interfaces.
 
+### Editor UI (Panels)
+
+`EditorLayer` composes the editor from panels in `src/Panels/`:
+
+- **Viewport** (`Viewport/`) — `ViewportPanel` hosts three modes that share `ViewportPanelBase` and a `ViewportContext` (scene, renderer, editor camera): `ObjectViewportPanel` (scene/object editing with gizmos), `ModelingViewportPanel` (mesh editing), and `UVViewportPanel` (UV editing). `PassPanel` selects which render-graph output is displayed.
+- **SceneHierarchy** (`SceneHierarchy/`) — `SceneHierarchyPanel` plus per-component inspectors (`DrawTransform`, `DrawMesh`, `DrawMaterial`, `DrawLight`, `DrawRigidBody`, `DrawLua`, …).
+- **ContentBrowser** (`ContentBrowser/`) — `ContentBrowserPanel` with async asset thumbnails rendered by `AssetPreviewManager` (`Texture2DPreview`, `MaterialPreview`, `PrefabPreview`).
+- Standalone panels: `MenubarPanel`, `ToolbarPanel`, `StatsPanel`, `SettingsPanel`, `ShaderPanel`.
+
 ### ECS & Scene
 
-Scenes are built on **EnTT**. `Scene` owns the registry; `Entity` is a thin handle into it. All data lives in components defined in `src/Scene/Components.h` — `TransformComponent`, `MeshComponent`, `CameraComponent`, `RigidBodyComponent`, `ScriptComponent`, and `RelationshipComponent` (parent/child hierarchy). `SceneRenderer` bridges the scene to the render graph.
+Scenes are built on **EnTT**. `Scene` owns the registry; `Entity` is a thin handle into it. All data lives in components defined in `src/Scene/Components.h` — `TransformComponent`, `MeshComponent`, `MaterialComponent`, `SceneCameraComponent`, `LightComponent`, `RigidBodyComponent`, the scripting components (`NativeScriptComponent`, `LuaScriptComponent`), and `ParentComponent`/`ChildrenComponent` for the parent/child hierarchy. `SceneRenderer` bridges the scene to the render graph.
 
 ### Render Graph
 
@@ -45,7 +54,7 @@ The rendering pipeline uses a true render graph (`src/Render/RenderGraph.h`) wit
 
 ### Physics & Scripting
 
-`PhysicsEngine` wraps Bullet3. `CollisionBaker` converts mesh geometry to collision shapes. The scripting system uses **Sol2** bindings over Lua 5.4 — `ScriptEngine` manages the VM, `LuaBindings` exposes the C++ API, and `ScriptComponent` attaches scripts to entities.
+`PhysicsEngine` wraps Bullet3. `CollisionBaker` converts mesh geometry to collision shapes. Scripting has two paths: native C++ behaviors attached via `NativeScriptComponent`, and Lua scripts attached via `LuaScriptComponent`. The Lua path uses **Sol2** bindings over Lua 5.4 — `ScriptEngine` manages the VM and `LuaBindings` exposes the C++ API.
 
 ### Event System
 

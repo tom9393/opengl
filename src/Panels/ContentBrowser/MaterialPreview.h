@@ -76,7 +76,7 @@ namespace Engine {
 
             RenderView view = SceneExtractor::Extract(m_Scene.get(), ctx);
 
-            Renderer::BeginScene();
+            Renderer::BeginScene(ctx);
             graph.Execute(ctx, view);
             Renderer::EndScene();
 

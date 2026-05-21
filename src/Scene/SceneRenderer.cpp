@@ -42,7 +42,7 @@ namespace Engine {
         view.FarPlane = farPlane;
         view.ViewportSize = { m_ViewportWidth, m_ViewportHeight };
 
-        Renderer::BeginScene();
+        Renderer::BeginScene(ctx);
         m_RenderGraph.Execute(ctx, view);
         Renderer::EndScene();
 
@@ -69,7 +69,7 @@ namespace Engine {
                 renderView.NearPlane = camera.sceneCamera->GetNearClip();
                 renderView.FarPlane  = camera.sceneCamera->GetFarClip();
 
-                Renderer::BeginScene();
+                Renderer::BeginScene(ctx);
                 m_RenderGraph.Execute(ctx, renderView);
                 Renderer::EndScene();
 
