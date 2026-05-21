@@ -11,8 +11,8 @@ namespace Engine {
     class PassPanel;
 
     struct ViewportContext {
-        Shared<Scene> Scene;
-        Shared<SceneRenderer> SceneRenderer;
+        Shared<Scene> SceneContext;
+        Shared<SceneRenderer> SceneRendererContext;
         Shared<EditorCamera> Camera;
     };
 

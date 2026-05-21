@@ -15,8 +15,8 @@ namespace Engine {
     }
 
     void ViewportPanelBase::SetViewportContext(const ViewportContext& ctx) {
-        m_Context = ctx.Scene;
-        m_SceneRenderer = ctx.SceneRenderer;
+        m_Context = ctx.SceneContext;
+        m_SceneRenderer = ctx.SceneRendererContext;
         m_EditorCamera = ctx.Camera;
     }
 

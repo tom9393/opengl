@@ -12,7 +12,7 @@ namespace Engine {
     }
 
     void ViewportPanel::SetViewportContext(const ViewportContext& ctx) {
-        m_PassPanel.SetRenderer(ctx.SceneRenderer);
+        m_PassPanel.SetRenderer(ctx.SceneRendererContext);
         m_Object.SetViewportContext(ctx);
         m_Modeling.SetViewportContext(ctx);
     }
