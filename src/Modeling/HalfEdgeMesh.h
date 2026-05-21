@@ -86,8 +86,11 @@ namespace Engine {
 
         // Delete the given faces, exposing new boundary loops and dropping vertices that
         // become orphaned. Compacts all arrays; vertexRemap (size = old vertex count)
-        // maps each old vertex to its new index, or -1 if removed.
-        bool DeleteFaces(const std::vector<int>& faces, std::vector<int>& vertexRemap);
+        // maps each old vertex to its new index, or -1 if removed. halfEdgeRemap
+        // (size = old half-edge count) maps each old half-edge to its new index, or -1 if
+        // removed, so callers can compact parallel per-half-edge data (e.g. corner UVs).
+        bool DeleteFaces(const std::vector<int>& faces, std::vector<int>& vertexRemap,
+                         std::vector<int>& halfEdgeRemap);
 
         // Subdivide the given faces: splits every incident edge at its midpoint and adds
         // a center vertex per selected face, replacing each selected face with quads.

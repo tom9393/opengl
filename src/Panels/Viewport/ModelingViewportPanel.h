@@ -9,6 +9,10 @@ namespace Engine {
     public:
         ModelingViewportPanel() = default;
 
+        // Shared with the UV editor: both views operate on one edit session, so the UV
+        // layout reflects the mesh entered into Edit Mode here.
+        MeshEditSession& GetSession() { return m_Session; }
+
     protected:
         void OnDraw() override;
         bool OnMousePressed(MouseButtonPressedEvent& e) override;

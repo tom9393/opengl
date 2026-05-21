@@ -88,14 +88,24 @@ namespace Engine {
             }
         }
 
-        // Each render triangle becomes a face on welded indices; drop degenerates.
+        // Each render triangle becomes a face on welded indices; drop degenerates. The
+        // per-corner UVs are read from the original (pre-weld) render vertices so seams
+        // survive into the corner UV layer built below.
         std::vector<std::vector<int>> faces;
+        std::vector<std::vector<glm::vec2>> faceCornerUV;
         for (size_t t = 0; t + 2 < indices.size(); t += 3) {
-            int a = renderToWelded[indices[t]];
-            int b = renderToWelded[indices[t + 1]];
-            int c = renderToWelded[indices[t + 2]];
-            if (a != b && b != c && a != c)
+            int ra = indices[t], rb = indices[t + 1], rc = indices[t + 2];
+            int a = renderToWelded[ra];
+            int b = renderToWelded[rb];
+            int c = renderToWelded[rc];
+            if (a != b && b != c && a != c) {
                 faces.push_back({ a, b, c });
+                faceCornerUV.push_back({
+                    uvOff >= 0 ? readVec2(ra, uvOff) : glm::vec2(0.0f),
+                    uvOff >= 0 ? readVec2(rb, uvOff) : glm::vec2(0.0f),
+                    uvOff >= 0 ? readVec2(rc, uvOff) : glm::vec2(0.0f)
+                });
+            }
         }
 
         if (!m_HalfEdge.Build(positions, faces)) {
@@ -104,8 +114,12 @@ namespace Engine {
             m_UV.clear();
             m_Tangent.clear();
             m_Bitangent.clear();
+            m_UVVerts.clear();
+            m_CornerUV.clear();
             return false;
         }
+
+        BuildCornerUVs(faces, faceCornerUV);
 
         m_Entity = entity;
         m_OriginalMeshHandle = handle;
@@ -123,50 +137,69 @@ namespace Engine {
             return;
 
         int vCount = (int)m_HalfEdge.Vertices().size();
+        int faceCount = (int)m_HalfEdge.Faces().size();
 
-        // Fan-triangulate every face into welded-index triangles.
-        std::vector<unsigned int> indices;
-        for (int f = 0; f < (int)m_HalfEdge.Faces().size(); ++f) {
+        // Recompute smooth (area-weighted) normals per welded vertex from a fan
+        // triangulation of every face.
+        std::vector<glm::vec3> normals(vCount, glm::vec3(0.0f));
+        for (int f = 0; f < faceCount; ++f) {
             std::vector<int> fv = m_HalfEdge.FaceVertices(f);
             for (size_t k = 1; k + 1 < fv.size(); ++k) {
-                indices.push_back((unsigned int)fv[0]);
-                indices.push_back((unsigned int)fv[k]);
-                indices.push_back((unsigned int)fv[k + 1]);
+                int a = fv[0], b = fv[k], c = fv[k + 1];
+                glm::vec3 fn = glm::cross(m_HalfEdge.Position(b) - m_HalfEdge.Position(a),
+                                          m_HalfEdge.Position(c) - m_HalfEdge.Position(a));
+                normals[a] += fn;
+                normals[b] += fn;
+                normals[c] += fn;
             }
-        }
-
-        // Recompute smooth (area-weighted) normals from the triangulation.
-        std::vector<glm::vec3> normals(vCount, glm::vec3(0.0f));
-        for (size_t t = 0; t + 2 < indices.size(); t += 3) {
-            int a = indices[t], b = indices[t + 1], c = indices[t + 2];
-            glm::vec3 fn = glm::cross(m_HalfEdge.Position(b) - m_HalfEdge.Position(a),
-                                      m_HalfEdge.Position(c) - m_HalfEdge.Position(a));
-            normals[a] += fn;
-            normals[b] += fn;
-            normals[c] += fn;
         }
         for (glm::vec3& n : normals) {
             float len = glm::length(n);
             n = len > 0.0f ? n / len : glm::vec3(0.0f, 1.0f, 0.0f);
         }
 
-        // Interleave into the canonical 5-attribute layout the G-buffer shader expects.
+        // Emit one render vertex per (welded vertex, UV vert) pair so the mesh splits at
+        // UV seams; position/normal/tangent come from the welded vertex, UV from the
+        // per-corner layer. Faces are fan-triangulated by their corner half-edges.
+        const int floatsPerVertex = 14;
+        std::map<std::pair<int, int>, unsigned int> cornerToRender;
         std::vector<float> vertices;
-        vertices.reserve(vCount * 14);
+        std::vector<unsigned int> indices;
         glm::vec3 minAABB(std::numeric_limits<float>::max());
         glm::vec3 maxAABB(std::numeric_limits<float>::lowest());
-        for (int v = 0; v < vCount; ++v) {
+
+        auto emit = [&](int he) -> unsigned int {
+            int v = m_HalfEdge.HalfEdges()[he].Origin;
+            int uvIdx = m_CornerUV[he];
+            std::pair<int, int> key{ v, uvIdx };
+            auto it = cornerToRender.find(key);
+            if (it != cornerToRender.end())
+                return it->second;
+
             const glm::vec3& p = m_HalfEdge.Position(v);
             const glm::vec3& n = normals[v];
-            const glm::vec2& uv = m_UV[v];
+            glm::vec2 uv = (uvIdx >= 0 && uvIdx < (int)m_UVVerts.size()) ? m_UVVerts[uvIdx] : m_UV[v];
             const glm::vec3& t = m_Tangent[v];
             const glm::vec3& bt = m_Bitangent[v];
+
+            unsigned int idx = (unsigned int)(vertices.size() / floatsPerVertex);
             vertices.insert(vertices.end(), {
                 p.x, p.y, p.z, n.x, n.y, n.z, uv.x, uv.y,
                 t.x, t.y, t.z, bt.x, bt.y, bt.z
             });
             minAABB = glm::min(minAABB, p);
             maxAABB = glm::max(maxAABB, p);
+            cornerToRender[key] = idx;
+            return idx;
+        };
+
+        for (int f = 0; f < faceCount; ++f) {
+            std::vector<int> he = m_HalfEdge.FaceHalfEdges(f);
+            for (size_t k = 1; k + 1 < he.size(); ++k) {
+                indices.push_back(emit(he[0]));
+                indices.push_back(emit(he[k]));
+                indices.push_back(emit(he[k + 1]));
+            }
         }
 
         Shared<VertexArray> vao = VertexArray::Create();
@@ -213,6 +246,8 @@ namespace Engine {
         m_UV.clear();
         m_Tangent.clear();
         m_Bitangent.clear();
+        m_UVVerts.clear();
+        m_CornerUV.clear();
         m_Entity = Entity{};
         m_OriginalMeshHandle = 0;
         m_EditMeshHandle = 0;
@@ -231,11 +266,13 @@ namespace Engine {
         if (!m_Active)
             return false;
 
+        int oldHECount = (int)m_HalfEdge.HalfEdges().size();
         std::vector<int> sources;
         if (!m_HalfEdge.ExtrudeFaces(faces, sources))
             return false;
 
         AppendCarriedAttributes(sources);
+        SeedNewCornerUVs(oldHECount);
         SyncToMesh();
         return true;
     }
@@ -244,11 +281,13 @@ namespace Engine {
         if (!m_Active)
             return false;
 
+        int oldHECount = (int)m_HalfEdge.HalfEdges().size();
         std::vector<int> sources;
         if (!m_HalfEdge.SubdivideFaces(faces, sources))
             return false;
 
         AppendCarriedAttributes(sources);
+        SeedNewCornerUVs(oldHECount);
         SyncToMesh();
         return true;
     }
@@ -257,8 +296,9 @@ namespace Engine {
         if (!m_Active)
             return false;
 
-        std::vector<int> remap; // old vertex index -> new index, or -1 if removed
-        if (!m_HalfEdge.DeleteFaces(faces, remap))
+        std::vector<int> remap;   // old vertex index    -> new index, or -1 if removed
+        std::vector<int> heRemap; // old half-edge index -> new index, or -1 if removed
+        if (!m_HalfEdge.DeleteFaces(faces, remap, heRemap))
             return false;
 
         // Compact the carried attributes the same way (new index <= old, so forward-safe).
@@ -280,8 +320,86 @@ namespace Engine {
         m_Tangent = std::move(tan);
         m_Bitangent = std::move(bit);
 
+        // Compact the per-corner UVs onto the new half-edge indexing; UV verts that lose
+        // all their corners simply go unreferenced (the editor ignores them).
+        std::vector<int> cornerUV((int)m_HalfEdge.HalfEdges().size(), -1);
+        for (int he = 0; he < (int)heRemap.size(); ++he)
+            if (heRemap[he] >= 0)
+                cornerUV[heRemap[he]] = m_CornerUV[he];
+        m_CornerUV = std::move(cornerUV);
+
         SyncToMesh();
         return true;
+    }
+
+    void MeshEditSession::BuildCornerUVs(const std::vector<std::vector<int>>& faces,
+                                         const std::vector<std::vector<glm::vec2>>& faceCornerUV) {
+        m_UVVerts.clear();
+        m_CornerUV.assign(m_HalfEdge.HalfEdges().size(), -1);
+
+        // A corner's UV vert is keyed by (welded vertex, quantized UV): same vertex with
+        // the same UV across faces shares a vert (one island); a differing UV at the same
+        // vertex splits into a second vert (a seam). The scale matches the position weld.
+        const float uvScale = 100000.0f;
+        std::map<std::array<long long, 3>, int> uvMap;
+
+        for (int f = 0; f < (int)faces.size(); ++f) {
+            std::vector<int> he = m_HalfEdge.FaceHalfEdges(f);
+            for (int k = 0; k < (int)he.size() && k < (int)faces[f].size(); ++k) {
+                int weldedV = faces[f][k];
+                const glm::vec2& uv = faceCornerUV[f][k];
+                std::array<long long, 3> key = {
+                    weldedV,
+                    std::llround(uv.x * uvScale),
+                    std::llround(uv.y * uvScale)
+                };
+
+                auto it = uvMap.find(key);
+                int idx;
+                if (it == uvMap.end()) {
+                    idx = (int)m_UVVerts.size();
+                    m_UVVerts.push_back(uv);
+                    uvMap[key] = idx;
+                } else {
+                    idx = it->second;
+                }
+                m_CornerUV[he[k]] = idx;
+            }
+        }
+    }
+
+    void MeshEditSession::SeedNewCornerUVs(int oldHalfEdgeCount) {
+        int newHECount = (int)m_HalfEdge.HalfEdges().size();
+        m_CornerUV.resize(newHECount, -1);
+
+        // New interior corners are seeded from the per-vertex UV; corners at the same
+        // vertex with the same seed share a UV vert so new faces stay connected in UV
+        // space. Boundary half-edges keep -1.
+        const float uvScale = 100000.0f;
+        std::map<std::array<long long, 3>, int> uvMap;
+        for (int he = oldHalfEdgeCount; he < newHECount; ++he) {
+            if (m_HalfEdge.HalfEdges()[he].Face == HalfEdgeMesh::InvalidIndex)
+                continue;
+
+            int v = m_HalfEdge.HalfEdges()[he].Origin;
+            const glm::vec2& uv = m_UV[v];
+            std::array<long long, 3> key = {
+                v,
+                std::llround(uv.x * uvScale),
+                std::llround(uv.y * uvScale)
+            };
+
+            auto it = uvMap.find(key);
+            int idx;
+            if (it == uvMap.end()) {
+                idx = (int)m_UVVerts.size();
+                m_UVVerts.push_back(uv);
+                uvMap[key] = idx;
+            } else {
+                idx = it->second;
+            }
+            m_CornerUV[he] = idx;
+        }
     }
 
 }

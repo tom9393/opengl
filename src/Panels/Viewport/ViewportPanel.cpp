@@ -9,6 +9,8 @@ namespace Engine {
     {
         m_Object.SetPassPanel(&m_PassPanel);
         m_Modeling.SetPassPanel(&m_PassPanel);
+        // The UV editor shares the Modeling tab's edit session (one mesh, two views).
+        m_UV.SetSession(&m_Modeling.GetSession());
     }
 
     void ViewportPanel::SetViewportContext(const ViewportContext& ctx) {
@@ -34,6 +36,10 @@ namespace Engine {
             }
             if (ImGui::BeginTabItem("Modeling")) {
                 m_Modeling.OnImGuiRender();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("UV Editor")) {
+                m_UV.OnImGuiRender();
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

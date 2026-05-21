@@ -381,8 +381,10 @@ namespace Engine {
         return true;
     }
 
-    bool HalfEdgeMesh::DeleteFaces(const std::vector<int>& faces, std::vector<int>& vertexRemap) {
+    bool HalfEdgeMesh::DeleteFaces(const std::vector<int>& faces, std::vector<int>& vertexRemap,
+                                   std::vector<int>& halfEdgeRemap) {
         vertexRemap.clear();
+        halfEdgeRemap.clear();
         if (faces.empty())
             return false;
 
@@ -399,6 +401,7 @@ namespace Engine {
         auto revert = [&](const char* why) {
             m_Vertices = snapV; m_HalfEdges = snapH; m_Faces = snapF;
             vertexRemap.clear();
+            halfEdgeRemap.clear();
             std::cout << "[HalfEdgeMesh] Delete failed: " << why << "; reverted." << std::endl;
         };
 
@@ -440,6 +443,7 @@ namespace Engine {
         int newH = 0;
         for (int he = 0; he < heCount; ++he)
             if (!removeHE[he]) heRemap[he] = newH++;
+        halfEdgeRemap = heRemap;
 
         std::vector<int> fRemap(m_Faces.size(), -1);
         int newF = 0;

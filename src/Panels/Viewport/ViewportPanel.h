@@ -2,6 +2,7 @@
 
 #include "ObjectViewportPanel.h"
 #include "ModelingViewportPanel.h"
+#include "UVViewportPanel.h"
 #include "PassPanel.h"
 
 namespace Engine {
@@ -18,6 +19,7 @@ namespace Engine {
         PassPanel m_PassPanel;
         ObjectViewportPanel m_Object;
         ModelingViewportPanel m_Modeling;
+        UVViewportPanel m_UV;
     };
 
 }
