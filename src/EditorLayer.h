@@ -8,7 +8,7 @@
 #include "Panels/SceneHierarchy/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowser/ContentBrowserPanel.h"
 #include "Panels/SettingsPanel.h"
-#include "Panels/ViewportPanel.h"
+#include "Panels/Viewport/ViewportPanel.h"
 #include "Panels/StatsPanel.h"
 #include "Panels/ToolbarPanel.h"
 #include "Panels/MenubarPanel.h"

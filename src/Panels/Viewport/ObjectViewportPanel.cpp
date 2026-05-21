@@ -1,112 +1,36 @@
-#include "ViewportPanel.h"
+#include "ObjectViewportPanel.h"
+#include "PassPanel.h"
 #include "Asset/Prefab.h"
 #include "Asset/AssetManager.h"
 #include "Asset/PrimitiveBuilder.h"
 #include "Core/Input.h"
 #include "Core/KeyCodes.h"
-#include "Events/EventBroker.h"
-#include "PassPanel.h"
-#include "Utils/ScopedImGuiStyle.h"
+#include "Core/MouseButtonCodes.h"
 #include "Utils/GizmoManager.h"
 
 namespace Engine {
 
-    ViewportPanel::ViewportPanel()
-    {
-        EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMouseButtonPressed), this);
-    }
-
-    ViewportPanel::~ViewportPanel()
-    {
-        EventBroker::Get().UnsubscribeAll(this);
-    }
-
-    void ViewportPanel::SetContext(Shared<Scene> scene) {
-        m_Context = scene;
-    }
-
-    void ViewportPanel::SetRenderer(Shared<SceneRenderer> renderer) {
-        m_SceneRenderer = renderer;
-        m_PassPanel.SetRenderer(renderer);
-    }
-
-    void ViewportPanel::SetCamera(Shared<EditorCamera> camera) {
-        m_EditorCamera = camera;
-    }
-
-    void ViewportPanel::OnImGuiRender() {
-        ImGuiWindowFlags window_flags = 0;
-        if (Input::IsKeyPressed(KEY_LEFT_CONTROL))
-            window_flags |= ImGuiWindowFlags_NoMove;
-
-        ScopedImGuiStyle noPadding(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-
-        m_PassPanel.OnImGuiRender();
-
-        ImGui::Begin("Viewport", nullptr, window_flags);
-
-        m_IsHovered = ImGui::IsWindowHovered();
-        m_IsFocused = ImGui::IsWindowFocused();
-
-        if (m_EditorCamera)
-            m_EditorCamera->SetViewportHovered(m_IsHovered);
-
-        auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-        auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-        auto viewportOffset = ImGui::GetWindowPos();
-        m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-        m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
-        ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-        glm::vec2 newViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-
-        if (m_ViewportSize != newViewportSize && newViewportSize.x > 0 && newViewportSize.y > 0) {
-            m_ViewportSize = newViewportSize;
-            m_EditorCamera->SetViewportSize((unsigned int)m_ViewportSize.x, (unsigned int)m_ViewportSize.y);
-            m_SceneRenderer->OnViewportResize((unsigned int)m_ViewportSize.x, (unsigned int)m_ViewportSize.y);
-        }
-
-        unsigned int texID = m_PassPanel.GetSelectedAttachment();
-        if (texID != 0) {
-            ImGui::Image((void*)(intptr_t)texID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
-        }
-
-        DrawDragAndDrop();
-        DrawContextMenu();
-
-        if (SceneManager::GetSceneState() == SceneState::Edit) {
-            UpdateSelectedEntityGizmo();
-        }
-
-        ImGui::End();
-    }
-
-    void ViewportPanel::DrawDragAndDrop() {
+    void ObjectViewportPanel::OnDraw() {
         if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Prefab"))
-			{
-				UUID handle = *(UUID*)payload->Data;
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Prefab"))
+            {
+                UUID handle = *(UUID*)payload->Data;
                 Shared<Prefab> prefab = AssetManager::GetAsset<Prefab>(handle);
 
                 Entity rootEntity = prefab->FindRootEntity();
-                if (rootEntity) 
+                if (rootEntity)
                 {
                     Entity spawnedModel = Entity::CloneEntity(rootEntity, m_Context.get(), Entity{});
                 }
             }
             ImGui::EndDragDropTarget();
         }
-    }
 
-    void ViewportPanel::DrawContextMenu() {
         if (ImGui::BeginPopupContextWindow("SceneHierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
-            // You can add other standard options here too, like "Create Empty Entity"
-            
-            // Your 3D Object Menu
             if (ImGui::BeginMenu("Create 3D Object"))
             {
-                for (auto primitive: AllPrimitives)
+                for (auto primitive : AllPrimitives)
                 {
                     const char* name = PrimitiveNames[static_cast<int>(primitive)];
                     if (ImGui::MenuItem(name))
@@ -122,15 +46,15 @@ namespace Engine {
                         AssetMetadata metadata;
                         metadata.Handle = UUID();
                         metadata.Name = name;
-                        metadata.FilePath = std::string("/home/tom/Coding/c++/opengl/assets/") + name;
+                        metadata.FilePath = std::string("assets/") + name;
                         metadata.IsMemoryAsset = true;
                         metadata.Type = AssetType::Mesh;
 
-                        Shared<Asset> primitive = PrimitiveBuilder::CreatePrimitive(spec, name);
-                        UUID meshID = AssetManager::RegisterAsset(metadata, primitive);
+                        Shared<Asset> primitiveAsset = PrimitiveBuilder::CreatePrimitive(spec, name);
+                        UUID meshID = AssetManager::RegisterAsset(metadata, primitiveAsset);
 
                         entity.AddComponent<MeshComponent>(meshID);
-                        entity.AddComponent<TransformComponent>(); 
+                        entity.AddComponent<TransformComponent>();
                     }
                 }
 
@@ -139,26 +63,29 @@ namespace Engine {
 
             ImGui::EndPopup();
         }
+
+        if (SceneManager::GetSceneState() == SceneState::Edit) {
+            UpdateSelectedEntityGizmo();
+        }
     }
 
-    entt::entity ViewportPanel::RaycastSelection() {
+    entt::entity ObjectViewportPanel::RaycastSelection() {
         if (!m_IsHovered) return entt::null;
 
         auto [mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
         my -= m_ViewportBounds[0].y;
-        
+
         int mouseX = (int)mx;
         int mouseY = (int)(m_ViewportSize.y - my - 1);
         float width = m_ViewportSize.x;
         float height = m_ViewportSize.y;
 
-        // Ensure we are inside bounds
         if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)width && mouseY < (int)height) {
             glm::vec3 rayOrigin = m_EditorCamera->GetPosition();
             glm::mat4 cameraViewMatrix = m_EditorCamera->GetViewMatrix();
             glm::mat4 cameraProjection = m_EditorCamera->GetProjection();
-            
+
             glm::vec3 rayDir = ScreenPosToWorldRay(mouseX, mouseY, width, height, cameraViewMatrix, cameraProjection);
 
             entt::entity selectedEntity = entt::null;
@@ -182,7 +109,7 @@ namespace Engine {
         return entt::null;
     }
 
-    void ViewportPanel::UpdateSelectedEntityGizmo() {
+    void ObjectViewportPanel::UpdateSelectedEntityGizmo() {
         Entity selectedEntity = { SceneManager::GetSelectedEntity(), SceneManager::GetContext() };
         if (!selectedEntity || !selectedEntity.HasComponent<TransformComponent>())
             return;
@@ -201,9 +128,7 @@ namespace Engine {
         }
     }
 
-    bool ViewportPanel::OnMouseButtonPressed(MouseButtonPressedEvent &e)
-    {
-        // Handle raycast picking only if clicking in the viewport bounds
+    bool ObjectViewportPanel::OnMousePressed(MouseButtonPressedEvent& e) {
         if (e.GetMouseButton() == MOUSE_BUTTON_LEFT && IsHovered() && !ImGuizmo::IsOver())
         {
             entt::entity clickedId = RaycastSelection();
@@ -213,4 +138,5 @@ namespace Engine {
 
         return false;
     }
+
 }

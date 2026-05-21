@@ -19,7 +19,6 @@ namespace Engine {
 
         for (auto& framebuffer : framebuffers)
         {
-
             unsigned int color = 0;
             unsigned int depth = 0;
 
