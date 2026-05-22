@@ -29,6 +29,18 @@ namespace Engine {
         // 3. Sort
         SortDrawCommands(view);
 
+        // 4. Environment / IBL + post-processing settings
+        if (Shared<EnvironmentMap> env = scene->GetEnvironment())
+        {
+            view.Environment.Skybox        = env->GetSkybox();
+            view.Environment.Irradiance    = env->GetIrradiance();
+            view.Environment.Prefilter     = env->GetPrefilter();
+            view.Environment.PrefilterMips = env->GetPrefilterMips();
+            view.Environment.Intensity     = scene->GetEnvironmentIntensity();
+            view.Environment.Valid         = true;
+        }
+        view.Post = scene->GetPostSettings();
+
         return view;
     }
 

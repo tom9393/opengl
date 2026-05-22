@@ -3,6 +3,7 @@
 #include "DrawCommand.h"
 #include "ShadowCasters.h"
 #include "Light.h"
+#include "EnvironmentMap.h"
 
 namespace Engine {
 
@@ -36,6 +37,8 @@ namespace Engine {
         std::vector<ShadowCasterCone> ConeShadowCasters;
         std::vector<ShadowCasterPoint> PointShadowCasters;
         SceneLightData LightData;
+        EnvironmentRenderData Environment;
+        PostProcessSettings Post;
     };
 
 }

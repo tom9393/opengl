@@ -42,6 +42,40 @@ namespace Engine
         const std::string dlfrag = "/home/tom/Coding/c++/opengl/shaders/deferred_lighting.frag";
         deferredlightingShader->AddShaders({dlvert, dlfrag});
         Add(deferredlightingShader);
+
+        const std::string shaderDir = "/home/tom/Coding/c++/opengl/shaders/";
+        const std::string fullscreenVert = dlvert; // shared NDC fullscreen-quad vertex stage
+        const std::string cubeVert = shaderDir + "cubemap.vert";
+
+        // --- Image-based lighting bake shaders ---
+        Shared<Shader> equirectShader = Shader::Create("EquirectToCube");
+        equirectShader->AddShaders({cubeVert, shaderDir + "equirect_to_cube.frag"});
+        Add(equirectShader);
+
+        Shared<Shader> irradianceShader = Shader::Create("IrradianceConvolution");
+        irradianceShader->AddShaders({cubeVert, shaderDir + "irradiance_convolution.frag"});
+        Add(irradianceShader);
+
+        Shared<Shader> prefilterShader = Shader::Create("Prefilter");
+        prefilterShader->AddShaders({cubeVert, shaderDir + "prefilter.frag"});
+        Add(prefilterShader);
+
+        Shared<Shader> brdfShader = Shader::Create("BRDF");
+        brdfShader->AddShaders({fullscreenVert, shaderDir + "brdf.frag"});
+        Add(brdfShader);
+
+        // --- Post processing shaders ---
+        Shared<Shader> bloomDownShader = Shader::Create("BloomDownsample");
+        bloomDownShader->AddShaders({fullscreenVert, shaderDir + "bloom_down.frag"});
+        Add(bloomDownShader);
+
+        Shared<Shader> bloomUpShader = Shader::Create("BloomUpsample");
+        bloomUpShader->AddShaders({fullscreenVert, shaderDir + "bloom_up.frag"});
+        Add(bloomUpShader);
+
+        Shared<Shader> postShader = Shader::Create("PostProcess");
+        postShader->AddShaders({fullscreenVert, shaderDir + "post.frag"});
+        Add(postShader);
     }
 
     void ShaderLibrary::Shutdown()

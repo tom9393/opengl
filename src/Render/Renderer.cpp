@@ -2,6 +2,7 @@
 #include "Asset/Mesh.h"
 #include "Asset/Material.h"
 #include "Buffer.h"
+#include "EnvironmentMap.h"
 #include "OpenGL/OpenGLShader.h"
 #include "Utils/MathTools.h"
 
@@ -31,6 +32,11 @@ namespace Engine
 
         RenderCommand::Init();
         ShaderLibrary::Init();
+
+        // Build the env-independent BRDF integration LUT once now, while no graph
+        // framebuffer is bound. Lazily building it mid-pass would clobber the
+        // currently bound framebuffer.
+        EnvironmentMap::GetBRDFLUT();
 
         s_LineData.Init();
         s_PointData.Init();

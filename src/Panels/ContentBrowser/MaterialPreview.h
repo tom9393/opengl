@@ -82,7 +82,7 @@ namespace Engine {
 
             pool->InsertFrameFence();
 
-            uint32_t sharedTexID = graph.GetPassColorAttachmentRendererID("ScenePass", 0);
+            uint32_t sharedTexID = graph.GetPassColorAttachmentRendererID("PostProcessPass", 0);
 
             if (!m_Texture)
             {

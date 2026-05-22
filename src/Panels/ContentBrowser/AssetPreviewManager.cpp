@@ -6,6 +6,7 @@
 #include "Render/Passes/ShadowPass3D.h"
 #include "Render/Passes/GeometryPass.h"
 #include "Render/Passes/ScenePass.h"
+#include "Render/Passes/PostProcessPass.h"
 #include "Texture2DPreview.h"
 
 namespace Engine {
@@ -30,6 +31,7 @@ namespace Engine {
         s_PreviewGraph->AddPass<ShadowPass3D>("PointShadowPass");
         s_PreviewGraph->AddPass<GeometryPass>("GeometryPass");
         s_PreviewGraph->AddPass<ScenePass>("ScenePass");
+        s_PreviewGraph->AddPass<PostProcessPass>("PostProcessPass");
 
         s_PreviewPool = MakeShared<DynamicBufferPool>(1024 * 1024);
     }

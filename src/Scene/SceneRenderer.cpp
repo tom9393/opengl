@@ -5,6 +5,7 @@
 #include "Passes/ShadowPass3D.h"
 #include "Passes/GeometryPass.h"
 #include "Passes/ScenePass.h"
+#include "Passes/PostProcessPass.h"
 #include "Render/Renderer.h"
 #include "Render/SceneCamera.h"
 #include "RenderView.h"
@@ -22,9 +23,10 @@ namespace Engine {
         m_RenderGraph.AddPass<ShadowPass3D>("PointShadowPass");
         m_RenderGraph.AddPass<GeometryPass>("GeometryPass");
         m_RenderGraph.AddPass<ScenePass>("ScenePass");
+        m_RenderGraph.AddPass<PostProcessPass>("PostProcessPass");
 
-        // SceneColor is the final viewport texture; this drives culling.
-        m_RenderGraph.MarkPresent("SceneColor");
+        // FinalColor (post-processed) is the presented viewport texture; this drives culling.
+        m_RenderGraph.MarkPresent("FinalColor");
         m_RenderGraph.Compile();
     }
 

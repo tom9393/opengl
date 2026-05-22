@@ -12,6 +12,16 @@ uniform sampler2DArray u_DirSpotShadowMaps;
 uniform samplerCubeArray u_PointShadowCubemaps;
 uniform float u_FarPlane;
 
+// Image-based lighting
+uniform samplerCube u_IrradianceMap;
+uniform samplerCube u_PrefilterMap;
+uniform sampler2D   u_BrdfLUT;
+uniform samplerCube u_Skybox;
+uniform bool        u_HasEnvironment;
+uniform float       u_EnvIntensity;
+uniform float       u_PrefilterMaxLod;
+uniform mat4        u_InverseViewProjection;
+
 struct Light {
     vec4 PositionType;
     vec4 ColorInner;
@@ -66,6 +76,18 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+// World-space view ray through the current pixel (for skybox background).
+vec3 ViewRayDirection(vec2 uv) {
+    vec4 clip = vec4(uv * 2.0 - 1.0, 1.0, 1.0);
+    vec4 world = u_InverseViewProjection * clip;
+    world /= world.w;
+    return normalize(world.xyz - u_CameraPosition);
 }
 
 // --- Shadow Calculation Functions ---
@@ -180,6 +202,17 @@ void main()
 {
     vec3 WorldPos = texture(gPosition, TexCoords).rgb;
     vec3 N = texture(gNormal, TexCoords).rgb;
+
+    // Background pixels (no geometry) draw the skybox. The G-buffer clears
+    // normals to zero, so a near-zero normal flags an empty pixel.
+    if (dot(N, N) < 0.5) {
+        vec3 bg = u_HasEnvironment
+            ? texture(u_Skybox, ViewRayDirection(TexCoords)).rgb
+            : vec3(0.2);
+        FragColor = vec4(bg, 1.0);
+        return;
+    }
+
     vec3 albedo = texture(gAlbedo, TexCoords).rgb;
     float metallic = texture(gPBR, TexCoords).r;
     float roughness = texture(gPBR, TexCoords).g;
@@ -245,12 +278,25 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    vec3 ambient;
+    if (u_HasEnvironment) {
+        // Image-based lighting: diffuse irradiance + specular prefilter * BRDF.
+        vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+        vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
 
-    // HDR Tonemapping
-    color = color / (color + vec3(1.0)); 
-    color = pow(color, vec3(1.0/2.2));
-    
-    FragColor = vec4(color, 1.0);
+        vec3 irradiance = texture(u_IrradianceMap, N).rgb;
+        vec3 diffuse = irradiance * albedo;
+
+        vec3 R = reflect(-V, N);
+        vec3 prefiltered = textureLod(u_PrefilterMap, R, roughness * u_PrefilterMaxLod).rgb;
+        vec2 brdf = texture(u_BrdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+        vec3 specular = prefiltered * (F * brdf.x + brdf.y);
+
+        ambient = (kD * diffuse + specular) * ao * u_EnvIntensity;
+    } else {
+        ambient = vec3(0.03) * albedo * ao;
+    }
+
+    // Output linear HDR; tonemapping and gamma happen in the post-process pass.
+    FragColor = vec4(ambient + Lo, 1.0);
 }

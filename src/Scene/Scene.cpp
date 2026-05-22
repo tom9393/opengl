@@ -80,8 +80,26 @@ namespace Engine
 			destination.emplace_or_replace<ChildrenComponent>(newEntityId, newChildren);
 		}
 
+		// Share the baked environment (immutable after baking) and post settings.
+		newScene->m_Environment = other->m_Environment;
+		newScene->m_EnvironmentPath = other->m_EnvironmentPath;
+		newScene->m_EnvironmentIntensity = other->m_EnvironmentIntensity;
+		newScene->m_PostSettings = other->m_PostSettings;
+
 		return newScene;
 	};
+
+	void Scene::SetEnvironmentPath(const std::string& path)
+	{
+		m_EnvironmentPath = path;
+		if (path.empty())
+		{
+			m_Environment = nullptr;
+			return;
+		}
+		m_Environment = EnvironmentMap::Load(path);
+		if (!m_Environment) m_EnvironmentPath.clear();
+	}
 
 	void Scene::OnUpdate(TimeStep ts)
 	{

@@ -2,6 +2,7 @@
 
 #include "RenderPass.h"
 #include "Render/RenderGraph.h"
+#include "Render/EnvironmentMap.h"
 
 namespace Engine {
 
@@ -12,7 +13,8 @@ namespace Engine {
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
-            Output("SceneColor", FramebufferTextureFormat::RGBA8);
+            // HDR target: lighting outputs linear radiance; tonemap is in the post pass.
+            Output("SceneColor", FramebufferTextureFormat::RGBA16F);
             Input("GBuffer.Position");
             Input("GBuffer.Normal");
             Input("GBuffer.Albedo");
@@ -43,6 +45,28 @@ namespace Engine {
                 m_RenderGraph->BindInput("ShadowMap2D", 4);
             if (m_RenderGraph->HasInput("PointShadowMap"))
                 m_RenderGraph->BindInput("PointShadowMap", 5);
+
+            // --- Image-based lighting ---
+            const EnvironmentRenderData& env = view.Environment;
+
+            deferredShader->SetInt("u_IrradianceMap", 6);
+            deferredShader->SetInt("u_PrefilterMap",  7);
+            deferredShader->SetInt("u_BrdfLUT",       8);
+            deferredShader->SetInt("u_Skybox",        9);
+            deferredShader->SetBool("u_HasEnvironment", env.Valid);
+            deferredShader->SetFloat("u_EnvIntensity", env.Intensity);
+            deferredShader->SetFloat("u_PrefilterMaxLod", (float)env.PrefilterMips - 1.0f);
+            deferredShader->SetMat4("u_InverseViewProjection", glm::inverse(ctx.ViewProjection));
+
+            unsigned int fallbackCube = EnvironmentMap::GetFallbackCubemap();
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, env.Valid ? env.Irradiance : fallbackCube);
+            glActiveTexture(GL_TEXTURE7);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, env.Valid ? env.Prefilter : fallbackCube);
+            glActiveTexture(GL_TEXTURE8);
+            glBindTexture(GL_TEXTURE_2D, EnvironmentMap::GetBRDFLUT());
+            glActiveTexture(GL_TEXTURE9);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, env.Valid ? env.Skybox : fallbackCube);
 
             Renderer::DrawFullscreenQuad();
 
