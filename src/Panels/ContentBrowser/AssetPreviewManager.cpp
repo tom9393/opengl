@@ -21,10 +21,10 @@ namespace Engine {
     Shared<DynamicBufferPool> AssetPreviewManager::s_PreviewPool;
 
     void AssetPreviewManager::Init() {
-		s_DefaultFileIcon = Texture2D::Create("../assets/icons/documentIcon.png");
-		s_DefaultFolderIcon = Texture2D::Create("../assets/icons/folderIcon.png");
-		s_LuaIcon = Texture2D::Create("../assets/icons/luaIcon.png");
-		s_ModelIcon = Texture2D::Create("../assets/icons/modelIcon.png");
+		s_DefaultFileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
+		s_DefaultFolderIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/folderIcon.png"));
+		s_LuaIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/luaIcon.png"));
+		s_ModelIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/modelIcon.png"));
 
         s_PreviewGraph = MakeUnique<RenderGraph>(256, 256);
         s_PreviewGraph->AddPass<ShadowPass2D>("ShadowPass2D");

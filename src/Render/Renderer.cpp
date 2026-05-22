@@ -33,10 +33,11 @@ namespace Engine
         RenderCommand::Init();
         ShaderLibrary::Init();
 
-        // Build the env-independent BRDF integration LUT once now, while no graph
-        // framebuffer is bound. Lazily building it mid-pass would clobber the
-        // currently bound framebuffer.
+        // Build the env-independent BRDF integration LUT and fallback cubemap once
+        // now, while no graph framebuffer is bound. Both render into their own
+        // targets, so building them mid-pass would clobber the bound framebuffer.
         EnvironmentMap::GetBRDFLUT();
+        EnvironmentMap::GetFallbackCubemap();
 
         s_LineData.Init();
         s_PointData.Init();

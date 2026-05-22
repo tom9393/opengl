@@ -7,7 +7,18 @@ namespace Engine {
 
     Shared<Texture2D> TextureImporter::LoadTexture2D(const AssetMetadata &metadata)
     {
-        return Texture2D::Create(metadata.FilePath);
+        TextureLoadData data;
+        stbi_set_flip_vertically_on_load(1);
+        data.Pixels = stbi_load(metadata.FilePath.c_str(), &data.Width, &data.Height, &data.Channels, 4);
+
+        if (!data.Pixels) {
+            std::cerr << "Failed to load texture: " << metadata.FilePath << std::endl;
+            return nullptr;
+        }
+
+        Shared<Texture2D> texture = Texture2D::Create(data);
+        stbi_image_free(data.Pixels);
+        return texture;
     }
 
     TextureLoadData TextureImporter::DecodeTextureFromMemory(const void* data, size_t length) {
@@ -79,6 +90,26 @@ namespace Engine {
                 if (cb) cb(texture);
             });
         });
+    }
+
+    Shared<Texture2D> TextureImporter::LoadHDR(const std::string& path)
+    {
+        stbi_set_flip_vertically_on_load(true);
+        int width, height, channels;
+        float* data = stbi_loadf(path.c_str(), &width, &height, &channels, 3);
+        if (!data)
+            return nullptr;
+
+        TextureLoadData hdrData;
+        hdrData.HDRPixels = data;
+        hdrData.Width     = width;
+        hdrData.Height    = height;
+        hdrData.Channels  = 3;
+        hdrData.clamp     = true;
+        Shared<Texture2D> texture = Texture2D::Create(hdrData);
+        stbi_image_free(data);
+
+        return texture;
     }
 
     Shared<AssetMetadata> TextureImporter::ImportTexture2D(const std::filesystem::path &path)

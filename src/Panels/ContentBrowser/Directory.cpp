@@ -6,8 +6,8 @@ namespace Engine {
 
     Directory::Directory() : m_CurrentDirectory(s_AssetPath)
     {
-		m_DirIcon = Texture2D::Create("../assets/icons/folderIcon.png");
-		m_FileIcon = Texture2D::Create("../assets/icons/documentIcon.png");
+		m_DirIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/folderIcon.png"));
+		m_FileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
 		RefreshCache();
     }
 

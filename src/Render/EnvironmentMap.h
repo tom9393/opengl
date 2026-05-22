@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pch.h"
+#include "RenderTexture.h"
 
 namespace Engine
 {
@@ -37,15 +38,13 @@ namespace Engine
     class EnvironmentMap
     {
     public:
-        ~EnvironmentMap();
-
         // Load and bake an equirectangular .hdr file. Returns null on failure.
         // Must be called on the thread owning the GL context.
         static Shared<EnvironmentMap> Load(const std::string& hdrPath);
 
-        unsigned int GetSkybox() const { return m_EnvironmentCubemap; }
-        unsigned int GetIrradiance() const { return m_IrradianceMap; }
-        unsigned int GetPrefilter() const { return m_PrefilterMap; }
+        unsigned int GetSkybox() const { return m_EnvironmentCubemap ? m_EnvironmentCubemap->GetID() : 0; }
+        unsigned int GetIrradiance() const { return m_IrradianceMap ? m_IrradianceMap->GetID() : 0; }
+        unsigned int GetPrefilter() const { return m_PrefilterMap ? m_PrefilterMap->GetID() : 0; }
         unsigned int GetPrefilterMips() const { return m_PrefilterMips; }
         const std::string& GetPath() const { return m_Path; }
 
@@ -55,12 +54,16 @@ namespace Engine
         // samplers always reference a complete texture.
         static unsigned int GetFallbackCubemap();
 
+        // Release the shared BRDF LUT / fallback cubemap while the GL context is
+        // still alive.
+        static void Shutdown();
+
     private:
-        std::string  m_Path;
-        unsigned int m_EnvironmentCubemap = 0;
-        unsigned int m_IrradianceMap      = 0;
-        unsigned int m_PrefilterMap       = 0;
-        unsigned int m_PrefilterMips      = 5;
+        std::string           m_Path;
+        Shared<RenderTexture> m_EnvironmentCubemap;
+        Shared<RenderTexture> m_IrradianceMap;
+        Shared<RenderTexture> m_PrefilterMap;
+        unsigned int          m_PrefilterMips = 5;
     };
 
 }

@@ -3,6 +3,7 @@
 #include "LinuxWindow.h"
 #include "OpenGL/OpenGLContext.h"
 #include "Asset/DefaultTextures.h"
+#include "Render/EnvironmentMap.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/MouseEvent.h"
 #include "Events/KeyboardEvent.h"
@@ -190,6 +191,7 @@ namespace Engine
     void LinuxWindow::Shutdown()
     {
         DefaultTextures::Shutdown();
+        EnvironmentMap::Shutdown();
         glfwDestroyWindow(m_Window);
     };
 

@@ -18,6 +18,36 @@ namespace Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     };
 
+    void OpenGLRendererAPI::SetDepthTest(bool enabled)
+    {
+        enabled ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
+    };
+
+    void OpenGLRendererAPI::SetFaceCulling(bool enabled)
+    {
+        enabled ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
+    };
+
+    void OpenGLRendererAPI::SetAdditiveBlend(bool enabled)
+    {
+        if (enabled)
+        {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE);
+            glBlendEquation(GL_FUNC_ADD);
+        }
+        else
+        {
+            glDisable(GL_BLEND);
+        }
+    };
+
+    void OpenGLRendererAPI::BindTexture2D(unsigned int slot, unsigned int rendererID)
+    {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, rendererID);
+    };
+
     void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
     {
         glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
@@ -79,6 +109,44 @@ namespace Engine
         // Bind the VAO and draw the quad as a triangle strip
         glBindVertexArray(s_QuadVAO);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindVertexArray(0);
+    }
+
+    static uint32_t s_CubeVAO = 0;
+    static uint32_t s_CubeVBO = 0;
+
+    void OpenGLRendererAPI::DrawCube()
+    {
+        if (s_CubeVAO == 0)
+        {
+            // A unit cube centered at the origin (position-only), wound so its
+            // faces are visible when rendered from the inside (env-map capture).
+            float vertices[] = {
+                // back face
+                -1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1, -1, -1, -1, -1, -1,  1, -1,
+                // front face
+                -1, -1,  1,  1, -1,  1,  1,  1,  1,  1,  1,  1, -1,  1,  1, -1, -1,  1,
+                // left face
+                -1,  1,  1, -1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1,  1,  1,
+                // right face
+                 1,  1,  1,  1, -1, -1,  1,  1, -1,  1, -1, -1,  1,  1,  1,  1, -1,  1,
+                // bottom face
+                -1, -1, -1,  1, -1, -1,  1, -1,  1,  1, -1,  1, -1, -1,  1, -1, -1, -1,
+                // top face
+                -1,  1, -1,  1,  1,  1,  1,  1, -1,  1,  1,  1, -1,  1, -1, -1,  1,  1,
+            };
+
+            glGenVertexArrays(1, &s_CubeVAO);
+            glGenBuffers(1, &s_CubeVBO);
+            glBindVertexArray(s_CubeVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, s_CubeVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        }
+
+        glBindVertexArray(s_CubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
     }
 

@@ -13,11 +13,18 @@ namespace Engine
         void SetClearColor(const glm::vec4 &color) override;
         void Clear() override;
 
+        void SetDepthTest(bool enabled) override;
+        void SetFaceCulling(bool enabled) override;
+        void SetAdditiveBlend(bool enabled) override;
+
+        void BindTexture2D(unsigned int slot, unsigned int rendererID) override;
+
         void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) override;
         void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) override;
         void DrawLines(const std::shared_ptr<VertexArray> &lines, uint32_t size) override;
         void DrawPoints(const std::shared_ptr<VertexArray> &points, uint32_t size) override;
         void DrawFullscreenQuad() override;
+        void DrawCube() override;
 
         void ToggleWireframe() override;
 

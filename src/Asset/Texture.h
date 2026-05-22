@@ -24,7 +24,6 @@ namespace Engine
     class Texture2D : public Texture
     {
         public:
-        static std::shared_ptr<Texture2D> Create(const std::filesystem::path &path);
         static std::shared_ptr<Texture2D> Create(const TextureLoadData &data);
 
         virtual void Copy(uint32_t rendererID, uint32_t width, uint32_t height) = 0;

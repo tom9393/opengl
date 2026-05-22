@@ -1,19 +1,18 @@
 #pragma once
 
 #include "pch.h"
+#include "RenderTexture.h"
 
 namespace Engine
 {
 
     // Progressive dual-filter bloom (downsample chain + additive tent upsample),
-    // following the Call of Duty / Froyok approach. Self-contained: owns a mip
-    // chain of float framebuffers driven with direct GL, so it does not require
-    // the render graph's framebuffers to support mip levels.
+    // following the Call of Duty / Froyok approach. Owns a mip chain of float
+    // RenderTextures; all GPU work goes through RenderCommand and RenderTexture,
+    // so the class carries no render-API specifics.
     class Bloom
     {
     public:
-        ~Bloom();
-
         // (Re)allocate the mip chain for the given full-resolution size. Cheap
         // no-op when the size is unchanged.
         void Resize(unsigned int width, unsigned int height);
@@ -23,15 +22,12 @@ namespace Engine
         unsigned int Render(unsigned int srcTexture, float threshold);
 
     private:
-        void Destroy();
-
         struct Mip
         {
-            unsigned int Texture = 0;
-            glm::vec2    Size     = { 0, 0 };
+            Shared<RenderTexture> texture;
+            glm::vec2             size = { 0, 0 };
         };
 
-        unsigned int      m_FBO   = 0;
         unsigned int      m_Width = 0, m_Height = 0;
         std::vector<Mip>  m_Mips;
         float             m_FilterRadius = 0.005f;

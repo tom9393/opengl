@@ -24,6 +24,24 @@ namespace Engine
             s_RendererAPI->Clear();
         }
 
+        inline static void SetDepthTest(bool enabled)
+        {
+            s_RendererAPI->SetDepthTest(enabled);
+        }
+        inline static void SetFaceCulling(bool enabled)
+        {
+            s_RendererAPI->SetFaceCulling(enabled);
+        }
+        inline static void SetAdditiveBlend(bool enabled)
+        {
+            s_RendererAPI->SetAdditiveBlend(enabled);
+        }
+
+        inline static void BindTexture2D(unsigned int slot, unsigned int rendererID)
+        {
+            s_RendererAPI->BindTexture2D(slot, rendererID);
+        }
+
         inline static void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
         {
             s_RendererAPI->DrawIndexed(vertexArray);
@@ -47,6 +65,11 @@ namespace Engine
         inline static void DrawFullscreenQuad()
         {
             s_RendererAPI->DrawFullscreenQuad();
+        }
+
+        inline static void DrawCube()
+        {
+            s_RendererAPI->DrawCube();
         }
 
         inline static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)

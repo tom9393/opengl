@@ -8,7 +8,6 @@ namespace Engine
     class OpenGLTexture2D : public Texture2D
     {
         public:
-        OpenGLTexture2D(const std::filesystem::path &path);
         OpenGLTexture2D(const TextureLoadData &data);
         virtual ~OpenGLTexture2D();
 
@@ -25,9 +24,8 @@ namespace Engine
 
         private:
         std::filesystem::path m_Path;
-        unsigned char* m_RawData;
         unsigned int m_DataFormat, m_InternalFormat;
-        unsigned int m_Width, m_Height, m_Channels;
+        unsigned int m_Width, m_Height;
         unsigned int m_RendererID;
     };
 
