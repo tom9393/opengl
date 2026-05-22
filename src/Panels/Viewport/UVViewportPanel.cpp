@@ -2,6 +2,7 @@
 #include "Asset/AssetManager.h"
 #include "Asset/Material.h"
 #include "Asset/Texture.h"
+#include "Commands/MeshEditCommand.h"
 #include "Scene/Components.h"
 
 namespace Engine {
@@ -238,6 +239,8 @@ namespace Engine {
                         m_Selected.push_back(hit);
                     }
                     BeginTransform(mouse);
+                    m_TransformBefore = m_Session->CaptureState();
+                    m_TransformMoved = false;
                     m_Drag = Drag::Transform;
                 } else {
                     if (!io.KeyShift)
@@ -259,10 +262,16 @@ namespace Engine {
                 }
                 break;
             case Drag::Transform:
-                if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
                     ApplyTransform(mouse, canvasMin);
-                else
+                    if (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f)
+                        m_TransformMoved = true;
+                } else {
+                    if (m_TransformMoved)
+                        m_Session->History().Push(MakeUnique<MeshEditCommand>(
+                            m_Session, m_TransformBefore, m_Session->CaptureState()));
                     m_Drag = Drag::None;
+                }
                 break;
             case Drag::Box:
                 if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {

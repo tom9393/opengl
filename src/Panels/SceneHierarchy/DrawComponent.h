@@ -8,6 +8,7 @@
 #include "DrawRigidBody.h"
 #include "DrawLight.h"
 #include "DrawLua.h"
+#include "Commands/SceneCommands.h"
 #include "Scene/Entity.h"
 
 namespace Engine {
@@ -53,7 +54,7 @@ namespace Engine {
 
 			if (removeComponent)
 			{
-				entity.RemoveComponent<T>();
+				RecordEntityEdit(entity, [&]{ entity.RemoveComponent<T>(); });
 			}
 		}
 	};
@@ -90,27 +91,27 @@ namespace Engine {
 
 			if (ImGui::MenuItem("Camera"))
 			{
-				selection.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>());
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>()); });
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Mesh"))
 			{
-				selection.AddComponent<MeshComponent>();
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<MeshComponent>(); });
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Transform"))
 			{
 				glm::vec3 trans = glm::vec3(0.0f, 0.0f, 0.0f);
-				selection.AddComponent<TransformComponent>(trans);
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<TransformComponent>(trans); });
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Material"))
 			{
-				MaterialComponent& mc = selection.AddComponent<MaterialComponent>();
-				mc.MaterialHandle = UUID();
+				RecordEntityEdit(selection, [&]{ MaterialComponent& mc = selection.AddComponent<MaterialComponent>();
+				mc.MaterialHandle = UUID(); });
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -118,8 +119,8 @@ namespace Engine {
 			{
 				if (ImGui::MenuItem("PlayerScript"))
 				{
-					NativeScriptComponent &nsc = selection.AddComponent<NativeScriptComponent>();
-					nsc.Bind<PlayerScript>();
+					RecordEntityEdit(selection, [&]{ NativeScriptComponent &nsc = selection.AddComponent<NativeScriptComponent>();
+					nsc.Bind<PlayerScript>(); });
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndMenu();
@@ -127,19 +128,19 @@ namespace Engine {
 
 			if (ImGui::MenuItem("LuaScript"))
 			{
-				selection.AddComponent<LuaScriptComponent>();
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<LuaScriptComponent>(); });
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("RigidBody"))
 			{
-				selection.AddComponent<RigidBodyComponent>();
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<RigidBodyComponent>(); });
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Light"))
 			{
-				selection.AddComponent<LightComponent>();
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<LightComponent>(); });
 				ImGui::CloseCurrentPopup();
 			}
 

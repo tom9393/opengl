@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Asset/AssetManager.h"
+#include "Commands/CommandHistory.h"
+#include "Core/Input.h"
 #include "Core/KeyCodes.h"
 #include "Core/Application.h"
 #include "Core/MouseButtonCodes.h"
@@ -101,8 +103,31 @@ namespace Engine
         Renderer::ResetStatistics();
     }
 
+    CommandHistory& EditorLayer::ActiveHistory()
+    {
+        if (MeshEditSession* session = m_ViewportPanel.ActiveMeshSession())
+            return session->History();
+        return CommandHistory::Global();
+    }
+
+    void EditorLayer::ClearStaleSelection()
+    {
+        Scene* context = SceneManager::GetContext();
+        entt::entity selected = SceneManager::GetSelectedEntityHandle();
+        if (selected != entt::null && context && !context->GetRegistry().valid(selected))
+            SceneManager::SetSelectedEntity(entt::null);
+    }
+
     bool EditorLayer::OnKeyEvent(KeyboardPressEvent &e)
     {
+        // Undo/redo: gated to Edit mode (runtime component pointers aren't snapshotted).
+        bool ctrl = Input::IsKeyPressed(KEY_LEFT_CONTROL) || Input::IsKeyPressed(KEY_RIGHT_CONTROL);
+        if (ctrl && SceneManager::GetSceneState() == SceneState::Edit)
+        {
+            if (e.getKeyCode() == KEY_Z) { ActiveHistory().Undo(); ClearStaleSelection(); return true; }
+            if (e.getKeyCode() == KEY_Y) { ActiveHistory().Redo(); ClearStaleSelection(); return true; }
+        }
+
         if (m_Shortcuts.find(e.getKeyCode()) != m_Shortcuts.end()) {
             m_Shortcuts[e.getKeyCode()]();
             return true;
@@ -121,6 +146,9 @@ namespace Engine
             serializer.Deserialize(filepath);
 
             m_SceneRenderer->SetScene(m_EditingScene.get());
+
+            // The undo history references the previous scene's entities; drop it.
+            CommandHistory::Global().Clear();
         }
     };
 

@@ -13,6 +13,11 @@ namespace Engine {
         m_UV.SetSession(&m_Modeling.GetSession());
     }
 
+    MeshEditSession* ViewportPanel::ActiveMeshSession() {
+        MeshEditSession& session = m_Modeling.GetSession();
+        return session.IsActive() ? &session : nullptr;
+    }
+
     void ViewportPanel::SetViewportContext(const ViewportContext& ctx) {
         m_PassPanel.SetRenderer(ctx.SceneRendererContext);
         m_Object.SetViewportContext(ctx);

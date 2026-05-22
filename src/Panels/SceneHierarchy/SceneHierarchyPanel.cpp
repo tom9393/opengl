@@ -4,12 +4,49 @@
 #include "../../Scene/Components.h"
 #include "../../Asset/CollisionBaker.h"
 #include "../../Asset/Asset.h"
+#include "../../Commands/SceneCommands.h"
 #include "../../Scripting/PlayerScript.h"
 #include "../../Utils/SceneManager.h"
 #include "DrawComponent.h"
 
 namespace Engine
 {
+
+	namespace {
+		// Coalesces an inspector interaction (a drag, a typed value, etc.) into one undo
+		// step. While any ImGui item is active we hold a snapshot taken when it first
+		// became active; when the interaction ends we push a single ModifyEntityCommand
+		// if anything actually changed. Editing a different panel snapshots the (then
+		// unchanged) selection harmlessly.
+		void TrackInspectorEdit(Entity selection)
+		{
+			static bool s_Editing = false;
+			static UUID s_Entity = 0;
+			static EntitySnapshot s_Before;
+
+			bool active = ImGui::IsAnyItemActive();
+			if (active && !s_Editing && selection)
+			{
+				s_Editing = true;
+				s_Entity = selection.GetUUID();
+				s_Before = CaptureEntity(selection);
+			}
+			else if (!active && s_Editing)
+			{
+				s_Editing = false;
+				Entity entity = FindEntityByUUID(SceneManager::GetContext(), s_Entity);
+				if (entity)
+				{
+					EntitySnapshot after = CaptureEntity(entity);
+					// Component add/remove (a set change) is recorded at its action site;
+					// the tracker only commits in-place value edits.
+					if (SameComponentSet(s_Before, after) && SnapshotsDiffer(s_Before, after))
+						CommandHistory::Global().Push(
+							MakeUnique<ModifyEntityCommand>(s_Entity, s_Before, after));
+				}
+			}
+		}
+	}
 
 	void SceneHierarchyPanel::OnImGuiRender()
     {
@@ -25,10 +62,10 @@ namespace Engine
             {
                 entt::entity payloadEntity = *(const entt::entity*)payload->Data;
                 Entity child{ payloadEntity, context };
-                
+
                 // An empty entity implies "remove parent" in a robust SetParent implementation
-                Entity nullParent{}; 
-                child.SetParent(nullParent); 
+                Entity nullParent{};
+                RecordReparent(child, nullParent);
             }
         }
 
@@ -52,7 +89,8 @@ namespace Engine
         {
             if (ImGui::MenuItem("Create empty entity"))
             {
-                context->CreateEntity("Empty entity");
+                Entity created = context->CreateEntity("Empty entity");
+                CommandHistory::Global().Push(MakeUnique<CreateEntityCommand>(created));
             }
             ImGui::EndPopup();
         }
@@ -68,9 +106,12 @@ namespace Engine
         }
         ImGui::End();
 
+        TrackInspectorEdit(selection);
+
 		if (m_Deleted)
 		{
-			context->DestroyEntity(selection);
+			if (selection)
+				CommandHistory::Global().Execute(MakeUnique<DeleteEntityCommand>(selection));
 			SceneManager::SetSelectedEntity(entt::null);
 			m_Deleted = false;
 		}
@@ -113,9 +154,9 @@ namespace Engine
                 Entity child{ payloadEntity, context };
                 
                 // Prevent parenting to yourself or your own children (prevents infinite loops!)
-                if (child != entity) 
+                if (child != entity)
                 {
-                    child.SetParent(entity);
+                    RecordReparent(child, entity);
                 }
             }
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Model"))
@@ -124,10 +165,11 @@ namespace Engine
 				Shared<Scene> modelScene = AssetManager::GetAsset<Scene>(handle);
 
 				Entity rootEntity = modelScene->FindRootEntity();
-				if (rootEntity) 
+				if (rootEntity)
 				{
 					Entity spawnedModel = Entity::CloneEntity(rootEntity, context, selected);
 					spawnedModel.SetParent(selected);
+					CommandHistory::Global().Push(MakeUnique<CreateEntityCommand>(spawnedModel));
 				}
 				else 
 				{
@@ -143,6 +185,7 @@ namespace Engine
             {
                 Entity child = context->CreateEntity("Empty entity");
                 child.SetParent(entity);
+                CommandHistory::Global().Push(MakeUnique<CreateEntityCommand>(child));
             }
             if (ImGui::MenuItem("Delete entity"))
             {

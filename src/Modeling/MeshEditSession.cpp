@@ -234,6 +234,19 @@ namespace Engine {
         AssetManager::RegisterAsset(metadata, asset);
     }
 
+    MeshEditSession::State MeshEditSession::CaptureState() const {
+        return { m_HalfEdge, m_UV, m_Tangent, m_Bitangent, m_UVVerts, m_CornerUV };
+    }
+
+    void MeshEditSession::RestoreState(const State& state) {
+        m_HalfEdge = state.HalfEdge;
+        m_UV = state.UV;
+        m_Tangent = state.Tangent;
+        m_Bitangent = state.Bitangent;
+        m_UVVerts = state.UVVerts;
+        m_CornerUV = state.CornerUV;
+    }
+
     void MeshEditSession::End(bool commit) {
         if (!m_Active)
             return;
@@ -241,6 +254,7 @@ namespace Engine {
         if (!commit && m_Entity && m_Entity.HasComponent<MeshComponent>())
             m_Entity.GetComponent<MeshComponent>().MeshHandle = m_OriginalMeshHandle;
 
+        m_History.Clear();
         m_Active = false;
         m_HalfEdge.Clear();
         m_UV.clear();

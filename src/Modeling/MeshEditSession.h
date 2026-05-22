@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pch.h"
+#include "Commands/CommandHistory.h"
 #include "Modeling/HalfEdgeMesh.h"
 #include "Scene/Entity.h"
 
@@ -35,6 +36,24 @@ namespace Engine {
         Entity GetEntity() const { return m_Entity; }
         HalfEdgeMesh& Mesh() { return m_HalfEdge; }
         const HalfEdgeMesh& Mesh() const { return m_HalfEdge; }
+
+        // Full editable geometry of the session: the half-edge mesh plus every parallel
+        // attribute array. A topology/vertex/UV edit can be undone by restoring one of
+        // these and re-syncing — see MeshEditCommand. The session keeps its own command
+        // history (edit-mode undo is local and is cleared when the session ends).
+        struct State {
+            HalfEdgeMesh HalfEdge;
+            std::vector<glm::vec2> UV;
+            std::vector<glm::vec3> Tangent;
+            std::vector<glm::vec3> Bitangent;
+            std::vector<glm::vec2> UVVerts;
+            std::vector<int> CornerUV;
+        };
+
+        State CaptureState() const;
+        void RestoreState(const State& state);
+
+        CommandHistory& History() { return m_History; }
 
         // Per-corner (face-loop) UV layer used by the UV editor. m_UVVerts holds the
         // movable UV points; CornerUV()[he] indexes into UVVerts for the corner at
@@ -78,6 +97,9 @@ namespace Engine {
         // half-edge and stays the same length as the half-edge array.
         std::vector<glm::vec2> m_UVVerts;
         std::vector<int> m_CornerUV;
+
+        // Local undo/redo stack for in-session topology/vertex/UV edits.
+        CommandHistory m_History;
     };
 
 }

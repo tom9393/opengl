@@ -3,6 +3,7 @@
 #include "Asset/Prefab.h"
 #include "Asset/AssetManager.h"
 #include "Asset/PrimitiveBuilder.h"
+#include "Commands/SceneCommands.h"
 #include "Core/Input.h"
 #include "Core/KeyCodes.h"
 #include "Core/MouseButtonCodes.h"
@@ -21,6 +22,7 @@ namespace Engine {
                 if (rootEntity)
                 {
                     Entity spawnedModel = Entity::CloneEntity(rootEntity, m_Context.get(), Entity{});
+                    CommandHistory::Global().Push(MakeUnique<CreateEntityCommand>(spawnedModel));
                 }
             }
             ImGui::EndDragDropTarget();
@@ -55,6 +57,8 @@ namespace Engine {
 
                         entity.AddComponent<MeshComponent>(meshID);
                         entity.AddComponent<TransformComponent>();
+
+                        CommandHistory::Global().Push(MakeUnique<CreateEntityCommand>(entity));
                     }
                 }
 
@@ -123,9 +127,28 @@ namespace Engine {
         bool snap = Input::IsKeyPressed(KEY_LEFT_SHIFT);
         auto result = GizmoManager::Manipulate(*m_EditorCamera, transform, snap);
 
+        // Snapshot the transform at drag start, apply during the drag, and record one
+        // undo step at drag end (so a whole gizmo manipulation is a single Ctrl+Z).
+        if (result.IsUsing && !m_GizmoUsing) {
+            m_GizmoEntity = selectedEntity.GetUUID();
+            m_GizmoBefore = CaptureEntity(selectedEntity);
+        }
+
         if (result.IsUsing) {
             tc.ApplyMatrix(result.Transform);
         }
+
+        if (!result.IsUsing && m_GizmoUsing) {
+            Entity edited = FindEntityByUUID(SceneManager::GetContext(), m_GizmoEntity);
+            if (edited) {
+                EntitySnapshot after = CaptureEntity(edited);
+                if (SnapshotsDiffer(m_GizmoBefore, after))
+                    CommandHistory::Global().Push(
+                        MakeUnique<ModifyEntityCommand>(m_GizmoEntity, m_GizmoBefore, after));
+            }
+        }
+
+        m_GizmoUsing = result.IsUsing;
     }
 
     bool ObjectViewportPanel::OnMousePressed(MouseButtonPressedEvent& e) {

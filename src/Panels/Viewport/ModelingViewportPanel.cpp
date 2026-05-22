@@ -90,12 +90,12 @@ namespace Engine {
             ImGui::Dummy(ImVec2(12.0f, 0.0f));
             ImGui::SameLine();
             if (ImGui::Button("Extrude"))
-                m_Session.ExtrudeFaces(m_SelectedFaces);
+                RecordMeshEdit([&]{ return m_Session.ExtrudeFaces(m_SelectedFaces); });
             ImGui::SameLine();
-            if (ImGui::Button("Delete") && m_Session.DeleteFaces(m_SelectedFaces))
+            if (ImGui::Button("Delete") && RecordMeshEdit([&]{ return m_Session.DeleteFaces(m_SelectedFaces); }))
                 ClearSelection();
             ImGui::SameLine();
-            if (ImGui::Button("Subdivide") && m_Session.SubdivideFaces(m_SelectedFaces))
+            if (ImGui::Button("Subdivide") && RecordMeshEdit([&]{ return m_Session.SubdivideFaces(m_SelectedFaces); }))
                 ClearSelection();
         }
     }
@@ -256,6 +256,11 @@ namespace Engine {
         bool snap = Input::IsKeyPressed(KEY_LEFT_SHIFT);
         GizmoResult result = GizmoManager::Manipulate(*m_EditorCamera, gizmoMatrix, snap);
 
+        if (result.IsUsing && !m_VertGizmoUsing) {
+            m_VertGizmoBefore = m_Session.CaptureState();
+            m_VertGizmoMoved = false;
+        }
+
         if (result.IsUsing) {
             glm::vec3 deltaWorld = glm::vec3(result.Transform[3]) - worldCentroid;
             if (deltaWorld != glm::vec3(0.0f)) {
@@ -265,8 +270,16 @@ namespace Engine {
                 for (int v : verts)
                     mesh.Position(v) += deltaLocal;
                 m_Session.SyncToMesh();
+                m_VertGizmoMoved = true;
             }
         }
+
+        if (!result.IsUsing && m_VertGizmoUsing && m_VertGizmoMoved) {
+            m_Session.History().Push(
+                MakeUnique<MeshEditCommand>(&m_Session, m_VertGizmoBefore, m_Session.CaptureState()));
+        }
+
+        m_VertGizmoUsing = result.IsUsing;
     }
 
     int ModelingViewportPanel::PickVertex(const ImVec2& mouse) {

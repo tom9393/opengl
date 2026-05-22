@@ -62,6 +62,11 @@ namespace Engine {
         std::vector<glm::vec2> m_DragStartUVs; // selected UVs at drag start, parallel to m_Selected
         glm::vec2 m_BoxStart = { 0.0f, 0.0f };
         glm::vec2 m_BoxEnd = { 0.0f, 0.0f };
+
+        // Session geometry snapshot at the start of a UV transform drag; recorded as one
+        // undo step (on the session's history) when the drag ends, if it moved anything.
+        MeshEditSession::State m_TransformBefore;
+        bool m_TransformMoved = false;
     };
 
 }

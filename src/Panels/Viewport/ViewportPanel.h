@@ -15,6 +15,10 @@ namespace Engine {
 
         void OnImGuiRender();
 
+        // The mesh-edit session if the Modeling/UV editor is currently active, else
+        // null. Lets the editor route undo/redo to edit-mode's local history.
+        MeshEditSession* ActiveMeshSession();
+
     private:
         PassPanel m_PassPanel;
         ObjectViewportPanel m_Object;

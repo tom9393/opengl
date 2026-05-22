@@ -5,6 +5,7 @@
 #include "Scene/Entity.h"
 #include "Asset/AssetManager.h"
 #include "Asset/MatdefLoader.h"
+#include "Commands/MaterialEditCommand.h"
 
 namespace Engine {
 
@@ -143,7 +144,7 @@ namespace Engine {
                         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Texture2D"))
                         {
                             UUID texHandle = *(UUID*)payload->Data;
-                            material->Add({key, AssetManager::GetAsset<Texture2D>(texHandle)});
+                            RecordMaterialEdit(handle, [&]{ material->Add({key, AssetManager::GetAsset<Texture2D>(texHandle)}); });
                         }
                         ImGui::EndDragDropTarget();
                     }
@@ -159,7 +160,7 @@ namespace Engine {
                 ImGui::PopID();
             }
 
-            if (shouldRemove) material->Remove(propToRemove);
+            if (shouldRemove) RecordMaterialEdit(handle, [&]{ material->Remove(propToRemove); });
 
             ImGui::Separator();
 
@@ -170,25 +171,55 @@ namespace Engine {
             {
                 if (ImGui::BeginMenu("Textures"))
                 {
-                    if (ImGui::MenuItem("Albedo Map"))    material->Add({MaterialType::Albedo, Shared<Texture2D>(nullptr)});
-                    if (ImGui::MenuItem("Normal Map"))    material->Add({MaterialType::Normal, Shared<Texture2D>(nullptr)});
-                    if (ImGui::MenuItem("Metallic Map"))  material->Add({MaterialType::Metallic, Shared<Texture2D>(nullptr)});
-                    if (ImGui::MenuItem("Roughness Map")) material->Add({MaterialType::Roughness, Shared<Texture2D>(nullptr)});
-                    if (ImGui::MenuItem("AO Map"))        material->Add({MaterialType::AO, Shared<Texture2D>(nullptr)});
+                    if (ImGui::MenuItem("Albedo Map"))    RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::Albedo, Shared<Texture2D>(nullptr)}); });
+                    if (ImGui::MenuItem("Normal Map"))    RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::Normal, Shared<Texture2D>(nullptr)}); });
+                    if (ImGui::MenuItem("Metallic Map"))  RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::Metallic, Shared<Texture2D>(nullptr)}); });
+                    if (ImGui::MenuItem("Roughness Map")) RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::Roughness, Shared<Texture2D>(nullptr)}); });
+                    if (ImGui::MenuItem("AO Map"))        RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::AO, Shared<Texture2D>(nullptr)}); });
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Properties"))
                 {
-                    if (ImGui::MenuItem("Albedo Tint"))          material->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
-                    if (ImGui::MenuItem("Emission Color"))       material->Add({MaterialType::Emission, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)});
-                    if (ImGui::MenuItem("Roughness Multiplier")) material->Add({MaterialType::RoughnessMultiplier, 1.0f});
-                    if (ImGui::MenuItem("Metallic Multiplier"))  material->Add({MaterialType::MetallicMultiplier, 1.0f});
+                    if (ImGui::MenuItem("Albedo Tint"))          RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)}); });
+                    if (ImGui::MenuItem("Emission Color"))       RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::Emission, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)}); });
+                    if (ImGui::MenuItem("Roughness Multiplier")) RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::RoughnessMultiplier, 1.0f}); });
+                    if (ImGui::MenuItem("Metallic Multiplier"))  RecordMaterialEdit(handle, [&]{ material->Add({MaterialType::MetallicMultiplier, 1.0f}); });
                     ImGui::EndMenu();
                 }
                 ImGui::EndPopup();
             }
 
             ImGui::TreePop();
+        }
+
+        // Coalesce in-place parameter edits (drag floats, color pickers, blend/depth
+        // toggles) into one undo step, mirroring the entity inspector tracker. Adding or
+        // removing a parameter (a key-set change) is recorded above, so it is skipped
+        // here. Single material is edited at a time, so static state is sufficient.
+        {
+            static bool s_Editing = false;
+            static UUID s_Handle = 0;
+            static MaterialState s_Before;
+
+            bool active = ImGui::IsAnyItemActive();
+            if (active && !s_Editing)
+            {
+                s_Editing = true;
+                s_Handle = handle;
+                s_Before = CaptureMaterial(material);
+            }
+            else if (!active && s_Editing)
+            {
+                s_Editing = false;
+                Shared<Material> edited = AssetManager::GetAsset<Material>(s_Handle);
+                if (edited)
+                {
+                    MaterialState after = CaptureMaterial(edited);
+                    if (MaterialKeysEqual(s_Before, after) && MaterialStatesDiffer(s_Before, after))
+                        CommandHistory::Global().Push(
+                            MakeUnique<MaterialEditCommand>(s_Handle, s_Before, after));
+                }
+            }
         }
     };
 

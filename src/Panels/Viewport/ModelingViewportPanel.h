@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ViewportPanelBase.h"
+#include "Commands/MeshEditCommand.h"
 #include "Modeling/MeshEditSession.h"
 
 namespace Engine {
@@ -45,11 +46,30 @@ namespace Engine {
         // there is no active session or the entity lacks a transform.
         bool TryGetMVP(glm::mat4& mvp);
 
+        // Runs a topology op (extrude/delete/subdivide) and records one undo step on the
+        // session's local history if it succeeds. Returns the op's success result.
+        template <typename Op>
+        bool RecordMeshEdit(Op&& op)
+        {
+            MeshEditSession::State before = m_Session.CaptureState();
+            if (!op())
+                return false;
+            m_Session.History().Push(
+                MakeUnique<MeshEditCommand>(&m_Session, std::move(before), m_Session.CaptureState()));
+            return true;
+        }
+
         MeshEditSession m_Session;
         SelectMode m_SelectMode = SelectMode::Vertex;
         std::vector<int> m_SelectedVertices; // vertex indices
         std::vector<int> m_SelectedEdges;    // indices into Mesh().Edges()
         std::vector<int> m_SelectedFaces;    // face indices
+
+        // Coalesce a vertex-gizmo drag into one undo step (snapshot at drag start,
+        // record at drag end if anything actually moved).
+        bool m_VertGizmoUsing = false;
+        bool m_VertGizmoMoved = false;
+        MeshEditSession::State m_VertGizmoBefore;
     };
 
 }

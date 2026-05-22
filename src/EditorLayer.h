@@ -20,6 +20,8 @@
 namespace Engine
 {
 
+    class CommandHistory;
+
     class EditorLayer : public Layer
     {
         public:
@@ -41,6 +43,11 @@ namespace Engine
 
         void OnScenePlay();
         void OnSceneStop();
+
+        // Undo/redo route to the active mesh-edit session's local history when one is
+        // open, otherwise to the global scene history.
+        CommandHistory& ActiveHistory();
+        void ClearStaleSelection();
 
         bool OnKeyEvent(KeyboardPressEvent &e);
 
