@@ -268,7 +268,7 @@ namespace Engine {
                         m_TransformMoved = true;
                 } else {
                     if (m_TransformMoved)
-                        m_Session->History().Push(MakeUnique<MeshEditCommand>(
+                        CommandHistory::Global().Push(MakeUnique<MeshEditCommand>(
                             m_Session, m_TransformBefore, m_Session->CaptureState()));
                     m_Drag = Drag::None;
                 }

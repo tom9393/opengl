@@ -39,8 +39,8 @@ namespace Engine {
 
         // Full editable geometry of the session: the half-edge mesh plus every parallel
         // attribute array. A topology/vertex/UV edit can be undone by restoring one of
-        // these and re-syncing — see MeshEditCommand. The session keeps its own command
-        // history (edit-mode undo is local and is cleared when the session ends).
+        // these and re-syncing — see MeshEditCommand. These edits are recorded on the
+        // global command history, which is cleared when the session ends.
         struct State {
             HalfEdgeMesh HalfEdge;
             std::vector<glm::vec2> UV;
@@ -52,8 +52,6 @@ namespace Engine {
 
         State CaptureState() const;
         void RestoreState(const State& state);
-
-        CommandHistory& History() { return m_History; }
 
         // Per-corner (face-loop) UV layer used by the UV editor. m_UVVerts holds the
         // movable UV points; CornerUV()[he] indexes into UVVerts for the corner at
@@ -97,9 +95,6 @@ namespace Engine {
         // half-edge and stays the same length as the half-edge array.
         std::vector<glm::vec2> m_UVVerts;
         std::vector<int> m_CornerUV;
-
-        // Local undo/redo stack for in-session topology/vertex/UV edits.
-        CommandHistory m_History;
     };
 
 }

@@ -254,7 +254,7 @@ namespace Engine {
         if (!commit && m_Entity && m_Entity.HasComponent<MeshComponent>())
             m_Entity.GetComponent<MeshComponent>().MeshHandle = m_OriginalMeshHandle;
 
-        m_History.Clear();
+        CommandHistory::Global().Clear();
         m_Active = false;
         m_HalfEdge.Clear();
         m_UV.clear();

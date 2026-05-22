@@ -47,14 +47,14 @@ namespace Engine {
         bool TryGetMVP(glm::mat4& mvp);
 
         // Runs a topology op (extrude/delete/subdivide) and records one undo step on the
-        // session's local history if it succeeds. Returns the op's success result.
+        // global command history if it succeeds. Returns the op's success result.
         template <typename Op>
         bool RecordMeshEdit(Op&& op)
         {
             MeshEditSession::State before = m_Session.CaptureState();
             if (!op())
                 return false;
-            m_Session.History().Push(
+            CommandHistory::Global().Push(
                 MakeUnique<MeshEditCommand>(&m_Session, std::move(before), m_Session.CaptureState()));
             return true;
         }

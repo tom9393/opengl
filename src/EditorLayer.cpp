@@ -103,13 +103,6 @@ namespace Engine
         Renderer::ResetStatistics();
     }
 
-    CommandHistory& EditorLayer::ActiveHistory()
-    {
-        if (MeshEditSession* session = m_ViewportPanel.ActiveMeshSession())
-            return session->History();
-        return CommandHistory::Global();
-    }
-
     void EditorLayer::ClearStaleSelection()
     {
         Scene* context = SceneManager::GetContext();
@@ -124,8 +117,8 @@ namespace Engine
         bool ctrl = Input::IsKeyPressed(KEY_LEFT_CONTROL) || Input::IsKeyPressed(KEY_RIGHT_CONTROL);
         if (ctrl && SceneManager::GetSceneState() == SceneState::Edit)
         {
-            if (e.getKeyCode() == KEY_Z) { ActiveHistory().Undo(); ClearStaleSelection(); return true; }
-            if (e.getKeyCode() == KEY_Y) { ActiveHistory().Redo(); ClearStaleSelection(); return true; }
+            if (e.getKeyCode() == KEY_Z) { CommandHistory::Global().Undo(); ClearStaleSelection(); return true; }
+            if (e.getKeyCode() == KEY_Y) { CommandHistory::Global().Redo(); ClearStaleSelection(); return true; }
         }
 
         if (m_Shortcuts.find(e.getKeyCode()) != m_Shortcuts.end()) {

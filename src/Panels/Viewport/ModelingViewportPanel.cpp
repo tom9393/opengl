@@ -275,7 +275,7 @@ namespace Engine {
         }
 
         if (!result.IsUsing && m_VertGizmoUsing && m_VertGizmoMoved) {
-            m_Session.History().Push(
+            CommandHistory::Global().Push(
                 MakeUnique<MeshEditCommand>(&m_Session, m_VertGizmoBefore, m_Session.CaptureState()));
         }
 

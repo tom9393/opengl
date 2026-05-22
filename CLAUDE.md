@@ -30,6 +30,14 @@ The entry point (`main.cpp`) instantiates either `Editor` or `Runtime` and calls
 - **ContentBrowser** (`ContentBrowser/`) — `ContentBrowserPanel` with async asset thumbnails rendered by `AssetPreviewManager` (`Texture2DPreview`, `MaterialPreview`, `PrefabPreview`).
 - Standalone panels: `MenubarPanel`, `ToolbarPanel`, `StatsPanel`, `SettingsPanel`, `ShaderPanel`.
 
+### Mesh Editing
+
+Mesh editing lives in `src/Modeling/`. `HalfEdgeMesh` is a DCEL (half-edge) structure supporting n-gon faces over manifold + boundary surfaces, with in-place topology ops (`ExtrudeFaces`, `DeleteFaces`, `SubdivideFaces`) that snapshot the DCEL, splice it directly, then re-validate manifold invariants — restoring the snapshot if the result is broken. `MeshEditSession` bridges an entity's render `Mesh` and an editable `HalfEdgeMesh`: `Begin` clones the mesh into a unique in-memory asset (so edits never touch a shared/source asset) and welds render vertices into topological vertices, `SyncToMesh` triangulates + recomputes normals and re-uploads, and `End` commits the clone or restores the original handle. It carries parallel per-vertex attributes (UV/tangent) plus a per-corner UV layer (`UVVerts`/`CornerUV`) that represents seams/islands. `ModelingViewportPanel` drives topology edits; `UVViewportPanel` edits the per-corner UV layer.
+
+### Undo/Redo (Commands)
+
+`src/Commands/` implements undo/redo. `Command` is the base interface (`Undo`/`Redo`), and a command resolves what it needs (entities by UUID, the active scene) at Undo/Redo time rather than holding raw handles. `CommandHistory` owns the undo/redo stacks: `Execute` applies a freshly-built command and records it, `Push` records one whose effect was already applied live (e.g. a finished ImGui drag), with depth capped at 100. `CommandHistory::Global()` is the single shared history used for both scene and mesh edits. Concrete commands live in `SceneCommands.h` (`ModifyEntityCommand`, `CreateEntityCommand`, `DeleteEntityCommand`, `ReparentCommand` — built on an `EntitySnapshot` / subtree memento that preserves UUIDs), `MaterialEditCommand`, and `MeshEditCommand` (restores a whole `MeshEditSession::State` and re-syncs; the global history is cleared when the session ends).
+
 ### ECS & Scene
 
 Scenes are built on **EnTT**. `Scene` owns the registry; `Entity` is a thin handle into it. All data lives in components defined in `src/Scene/Components.h` — `TransformComponent`, `MeshComponent`, `MaterialComponent`, `SceneCameraComponent`, `LightComponent`, `RigidBodyComponent`, the scripting components (`NativeScriptComponent`, `LuaScriptComponent`), and `ParentComponent`/`ChildrenComponent` for the parent/child hierarchy. `SceneRenderer` bridges the scene to the render graph.
