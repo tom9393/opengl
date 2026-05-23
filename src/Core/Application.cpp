@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUploadQueue.h"
+#include "Audio/AudioEngine.h"
 #include "EditorLayer.h"
 #include "Events/EventBroker.h"
 #include "KeyCodes.h"
@@ -32,6 +33,7 @@ namespace Engine
 
         Renderer::Init();
         AssetManager::Init();
+        AudioEngine::Init();
 
         m_ImGuiLayer = new ImGuiLayer();
         PushOverlayer(m_ImGuiLayer);
@@ -42,6 +44,7 @@ namespace Engine
         EventBroker::Get().UnsubscribeAll(this);
 
         AssetManager::Shutdown();
+        AudioEngine::Shutdown();
 
         delete m_ThreadPool;
         delete m_LayerStack;

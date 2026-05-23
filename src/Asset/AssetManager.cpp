@@ -8,6 +8,7 @@
 #include "ModelImporter.h"
 #include "ScriptImporter.h"
 #include "TextureImporter.h"
+#include "AudioImporter.h"
 
 namespace Engine {
 
@@ -21,7 +22,10 @@ namespace Engine {
             { ".assbin", AssetType::Prefab },
             { ".obj", AssetType::Prefab },
             { ".fbx", AssetType::Prefab },
-            { ".lua", AssetType::LuaScript }
+            { ".lua", AssetType::LuaScript },
+            { ".wav", AssetType::Audio },
+            { ".mp3", AssetType::Audio },
+            { ".flac", AssetType::Audio }
     };
 
     void AssetManager::Init() {
@@ -48,6 +52,7 @@ namespace Engine {
         if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Prefab;
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
+        else if (ext == ".wav" || ext == ".mp3" || ext == ".flac") metadata.Type = AssetType::Audio;
         else metadata.Type = AssetType::None;
 
         m_AssetRegistry[metadata.Handle] = metadata;
@@ -79,6 +84,7 @@ namespace Engine {
             case AssetType::Texture2D: newAsset = TextureImporter::LoadTexture2D(metadata); break;
             case AssetType::Scene: newAsset = SceneImporter::LoadScene(metadata); break;
             case AssetType::Prefab: newAsset = ModelImporter::LoadModel(metadata); break;
+            case AssetType::Audio: newAsset = AudioImporter::LoadAudio(metadata); break;
         }
 
         if (newAsset) {
@@ -106,6 +112,7 @@ namespace Engine {
             case AssetType::Texture2D: TextureImporter::LoadTexture2DAsync(metadata, cb); break;
             case AssetType::Scene: SceneImporter::LoadSceneAsync(metadata, cb); break;
             case AssetType::Prefab: ModelImporter::LoadModelAsync(metadata, cb); break;
+            case AssetType::Audio: AudioImporter::LoadAudioAsync(metadata, cb); break;
         }
     }
 
@@ -114,6 +121,16 @@ namespace Engine {
         if (it != m_AssetRegistry.end())
             return it->second;
         return s_NullMetadata;
+    }
+
+    UUID AssetManager::GetHandleByName(const std::string& name, AssetType type) {
+        for (const auto& [handle, metadata] : m_AssetRegistry)
+        {
+            if (metadata.Name != name) continue;
+            if (type != AssetType::None && metadata.Type != type) continue;
+            return handle;
+        }
+        return 0;
     }
 
     void AssetManager::SaveAssetRegistry() 

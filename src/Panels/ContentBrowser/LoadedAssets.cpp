@@ -16,6 +16,7 @@ namespace Engine {
             case Engine::AssetType::Mesh:      return ImVec4(0.4f, 0.4f, 0.9f, 1.0f); // Light Blue
             case Engine::AssetType::Material:  return ImVec4(0.8f, 0.8f, 0.2f, 1.0f); // Yellow
             case Engine::AssetType::LuaScript: return ImVec4(0.8f, 0.4f, 0.8f, 1.0f);
+            case Engine::AssetType::Audio:     return ImVec4(0.2f, 0.7f, 0.8f, 1.0f); // Cyan
             case Engine::AssetType::None:
             default:                           return ImVec4(0.4f, 0.4f, 0.4f, 1.0f); // Grey
         }

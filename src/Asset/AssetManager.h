@@ -34,6 +34,9 @@ namespace Engine {
         static AssetState GetAssetState(UUID handle) { return m_AssetStates[handle]; }
         static const AssetMetadata& GetMetadata(UUID handle);
 
+        // Names assumed unique; first asset wins
+        static UUID GetHandleByName(const std::string& name, AssetType type = AssetType::None);
+
     private:
         static Shared<Asset> GetAssetInternal(UUID handle);
         static void GetAssetInternalAsync(UUID handle, std::function<void(Shared<Asset>)> cb);

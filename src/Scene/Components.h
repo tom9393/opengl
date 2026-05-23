@@ -17,6 +17,7 @@
 
 namespace Engine
 {
+
     struct IDComponent
     {
         UUID id;
@@ -211,4 +212,5 @@ namespace Engine
         LightComponent() = default;
         LightComponent(const LightComponent&) = default;
     };
+
 };

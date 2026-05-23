@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Asset/AssetManager.h"
 #include "Asset/CollisionBaker.h"
+#include "Audio/AudioEngine.h"
 #include "Components.h"
 #include "Entity.h"
 #include "Events/MouseEvent.h"
@@ -105,6 +106,7 @@ namespace Engine
 	{
 		PhysicsEngine::OnUpdate(ts);
 		ScriptEngine::OnUpdate(ts);
+		AudioEngine::OnUpdate(ts);
 	};
 
 	void Scene::OnRuntimeStart()
@@ -112,6 +114,7 @@ namespace Engine
         EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMousePress), this);
 
 		PhysicsEngine::RuntimeStart(this);
+		AudioEngine::RuntimeStart(this);
 		ScriptEngine::RuntimeStart(this);
 
 		PhysicsEngine::RegisterCollisionCallback([this](void* ptrA, void* ptrB, glm::vec3 &hitPos, glm::vec3 &normal){
@@ -143,6 +146,7 @@ namespace Engine
 	{
 
 		ScriptEngine::RuntimeStop();
+		AudioEngine::RuntimeStop();
 		PhysicsEngine::RuntimeStop();
 
 		EventBroker::Get().UnsubscribeAll(this);

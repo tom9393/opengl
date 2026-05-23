@@ -13,7 +13,8 @@ namespace Engine {
         Prefab,
         Mesh,
         Material,
-        LuaScript
+        LuaScript,
+        Audio
     };
 
     inline AssetType AssetTypeFromFilepath(const std::filesystem::path& path)
@@ -31,6 +32,9 @@ namespace Engine {
         if (ext == ".fbx")     return AssetType::Prefab;
         if (ext == ".gltf")    return AssetType::Prefab;
         if (ext == ".lua")     return AssetType::LuaScript;
+        if (ext == ".wav")     return AssetType::Audio;
+        if (ext == ".mp3")     return AssetType::Audio;
+        if (ext == ".flac")    return AssetType::Audio;
 
         return AssetType::None;
     }
@@ -46,6 +50,7 @@ namespace Engine {
 			case AssetType::Material: return "AssetType::Material";
 			case AssetType::Prefab: return "AssetType::Prefab";
 			case AssetType::LuaScript: return "AssetType::LuaScript";
+			case AssetType::Audio: return "AssetType::Audio";
 		}
 
 		return "AssetType::<Invalid>";
@@ -60,6 +65,7 @@ namespace Engine {
 		if (assetType == "AssetType::Material") return AssetType::Material;
 		if (assetType == "AssetType::Prefab") return AssetType::Prefab;
 		if (assetType == "AssetType::LuaScript") return AssetType::LuaScript;
+		if (assetType == "AssetType::Audio") return AssetType::Audio;
 
 		return AssetType::None;
 	}

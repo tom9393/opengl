@@ -82,6 +82,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     pthread
     GL
     dl
+    m
     glfw
     stb
     imgui
