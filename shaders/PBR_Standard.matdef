@@ -1,12 +1,11 @@
 MaterialDefinition:
   Shader: "GBufferShader"
-  TextureBindings:
+  Bindings:
     Albedo: "pbr.albedoMap"
     Normal: "pbr.normalMap"
     Metallic: "pbr.metallicMap"
     Roughness: "pbr.roughnessMap"
     AO: "pbr.aoMap"
-  PropertyBindings:
     AlbedoTint: "pbr.albedoTint"
     Emission: "pbr.emission"
     RoughnessMultiplier: "pbr.roughnessMultiplier"

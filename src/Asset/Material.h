@@ -19,8 +19,7 @@ namespace Engine {
         bool DoubleSided = false;
 
         std::unordered_map<MaterialType, PropertyValue> m_Properties;
-        std::unordered_map<MaterialType, std::string> m_PropertyBindings;
-        std::unordered_map<MaterialType, std::string> m_TextureBindings;
+        std::unordered_map<MaterialType, std::string> m_Bindings;
 
         void Add(const MaterialProperty& property)
         {
@@ -36,42 +35,68 @@ namespace Engine {
         {
             TargetShader->Bind();
 
-            for (const auto& [key, value] : m_Properties)
-            {
-                auto bindingIt = m_PropertyBindings.find(key);
-                if (bindingIt == m_PropertyBindings.end()) continue;
-
-                const std::string& uniformName = bindingIt->second;
-
-                if (std::holds_alternative<float>(value)) 
-                    TargetShader->SetFloat(uniformName, std::get<float>(value));
-                else if (std::holds_alternative<int>(value)) 
-                    TargetShader->SetInt(uniformName, std::get<int>(value));
-                else if (std::holds_alternative<glm::vec4>(value)) 
-                    TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
-            }
-
             uint32_t slot = 0;
-            for (const auto& [key, uniformName] : m_TextureBindings)
+            for (const auto& [key, uniformName] : m_Bindings)
             {
-                auto it = m_Properties.find(key);
-                Shared<Texture2D> texture = nullptr;
-
-                if (it != m_Properties.end() && std::holds_alternative<Shared<Texture2D>>(it->second)) {
-                    texture = std::get<Shared<Texture2D>>(it->second);
-                }
-
-                if (!texture) {
-                    texture = GetDefaultFallback(key);
-                }
-
-                texture->Bind(slot);
-                TargetShader->SetInt(uniformName, slot);
-                slot++;
+                if (IsTextureType(key))
+                    BindTexture(key, uniformName, slot);
+                else
+                    BindScalar(key, uniformName);
             }
         }
 
-        Shared<Texture2D> GetDefaultFallback(MaterialType type) const 
+        void BindTexture(MaterialType key, const std::string& uniformName, uint32_t& slot) const
+        {
+            auto it = m_Properties.find(key);
+            Shared<Texture2D> texture = nullptr;
+
+            if (it != m_Properties.end() && std::holds_alternative<Shared<Texture2D>>(it->second)) {
+                texture = std::get<Shared<Texture2D>>(it->second);
+            }
+
+            if (!texture) {
+                texture = GetDefaultFallback(key);
+            }
+
+            texture->Bind(slot);
+            TargetShader->SetInt(uniformName, slot);
+            slot++;
+        }
+
+        void BindScalar(MaterialType key, const std::string& uniformName) const
+        {
+            auto it = m_Properties.find(key);
+            if (it == m_Properties.end()) return;
+
+            const PropertyValue& value = it->second;
+
+            if (std::holds_alternative<float>(value))
+                TargetShader->SetFloat(uniformName, std::get<float>(value));
+            else if (std::holds_alternative<int>(value))
+                TargetShader->SetInt(uniformName, std::get<int>(value));
+            else if (std::holds_alternative<glm::vec4>(value))
+                TargetShader->SetVec4(uniformName, std::get<glm::vec4>(value));
+        }
+
+        static bool IsTextureType(MaterialType type)
+        {
+            switch (type) {
+                case MaterialType::Albedo:
+                case MaterialType::Normal:
+                case MaterialType::Metallic:
+                case MaterialType::Roughness:
+                case MaterialType::AO:
+                case MaterialType::Height:
+                case MaterialType::Emissive:
+                case MaterialType::Diffuse:
+                case MaterialType::Specular:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        Shared<Texture2D> GetDefaultFallback(MaterialType type) const
         {
             switch(type) {
                 case MaterialType::Normal:   return DefaultTextures::GetNormalTexture();

@@ -57,7 +57,9 @@ Render-graph passes draw into fixed-size `Framebuffer` attachments. Offscreen su
 
 ### Asset System
 
-`AssetManager` (static singleton) maintains a central registry and handles async loading via `ThreadPool`. All resource types (`Mesh`, `Texture2D`, `Material`, `Scene`, `Prefab`) inherit from `Asset`. GPU uploads are batched through `AssetUploadQueue`. Asset metadata is stored in `assets/AssetRegistry.yaml`. Model import uses Assimp; textures support KTX format via the `lib/ktx` submodule.
+`AssetManager` (static singleton) maintains a central registry and handles async loading via `ThreadPool`. All resource types (`Mesh`, `Texture2D`, `Material`, `Scene`, `Prefab`, `AudioClip`) inherit from `Asset`. GPU uploads are batched through `AssetUploadQueue`. Asset metadata is stored in `assets/AssetRegistry.yaml`; textures support KTX format via the `lib/ktx` submodule.
+
+Model import (`ModelImporter`) is a two-phase pipeline so heavy parsing stays off the main thread: `AssimpLoader::LoadScene` reads the file via Assimp into a CPU-only `ParsedScene` tree (`ParsedScene.h` — `ParsedSceneNode`s carrying transforms, meshes, lights, cameras, plus a scene-global `ParsedMaterial` list), then `SceneBuilder::BuildPrefab` runs on the main thread to upload meshes/textures and assemble the entity hierarchy into a `Prefab`. For async loads, `LoadScene` runs on the thread pool and `BuildPrefab` is deferred to the main thread via `AssetUploadQueue`.
 
 ### Material System
 
@@ -66,6 +68,10 @@ Render-graph passes draw into fixed-size `Framebuffer` attachments. Offscreen su
 ### Physics & Scripting
 
 `PhysicsEngine` wraps Bullet3. `CollisionBaker` converts mesh geometry to collision shapes. Scripting has two paths: native C++ behaviors attached via `NativeScriptComponent`, and Lua scripts attached via `LuaScriptComponent`. The Lua path uses **Sol2** bindings over Lua 5.4 — `ScriptEngine` manages the VM and `LuaBindings` exposes the C++ API.
+
+### Audio
+
+`src/Audio/` wraps the vendored single-header **miniaudio** (`lib/miniaudio/miniaudio.h`). `AudioEngine` is a static singleton (mirroring `PhysicsEngine`/`ScriptEngine`) owning miniaudio's `ma_engine` — device, node graph, resource manager, and 3D spatializer. An `AudioClip` is a CPU-side asset holding the whole file decoded to interleaved f32 PCM (decoded by `AudioImporter`); one clip is shared by every `AudioInstance` that plays it, each reading through its own cursor. `AudioInstance` is the RAII runtime handle around a single `ma_sound` (analogous to a `RigidBody`'s runtime body). There is **no audio component** — playback is driven entirely from Lua via the global `Audio.Play(clip, entity, opts)` API: the engine owns the live sound, follows the emitter entity's transform each frame for spatial sounds, and reaps finished sounds. `AudioEngine::RuntimeStart`/`RuntimeStop` bracket play mode.
 
 ### Event System
 
@@ -83,6 +89,7 @@ Render-graph passes draw into fixed-size `Framebuffer` attachments. Offscreen su
 | glad / GLFW | OpenGL loader / window & input |
 | yaml-cpp | Scene serialization |
 | stb_image / ktx | Texture loading |
+| miniaudio | Audio playback (vendored single header, not a submodule) |
 
 Precompiled headers are in `pch.h` — include it rather than re-including common headers.
 

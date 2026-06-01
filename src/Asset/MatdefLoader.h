@@ -57,19 +57,11 @@ namespace Engine {
                 else if (mode == "Additive") material->mode = BlendMode::Additive;
             }
 
-            auto texBindings = matDef["TextureBindings"];
-            if (texBindings) {
-                for (auto it = texBindings.begin(); it != texBindings.end(); ++it) {
+            auto bindings = matDef["Bindings"];
+            if (bindings) {
+                for (auto it = bindings.begin(); it != bindings.end(); ++it) {
                     MaterialType type = StringToMaterialType(it->first.as<std::string>());
-                    material->m_TextureBindings[type] = it->second.as<std::string>();
-                }
-            }
-
-            auto propBindings = matDef["PropertyBindings"];
-            if (propBindings) {
-                for (auto it = propBindings.begin(); it != propBindings.end(); ++it) {
-                    MaterialType type = StringToMaterialType(it->first.as<std::string>());
-                    material->m_PropertyBindings[type] = it->second.as<std::string>();
+                    material->m_Bindings[type] = it->second.as<std::string>();
                 }
             }
 
