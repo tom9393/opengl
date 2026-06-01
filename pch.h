@@ -33,6 +33,7 @@
 #include <condition_variable>
 #include <stdexcept>
 #include <cstdio>
+#include <optional>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

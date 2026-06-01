@@ -1,3 +1,5 @@
+#include "Core/Application.h"
+#include "AssetUploadQueue.h"
 #include "SceneImporter.h"
 #include "Asset/AssimpLoader.h"
 
