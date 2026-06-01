@@ -39,6 +39,18 @@ namespace Engine
 		if (sourceEntity.HasComponent<MaterialComponent>()) {
 			newEntity.AddComponent<MaterialComponent>(sourceEntity.GetComponent<MaterialComponent>());
 		}
+
+		if (sourceEntity.HasComponent<SceneCameraComponent>()) {
+			auto& srcCamera = sourceEntity.GetComponent<SceneCameraComponent>();
+			// Deep copy
+			auto& newCamera = newEntity.AddComponent<SceneCameraComponent>(MakeShared<SceneCamera>(*srcCamera.sceneCamera));
+			newCamera.primary = srcCamera.primary;
+			newCamera.fixedAspectRatio = srcCamera.fixedAspectRatio;
+		}
+
+		if (sourceEntity.HasComponent<LightComponent>()) {
+			newEntity.AddComponent<LightComponent>(sourceEntity.GetComponent<LightComponent>());
+		}
 		// Add other components as needed
 
 		auto children = sourceEntity.GetChildren(); 

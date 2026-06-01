@@ -3,6 +3,8 @@
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>
+#include <assimp/light.h>
+#include <assimp/camera.h>
 #include <assimp/postprocess.h>
 
 #include "pch.h"
@@ -33,17 +35,6 @@ namespace Engine
 
     //static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_ImproveCacheLocality;
     static constexpr unsigned int s_AssimpFlags = aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
-
-    static std::array<aiTextureType, 16> AssimpTextureTypes = { 
-        aiTextureType_DIFFUSE, aiTextureType_BASE_COLOR,
-        aiTextureType_NORMALS, aiTextureType_HEIGHT, aiTextureType_NORMAL_CAMERA,
-        aiTextureType_METALNESS, aiTextureType_SHININESS,
-        aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_MAYA_SPECULAR_ROUGHNESS,
-        aiTextureType_AMBIENT_OCCLUSION, aiTextureType_LIGHTMAP,
-        aiTextureType_EMISSIVE, aiTextureType_EMISSION_COLOR,
-        aiTextureType_OPACITY, aiTextureType_REFLECTION,
-        aiTextureType_SHININESS
-    };
 
     static MaterialType AssimpToTextureType(aiTextureType type)
     {
@@ -126,115 +117,54 @@ namespace Engine
         std::vector<ParsedNode> Children;
     };
 
+    struct ParsedLight {
+        std::string Name;
+        LightComponent::LightType Type = LightComponent::LightType::Point;
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1.0f;
+        bool CastShadows = true;
+        float InnerCutOff = 0.0f; // cosine of the inner cone half-angle (cone lights only)
+        float OuterCutOff = 0.0f; // cosine of the outer cone half-angle (cone lights only)
+    };
+
+    struct ParsedCamera {
+        std::string Name;
+        bool Orthographic = false;
+        float VerticalFOV = glm::radians(45.0f);
+        float OrthographicSize = 10.0f;
+        float NearClip = 0.01f;
+        float FarClip = 1000.0f;
+        bool Primary = false;
+    };
+
     struct ParsedModelData {
         std::string Name;
         std::string Directory;
         std::vector<ParsedMesh> Meshes;
         std::vector<ParsedMaterial> Materials;
+        std::vector<ParsedLight> Lights;
+        std::vector<ParsedCamera> Cameras;
         ParsedNode RootNode;
     };
 
     class AssimpLoader
     {
         public:
-        static Shared<Prefab> LoadModel(const AssetMetadata &metadata)
+        static Shared<Prefab> LoadModel(const AssetMetadata& metadata)
         {
-            Assimp::Importer importer;
-            std::filesystem::path path = metadata.FilePath;
-            const aiScene* scene = importer.ReadFile(path, s_AssimpFlags);
-
-            if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-                std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+            ParsedModelData modelData;
+            if (!ParseScene(metadata, modelData))
                 return nullptr;
-            }
 
-            std::string modelName = metadata.Name;
-            Shared<Prefab> prefab = MakeShared<Prefab>();
-            Entity rootEntity = prefab->CreateEntity(modelName);
-            rootEntity.AddComponent<TransformComponent>();
-
-            // 1. Process and Register all Materials
-            std::vector<UUID> materialHandles(scene->mNumMaterials);
-            for (uint32_t i = 0; i < scene->mNumMaterials; i++) 
-            {
-                // Pass the callback down so embedded textures can also be registered
-                Shared<Material> material = ProcessAiMaterial(scene->mMaterials[i], path.parent_path().string(), scene);
-                
-                aiString aiMatName;
-                scene->mMaterials[i]->Get(AI_MATKEY_NAME, aiMatName);
-                std::string matName = aiMatName.length > 0 ? aiMatName.C_Str() : "Material_" + std::to_string(i);
-
-                AssetMetadata metadata;
-                metadata.Handle = UUID();
-                metadata.Name = modelName + "_" + matName;
-                metadata.FilePath = path.string();
-                metadata.Type = AssetType::Material;
-                metadata.IsMemoryAsset = true;
-
-                Shared<Asset> assetCast = material;
-                materialHandles[i] = AssetManager::RegisterAsset(metadata, assetCast);
-            }
-
-            // 2. Process and Register all Meshes
-            std::vector<UUID> meshHandles(scene->mNumMeshes);
-            for (uint32_t i = 0; i < scene->mNumMeshes; i++) 
-            {
-                Shared<Mesh> mesh = ProcessAiMesh(scene->mMeshes[i]);
-                
-                std::string meshName = scene->mMeshes[i]->mName.C_Str();
-                if (meshName.empty()) meshName = "Mesh_" + std::to_string(i);
-
-                AssetMetadata metadata;
-                metadata.Handle = UUID();
-                metadata.Name = modelName + "_" + meshName;
-                metadata.FilePath = path.string();
-                metadata.Type = AssetType::Mesh;
-                metadata.IsMemoryAsset = true;
-
-                Shared<Asset> assetCast = mesh;
-                meshHandles[i] = AssetManager::RegisterAsset(metadata, assetCast);
-            }
-
-            // 3. Process the Hierarchy directly into the Scene
-            ProcessAiNodeToEntity(scene->mRootNode, scene, prefab, rootEntity, meshHandles, materialHandles);
-
-            Shared<Asset> castedScene = prefab;
-            AssetManager::RegisterAsset(metadata, castedScene);
-
-            std::cout << "Successfully loaded and registered entire model: " << path.string() << std::endl;
-            return prefab;
+            return FinalizeModelOnMainThread(metadata, modelData);
         }
 
         static void LoadModelAsync(const AssetMetadata& metadata, std::function<void(Shared<Asset>)> cb) {
             Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
-                
-                // --- PHASE 1: WORKER THREAD ---
-                Assimp::Importer importer;
-                const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
-
-                if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-                    std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-                    return; // Note: Handle failure state properly in production
-                }
-
                 ParsedModelData modelData;
-                modelData.Name = metadata.Name;
-                modelData.Directory = std::filesystem::path(metadata.FilePath).parent_path().string();
+                if (!ParseScene(metadata, modelData))
+                    return;
 
-                // Extract Materials
-                for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
-                    modelData.Materials.push_back(ParseMaterialData(scene->mMaterials[i], scene));
-                }
-
-                // Extract Meshes
-                for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
-                    modelData.Meshes.push_back(ParseMeshData(scene->mMeshes[i]));
-                }
-
-                // Extract Hierarchy
-                modelData.RootNode = ParseNodeData(scene->mRootNode);
-
-                // --- SEND TO MAIN THREAD ---
                 AssetUploadQueue::Submit([metadata, modelData, cb]() {
                     Shared<Prefab> model = FinalizeModelOnMainThread(metadata, modelData);
                     if (cb) cb(model);
@@ -243,6 +173,50 @@ namespace Engine
         }
 
     private:
+        static bool ParseScene(const AssetMetadata& metadata, ParsedModelData& outData)
+        {
+            Assimp::Importer importer;
+            const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
+
+            if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+                std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+                return false;
+            }
+
+            outData.Name = metadata.Name;
+            outData.Directory = std::filesystem::path(metadata.FilePath).parent_path().string();
+
+            // Extract Materials
+            for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
+                outData.Materials.push_back(ParseMaterialData(scene->mMaterials[i], scene));
+            }
+
+            // Extract Meshes
+            for (uint32_t i = 0; i < scene->mNumMeshes; i++) {
+                outData.Meshes.push_back(ParseMeshData(scene->mMeshes[i]));
+            }
+
+            // Extract Lights (the aiScene is freed when the importer goes out of
+            // scope, so copy everything we need into POD before returning). Assimp
+            // attaches lights/cameras to scene nodes by name; the node's transform
+            // already places and orients them, so we only translate intrinsic params.
+            for (uint32_t i = 0; i < scene->mNumLights; i++) {
+                ParsedLight parsed;
+                if (ParseLightData(scene->mLights[i], parsed))
+                    outData.Lights.push_back(parsed);
+            }
+
+            // Extract Cameras
+            for (uint32_t i = 0; i < scene->mNumCameras; i++) {
+                outData.Cameras.push_back(ParseCameraData(scene->mCameras[i]));
+            }
+
+            // Extract Hierarchy
+            outData.RootNode = ParseNodeData(scene->mRootNode);
+
+            return true;
+        }
+
         static ParsedNode ParseNodeData(aiNode* node) {
             ParsedNode parsedNode;
             parsedNode.Name = node->mName.C_Str();
@@ -335,8 +309,6 @@ namespace Engine
             parsedMat.Metallic = GetMetallic(mat);
 
             // Grab Texture Paths
-            // Note: I stripped out `AssimpTextureTypes` array from the previous file to save space, 
-            // you'll need to leave your `AssimpTextureTypes` and `AssimpToTextureType` definitions above this class!
             std::array<aiTextureType, 5> typesToCheck = { aiTextureType_DIFFUSE, aiTextureType_NORMALS, aiTextureType_METALNESS, aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_AMBIENT_OCCLUSION };
             
             for (auto type : typesToCheck) {
@@ -364,10 +336,7 @@ namespace Engine
         }
 
         static Shared<Prefab> FinalizeModelOnMainThread(const AssetMetadata& metadata, const ParsedModelData& data) {
-            PROFILE_FUNCTION();
             Shared<Prefab> prefab = MakeShared<Prefab>();
-            Entity rootEntity = prefab->CreateEntity(data.Name);
-            rootEntity.AddComponent<TransformComponent>();
 
             // 1. Generate GPU Materials
             std::vector<UUID> materialHandles(data.Materials.size());
@@ -462,24 +431,38 @@ namespace Engine
                 meshHandles[i] = AssetManager::RegisterAsset(meshMeta, assetCast);
             }
 
-            // 3. Build ECS Hierarchy
-            BuildEntityHierarchy(data.RootNode, prefab, rootEntity, meshHandles, materialHandles, data);
+            // 3. Build ECS Hierarchy.
+            // Lights and cameras are matched to nodes by name; precompute lookups so
+            // traversal is O(nodes) instead of O(nodes * (lights + cameras)).
+            std::unordered_map<std::string, const ParsedLight*> lightsByName = BuildNameLookup(data.Lights);
+            std::unordered_map<std::string, const ParsedCamera*> camerasByName = BuildNameLookup(data.Cameras);
+
+            // The Assimp root node becomes the prefab root directly (named after the
+            // asset) rather than nesting under a redundant synthetic root entity.
+            Entity nullParent{};
+            BuildEntityHierarchy(data.RootNode, prefab, nullParent, meshHandles, materialHandles, data, lightsByName, camerasByName, data.Name);
 
             // 4. Mark Complete!
             Shared<Asset> prefabCast = prefab;
             AssetManager::RegisterAsset(metadata, prefabCast);
-            std::cout << "Successfully loaded async model: " << metadata.FilePath << std::endl;
+            std::cout << "Successfully loaded model: " << metadata.FilePath << std::endl;
             return prefab;
         }
 
-        static void BuildEntityHierarchy(const ParsedNode& nodeData, Shared<Prefab>& prefab, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles, const ParsedModelData& fullData) {
-            Entity currentEntity = prefab->CreateEntity(nodeData.Name);
+        static void BuildEntityHierarchy(const ParsedNode& nodeData, Shared<Prefab>& prefab, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles, const ParsedModelData& fullData, const std::unordered_map<std::string, const ParsedLight*>& lightsByName, const std::unordered_map<std::string, const ParsedCamera*>& camerasByName, const std::string& nameOverride = "") {
+            Entity currentEntity = prefab->CreateEntity(nameOverride.empty() ? nodeData.Name : nameOverride);
             currentEntity.SetParent(parentEntity);
 
             auto& transform = currentEntity.AddComponent<TransformComponent>();
             transform.translation = nodeData.Translation;
             transform.rotation = nodeData.Rotation;
             transform.scale = nodeData.Scale;
+
+            // Attach a light or camera if this node carries one
+            if (const ParsedLight* light = FindByName(lightsByName, nodeData.Name))
+                AttachLight(currentEntity, *light);
+            if (const ParsedCamera* camera = FindByName(camerasByName, nodeData.Name))
+                AttachCamera(currentEntity, *camera);
 
             for (uint32_t meshIndex : nodeData.MeshIndices) {
                 Entity meshEntity = (nodeData.MeshIndices.size() == 1) ? currentEntity : prefab->CreateEntity(nodeData.Name + "_MeshPart");
@@ -498,194 +481,109 @@ namespace Engine
             }
 
             for (const auto& childNode : nodeData.Children) {
-                BuildEntityHierarchy(childNode, prefab, currentEntity, meshHandles, materialHandles, fullData);
+                BuildEntityHierarchy(childNode, prefab, currentEntity, meshHandles, materialHandles, fullData, lightsByName, camerasByName);
             }
         }
 
-        static void ProcessAiNodeToEntity(aiNode* node, const aiScene* scene, Shared<Prefab>& prefab, Entity parentEntity, const std::vector<UUID>& meshHandles, const std::vector<UUID>& materialHandles)
+        // --- Lights & Cameras ---
+
+        // Lights and cameras are matched to the scene node whose name they carry.
+        // Precompute a name -> item lookup so attachment is O(1) per node; on
+        // duplicate node names the first item wins.
+        template<typename T>
+        static std::unordered_map<std::string, const T*> BuildNameLookup(const std::vector<T>& items)
         {
-            std::string nodeName = node->mName.C_Str();
-            if (nodeName.empty()) nodeName = "Unnamed_Node";
-
-            Entity currentEntity = prefab->CreateEntity(nodeName);
-            currentEntity.SetParent(parentEntity);
-
-            // Extract and set Transform
-            aiVector3D aiScale, aiPos;
-            aiQuaternion aiRot;
-            node->mTransformation.Decompose(aiScale, aiRot, aiPos);
-
-            auto& transform = currentEntity.AddComponent<TransformComponent>();
-            transform.translation = { aiPos.x, aiPos.y, aiPos.z };
-            transform.rotation = glm::eulerAngles(glm::quat(aiRot.w, aiRot.x, aiRot.y, aiRot.z));
-            transform.scale = { aiScale.x, aiScale.y, aiScale.z };
-
-            // Attach Meshes (Assimp nodes can have multiple meshes)
-            for (uint32_t i = 0; i < node->mNumMeshes; i++) 
-            {
-                uint32_t meshIndex = node->mMeshes[i];
-                aiMesh* aiMesh = scene->mMeshes[meshIndex];
-                
-                // If a node has multiple meshes, we create sub-entities for them to keep the 1-Mesh-per-Entity standard
-                Entity meshEntity = (node->mNumMeshes == 1) ? currentEntity : prefab->CreateEntity(aiMesh->mName.C_Str());
-                if (node->mNumMeshes > 1) {
-                    meshEntity.SetParent(currentEntity);
-                    meshEntity.AddComponent<TransformComponent>();
-                }
-
-                auto& meshComp = meshEntity.AddComponent<MeshComponent>();
-                meshComp.MeshHandle = meshHandles[meshIndex];
-
-                uint32_t materialIndex = aiMesh->mMaterialIndex;
-                if (materialIndex < materialHandles.size()) {
-                    auto& matComp = meshEntity.AddComponent<MaterialComponent>();
-                    matComp.MaterialHandle = materialHandles[materialIndex];
-                }
-            }
-
-            // Recursively process children
-            for (uint32_t i = 0; i < node->mNumChildren; i++) 
-            {
-                ProcessAiNodeToEntity(node->mChildren[i], scene, prefab, currentEntity, meshHandles, materialHandles);
-            }
+            std::unordered_map<std::string, const T*> lookup;
+            lookup.reserve(items.size());
+            for (const T& item : items)
+                lookup.emplace(item.Name, &item);
+            return lookup;
         }
 
-        static Shared<Mesh> ProcessAiMesh(aiMesh* aiMesh)
+        template<typename T>
+        static const T* FindByName(const std::unordered_map<std::string, const T*>& lookup, const std::string& name)
         {
-            glm::vec3 minExtents(std::numeric_limits<float>::max());
-            glm::vec3 maxExtents(std::numeric_limits<float>::lowest());
-
-            Shared<Mesh> mesh = MakeShared<Mesh>();
-            std::vector<float>& vertices = mesh->GetVertices();
-
-            bool hasPositions = aiMesh->HasPositions();
-            bool hasNormals = aiMesh->HasNormals();
-            bool hasUVs = aiMesh->mTextureCoords[0] != nullptr;
-            bool hasTangents = aiMesh->HasTangentsAndBitangents();
-
-            std::vector<BufferElement> layoutElements;
-            size_t floatsPerVertex = 0;
-
-            if (hasPositions) {
-                layoutElements.push_back({ ShaderDataType::Float3, "a_Position" });
-                floatsPerVertex += 3;
-            }
-            if (hasNormals) {
-                layoutElements.push_back({ ShaderDataType::Float3, "a_Normal" });
-                floatsPerVertex += 3;
-            }
-            if (hasUVs) {
-                layoutElements.push_back({ ShaderDataType::Float2, "a_TexCoord" });
-                floatsPerVertex += 2;
-            }
-            if (hasTangents) {
-                layoutElements.push_back({ ShaderDataType::Float3, "a_Tangent" });
-                layoutElements.push_back({ ShaderDataType::Float3, "a_Bitangent" });
-                floatsPerVertex += 6;
-            }
-
-            BufferLayout meshLayout(layoutElements);
-
-            vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
-
-            for(unsigned int i = 0; i < aiMesh->mNumVertices; i++)
-            {
-                if (hasPositions) {
-                    glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
-                    minExtents = glm::min(minExtents, pos);
-                    maxExtents = glm::max(maxExtents, pos);
-
-                    vertices.emplace_back(pos.x); 
-                    vertices.emplace_back(pos.y); 
-                    vertices.emplace_back(pos.z);
-                }
-
-                if (hasNormals) {
-                    vertices.emplace_back(aiMesh->mNormals[i].x); 
-                    vertices.emplace_back(aiMesh->mNormals[i].y); 
-                    vertices.emplace_back(aiMesh->mNormals[i].z);
-                } 
-
-                if (hasUVs) {
-                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].x); 
-                    vertices.emplace_back(aiMesh->mTextureCoords[0][i].y);
-                } 
-
-                if (hasTangents) {
-                    vertices.emplace_back(aiMesh->mTangents[i].x); 
-                    vertices.emplace_back(aiMesh->mTangents[i].y); 
-                    vertices.emplace_back(aiMesh->mTangents[i].z);
-                    
-                    vertices.emplace_back(aiMesh->mBitangents[i].x); 
-                    vertices.emplace_back(aiMesh->mBitangents[i].y); 
-                    vertices.emplace_back(aiMesh->mBitangents[i].z);
-                } 
-            }
-
-            std::vector<unsigned int>& indices = mesh->GetIndices();
-            indices.reserve(aiMesh->mNumFaces * 3);
-            for(unsigned int i = 0; i < aiMesh->mNumFaces; i++)
-            {
-                aiFace face = aiMesh->mFaces[i];
-                for(unsigned int j = 0; j < face.mNumIndices; j++)
-                    indices.emplace_back(face.mIndices[j]);        
-            }
-
-            Shared<VertexArray> VAO = VertexArray::Create();
-            VAO->Bind();
-
-            Shared<VertexBuffer> VBO = VertexBuffer::Create(&vertices[0], vertices.size() * sizeof(float));
-            VBO->SetLayout(meshLayout);
-            VAO->AddVertexBuffer(VBO);
-
-            Shared<IndexBuffer> EBO = IndexBuffer::Create(&indices[0], indices.size());
-            VAO->SetIndexBuffer(EBO);
-
-            VAO->Unbind();
-
-            std::vector<Shared<VertexBuffer>> VBOs = { VBO };
-
-            mesh->SetVAO(VAO);
-            mesh->SetVBOs(VBOs);
-            mesh->SetEBO(EBO);
-            mesh->SetAABB({ minExtents, maxExtents });
-
-            return mesh;
+            auto it = lookup.find(name);
+            return it != lookup.end() ? it->second : nullptr;
         }
 
-        static Shared<Material> ProcessAiMaterial(aiMaterial* mat, const std::string& directory, const aiScene* scene)
+        static bool ParseLightData(const aiLight* light, ParsedLight& out)
         {
-            Shared<Material> material = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
-
-            material->Add({MaterialType::AlbedoTint, GetAlbedoTint(mat)});
-            material->Add({MaterialType::Emission, GetEmission(mat)});
-            material->Add({MaterialType::RoughnessMultiplier, GetRoughness(mat)});
-            material->Add({MaterialType::MetallicMultiplier, GetMetallic(mat)});
-
-            for (auto& type : AssimpTextureTypes)
+            switch (light->mType)
             {
-                for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-                {
-                    aiString str;
-                    mat->GetTexture(type, i, &str);
-
-                    std::string filename = std::string(str.C_Str());
-                    std::string fullPath = directory + "/" + filename;
-                    
-                    // Todo: figure out ktx loading
-                    Shared<Texture2D> texture = GetTexture(scene, str, fullPath);
-
-                    if (!texture)
-                    {
-                        std::cout << "Warning: Failed to load texture: " << filename << std::endl;
-                        continue;
-                    }
-
-                    material->Add({AssimpToTextureType(type), texture});
-                }
+                case aiLightSource_DIRECTIONAL: out.Type = LightComponent::LightType::Directional; break;
+                case aiLightSource_POINT:       out.Type = LightComponent::LightType::Point;       break;
+                case aiLightSource_SPOT:        out.Type = LightComponent::LightType::Cone;         break;
+                default: // Ambient / area lights have no engine equivalent
+                    std::cout << "Warning: Skipping unsupported light type for node: " << light->mName.C_Str() << std::endl;
+                    return false;
             }
 
-            return material;
+            out.Name = light->mName.C_Str();
+
+            // Assimp folds intensity into the diffuse color. Split it back into a normalized
+            // color + scalar intensity to match the engine's representation.
+            glm::vec3 color = { light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b };
+            float intensity = glm::max(color.r, glm::max(color.g, color.b));
+
+            out.Color = intensity > 0.0f ? color / intensity : glm::vec3(1.0f);
+            out.Intensity = intensity;
+            out.CastShadows = true;
+
+            // Cone angles are measured from the light axis to the cone edge (half-angles);
+            // the engine stores and compares against their cosine.
+            out.InnerCutOff = glm::cos(light->mAngleInnerCone);
+            out.OuterCutOff = glm::cos(light->mAngleOuterCone);
+
+            return true;
+        }
+
+        static ParsedCamera ParseCameraData(const aiCamera* camera)
+        {
+            ParsedCamera out;
+            out.Name = camera->mName.C_Str();
+            out.NearClip = camera->mClipPlaneNear;
+            out.FarClip = camera->mClipPlaneFar;
+
+            // Fall back to a 16:9 aspect when the file omits one (mAspect == 0).
+            float aspect = camera->mAspect > 0.0f ? camera->mAspect : (16.0f / 9.0f);
+
+            if (camera->mOrthographicWidth > 0.0f)
+            {
+                out.Orthographic = true;
+                // mOrthographicWidth is a half-width; the engine sizes ortho cameras by full height.
+                out.OrthographicSize = (camera->mOrthographicWidth * 2.0f) / aspect;
+            }
+            else
+            {
+                // mHorizontalFOV is the half horizontal angle; convert to the full vertical FOV.
+                out.VerticalFOV = 2.0f * glm::atan(glm::tan(camera->mHorizontalFOV) / aspect);
+            }
+
+            return out;
+        }
+
+        static void AttachLight(Entity entity, const ParsedLight& data)
+        {
+            auto& light = entity.AddComponent<LightComponent>();
+            light.Type = data.Type;
+            light.Color = data.Color;
+            light.Intensity = data.Intensity;
+            light.CastShadows = data.CastShadows;
+            light.InnerCutOff = data.InnerCutOff;
+            light.OuterCutOff = data.OuterCutOff;
+        }
+
+        static void AttachCamera(Entity entity, const ParsedCamera& data)
+        {
+            Shared<SceneCamera> camera = MakeShared<SceneCamera>();
+            if (data.Orthographic)
+                camera->SetOrthographic(data.OrthographicSize, data.NearClip, data.FarClip);
+            else
+                camera->SetPerspective(data.VerticalFOV, data.NearClip, data.FarClip);
+
+            auto& cameraComponent = entity.AddComponent<SceneCameraComponent>(camera);
+            cameraComponent.primary = data.Primary;
         }
 
         static glm::vec4 GetAlbedoTint(aiMaterial* mat)
@@ -738,49 +636,6 @@ namespace Engine
                 }
             }
             return metallic;
-        }
-
-        static Shared<Texture2D> GetTexture(const aiScene* scene, const aiString &str, const std::string &path)
-        {
-            if (const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str())) 
-            {
-                Shared<Texture2D> texture = CreateEmbeddedTexture(embeddedTexture);
-
-                AssetMetadata metadata;
-                metadata.Name = std::string(str.C_Str());
-                metadata.FilePath = str.C_Str();
-                metadata.Type = AssetType::Texture2D;
-                metadata.IsMemoryAsset = true;
-
-                Shared<Asset> texCast = texture;
-                UUID texHandle = AssetManager::RegisterAsset(metadata, texCast);
-
-                return texture;
-            }
-
-            UUID texHandle = AssetManager::ImportAsset(path);
-            return AssetManager::GetAsset<Texture2D>(texHandle);
-
-        }
-
-        static Shared<Texture2D> CreateEmbeddedTexture(const aiTexture* embeddedTexture)
-        {
-            // if (embeddedTexture->mHeight == 0) 
-            // {
-            //     // Compressed embedded texture
-            //     void* buffer = embeddedTexture->pcData;
-            //     size_t bufferSize = embeddedTexture->mWidth;
-            //     return Texture2D::Create(buffer, bufferSize);
-            // } 
-
-            // // Raw embedded texture
-            // void* buffer = embeddedTexture->pcData;
-            // uint32_t width = embeddedTexture->mWidth;
-            // uint32_t height = embeddedTexture->mHeight;
-            // return Texture2D::Create(buffer, width, height);
-
-            return nullptr;
-
         }
     };
 
