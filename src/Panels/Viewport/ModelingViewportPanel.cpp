@@ -30,21 +30,32 @@ namespace Engine {
         DrawToolbar();
     }
 
+    void ModelingViewportPanel::EnterEditMode() {
+        if (m_Session.IsActive())
+            return;
+        Entity selected = SceneManager::GetSelectedEntity();
+        if (m_Session.Begin(selected))
+            ClearSelection();
+    }
+
+    void ModelingViewportPanel::ExitEditMode() {
+        if (!m_Session.IsActive())
+            return;
+        m_Session.End(true);
+        ClearSelection();
+    }
+
     void ModelingViewportPanel::DrawToolbar() {
         ImGui::SetCursorScreenPos(ImVec2(m_ViewportBounds[0].x + 8.0f, m_ViewportBounds[0].y + 8.0f));
 
         if (!m_Session.IsActive()) {
-            if (ImGui::Button("Enter Edit Mode")) {
-                Entity selected = SceneManager::GetSelectedEntity();
-                if (m_Session.Begin(selected))
-                    ClearSelection();
-            }
+            if (ImGui::Button("Enter Edit Mode"))
+                EnterEditMode();
             return;
         }
 
         if (ImGui::Button("Commit")) {
-            m_Session.End(true);
-            ClearSelection();
+            ExitEditMode();
             return;
         }
         ImGui::SameLine();

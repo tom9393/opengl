@@ -14,6 +14,13 @@ namespace Engine {
         // layout reflects the mesh entered into Edit Mode here.
         MeshEditSession& GetSession() { return m_Session; }
 
+        // Edit-mode lifecycle. Driven both by the toolbar's Enter/Commit buttons and by
+        // the Viewport tab: entering the Modeling/UV tabs enters edit mode and returning
+        // to Layout commits. EnterEditMode begins a session on the selected entity (no-op
+        // if already active or nothing valid is selected); ExitEditMode commits.
+        void EnterEditMode();
+        void ExitEditMode();
+
     protected:
         void OnDraw() override;
         bool OnMousePressed(MouseButtonPressedEvent& e) override;

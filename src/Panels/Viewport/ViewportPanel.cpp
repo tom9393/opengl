@@ -31,14 +31,17 @@ namespace Engine {
 
         if (ImGui::BeginTabBar("ViewportTabs")) {
             if (ImGui::BeginTabItem("Layout")) {
+                SetActiveTab(Tab::Layout);
                 m_Object.OnImGuiRender();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Modeling")) {
+                SetActiveTab(Tab::Modeling);
                 m_Modeling.OnImGuiRender();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("UV Editor")) {
+                SetActiveTab(Tab::UV);
                 m_UV.OnImGuiRender();
                 ImGui::EndTabItem();
             }
@@ -46,6 +49,18 @@ namespace Engine {
         }
 
         ImGui::End();
+    }
+
+    void ViewportPanel::SetActiveTab(Tab tab) {
+        if (tab == m_ActiveTab)
+            return;
+
+        if (IsEditTab(tab) && !IsEditTab(m_ActiveTab))
+            m_Modeling.EnterEditMode();
+        else if (!IsEditTab(tab) && IsEditTab(m_ActiveTab))
+            m_Modeling.ExitEditMode();
+
+        m_ActiveTab = tab;
     }
 
 }
