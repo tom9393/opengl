@@ -101,8 +101,7 @@ namespace Engine
             out.Name = metadata.Name;
             out.Directory = std::filesystem::path(metadata.FilePath).parent_path().string();
 
-            // Parse materials once up front; meshes reference them by global
-            // index so a material shared across nodes is decoded/uploaded once.
+            // Parse materials once up front; meshes reference them by global index
             out.Materials.reserve(scene->mNumMaterials);
             for (uint32_t i = 0; i < scene->mNumMaterials; i++)
                 out.Materials.push_back(ParseMaterialData(scene->mMaterials[i], scene));
@@ -126,27 +125,20 @@ namespace Engine
             parsedNode.Rotation = glm::eulerAngles(glm::quat(aiRot.w, aiRot.x, aiRot.y, aiRot.z));
             parsedNode.Scale = { aiScale.x, aiScale.y, aiScale.z };
 
-            // Parse this node's meshes. Each ParsedMesh keeps the global material
-            // index set in ParseMeshData, indexing into ParsedScene::Materials.
             for (uint32_t i = 0; i < node->mNumMeshes; i++) {
                 aiMesh* sourceMesh = scene->mMeshes[node->mMeshes[i]];
-                parsedNode.Meshes.push_back(ParseMeshData(sourceMesh));
+                parsedNode.Meshes.push_back(ParseMeshData(sourceMesh)); // ParseMeshData assigns material index
             }
 
-            // Assimp attaches lights/cameras to scene nodes by name. Find the one
-            // carrying this node's name (first wins on duplicates) and embed it; the
-            // node's transform places and orients it, so we only translate intrinsic
-            // params. The aiScene is freed with the importer, so the parsed PODs own
-            // everything we need.
             for (uint32_t i = 0; i < scene->mNumLights; i++) {
-                if (parsedNode.Name != scene->mLights[i]->mName.C_Str()) continue;
+                if (parsedNode.Name != scene->mLights[i]->mName.C_Str()) continue; // All cameras/lights are global so we must do this to assign them to a specific node
                 ParsedLight parsed;
                 if (ParseLightData(scene->mLights[i], parsed))
                     parsedNode.Light = std::move(parsed);
                 break;
             }
             for (uint32_t i = 0; i < scene->mNumCameras; i++) {
-                if (parsedNode.Name != scene->mCameras[i]->mName.C_Str()) continue;
+                if (parsedNode.Name != scene->mCameras[i]->mName.C_Str()) continue; // Same as above
                 parsedNode.Camera = ParseCameraData(scene->mCameras[i]);
                 break;
             }
@@ -154,6 +146,7 @@ namespace Engine
             for (uint32_t i = 0; i < node->mNumChildren; i++) {
                 parsedNode.Children.push_back(ParseNodeData(node->mChildren[i], scene));
             }
+
             return parsedNode;
         }
 
@@ -163,21 +156,26 @@ namespace Engine
             if (parsedMesh.Name.empty()) parsedMesh.Name = "Unnamed_Mesh";
             parsedMesh.MaterialIndex = aiMesh->mMaterialIndex;
 
-            glm::vec3 minExtents(std::numeric_limits<float>::max());
-            glm::vec3 maxExtents(std::numeric_limits<float>::lowest());
+            glm::vec3 minExtents(std::numeric_limits<float>::max()); // Assimp does provide min/max AABB out of the box but this is per parent,
+            glm::vec3 maxExtents(std::numeric_limits<float>::lowest()); // hence if we want per entity AABBs we need to calculate them manually
 
             bool hasPositions = aiMesh->HasPositions();
             bool hasNormals = aiMesh->HasNormals();
             bool hasUVs = aiMesh->mTextureCoords[0] != nullptr;
             bool hasTangents = aiMesh->HasTangentsAndBitangents();
 
-            // Calculate exact floats required
-            size_t floatsPerVertex = 0;
-            if (hasPositions) floatsPerVertex += 3;
-            if (hasNormals) floatsPerVertex += 3;
-            if (hasUVs) floatsPerVertex += 2;
-            if (hasTangents) floatsPerVertex += 6;
+            std::vector<BufferElement> elements;
+            if (hasPositions) elements.emplace_back(ShaderDataType::Float3, "a_Position");
+            if (hasNormals)   elements.emplace_back(ShaderDataType::Float3, "a_Normal");
+            if (hasUVs)       elements.emplace_back(ShaderDataType::Float2, "a_TexCoord");
+            if (hasTangents) {
+                elements.emplace_back(ShaderDataType::Float3, "a_Tangent");
+                elements.emplace_back(ShaderDataType::Float3, "a_Bitangent");
+            }
 
+            parsedMesh.Layout = BufferLayout(elements);
+
+            size_t floatsPerVertex = parsedMesh.Layout.GetStride() / sizeof(float);
             parsedMesh.Vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
 
             for (unsigned int i = 0; i < aiMesh->mNumVertices; i++) {
@@ -219,13 +217,11 @@ namespace Engine
             mat->Get(AI_MATKEY_NAME, aiMatName);
             parsedMat.Name = aiMatName.length > 0 ? aiMatName.C_Str() : "Unnamed_Material";
 
-            // Grab properties (Using your existing helpers)
             parsedMat.AlbedoTint = GetAlbedoTint(mat);
             parsedMat.Emission = GetEmission(mat);
             parsedMat.Roughness = GetRoughness(mat);
             parsedMat.Metallic = GetMetallic(mat);
 
-            // Grab Texture Paths
             std::array<aiTextureType, 5> typesToCheck = { aiTextureType_DIFFUSE, aiTextureType_NORMALS, aiTextureType_METALNESS, aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_AMBIENT_OCCLUSION };
 
             for (auto type : typesToCheck) {
@@ -235,7 +231,6 @@ namespace Engine
                 MaterialType matType = AssimpToTextureType(type);
                 if (matType != MaterialType::None) {
                     parsedMat.TexturePaths[matType] = std::string(str.C_Str());
-                    // --- NEW EMBEDDED TEXTURE CHECK ---
                     if (const aiTexture* embeddedTex = scene->GetEmbeddedTexture(str.C_Str())) {
                         if (embeddedTex->mHeight == 0) {
                             parsedMat.EmbeddedTextures[matType] = TextureImporter::DecodeTextureFromMemory(embeddedTex->pcData, embeddedTex->mWidth);
@@ -243,7 +238,6 @@ namespace Engine
                             parsedMat.EmbeddedTextures[matType] = TextureImporter::DecodeTextureUncompressed(embeddedTex->pcData, embeddedTex->mWidth, embeddedTex->mHeight);
                         }
                     } else {
-                        // It's external, just save the path as usual.
                         parsedMat.TexturePaths[matType] = std::string(str.C_Str());
                     }
                 }
@@ -258,7 +252,7 @@ namespace Engine
                 case aiLightSource_DIRECTIONAL: out.Type = LightComponent::LightType::Directional; break;
                 case aiLightSource_POINT:       out.Type = LightComponent::LightType::Point;       break;
                 case aiLightSource_SPOT:        out.Type = LightComponent::LightType::Cone;         break;
-                default: // Ambient / area lights have no engine equivalent
+                default: // Currently no support for area/ambient light
                     std::cout << "Warning: Skipping unsupported light type for node: " << light->mName.C_Str() << std::endl;
                     return false;
             }

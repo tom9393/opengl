@@ -16,24 +16,18 @@
 namespace Engine
 {
 
-    // Turns a parsed scene tree (produced by AssimpLoader) into an instantiated
-    // Prefab: uploads meshes/materials/textures to the GPU and builds the entity
-    // hierarchy. GPU work happens here, so this must run on the main thread.
+    // Turns a parsed scene tree into prefab; upload materials/meshes/textures to GPU and build entity hierarchy. Run on main thread
     class SceneBuilder
     {
         public:
         static Shared<Prefab> BuildPrefab(const AssetMetadata& metadata, const ParsedScene& data) {
             Shared<Prefab> prefab = MakeShared<Prefab>();
 
-            // Materials are shared across the whole model: upload each once and
-            // reference it by its global index while building the hierarchy.
+            // Materials are shared across the whole model: upload each once and reference it by its global index when building hierarchy
             std::vector<UUID> materialHandles(data.Materials.size());
             for (size_t i = 0; i < data.Materials.size(); i++)
                 materialHandles[i] = CreateMaterialAsset(data.Materials[i], data);
 
-            // Build the ECS hierarchy directly from the node tree. The root node
-            // becomes the prefab root directly (named after the asset) rather than
-            // nesting under a redundant synthetic root entity.
             Entity nullParent{};
             BuildEntityHierarchy(data.RootNode, prefab, nullParent, data, materialHandles, data.Name);
 
@@ -44,7 +38,6 @@ namespace Engine
         }
 
     private:
-        // Uploads a parsed material to the GPU and registers it as a memory asset.
         static UUID CreateMaterialAsset(const ParsedMaterial& matData, const ParsedScene& data) {
             Shared<Material> material = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
@@ -54,7 +47,6 @@ namespace Engine
             material->Add({MaterialType::MetallicMultiplier, matData.Metallic});
 
 
-            // Load Textures (Note: In a fully async system, you would trigger LoadTextureAsync here)
             for (const auto& [type, path] : matData.TexturePaths) {
                 std::string texturePath = data.Directory + "/" + path;
                 if (!std::filesystem::exists(texturePath)) continue;
@@ -68,11 +60,8 @@ namespace Engine
             }
 
             for (auto& [type, loadData] : matData.EmbeddedTextures) {
-                // RIGHT HERE! We use your existing method now that we are safe on the Main Thread
-
                 Shared<Texture2D> texture = Texture2D::Create(loadData);
 
-                // Clean up the CPU RAM!
                 TextureImporter::FreeTextureData(loadData);
 
                 AssetMetadata metadata;
@@ -96,24 +85,15 @@ namespace Engine
             return AssetManager::RegisterAsset(matMeta, assetCast);
         }
 
-        // Uploads a parsed mesh to the GPU and registers it as a memory asset.
         static UUID CreateMeshAsset(const ParsedMesh& meshData, const ParsedScene& data) {
             Shared<Mesh> mesh = MakeShared<Mesh>();
             mesh->GetVertices() = meshData.Vertices;
             mesh->GetIndices() = meshData.Indices;
 
-            // --- OPENGL CALLS HAPPEN HERE ---
             Shared<VertexArray> VAO = VertexArray::Create();
             Shared<VertexBuffer> VBO = VertexBuffer::Create((float*)meshData.Vertices.data(), meshData.Vertices.size() * sizeof(float));
 
-            // Reconstruct Layout dynamically (Simplified layout assumption based on your original code)
-            VBO->SetLayout({
-                { ShaderDataType::Float3, "a_Position" },
-                { ShaderDataType::Float3, "a_Normal" },
-                { ShaderDataType::Float2, "a_TexCoord" },
-                { ShaderDataType::Float3, "a_Tangent" },
-                { ShaderDataType::Float3, "a_Bitangent" }
-            });
+            VBO->SetLayout(meshData.Layout);
 
             VAO->AddVertexBuffer(VBO);
             Shared<IndexBuffer> EBO = IndexBuffer::Create((unsigned int*)meshData.Indices.data(), meshData.Indices.size());
@@ -142,11 +122,8 @@ namespace Engine
             transform.rotation = nodeData.Rotation;
             transform.scale = nodeData.Scale;
 
-            // Attach a light or camera if this node carries one
-            if (nodeData.Light)
-                AttachLight(currentEntity, *nodeData.Light);
-            if (nodeData.Camera)
-                AttachCamera(currentEntity, *nodeData.Camera);
+            if (nodeData.Light) AttachLight(currentEntity, *nodeData.Light);
+            if (nodeData.Camera) AttachCamera(currentEntity, *nodeData.Camera);
 
             for (const ParsedMesh& meshData : nodeData.Meshes) {
                 Entity meshEntity = (nodeData.Meshes.size() == 1) ? currentEntity : prefab->CreateEntity(nodeData.Name + "_MeshPart");

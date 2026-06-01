@@ -4,6 +4,7 @@
 #include "MaterialSpecification.h"
 #include "TextureImporter.h"
 #include "Scene/Components.h"
+#include "Render/BufferLayout.h"
 
 namespace Engine
 {
@@ -21,6 +22,7 @@ namespace Engine
         std::string Name;
         std::vector<float> Vertices;
         std::vector<unsigned int> Indices;
+        BufferLayout Layout; // Describes how Vertices is packed; only the attributes the source mesh actually provides
         uint32_t MaterialIndex = 0;
         glm::vec3 MinExtents;
         glm::vec3 MaxExtents;
