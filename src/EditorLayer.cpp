@@ -139,6 +139,7 @@ namespace Engine
             serializer.Deserialize(filepath);
 
             m_SceneRenderer->SetScene(m_EditingScene.get());
+            m_ViewportPanel.SetViewportContext({ m_EditingScene, m_SceneRenderer, m_EditorCamera });
 
             // The undo history references the previous scene's entities; drop it.
             CommandHistory::Global().Clear();

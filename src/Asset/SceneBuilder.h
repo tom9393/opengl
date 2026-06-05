@@ -77,7 +77,7 @@ namespace Engine
             }
 
             AssetMetadata matMeta;
-            matMeta.Handle = UUID();
+            matMeta.Handle = UUID(matData.Hash);
             matMeta.Name = data.Name + "_" + matData.Name;
             matMeta.Type = AssetType::Material;
             matMeta.IsMemoryAsset = true;
@@ -105,7 +105,7 @@ namespace Engine
             mesh->SetAABB({ meshData.MinExtents, meshData.MaxExtents });
 
             AssetMetadata meshMeta;
-            meshMeta.Handle = UUID();
+            meshMeta.Handle = UUID(meshData.Hash);
             meshMeta.Name = data.Name + "_" + meshData.Name;
             meshMeta.Type = AssetType::Mesh;
             meshMeta.IsMemoryAsset = true;

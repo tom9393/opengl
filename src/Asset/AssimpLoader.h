@@ -112,6 +112,18 @@ namespace Engine
         }
 
     private:
+        // FNV-1a; chains so callers can fold several buffers into one stable key
+        static uint64_t HashBytes(uint64_t hash, const void* data, size_t size) {
+            const uint8_t* bytes = static_cast<const uint8_t*>(data);
+            for (size_t i = 0; i < size; i++) {
+                hash ^= bytes[i];
+                hash *= 1099511628211ULL;
+            }
+            return hash;
+        }
+
+        static constexpr uint64_t s_FNVOffsetBasis = 14695981039346656037ULL;
+
         static ParsedSceneNode ParseNodeData(aiNode* node, const aiScene* scene) {
             ParsedSceneNode parsedNode;
             parsedNode.Name = node->mName.C_Str();
@@ -178,12 +190,15 @@ namespace Engine
             size_t floatsPerVertex = parsedMesh.Layout.GetStride() / sizeof(float);
             parsedMesh.Vertices.reserve(aiMesh->mNumVertices * floatsPerVertex);
 
+            uint64_t hash = HashBytes(s_FNVOffsetBasis, parsedMesh.Name.data(), parsedMesh.Name.size());
+
             for (unsigned int i = 0; i < aiMesh->mNumVertices; i++) {
                 if (hasPositions) {
                     glm::vec3 pos(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z);
                     minExtents = glm::min(minExtents, pos);
                     maxExtents = glm::max(maxExtents, pos);
                     parsedMesh.Vertices.push_back(pos.x); parsedMesh.Vertices.push_back(pos.y); parsedMesh.Vertices.push_back(pos.z);
+                    hash = HashBytes(hash, &pos, sizeof(pos));
                 }
                 if (hasNormals) {
                     parsedMesh.Vertices.push_back(aiMesh->mNormals[i].x); parsedMesh.Vertices.push_back(aiMesh->mNormals[i].y); parsedMesh.Vertices.push_back(aiMesh->mNormals[i].z);
@@ -207,6 +222,7 @@ namespace Engine
 
             parsedMesh.MinExtents = minExtents;
             parsedMesh.MaxExtents = maxExtents;
+            parsedMesh.Hash = hash;
 
             return parsedMesh;
         }
@@ -224,6 +240,8 @@ namespace Engine
 
             std::array<aiTextureType, 5> typesToCheck = { aiTextureType_DIFFUSE, aiTextureType_NORMALS, aiTextureType_METALNESS, aiTextureType_DIFFUSE_ROUGHNESS, aiTextureType_AMBIENT_OCCLUSION };
 
+            uint64_t hash = HashBytes(s_FNVOffsetBasis, parsedMat.Name.data(), parsedMat.Name.size());
+
             for (auto type : typesToCheck) {
                 if (mat->GetTextureCount(type) < 1) continue;
                 aiString str;
@@ -232,6 +250,8 @@ namespace Engine
                 if (matType != MaterialType::None) {
                     parsedMat.TexturePaths[matType] = std::string(str.C_Str());
                     if (const aiTexture* embeddedTex = scene->GetEmbeddedTexture(str.C_Str())) {
+                        size_t byteCount = embeddedTex->mHeight == 0 ? embeddedTex->mWidth : (size_t)embeddedTex->mWidth * embeddedTex->mHeight * sizeof(aiTexel);
+                        hash = HashBytes(hash, embeddedTex->pcData, byteCount);
                         if (embeddedTex->mHeight == 0) {
                             parsedMat.EmbeddedTextures[matType] = TextureImporter::DecodeTextureFromMemory(embeddedTex->pcData, embeddedTex->mWidth);
                         } else {
@@ -239,9 +259,11 @@ namespace Engine
                         }
                     } else {
                         parsedMat.TexturePaths[matType] = std::string(str.C_Str());
+                        hash = HashBytes(hash, str.C_Str(), str.length);
                     }
                 }
             }
+            parsedMat.Hash = hash;
             return parsedMat;
         }
 

@@ -26,6 +26,7 @@ namespace Engine
         uint32_t MaterialIndex = 0;
         glm::vec3 MinExtents;
         glm::vec3 MaxExtents;
+        uint64_t Hash = 0; // Deterministic key derived from name + vertex positions; becomes the asset handle so it survives reloads
     };
 
     struct ParsedMaterial {
@@ -36,6 +37,7 @@ namespace Engine
         float Metallic;
         std::unordered_map<MaterialType, std::string> TexturePaths;
         std::unordered_map<MaterialType, TextureLoadData> EmbeddedTextures;
+        uint64_t Hash = 0; // Deterministic key derived from name + texture data/paths; becomes the asset handle so it survives reloads
     };
 
     struct ParsedLight {
