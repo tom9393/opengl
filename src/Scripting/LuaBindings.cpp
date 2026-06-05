@@ -85,12 +85,16 @@ namespace Engine {
             "GetLuaEnvironment", [](Entity& e) -> sol::object {
                 if (e.HasComponent<LuaScriptComponent>()) {
                     auto& script = e.GetComponent<LuaScriptComponent>();
-                    
+
                     if (script.Environment.valid()) {
-                        return script.Environment; 
+                        return script.Environment;
                     }
                 }
                 return sol::nil;
+            },
+            "GetParent", [](Entity& e, sol::this_state s) -> sol::object {
+                if (!e.HasParent()) return sol::nil;
+                return sol::make_object(s, Entity{ e.GetParent(), e.GetScene() });
             }
         );
 

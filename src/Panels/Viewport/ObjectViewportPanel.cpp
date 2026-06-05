@@ -48,7 +48,7 @@ namespace Engine {
                         AssetMetadata metadata;
                         metadata.Handle = UUID();
                         metadata.Name = name;
-                        metadata.FilePath = std::string("assets/") + name;
+                        metadata.FilePath = std::string("../assets/") + name;
                         metadata.IsMemoryAsset = true;
                         metadata.Type = AssetType::Mesh;
 
