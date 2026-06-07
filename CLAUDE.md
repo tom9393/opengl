@@ -57,9 +57,11 @@ Render-graph passes draw into fixed-size `Framebuffer` attachments. Offscreen su
 
 ### Asset System
 
-`AssetManager` (static singleton) maintains a central registry and handles async loading via `ThreadPool`. All resource types (`Mesh`, `Texture2D`, `Material`, `Scene`, `Prefab`, `AudioClip`) inherit from `Asset`. GPU uploads are batched through `AssetUploadQueue`. Asset metadata is stored in `assets/AssetRegistry.yaml`; textures support KTX format via the `lib/ktx` submodule.
+`AssetManager` (static singleton) maintains a central registry and handles async loading via `ThreadPool`. All resource types (`Mesh`, `Texture2D`, `Material`, `Scene`, `Prefab`, `AudioClip`) inherit from `Asset`. `AssetManager::GetAssetInternal(Async)` dispatches on `AssetType` to per-type importers (`SceneImporter`, `PrefabImporter`, `TextureImporter`, `AudioImporter`, `ScriptImporter`). GPU uploads are batched through `AssetUploadQueue`. Asset metadata is stored in `assets/AssetRegistry.yaml`; textures support KTX format via the `lib/ktx` submodule.
 
-Model import (`ModelImporter`) is a two-phase pipeline so heavy parsing stays off the main thread: `AssimpLoader::LoadScene` reads the file via Assimp into a CPU-only `ParsedScene` tree (`ParsedScene.h` — `ParsedSceneNode`s carrying transforms, meshes, lights, cameras, plus a scene-global `ParsedMaterial` list), then `SceneBuilder::BuildPrefab` runs on the main thread to upload meshes/textures and assemble the entity hierarchy into a `Prefab`. For async loads, `LoadScene` runs on the thread pool and `BuildPrefab` is deferred to the main thread via `AssetUploadQueue`.
+Model import (`.obj/.fbx/.gltf`, registered as `AssetType::Scene`) is a two-phase pipeline so heavy parsing stays off the main thread: `SceneImporter::LoadScene` calls `AssimpLoader::LoadScene`, which reads the file via Assimp into a CPU-only `ParsedScene` tree (`ParsedScene.h` — `ParsedSceneNode`s carrying transforms, meshes, lights, cameras, plus a scene-global `ParsedMaterial` list), then `SceneBuilder::BuildPrefab` runs on the main thread to upload meshes/textures and assemble the entity hierarchy into a `Prefab` (a `Scene` subclass). For async loads, `LoadScene` runs on the thread pool and `BuildPrefab` is deferred to the main thread via `AssetUploadQueue`. `AssimpLoader` assigns each parsed mesh/material a deterministic FNV-1a `Hash` (from its name + vertex positions / texture data) that becomes the asset handle, so re-imports reuse the same handles and shared meshes/materials dedupe across loads.
+
+Scene and prefab files are YAML (yaml-cpp): `SceneSerializer` reads/writes `.pmblend` scenes and `PrefabSerializer` reads/writes `.prefab` files (an entity subtree saved as component data + asset-handle references); both delegate per-entity component (de)serialization to the shared `EntitySerializer`, which deserializes in two passes — create every entity, then relink parents. Prefabs thus have two origins: imported models (built live by `SceneBuilder`) and saved `.prefab` assets (loaded by `PrefabImporter` via `PrefabSerializer`).
 
 ### Material System
 
@@ -67,7 +69,7 @@ Model import (`ModelImporter`) is a two-phase pipeline so heavy parsing stays of
 
 ### Physics & Scripting
 
-`PhysicsEngine` wraps Bullet3. `CollisionBaker` converts mesh geometry to collision shapes. Scripting has two paths: native C++ behaviors attached via `NativeScriptComponent`, and Lua scripts attached via `LuaScriptComponent`. The Lua path uses **Sol2** bindings over Lua 5.4 — `ScriptEngine` manages the VM and `LuaBindings` exposes the C++ API.
+`PhysicsEngine` wraps Bullet3 and steps the world. A `RigidBodyComponent` carries a runtime `RigidBody` (`src/Physics/RigidBody.h`) — an RAII wrapper around a `btRigidBody` + motion state, built from an `RBShape` (`RBBoxShape` / `RBConvexShape` / `RBComplexShape` / `RBPlaneShape`) and exposing the gameplay API (impulses, velocities, kinematic toggles, etc.). `CollisionBaker` bakes an entity's mesh subtree into simplified convex hulls written to `.pmcol` files under `assets/collision/`, keyed by an FNV-1a hash of the meshes' AABBs so identical geometry shares one bake; bakes with no remaining referencing entity are deleted. `PhysicsDebugDrawer` visualizes collision shapes. Scripting has two paths: native C++ behaviors attached via `NativeScriptComponent`, and Lua scripts attached via `LuaScriptComponent`. The Lua path uses **Sol2** bindings over Lua 5.4 — `ScriptEngine` manages the VM and `LuaBindings` exposes the C++ API.
 
 ### Audio
 
