@@ -5,7 +5,7 @@
 #include "AssimpLoader.h"
 #include "Asset.h"
 #include "SceneImporter.h"
-#include "ModelImporter.h"
+#include "PrefabImporter.h"
 #include "ScriptImporter.h"
 #include "TextureImporter.h"
 #include "AudioImporter.h"
@@ -19,9 +19,11 @@ namespace Engine {
             { ".jpeg", AssetType::Texture2D },
             { ".ktx", AssetType::Texture2D },
             { ".ktx2", AssetType::Texture2D },
-            { ".assbin", AssetType::Prefab },
-            { ".obj", AssetType::Prefab },
-            { ".fbx", AssetType::Prefab },
+            { ".assbin", AssetType::Scene },
+            { ".obj", AssetType::Scene },
+            { ".fbx", AssetType::Scene },
+            { ".gltf", AssetType::Scene },
+            { ".prefab", AssetType::Prefab },
             { ".lua", AssetType::LuaScript },
             { ".wav", AssetType::Audio },
             { ".mp3", AssetType::Audio },
@@ -49,7 +51,8 @@ namespace Engine {
         metadata.Name = filepath.stem().string();
         
         std::string ext = filepath.extension().string();
-        if (ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Prefab;
+        if (ext == ".pmblend" || ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Scene;
+        else if (ext == ".prefab") metadata.Type = AssetType::Prefab;
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
         else if (ext == ".wav" || ext == ".mp3" || ext == ".flac") metadata.Type = AssetType::Audio;
@@ -83,7 +86,7 @@ namespace Engine {
         switch (metadata.Type) {
             case AssetType::Texture2D: newAsset = TextureImporter::LoadTexture2D(metadata); break;
             case AssetType::Scene: newAsset = SceneImporter::LoadScene(metadata); break;
-            case AssetType::Prefab: newAsset = ModelImporter::LoadModel(metadata); break;
+            case AssetType::Prefab: newAsset = PrefabImporter::LoadPrefab(metadata); break;
             case AssetType::Audio: newAsset = AudioImporter::LoadAudio(metadata); break;
         }
 
@@ -111,7 +114,7 @@ namespace Engine {
         switch (metadata.Type) {
             case AssetType::Texture2D: TextureImporter::LoadTexture2DAsync(metadata, cb); break;
             case AssetType::Scene: SceneImporter::LoadSceneAsync(metadata, cb); break;
-            case AssetType::Prefab: ModelImporter::LoadModelAsync(metadata, cb); break;
+            case AssetType::Prefab: PrefabImporter::LoadPrefabAsync(metadata, cb); break;
             case AssetType::Audio: AudioImporter::LoadAudioAsync(metadata, cb); break;
         }
     }

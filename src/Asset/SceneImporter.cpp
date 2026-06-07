@@ -2,27 +2,54 @@
 #include "AssetUploadQueue.h"
 #include "SceneImporter.h"
 #include "Asset/AssimpLoader.h"
+#include "Asset/SceneBuilder.h"
 
 namespace Engine {
 
     Shared<Scene> SceneImporter::LoadScene(const AssetMetadata &metadata)
     {
-        Shared<Scene> scene = MakeShared<Scene>();
-        SceneSerializer serializer(scene);
-        serializer.Deserialize(metadata.FilePath);
-        return scene;
+        std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
+
+        if (ext == ".pmblend")
+        {
+            Shared<Scene> scene = MakeShared<Scene>();
+            SceneSerializer serializer(scene);
+            serializer.Deserialize(metadata.FilePath);
+            return scene;
+        }
+
+        std::optional<ParsedScene> parsed = AssimpLoader::LoadScene(metadata);
+        if (!parsed)
+            return nullptr;
+
+        return SceneBuilder::BuildPrefab(metadata, *parsed);
     }
 
     void SceneImporter::LoadSceneAsync(const AssetMetadata &metadata, std::function<void(Shared<Asset>)> cb)
     {
-        Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
-            Shared<Scene> scene = MakeShared<Scene>();
-            SceneSerializer serializer(scene);
-            serializer.Deserialize(metadata.FilePath);
-            AssetUploadQueue::Submit([metadata, scene, cb]() {
-                // --- THIS RUNS ON THE MAIN THREAD ---
+        std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
 
-                if (cb) cb(scene);
+        if (ext == ".pmblend")
+        {
+            Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
+                Shared<Scene> scene = MakeShared<Scene>();
+                SceneSerializer serializer(scene);
+                serializer.Deserialize(metadata.FilePath);
+                AssetUploadQueue::Submit([metadata, scene, cb]() {
+                    if (cb) cb(scene);
+                });
+            });
+            return;
+        }
+
+        Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
+            std::optional<ParsedScene> parsed = AssimpLoader::LoadScene(metadata);
+            if (!parsed)
+                return;
+
+            AssetUploadQueue::Submit([metadata, parsed = std::move(*parsed), cb]() {
+                Shared<Prefab> prefab = SceneBuilder::BuildPrefab(metadata, parsed);
+                if (cb) cb(prefab);
             });
         });
     }

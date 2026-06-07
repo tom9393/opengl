@@ -56,6 +56,7 @@ namespace Engine {
             AssetManager::GetAssetAsync(assetHandle, [&](Shared<Asset> asset){
 
                 switch (metadata.Type) {
+                    case AssetType::Scene:
                     case AssetType::Prefab: {
                         Shared<PrefabPreview> prev = MakeShared<PrefabPreview>();
                         prev->SetAsset(asset);

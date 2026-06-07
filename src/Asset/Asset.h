@@ -27,10 +27,11 @@ namespace Engine {
         if (ext == ".jpeg")    return AssetType::Texture2D;
         if (ext == ".ktx")     return AssetType::Texture2D;
         if (ext == ".ktx2")    return AssetType::Texture2D;
-        if (ext == ".assbin")  return AssetType::Prefab;
-        if (ext == ".obj")     return AssetType::Prefab;
-        if (ext == ".fbx")     return AssetType::Prefab;
-        if (ext == ".gltf")    return AssetType::Prefab;
+        if (ext == ".assbin")  return AssetType::Scene;
+        if (ext == ".obj")     return AssetType::Scene;
+        if (ext == ".fbx")     return AssetType::Scene;
+        if (ext == ".gltf")    return AssetType::Scene;
+        if (ext == ".prefab")  return AssetType::Prefab;
         if (ext == ".lua")     return AssetType::LuaScript;
         if (ext == ".wav")     return AssetType::Audio;
         if (ext == ".mp3")     return AssetType::Audio;

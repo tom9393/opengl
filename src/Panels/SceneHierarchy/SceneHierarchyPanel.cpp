@@ -1,6 +1,7 @@
 #include "SceneHierarchyPanel.h"
 #include "../../Scene/Entity.h"
 #include "../../Scene/Scene.h"
+#include "../../Scene/PrefabSerializer.h"
 #include "../../Scene/Components.h"
 #include "../../Asset/CollisionBaker.h"
 #include "../../Asset/Asset.h"
@@ -190,6 +191,13 @@ namespace Engine
             if (ImGui::MenuItem("Delete entity"))
             {
                 m_Deleted = true;
+            }
+            if (ImGui::MenuItem("Save as prefab"))
+            {
+                std::string name = entity.GetComponent<TagComponent>().tag;
+                std::string path = "../assets/" + name + ".prefab";
+                PrefabSerializer::Serialize(entity, path);
+                AssetManager::ImportAsset(path);
             }
             ImGui::EndPopup();
         }

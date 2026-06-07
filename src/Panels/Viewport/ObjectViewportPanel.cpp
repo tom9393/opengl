@@ -13,7 +13,9 @@ namespace Engine {
 
     void ObjectViewportPanel::OnDraw() {
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Prefab"))
+            const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetType::Prefab");
+            if (!payload) payload = ImGui::AcceptDragDropPayload("AssetType::Scene");
+            if (payload)
             {
                 UUID handle = *(UUID*)payload->Data;
                 Shared<Prefab> prefab = AssetManager::GetAsset<Prefab>(handle);
