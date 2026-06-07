@@ -12,27 +12,101 @@ namespace Engine {
     class CollisionBaker
     {
     public:
-    // Generates a simplified hull and saves it to disk
-        static std::string Bake(Entity &entity)
+        // Bake a collision shape for given entity using its mesh tree's AABBs
+        static void Bake(Entity &entity)
         {
-            std::vector<Shared<Mesh>> meshes;
+            std::vector<Shared<Mesh>> meshes = GatherMeshes(entity);
+            if (meshes.empty()) return;
+
+            std::string path = PathForHash(HashMeshes(meshes));
+            UUID uuid = entity.GetUUID();
+
+            auto it = s_EntityShapes.find(uuid);
+            std::string oldPath = (it != s_EntityShapes.end()) ? it->second : std::string();
+
+            if (!std::filesystem::exists(path))
+                WriteBake(path, meshes);
+
+            s_EntityShapes[uuid] = path;
+
+            if (!oldPath.empty() && oldPath != path)
+                DeleteIfOrphaned(entity, oldPath);
+        }
+
+        static std::string GetShapePath(Entity &entity)
+        {
+            std::string path = ComputePath(entity);
+            if (path.empty() || !std::filesystem::exists(path)) return "";
+
+            s_EntityShapes[entity.GetUUID()] = path;
+            return path;
+        }
+
+        static bool HasShape(Entity &entity)
+        {
+            return !GetShapePath(entity).empty();
+        }
+
+        // Call before destroying entity/removing component
+        static void Release(Entity &entity)
+        {
+            auto it = s_EntityShapes.find(entity.GetUUID());
+            if (it == s_EntityShapes.end()) return;
+
+            std::string path = it->second;
+            s_EntityShapes.erase(it);
+            DeleteIfOrphaned(entity, path);
+        }
+
+    private:
+        static inline std::unordered_map<UUID, std::string> s_EntityShapes;
+        static constexpr const char* s_CollisionDir = "../assets/collision/";
+
+        static std::vector<Shared<Mesh>> GatherMeshes(Entity &entity)
+        {
             std::vector<Entity> meshEntities;
-
             if (entity.HasComponent<MeshComponent>()) meshEntities.emplace_back(entity);
-
             entity.GetAllChildrenWithComponent<MeshComponent>(meshEntities);
+
+            std::vector<Shared<Mesh>> meshes;
             for (auto& e : meshEntities)
-            {
-                UUID handle = e.GetComponent<MeshComponent>().MeshHandle;
-                meshes.emplace_back(AssetManager::GetAsset<Mesh>(handle));
+                meshes.emplace_back(AssetManager::GetAsset<Mesh>(e.GetComponent<MeshComponent>().MeshHandle));
+            return meshes;
+        }
+
+        static std::string ComputePath(Entity &entity)
+        {
+            std::vector<Shared<Mesh>> meshes = GatherMeshes(entity);
+            if (meshes.empty()) return "";
+            return PathForHash(HashMeshes(meshes));
+        }
+
+        // FNV-1a
+        static uint64_t HashMeshes(const std::vector<Shared<Mesh>> &meshes)
+        {
+            uint64_t hash = 14695981039346656037ULL;
+            auto fold = [&](const void* data, size_t size) {
+                const uint8_t* bytes = static_cast<const uint8_t*>(data);
+                for (size_t i = 0; i < size; i++) { hash ^= bytes[i]; hash *= 1099511628211ULL; }
+            };
+
+            for (const auto& mesh : meshes) {
+                const AABB& aabb = mesh->GetAABB();
+                fold(&aabb.Min, sizeof(glm::vec3));
+                fold(&aabb.Max, sizeof(glm::vec3));
             }
+            return hash;
+        }
 
-            AssetMetadata metadata = AssetManager::GetMetadata(meshEntities.front().GetComponent<MeshComponent>().MeshHandle);
+        static std::string PathForHash(uint64_t hash)
+        {
+            return std::string(s_CollisionDir) + std::to_string(hash) + ".pmcol";
+        }
 
-            std::string outputPath = metadata.FilePath + ".pmcol";
-
-            if (std::filesystem::exists(outputPath)) return outputPath;
-            std::ofstream out(outputPath, std::ios::binary);
+        static void WriteBake(const std::string &path, const std::vector<Shared<Mesh>> &meshes)
+        {
+            std::filesystem::create_directories(s_CollisionDir);
+            std::ofstream out(path, std::ios::binary);
 
             uint32_t meshCount = (uint32_t)meshes.size();
             out.write((char*)&meshCount, sizeof(uint32_t));
@@ -62,8 +136,24 @@ namespace Engine {
                 }
             }
             out.close();
-            std::cout << "[Baker] Finished baking: " << outputPath << std::endl;
-            return outputPath;
+            std::cout << "[Baker] Finished baking: " << path << std::endl;
+        }
+
+        // Drop a collision shape if no longer used by any entity
+        static void DeleteIfOrphaned(Entity &entity, const std::string &path)
+        {
+            Scene* scene = entity.GetScene();
+            if (!scene) return;
+
+            auto view = scene->GetRegistry().view<RigidBodyComponent>();
+            for (auto e : view) {
+                if (e == entity.GetHandle()) continue;
+                Entity other{ e, scene };
+                if (ComputePath(other) == path) return;
+            }
+
+            std::filesystem::remove(path);
+            std::cout << "[Baker] Removed orphaned collision: " << path << std::endl;
         }
     };
 }

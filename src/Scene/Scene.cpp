@@ -184,6 +184,9 @@ namespace Engine
 
 		std::cout << (uint32_t)entity.GetHandle() << std::endl;
 
+		if (entity.HasComponent<RigidBodyComponent>())
+			CollisionBaker::Release(entity);
+
 		m_Registry.destroy(entity);
 	};
 

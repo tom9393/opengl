@@ -97,7 +97,6 @@ namespace Engine
 			out << YAML::Key << "BodyType"  << YAML::Value << RigidBodyToString(rb.type);
 			out << YAML::Key << "Mass"      << YAML::Value << rb.mass;
 			out << YAML::Key << "Inertia"   << YAML::Value << rb.inertia;
-			out << YAML::Key << "ShapePath" << YAML::Value << rb.ShapePath.string();
 		});
 
 		SerializeComponent<LuaScriptComponent>(out, e, "LuaScriptComponent", [](auto& out, auto& lsc) {
@@ -200,8 +199,6 @@ namespace Engine
 			rbc.type = RigidBodyFromString(bodyTypeString);
 			rbc.mass = node["Mass"].as<float>();
 			rbc.inertia = node["Inertia"].as<glm::vec3>();
-			if (node["ShapePath"])
-				rbc.ShapePath = node["ShapePath"].as<std::string>();
 		}
 	}
 

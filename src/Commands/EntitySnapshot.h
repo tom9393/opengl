@@ -140,8 +140,7 @@ namespace Engine {
 
         if (a.RigidBody && (a.RigidBody->type    != b.RigidBody->type ||
                             a.RigidBody->mass    != b.RigidBody->mass ||
-                            a.RigidBody->inertia != b.RigidBody->inertia ||
-                            a.RigidBody->ShapePath != b.RigidBody->ShapePath))
+                            a.RigidBody->inertia != b.RigidBody->inertia))
             return true;
 
         if (a.Light && (a.Light->Type        != b.Light->Type ||

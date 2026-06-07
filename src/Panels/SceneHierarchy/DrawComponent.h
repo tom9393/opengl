@@ -54,6 +54,8 @@ namespace Engine {
 
 			if (removeComponent)
 			{
+				if constexpr (std::is_same_v<T, RigidBodyComponent>)
+					CollisionBaker::Release(entity);
 				RecordEntityEdit(entity, [&]{ entity.RemoveComponent<T>(); });
 			}
 		}

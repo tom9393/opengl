@@ -36,13 +36,11 @@ namespace Engine {
 
         if (ImGui::Button("Re-Bake Collision Data"))
         {
-            component.ShapePath = CollisionBaker::Bake(entity);
+            CollisionBaker::Bake(entity);
         }
 
-        bool fileExists = !component.ShapePath.empty() && std::filesystem::exists(component.ShapePath);
-
         ImGui::SameLine();
-        if (fileExists)
+        if (CollisionBaker::HasShape(entity))
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 0.2f, 1.0f));
             ImGui::Text("(Meshes baked)");

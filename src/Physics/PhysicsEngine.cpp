@@ -118,12 +118,13 @@ namespace Engine {
 		for (auto& e : view)
 		{
 			Entity entity = { e, s_Scene };
+
+            if (!CollisionBaker::HasShape(entity)) continue;
+
 			auto& transformComponent = entity.GetComponent<TransformComponent>();
 			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
 
-            if (rigidbodyComponent.ShapePath.empty()) continue;
-
-			RBComplexShape* shape = new RBComplexShape(rigidbodyComponent.ShapePath);
+			RBComplexShape* shape = new RBComplexShape(CollisionBaker::GetShapePath(entity));
 			Shared<RigidBody> body = MakeShared<RigidBody>(shape, transformComponent.translation, transformComponent.rotation, transformComponent.scale, rigidbodyComponent.inertia, rigidbodyComponent.mass);
 
 			AddRigidBody(body);
