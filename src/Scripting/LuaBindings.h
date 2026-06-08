@@ -13,14 +13,11 @@ namespace Engine {
         static void Register(sol::state& state);
 
         static void BindComponents(Scene* scene);
+        static void BindEntity(Entity entity);
         static void UnbindComponents(Scene* scene);
         static void ReloadScripts(Scene* scene);
 
     private:
-        static void RegisterMath(sol::state& state);
-        static void RegisterInputs(sol::state& state);
-        static void RegisterComponents(sol::state& state);
-        
         template <typename T>
         static void BindComponent(Entity &e);
     };

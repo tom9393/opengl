@@ -51,7 +51,16 @@ namespace Engine
 		if (sourceEntity.HasComponent<LightComponent>()) {
 			newEntity.AddComponent<LightComponent>(sourceEntity.GetComponent<LightComponent>());
 		}
-		// Add other components as needed
+
+		// RuntimeBody is rebuilt when the body is added to the world.
+		if (sourceEntity.HasComponent<RigidBodyComponent>()) {
+			newEntity.AddComponent<RigidBodyComponent>(sourceEntity.GetComponent<RigidBodyComponent>());
+		}
+
+		// The environment is created fresh when the script is bound.
+		if (sourceEntity.HasComponent<LuaScriptComponent>()) {
+			newEntity.AddComponent<LuaScriptComponent>(sourceEntity.GetComponent<LuaScriptComponent>());
+		}
 
 		auto children = sourceEntity.GetChildren(); 
 		for (auto& child : children) 

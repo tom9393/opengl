@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Asset/AssetManager.h"
 #include "Asset/CollisionBaker.h"
+#include "Asset/Prefab.h"
 #include "Audio/AudioEngine.h"
 #include "Components.h"
 #include "Entity.h"
@@ -8,6 +9,7 @@
 #include "Events/EventBroker.h"
 #include "Physics/RigidBody.h"
 #include "Render/Renderer.h"
+#include "Scripting/LuaBindings.h"
 #include "Scripting/ScriptEngine.h"
 
 namespace Engine
@@ -109,13 +111,45 @@ namespace Engine
 		AudioEngine::OnUpdate(ts);
 	};
 
+	// Calls the matching lifecycle function on an entity's Lua script, if it defines one.
+	// Enter events pass (otherEntity, contactPoint, normal); exit events pass (otherEntity).
+	static void DispatchContactToLua(Scene* scene, entt::entity self, entt::entity other, const glm::vec3& point, const glm::vec3& normal, bool entered, bool trigger)
+	{
+		// A body can despawn mid-overlap, leaving a stale handle in the exit set.
+		if (!scene->GetRegistry().valid(self) || !scene->GetRegistry().valid(other)) return;
+
+		Entity e{ self, scene };
+		if (!e.HasComponent<LuaScriptComponent>()) return;
+
+		auto& env = e.GetComponent<LuaScriptComponent>().Environment;
+		if (!env.valid()) return;
+
+		const char* fn = trigger ? (entered ? "OnTriggerEnter" : "OnTriggerExit")
+		                         : (entered ? "OnCollisionEnter" : "OnCollisionExit");
+
+		sol::protected_function callback = env[fn];
+		if (!callback.valid()) return;
+
+		Entity otherEntity{ other, scene };
+		if (entered)
+			callback(otherEntity, point, normal);
+		else
+			callback(otherEntity);
+	}
+
 	void Scene::OnRuntimeStart()
-	{	
+	{
         EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMousePress), this);
 
 		PhysicsEngine::RuntimeStart(this);
 		AudioEngine::RuntimeStart(this);
 		ScriptEngine::RuntimeStart(this);
+
+		// Enter/exit collision & trigger events -> Lua scripts on both entities.
+		PhysicsEngine::RegisterContactCallback([this](entt::entity a, entt::entity b, const glm::vec3& point, const glm::vec3& normal, bool entered, bool trigger){
+				DispatchContactToLua(this, a, b, point, normal, entered, trigger);
+				DispatchContactToLua(this, b, a, point, -normal, entered, trigger);
+			});
 
 		PhysicsEngine::RegisterCollisionCallback([this](void* ptrA, void* ptrB, glm::vec3 &hitPos, glm::vec3 &normal){
                 entt::entity a = (entt::entity)(uintptr_t)ptrA;
@@ -189,6 +223,46 @@ namespace Engine
 
 		m_Registry.destroy(entity);
 	};
+
+	static void CollectSubtree(Entity entity, std::vector<Entity>& out)
+	{
+		out.push_back(entity);
+		for (auto child : entity.GetChildren())
+			CollectSubtree(Entity{ child, entity.GetScene() }, out);
+	}
+
+	Entity Scene::InstantiatePrefab(Shared<Prefab> prefab, const glm::vec3& position, const glm::vec3& rotation)
+	{
+		if (!prefab) return {};
+
+		Entity root = prefab->FindRootEntity();
+		if (!root) return {};
+
+		Entity spawned = Entity::CloneEntity(root, this, Entity{});
+
+		if (spawned.HasComponent<TransformComponent>())
+		{
+			auto& transform = spawned.GetComponent<TransformComponent>();
+			transform.translation = position;
+			transform.rotation = rotation;
+			transform.IsDirty = true;
+		}
+
+		// Bring the new subtree to life: physics bodies first (scripts read RuntimeBody
+		// while binding), then scripts. Only meaningful while the scene is playing.
+		std::vector<Entity> subtree;
+		CollectSubtree(spawned, subtree);
+
+		for (Entity e : subtree)
+			if (e.HasComponent<RigidBodyComponent>())
+				PhysicsEngine::AddRuntimeBody(e);
+
+		for (Entity e : subtree)
+			if (e.HasComponent<LuaScriptComponent>())
+				LuaBindings::BindEntity(e);
+
+		return spawned;
+	}
 
 	void Scene::OnMousePress(MouseButtonPressedEvent &e)
 	{

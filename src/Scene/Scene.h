@@ -12,6 +12,7 @@ namespace Engine
 {
 
     class Entity;
+    class Prefab;
 
     class Scene : public Asset
     {
@@ -26,6 +27,10 @@ namespace Engine
         Entity CreateEntity(const std::string &name = "Entity");
         Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
         void DestroyEntity(Entity& entity);
+
+        // Clones a prefab into this scene at the given transform and, when called
+        // during play, initialises the new subtree's physics bodies and scripts.
+        Entity InstantiatePrefab(Shared<Prefab> prefab, const glm::vec3& position, const glm::vec3& rotation = glm::vec3(0.0f));
 
         entt::registry& GetRegistry() { return m_Registry; }
 

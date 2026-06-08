@@ -313,6 +313,16 @@ namespace Engine {
             m_Body->setGravity(GlmToBullet(gravity));
         }
 
+        // Trigger bodies detect overlaps but produce no physical response
+        // (used for pickups, zones, doors). Drives OnTrigger* callbacks in scripts.
+        void SetTrigger(bool isTrigger) {
+            if (isTrigger) {
+                m_Body->setCollisionFlags(m_Body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+            } else {
+                m_Body->setCollisionFlags(m_Body->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
+            }
+        }
+
         // Kinematic bodies are moved by code, not by physics forces
         void SetKinematic(bool isKinematic) {
             if (isKinematic) {

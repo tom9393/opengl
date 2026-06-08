@@ -10,12 +10,23 @@ namespace Engine
     class Input
     {
         public:
+        static void Update();
+
         static bool IsKeyPressed(unsigned int keycode);
+        static bool IsKeyDown(unsigned int keycode);
+        static bool IsKeyReleased(unsigned int keycode);
+
         static bool IsMouseButtonPressed(unsigned int button);
+        static bool IsMouseButtonDown(unsigned int button);
+        static bool IsMouseButtonReleased(unsigned int button);
 
         static std::pair<float, float> GetMousePosition();
+        static std::pair<float, float> GetMouseDelta();
         static float GetMouseX();
         static float GetMouseY();
+
+        // Locks and hides the cursor (for FPS-style camera control), or restores it.
+        static void SetCursorLocked(bool locked);
     };
 
 };

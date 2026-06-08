@@ -55,6 +55,9 @@ namespace Engine {
 
     using Callback = std::function<void(void*, void*, glm::vec3&, glm::vec3&)>;
 
+    // self, other, contact point, normal, entered (true = enter / false = exit), trigger
+    using ContactCallback = std::function<void(entt::entity, entt::entity, const glm::vec3&, const glm::vec3&, bool, bool)>;
+
     class PhysicsEngine {
     public:
 
@@ -69,7 +72,12 @@ namespace Engine {
         static void AddRigidBody(Shared<RigidBody> &body);
         static void RemoveRigidBody(Shared<RigidBody> &body);
 
+        // Builds the runtime rigid body for one entity and adds it to the world.
+        // Used both at runtime start and when spawning prefabs mid-play.
+        static Shared<RigidBody> AddRuntimeBody(Entity entity);
+
         static void RegisterCollisionCallback(Callback cb) { s_Callback = cb; }
+        static void RegisterContactCallback(ContactCallback cb) { s_ContactCallback = cb; }
         static void CheckCollisions();
 
         btDiscreteDynamicsWorld* getWorld() { return s_PhysicsWorldConfiguration->World.get(); }
@@ -93,6 +101,12 @@ namespace Engine {
         static PhysicsSettings s_Settings;
 
         inline static Callback s_Callback;
+        inline static ContactCallback s_ContactCallback;
+
+        // Pairs currently touching, keyed by their two entity handles, so we can
+        // diff against the previous frame to emit enter/exit events.
+        struct ContactPair { entt::entity a; entt::entity b; bool trigger; glm::vec3 point; glm::vec3 normal; };
+        inline static std::unordered_map<uint64_t, ContactPair> s_ActivePairs;
     };
 
 }

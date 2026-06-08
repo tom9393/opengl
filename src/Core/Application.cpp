@@ -4,6 +4,7 @@
 #include "Audio/AudioEngine.h"
 #include "EditorLayer.h"
 #include "Events/EventBroker.h"
+#include "Input.h"
 #include "KeyCodes.h"
 #include "Render/Renderer.h"
 #include "TimeStep.h"
@@ -57,6 +58,8 @@ namespace Engine
         {
             m_Window->UpdateFrameTime();
             TimeStep ts = m_Window->GetFrameTime();
+
+            Input::Update();
 
             AssetUploadQueue::Process();
 

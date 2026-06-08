@@ -1,9 +1,8 @@
 #include "LuaBindings.h"
+#include "MathBindings.h"
+#include "InputBindings.h"
+#include "ComponentBindings.h"
 #include "Asset/AssetManager.h"
-#include "Audio/AudioEngine.h"
-#include "Audio/AudioInstance.h"
-#include "Core/Input.h"
-#include "Core/KeyCodes.h"
 #include "Physics/RigidBody.h"
 #include "Scene/Components.h"
 #include "ScriptEngine.h"
@@ -11,180 +10,9 @@
 namespace Engine {
 
     void LuaBindings::Register(sol::state& state) {
-        RegisterMath(state);
-        RegisterInputs(state);
-        RegisterComponents(state);
-    }
-
-    void LuaBindings::RegisterMath(sol::state& state) {
-        // Bind glm::vec3 with constructors and math operators
-        state.new_usertype<glm::vec3>("vec3",
-            sol::constructors<glm::vec3(float, float, float)>(),
-            "x", &glm::vec3::x,
-            "y", &glm::vec3::y,
-            "z", &glm::vec3::z,
-            // Meta-functions allow Lua to use standard math operators (+, -, *, /)
-            sol::meta_function::addition, [](const glm::vec3& a, const glm::vec3& b) { return a + b; },
-            sol::meta_function::subtraction, [](const glm::vec3& a, const glm::vec3& b) { return a - b; },
-
-            // Overload to allow scalar multiplication
-            sol::meta_function::multiplication, sol::overload(
-            [](const glm::vec3& a, float b) { return a * b; },
-            [](float a, const glm::vec3& b) { return a * b; }
-            ),
-
-            sol::meta_function::unary_minus, [](const glm::vec3& v) { return -v; }
-        );
-    }
-
-    void LuaBindings::RegisterInputs(sol::state& state) {
-        // Create a Lua table (namespace) for Input
-        sol::table input = state.create_table("Input");
-        
-        // Bind Input functions
-        input.set_function("IsKeyPressed", &Input::IsKeyPressed);
-        input.set_function("IsMouseButtonPressed", &Input::IsMouseButtonPressed);
-        input.set_function("GetMousePosition", &Input::GetMousePosition);
-
-        // Bind Math Utility
-        input.set_function("radians", [](float degrees) { return glm::radians(degrees); });
-
-        // Expose some common KeyCodes as an enum
-        state.new_enum("Key",
-            "W", KEY_W,
-            "A", KEY_A,
-            "S", KEY_S,
-            "D", KEY_D,
-            "Space", KEY_SPACE,
-            "Ctrl", KEY_LEFT_CONTROL,
-            "Key1", KEY_1,
-            "Key2", KEY_2,
-            "Key3", KEY_3,
-            "Key4", KEY_4,
-            "Key5", KEY_5,
-            "Key6", KEY_6,
-            "Key7", KEY_7,
-            "Key8", KEY_8,
-            "Key9", KEY_9,
-            "Key0", KEY_0
-        );
-    }
-
-    void LuaBindings::RegisterComponents(sol::state& state)
-    {
-
-        state.new_usertype<RaycastResult>("RaycastResult",
-            "Hit",      &RaycastResult::Hit,
-            "Entity",   &RaycastResult::HitEntity,
-            "Position", &RaycastResult::Position,
-            "Normal",   &RaycastResult::Normal
-        );
-
-        state.new_usertype<Entity>("Entity",
-            "Destroy", [](Entity& e) { e.GetScene()->DestroyEntity(e); },
-            "GetLuaEnvironment", [](Entity& e) -> sol::object {
-                if (e.HasComponent<LuaScriptComponent>()) {
-                    auto& script = e.GetComponent<LuaScriptComponent>();
-
-                    if (script.Environment.valid()) {
-                        return script.Environment;
-                    }
-                }
-                return sol::nil;
-            },
-            "GetParent", [](Entity& e, sol::this_state s) -> sol::object {
-                if (!e.HasParent()) return sol::nil;
-                return sol::make_object(s, Entity{ e.GetParent(), e.GetScene() });
-            }
-        );
-
-        state.new_usertype<TransformComponent>("TransformComponent",
-            "Translation", &TransformComponent::translation,
-            "Rotation", &TransformComponent::rotation,
-            "Scale", &TransformComponent::scale,
-            "GetForward", &TransformComponent::GetForward,
-            "GetRight", &TransformComponent::GetRight,
-            "RotateTowards", [](TransformComponent &transformComponent, const glm::vec3 &from, const glm::vec3 &to) {
-                return RotateTowards(from, to);
-            }
-        );
-
-        state.new_usertype<Scene>("Scene",
-        "CreateEntity", &Scene::CreateEntity,
-        "Raycast", [](Scene& scene, const glm::vec3 origin, const glm::vec3 dir, float dist) {
-            return PhysicsEngine::Raycast(origin, dir, dist);
-        });
-
-        state.new_usertype<TagComponent>("TagComponent",
-            "Tag", &TagComponent::tag
-        );
-
-        state.new_usertype<RigidBody>("RigidBody",
-            "SetTransform", &RigidBody::SetTransform,
-            "GetTransform", &RigidBody::GetTransform,
-
-            "GetForward", &RigidBody::GetForward,
-            "GetUp", &RigidBody::GetUp,
-            "GetRight", &RigidBody::GetRight,
-
-            "LookAt", &RigidBody::LookAt,
-            "MoveForward", &RigidBody::MoveForward,
-            "ApplyRelativeImpulse", &RigidBody::ApplyRelativeImpulse,
-            
-            "ApplyForce", &RigidBody::ApplyForce,
-            "ApplyImpulse", &RigidBody::ApplyImpulse,
-            "ApplyTorque", &RigidBody::ApplyTorque,
-            "ClearForces", &RigidBody::ClearForces,
-            
-            "SetLinearVelocity", &RigidBody::SetLinearVelocity,
-            "GetLinearVelocity", &RigidBody::GetLinearVelocity,
-            "SetAngularVelocity", &RigidBody::SetAngularVelocity,
-
-            "SetMass", &RigidBody::SetMass,
-            "SetDamping", &RigidBody::SetDamping,
-            "SetRestitution", &RigidBody::SetRestitution,
-            "SetFriction", &RigidBody::SetFriction,
-            "SetGravity", &RigidBody::SetGravity,
-            
-            "SetLinearFactor", &RigidBody::SetLinearFactor,
-            "SetAngularFactor", &RigidBody::SetAngularFactor,
-            "SetKinematic", &RigidBody::SetKinematic
-        );
-
-        state.new_usertype<SceneCameraComponent>("CameraComponent",
-            "Primary", &SceneCameraComponent::primary,
-            "FixedAspectRatio", &SceneCameraComponent::fixedAspectRatio
-        );
-
-        // Handle returned by Audio.Play, so scripts can stop/adjust a live sound.
-        state.new_usertype<AudioInstance>("AudioInstance",
-            "Play", &AudioInstance::Play,
-            "Stop", &AudioInstance::Stop,
-            "IsPlaying", &AudioInstance::IsPlaying,
-            "SetVolume", &AudioInstance::SetVolume,
-            "SetPitch", &AudioInstance::SetPitch,
-            "SetLooping", &AudioInstance::SetLooping
-        );
-
-        // Global audio API, available to every script (not tied to a component).
-        // Audio.Play("clip", entity, { volume=, pitch=, loop=, spatial=, minDistance=, maxDistance= })
-        // plays the named clip; for a spatial sound the engine follows `entity`'s
-        // transform each frame. Returns the sound so the script can stop/adjust it.
-        sol::table audio = state.create_table("Audio");
-        audio.set_function("Play", [](const std::string& name, Entity emitter, sol::optional<sol::table> opts) -> Shared<AudioInstance> {
-            AudioPlayParams params;
-            if (opts)
-            {
-                sol::table t = *opts;
-                params.Volume      = t.get_or("volume", params.Volume);
-                params.Pitch       = t.get_or("pitch", params.Pitch);
-                params.Loop        = t.get_or("loop", params.Loop);
-                params.Spatial     = t.get_or("spatial", params.Spatial);
-                params.MinDistance = t.get_or("minDistance", params.MinDistance);
-                params.MaxDistance = t.get_or("maxDistance", params.MaxDistance);
-            }
-            return AudioEngine::Play(emitter, name, params);
-        });
+        MathBindings::Register(state);
+        InputBindings::Register(state);
+        ComponentBindings::Register(state);
     }
 
     void LuaBindings::ReloadScripts(Scene* scene)
@@ -248,39 +76,40 @@ namespace Engine {
         e.GetComponent<LuaScriptComponent>().Environment["RigidBody"] = rbComponent.RuntimeBody;
     }
 
+    void LuaBindings::BindEntity(Entity entity)
+    {
+        auto& lua = ScriptEngine::GetState();
+        auto& script = entity.GetComponent<LuaScriptComponent>();
+
+        // Create a unique environment for this entity
+        script.Environment = sol::environment(lua, sol::create, lua.globals());
+
+        script.Environment["Self"] = entity;
+        script.Environment["Scene"] = entity.GetScene();
+
+        BindComponent<TagComponent>(entity);
+        BindComponent<TransformComponent>(entity);
+        BindComponent<SceneCameraComponent>(entity);
+        BindComponent<RigidBodyComponent>(entity);
+
+        AssetMetadata scriptMetadata = AssetManager::GetMetadata(script.ScriptHandle);
+        std::filesystem::path path = scriptMetadata.FilePath;
+
+        // Load the script file into this specific environment
+        lua.script_file(path, script.Environment);
+
+        // Call OnCreate if it exists
+        sol::function onCreate = script.Environment["OnCreate"];
+        if (onCreate.valid()) {
+            onCreate();
+        }
+    }
+
     void LuaBindings::BindComponents(Scene* scene)
     {
 		auto luaScripts = scene->m_Registry.view<LuaScriptComponent>();
         for (auto &e : luaScripts)
-        {
-            auto& lua = ScriptEngine::GetState();
-            Entity entity = { e, scene };
-
-            auto& script = entity.GetComponent<LuaScriptComponent>();
-            
-            // Create a unique environment for this entity
-            script.Environment = sol::environment(lua, sol::create, lua.globals());
-
-            script.Environment["Self"] = entity;
-            script.Environment["Scene"] = scene;
-
-            BindComponent<TagComponent>(entity);
-            BindComponent<TransformComponent>(entity);
-            BindComponent<SceneCameraComponent>(entity);
-            BindComponent<RigidBodyComponent>(entity);
-
-            AssetMetadata scriptMetadata = AssetManager::GetMetadata(script.ScriptHandle);
-            std::filesystem::path path = scriptMetadata.FilePath;
-
-            // Load the script file into this specific environment
-            lua.script_file(path, script.Environment);
-
-            // Call OnCreate if it exists
-            sol::function onCreate = script.Environment["OnCreate"];
-            if (onCreate.valid()) {
-                onCreate();
-            }
-        }
+            BindEntity({ e, scene });
     }
 
     void LuaBindings::UnbindComponents(Scene* scene)

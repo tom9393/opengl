@@ -46,6 +46,8 @@ namespace Engine {
         s_PhysicsWorldObjects = nullptr;
         s_Scene = nullptr;
         s_Callback = nullptr;
+        s_ContactCallback = nullptr;
+        s_ActivePairs.clear();
     }
 
     void PhysicsEngine::StepSimulation(float deltaTime, int maxSubSteps, float fixedTimeStep)
@@ -64,6 +66,9 @@ namespace Engine {
 
     void PhysicsEngine::CheckCollisions()
     {
+        // Pairs touching this frame, so we can diff against s_ActivePairs for enter/exit.
+        std::unordered_map<uint64_t, ContactPair> current;
+
         int numManifolds = s_PhysicsWorldConfiguration->Dispatcher->getNumManifolds();
         for (int i = 0; i < numManifolds; i++) {
             // Manifold -> which two objects are touching, may have 1 (sphere) or 4 (cube) points of touch
@@ -85,16 +90,44 @@ namespace Engine {
 
             // Get the first contact point for now
             btManifoldPoint& cp = contactManifold->getContactPoint(0);
-            
+
             // Convert Bullet vectors to your engine's vector type (e.g., glm::vec3)
-            glm::vec3 hitPos = BtToGlmVec3(cp.m_normalWorldOnB);
             glm::vec3 normal = BtToGlmVec3(cp.m_normalWorldOnB);
             glm::vec3 flippedNormal = -normal;
 
-            // Notify the Scene/Scripts
-            s_Callback(ptrA, ptrB, hitPos, normal);
-            s_Callback(ptrB, ptrA, hitPos, flippedNormal);
+            // Per-contact, per-frame notification (used by native scripts' OnCollision)
+            if (s_Callback)
+            {
+                glm::vec3 hitPos = normal;
+                s_Callback(ptrA, ptrB, hitPos, normal);
+                s_Callback(ptrB, ptrA, hitPos, flippedNormal);
+            }
+
+            // Record the pair for enter/exit diffing. A body flagged with
+            // CF_NO_CONTACT_RESPONSE (see RigidBody::SetTrigger) makes this a trigger overlap.
+            entt::entity a = (entt::entity)(uintptr_t)ptrA;
+            entt::entity b = (entt::entity)(uintptr_t)ptrB;
+            uint32_t ua = (uint32_t)a, ub = (uint32_t)b;
+            uint64_t key = ua < ub ? ((uint64_t)ua << 32 | ub) : ((uint64_t)ub << 32 | ua);
+
+            bool trigger = (objA->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE)
+                        || (objB->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE);
+
+            current[key] = { a, b, trigger, BtToGlmVec3(cp.m_positionWorldOnB), normal };
         }
+
+        if (s_ContactCallback)
+        {
+            for (auto& [key, pair] : current)
+                if (s_ActivePairs.find(key) == s_ActivePairs.end())
+                    s_ContactCallback(pair.a, pair.b, pair.point, pair.normal, true, pair.trigger);
+
+            for (auto& [key, pair] : s_ActivePairs)
+                if (current.find(key) == current.end())
+                    s_ContactCallback(pair.a, pair.b, pair.point, pair.normal, false, pair.trigger);
+        }
+
+        s_ActivePairs = std::move(current);
     }
 
     void PhysicsEngine::AddRigidBody(Shared<RigidBody> &body)
@@ -109,6 +142,27 @@ namespace Engine {
         // you'd need to track mapping from body -> indices and erase from vectors too.
     }
 
+    Shared<RigidBody> PhysicsEngine::AddRuntimeBody(Entity entity)
+    {
+        if (!entity.HasComponent<RigidBodyComponent>() || !entity.HasComponent<TransformComponent>())
+            return nullptr;
+
+        if (!CollisionBaker::HasShape(entity)) return nullptr;
+
+        auto& transformComponent = entity.GetComponent<TransformComponent>();
+        auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
+
+        RBComplexShape* shape = new RBComplexShape(CollisionBaker::GetShapePath(entity));
+        Shared<RigidBody> body = MakeShared<RigidBody>(shape, transformComponent.translation, transformComponent.rotation, transformComponent.scale, rigidbodyComponent.inertia, rigidbodyComponent.mass);
+
+        AddRigidBody(body);
+        body->SetUserPointer((void*)(uintptr_t)entity.GetHandle());
+        body->SetTransform(transformComponent.translation, transformComponent.rotation);
+
+        rigidbodyComponent.RuntimeBody = body;
+        return body;
+    }
+
     void PhysicsEngine::RuntimeStart(Scene* scene)
     {
         s_Scene = scene;
@@ -116,23 +170,7 @@ namespace Engine {
 
 		auto view = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent>();
 		for (auto& e : view)
-		{
-			Entity entity = { e, s_Scene };
-
-            if (!CollisionBaker::HasShape(entity)) continue;
-
-			auto& transformComponent = entity.GetComponent<TransformComponent>();
-			auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
-
-			RBComplexShape* shape = new RBComplexShape(CollisionBaker::GetShapePath(entity));
-			Shared<RigidBody> body = MakeShared<RigidBody>(shape, transformComponent.translation, transformComponent.rotation, transformComponent.scale, rigidbodyComponent.inertia, rigidbodyComponent.mass);
-
-			AddRigidBody(body);
-            body->SetUserPointer((void*)(uintptr_t)entity.GetHandle());
-			body->SetTransform(transformComponent.translation, transformComponent.rotation);
-
-            rigidbodyComponent.RuntimeBody = body;
-		}
+			AddRuntimeBody({ e, s_Scene });
     }
 
     void PhysicsEngine::RuntimeStop()
