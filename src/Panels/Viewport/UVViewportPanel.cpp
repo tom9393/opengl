@@ -4,16 +4,34 @@
 #include "Asset/Texture.h"
 #include "Commands/MeshEditCommand.h"
 #include "Scene/Components.h"
+#include "Utils/SceneManager.h"
 
 namespace Engine {
 
+    void UVViewportPanel::Enter() {
+        if (m_Session.IsActive())
+            return;
+        // Start from a clean view/selection: this session is independent of any previous
+        // one (and re-clones the entity's current mesh, picking up Modeling edits).
+        m_Selected.clear();
+        m_Drag = Drag::None;
+        m_ViewInitialized = false;
+        m_Session.Begin(SceneManager::GetSelectedEntity());
+    }
+
+    void UVViewportPanel::Exit() {
+        if (!m_Session.IsActive())
+            return;
+        m_Session.End(true);
+    }
+
     void UVViewportPanel::OnImGuiRender() {
-        if (!m_Session || !m_Session->IsActive()) {
+        if (!m_Session.IsActive()) {
             // No edit session: drop any stale state and re-fit when one next begins.
             m_Selected.clear();
             m_Drag = Drag::None;
             m_ViewInitialized = false;
-            ImGui::TextDisabled("Enter Edit Mode in the Modeling tab to edit UVs.");
+            ImGui::TextDisabled("Select a mesh entity to edit its UVs.");
             return;
         }
 
@@ -98,8 +116,8 @@ namespace Engine {
     }
 
     std::vector<bool> UVViewportPanel::ReferencedVerts() const {
-        const std::vector<glm::vec2>& uvs = m_Session->UVVerts();
-        const std::vector<int>& corner = m_Session->CornerUV();
+        const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
+        const std::vector<int>& corner = m_Session.CornerUV();
         std::vector<bool> ref(uvs.size(), false);
         for (int c : corner)
             if (c >= 0 && c < (int)uvs.size())
@@ -116,7 +134,7 @@ namespace Engine {
     }
 
     int UVViewportPanel::PickVert(const glm::vec2& mouse, const ImVec2& canvasMin) const {
-        const std::vector<glm::vec2>& uvs = m_Session->UVVerts();
+        const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         std::vector<bool> ref = ReferencedVerts();
         const float threshold = 8.0f;
         float best = threshold * threshold;
@@ -137,7 +155,7 @@ namespace Engine {
 
     void UVViewportPanel::BeginTransform(const glm::vec2& mouse) {
         m_DragStartMouse = mouse;
-        const std::vector<glm::vec2>& uvs = m_Session->UVVerts();
+        const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         m_DragStartUVs.clear();
         glm::vec2 centroid(0.0f);
         for (int idx : m_Selected) {
@@ -157,7 +175,7 @@ namespace Engine {
         if (io.MouseDelta.x == 0.0f && io.MouseDelta.y == 0.0f)
             return; // nothing moved this frame; skip the mesh rebuild
 
-        std::vector<glm::vec2>& uvs = m_Session->UVVerts();
+        std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         ImVec2 pivot = UVToScreen(m_DragPivotUV, canvasMin);
         glm::vec2 pivotScreen(pivot.x, pivot.y);
 
@@ -194,7 +212,7 @@ namespace Engine {
                 uvs[idx] = ScreenToUV(out, canvasMin);
         }
 
-        m_Session->SyncToMesh();
+        m_Session.SyncToMesh();
     }
 
     void UVViewportPanel::FinalizeBox(const ImVec2& canvasMin) {
@@ -205,7 +223,7 @@ namespace Engine {
         if (maxx - minx < 3.0f && maxy - miny < 3.0f)
             return; // treat a tiny box as an empty click (selection already cleared)
 
-        const std::vector<glm::vec2>& uvs = m_Session->UVVerts();
+        const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         std::vector<bool> ref = ReferencedVerts();
         for (int i = 0; i < (int)uvs.size(); ++i) {
             if (i >= (int)ref.size() || !ref[i])
@@ -239,7 +257,7 @@ namespace Engine {
                         m_Selected.push_back(hit);
                     }
                     BeginTransform(mouse);
-                    m_TransformBefore = m_Session->CaptureState();
+                    m_TransformBefore = m_Session.CaptureState();
                     m_TransformMoved = false;
                     m_Drag = Drag::Transform;
                 } else {
@@ -269,7 +287,7 @@ namespace Engine {
                 } else {
                     if (m_TransformMoved)
                         CommandHistory::Global().Push(MakeUnique<MeshEditCommand>(
-                            m_Session, m_TransformBefore, m_Session->CaptureState()));
+                            &m_Session, m_TransformBefore, m_Session.CaptureState()));
                     m_Drag = Drag::None;
                 }
                 break;
@@ -290,7 +308,7 @@ namespace Engine {
     }
 
     unsigned int UVViewportPanel::AlbedoTextureID() const {
-        Entity e = m_Session->GetEntity();
+        Entity e = m_Session.GetEntity();
         if (!e || !e.HasComponent<MaterialComponent>())
             return 0;
 
@@ -330,9 +348,9 @@ namespace Engine {
             dl->AddLine(UVToScreen({ 0.0f, t }, canvasMin), UVToScreen({ 1.0f, t }, canvasMin), col, 1.0f);
         }
 
-        const HalfEdgeMesh& mesh = m_Session->Mesh();
-        const std::vector<int>& corner = m_Session->CornerUV();
-        const std::vector<glm::vec2>& uvs = m_Session->UVVerts();
+        const HalfEdgeMesh& mesh = m_Session.Mesh();
+        const std::vector<int>& corner = m_Session.CornerUV();
+        const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
 
         // UV edges, drawn per face corner-to-corner.
         for (int f = 0; f < (int)mesh.Faces().size(); ++f) {

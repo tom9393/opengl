@@ -9,8 +9,10 @@ namespace Engine {
     {
         m_Object.SetPassPanel(&m_PassPanel);
         m_Modeling.SetPassPanel(&m_PassPanel);
-        // The UV editor shares the Modeling tab's edit session (one mesh, two views).
-        m_UV.SetSession(&m_Modeling.GetSession());
+
+        m_Tabs[(int)Tab::Layout]   = &m_Object;
+        m_Tabs[(int)Tab::Modeling] = &m_Modeling;
+        m_Tabs[(int)Tab::UV]       = &m_UV;
     }
 
     void ViewportPanel::SetViewportContext(const ViewportContext& ctx) {
@@ -30,20 +32,13 @@ namespace Engine {
         ImGui::Begin("Viewport", nullptr, window_flags);
 
         if (ImGui::BeginTabBar("ViewportTabs")) {
-            if (ImGui::BeginTabItem("Layout")) {
-                SetActiveTab(Tab::Layout);
-                m_Object.OnImGuiRender();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Modeling")) {
-                SetActiveTab(Tab::Modeling);
-                m_Modeling.OnImGuiRender();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("UV Editor")) {
-                SetActiveTab(Tab::UV);
-                m_UV.OnImGuiRender();
-                ImGui::EndTabItem();
+            const char* tabNames[] = { "Layout", "Modeling", "UV Editor" };
+            for (int i = 0; i < 3; i++) {
+                if (ImGui::BeginTabItem(tabNames[i])) {
+                    SetActiveTab((Tab)i);
+                    m_Tabs[i]->OnImGuiRender();
+                    ImGui::EndTabItem();
+                }
             }
             ImGui::EndTabBar();
         }
@@ -55,10 +50,8 @@ namespace Engine {
         if (tab == m_ActiveTab)
             return;
 
-        if (IsEditTab(tab) && !IsEditTab(m_ActiveTab))
-            m_Modeling.EnterEditMode();
-        else if (!IsEditTab(tab) && IsEditTab(m_ActiveTab))
-            m_Modeling.ExitEditMode();
+        m_Tabs[(int)m_ActiveTab]->Exit();
+        m_Tabs[(int)tab]->Enter();
 
         m_ActiveTab = tab;
     }

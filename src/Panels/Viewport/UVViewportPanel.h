@@ -1,23 +1,30 @@
 #pragma once
 
 #include "pch.h"
+#include "ViewportTab.h"
 #include "Modeling/MeshEditSession.h"
 
 namespace Engine {
 
-    // 2D UV map editor (Blender-style). Operates on the active MeshEditSession's
+    // 2D UV map editor (Blender-style). Owns its own MeshEditSession and edits its
     // per-corner UV layer: it draws the UV layout over a 0..1 grid (optionally with the
     // mesh's albedo texture behind it) and lets the user select UV verts and
     // move/rotate/scale them. Edits write straight to the session's UV verts and re-sync
-    // the render mesh, so the 3D viewports update live. Shows a hint when no edit session
-    // is active (UVs only exist in Edit Mode, entered from the Modeling tab).
-    class UVViewportPanel {
+    // the render mesh. The session begins on the selected entity when the UV tab is
+    // opened and commits when it is left; a hint is shown if no session is active (e.g.
+    // nothing selected, or the mesh could not be edited).
+    class UVViewportPanel : public ViewportTab {
     public:
         UVViewportPanel() = default;
 
-        void SetSession(MeshEditSession* session) { m_Session = session; }
+        // Edit-mode lifecycle (overrides ViewportTab), driven by the Viewport tab change:
+        // opening the UV tab enters edit mode, leaving it commits. Enter begins a session
+        // on the selected entity (no-op if already active or nothing valid is selected);
+        // Exit commits.
+        void Enter() override;
+        void Exit() override;
 
-        void OnImGuiRender();
+        void OnImGuiRender() override;
 
     private:
         enum class Tool { Move, Rotate, Scale };
@@ -44,7 +51,7 @@ namespace Engine {
 
         unsigned int AlbedoTextureID() const;
 
-        MeshEditSession* m_Session = nullptr;
+        MeshEditSession m_Session;
 
         // screen = canvasMin + m_Pan + (uv.x, 1 - uv.y) * m_Zoom
         glm::vec2 m_Pan = { 0.0f, 0.0f }; // pixels, relative to the canvas top-left

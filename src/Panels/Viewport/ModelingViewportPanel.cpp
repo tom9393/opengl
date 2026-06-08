@@ -30,7 +30,7 @@ namespace Engine {
         DrawToolbar();
     }
 
-    void ModelingViewportPanel::EnterEditMode() {
+    void ModelingViewportPanel::Enter() {
         if (m_Session.IsActive())
             return;
         Entity selected = SceneManager::GetSelectedEntity();
@@ -38,7 +38,7 @@ namespace Engine {
             ClearSelection();
     }
 
-    void ModelingViewportPanel::ExitEditMode() {
+    void ModelingViewportPanel::Exit() {
         if (!m_Session.IsActive())
             return;
         m_Session.End(true);
@@ -50,12 +50,12 @@ namespace Engine {
 
         if (!m_Session.IsActive()) {
             if (ImGui::Button("Enter Edit Mode"))
-                EnterEditMode();
+                Enter();
             return;
         }
 
         if (ImGui::Button("Commit")) {
-            ExitEditMode();
+            Exit();
             return;
         }
         ImGui::SameLine();

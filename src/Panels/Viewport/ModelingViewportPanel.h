@@ -10,16 +10,12 @@ namespace Engine {
     public:
         ModelingViewportPanel() = default;
 
-        // Shared with the UV editor: both views operate on one edit session, so the UV
-        // layout reflects the mesh entered into Edit Mode here.
-        MeshEditSession& GetSession() { return m_Session; }
-
-        // Edit-mode lifecycle. Driven both by the toolbar's Enter/Commit buttons and by
-        // the Viewport tab: entering the Modeling/UV tabs enters edit mode and returning
-        // to Layout commits. EnterEditMode begins a session on the selected entity (no-op
-        // if already active or nothing valid is selected); ExitEditMode commits.
-        void EnterEditMode();
-        void ExitEditMode();
+        // Edit-mode lifecycle (overrides ViewportTab). Driven by the toolbar's
+        // Enter/Commit buttons and by the Viewport tab change: opening the Modeling tab
+        // enters edit mode, leaving it commits. Enter begins a session on the selected
+        // entity (no-op if already active or nothing valid is selected); Exit commits.
+        void Enter() override;
+        void Exit() override;
 
     protected:
         void OnDraw() override;
