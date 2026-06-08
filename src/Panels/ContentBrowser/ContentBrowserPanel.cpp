@@ -1,5 +1,6 @@
 #include "ContentBrowserPanel.h"
 #include "AssetPreviewManager.h"
+#include "EditorIcons.h"
 #include "Render/Renderer.h"
 
 namespace Engine
@@ -7,6 +8,7 @@ namespace Engine
 
 	ContentBrowserPanel::ContentBrowserPanel()
 	{
+		EditorIcons::Init();
 		AssetPreviewManager::Init();
 	};
 

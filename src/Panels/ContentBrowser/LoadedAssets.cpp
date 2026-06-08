@@ -5,6 +5,17 @@
 
 namespace Engine {
 
+    static const std::pair<AssetType, const char*> s_FilterTypes[] = {
+        { AssetType::Texture2D, "Texture2D" },
+        { AssetType::Texture3D, "Texture3D" },
+        { AssetType::Scene,     "Scene" },
+        { AssetType::Prefab,    "Prefab" },
+        { AssetType::Mesh,      "Mesh" },
+        { AssetType::Material,  "Material" },
+        { AssetType::LuaScript, "Script" },
+        { AssetType::Audio,     "Audio" },
+    };
+
     static ImVec4 GetColorForAssetType(Engine::AssetType type)
     {
         switch (type)
@@ -15,7 +26,7 @@ namespace Engine {
             case Engine::AssetType::Prefab:    return ImVec4(0.2f, 0.2f, 0.8f, 1.0f); // Blue
             case Engine::AssetType::Mesh:      return ImVec4(0.4f, 0.4f, 0.9f, 1.0f); // Light Blue
             case Engine::AssetType::Material:  return ImVec4(0.8f, 0.8f, 0.2f, 1.0f); // Yellow
-            case Engine::AssetType::LuaScript: return ImVec4(0.8f, 0.4f, 0.8f, 1.0f);
+            case Engine::AssetType::LuaScript: return ImVec4(0.8f, 0.4f, 0.8f, 1.0f); // Pink
             case Engine::AssetType::Audio:     return ImVec4(0.2f, 0.7f, 0.8f, 1.0f); // Cyan
             case Engine::AssetType::None:
             default:                           return ImVec4(0.4f, 0.4f, 0.4f, 1.0f); // Grey
@@ -28,6 +39,12 @@ namespace Engine {
         static float thumbnailSize = 128.0f;
         float cellSize = thumbnailSize + padding;
 
+        if (ImGui::CollapsingHeader("Filter"))
+        {
+            for (const auto& [type, label] : s_FilterTypes)
+                ImGui::Checkbox(label, &m_VisibleTypes[type]);
+        }
+
         float panelWidth = ImGui::GetContentRegionAvail().x;
         int columnCount = (int)(panelWidth / cellSize);
         if (columnCount < 1)
@@ -37,10 +54,11 @@ namespace Engine {
 
         for (const auto& [uuid, asset] : AssetManager::m_AssetRegistry)
         {
-            // You can format this string to show the file path if your metadata structure supports it
             std::string displayName = asset.Name;
 
-            if (asset.Type == AssetType::Mesh) continue;
+            auto visibleIt = m_VisibleTypes.find(asset.Type);
+            if (visibleIt == m_VisibleTypes.end() || !visibleIt->second)
+                continue;
 
             if (displayName.length() > 20)
             {
@@ -57,12 +75,13 @@ namespace Engine {
 					(ImTextureID)iconID, 
 					{ thumbnailSize, thumbnailSize }, 
 					{ 0, 1 }, { 1, 0 }, 
-					bgColor // Passing the background color here!
+					bgColor
 			);
 
             if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
+				if (!asset.FilePath.empty())
+					ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
                 AssetPreviewManager::UpdatePreview(asset.Handle);
 			}
 
@@ -77,7 +96,7 @@ namespace Engine {
 
             ImGui::TextWrapped(displayName.c_str());
 
-            if (ImGui::IsItemHovered())
+            if (ImGui::IsItemHovered() && !asset.FilePath.empty())
 			{
 				ImGui::SetTooltip("Path: %s", asset.FilePath.c_str());
 			}
@@ -87,7 +106,6 @@ namespace Engine {
         }
         ImGui::Columns(1);
 
-        // Optional: Allow resizing the thumbnails in Loaded Assets view as well
         ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 16, 512);
         ImGui::SliderFloat("Padding", &padding, 0, 32);
     };

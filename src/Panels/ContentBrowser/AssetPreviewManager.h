@@ -25,12 +25,6 @@ namespace Engine {
     private:
         static std::unordered_map<UUID, Shared<Preview>> s_Previews;
 
-        static Shared<Texture2D> s_DefaultFileIcon;
-        static Shared<Texture2D> s_DefaultFolderIcon;
-        static Shared<Texture2D> s_LuaIcon;
-        static Shared<Texture2D> s_ModelIcon;
-        static Shared<Texture2D> s_AudioIcon;
-
         static Unique<RenderGraph> s_PreviewGraph;
         static Shared<DynamicBufferPool> s_PreviewPool;
     };

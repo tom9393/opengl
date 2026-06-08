@@ -25,7 +25,5 @@ namespace Engine {
 
         std::filesystem::path m_CurrentDirectory;
         std::vector<Entry> m_EditorCache;
-        Shared<Texture2D> m_DirIcon;
-        Shared<Texture2D> m_FileIcon;
     };
 }

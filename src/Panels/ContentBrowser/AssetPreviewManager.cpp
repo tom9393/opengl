@@ -1,5 +1,6 @@
 #include "AssetPreviewManager.h"
 #include "Asset/AssetManager.h"
+#include "EditorIcons.h"
 #include "MaterialPreview.h"
 #include "PrefabPreview.h"
 #include "Render/Passes/ShadowPass2D.h"
@@ -12,22 +13,11 @@
 namespace Engine {
 
     std::unordered_map<UUID, Shared<Preview>> AssetPreviewManager::s_Previews;
-    Shared<Texture2D> AssetPreviewManager::s_DefaultFileIcon;
-    Shared<Texture2D> AssetPreviewManager::s_DefaultFolderIcon;
-    Shared<Texture2D> AssetPreviewManager::s_LuaIcon;
-    Shared<Texture2D> AssetPreviewManager::s_ModelIcon;
-    Shared<Texture2D> AssetPreviewManager::s_AudioIcon;
 
     Unique<RenderGraph> AssetPreviewManager::s_PreviewGraph;
     Shared<DynamicBufferPool> AssetPreviewManager::s_PreviewPool;
 
     void AssetPreviewManager::Init() {
-		s_DefaultFileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
-		s_DefaultFolderIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/folderIcon.png"));
-		s_LuaIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/luaIcon.png"));
-		s_ModelIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/modelIcon.png"));
-		s_AudioIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/audioIcon.png"));
-
         s_PreviewGraph = MakeUnique<RenderGraph>(256, 256);
         s_PreviewGraph->AddPass<ShadowPass2D>("ShadowPass2D");
         s_PreviewGraph->AddPass<ShadowPass3D>("PointShadowPass");
@@ -40,18 +30,16 @@ namespace Engine {
 
     void AssetPreviewManager::Shutdown() {
         s_Previews.clear();
-        s_DefaultFileIcon.reset();
-        s_DefaultFolderIcon.reset();
     }
 
     uint32_t AssetPreviewManager::GetPreview(UUID assetHandle) {
         AssetMetadata metadata = AssetManager::GetMetadata(assetHandle);
-        if (metadata.Type == AssetType::LuaScript) return s_LuaIcon->GetID();
-        if (metadata.Type == AssetType::Audio) return s_AudioIcon->GetID();
+        if (metadata.Type == AssetType::LuaScript) return EditorIcons::Lua()->GetID();
+        if (metadata.Type == AssetType::Audio) return EditorIcons::Audio()->GetID();
 
         if (s_Previews.find(assetHandle) != s_Previews.end()) {
             uint32_t texID = s_Previews[assetHandle]->GetCachedTextureID();
-            return texID != 0 ? texID : s_DefaultFileIcon->GetID();
+            return texID != 0 ? texID : EditorIcons::File()->GetID();
         } else {
             AssetManager::GetAssetAsync(assetHandle, [&](Shared<Asset> asset){
 
@@ -82,7 +70,7 @@ namespace Engine {
             });
         }
 
-        return s_DefaultFileIcon->GetID();
+        return EditorIcons::File()->GetID();
     }
 
     void AssetPreviewManager::UpdatePreview(UUID assetHandle) {

@@ -1,4 +1,5 @@
 #include "Directory.h"
+#include "EditorIcons.h"
 
 namespace Engine {
 
@@ -6,8 +7,6 @@ namespace Engine {
 
     Directory::Directory() : m_CurrentDirectory(s_AssetPath)
     {
-		m_DirIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/folderIcon.png"));
-		m_FileIcon = AssetManager::GetAsset<Texture2D>(AssetManager::ImportAsset("../assets/icons/documentIcon.png"));
 		RefreshCache();
     }
 
@@ -36,7 +35,7 @@ namespace Engine {
 		ImGui::Columns(columnCount, 0, false);
 
 		for (auto& item : m_EditorCache) {
-			Shared<Texture2D> icon = item.IsDirectory ? m_DirIcon : m_FileIcon;
+			Shared<Texture2D> icon = item.IsDirectory ? EditorIcons::Folder() : EditorIcons::File();
 
 			ImGui::PushID(item.Name.c_str());
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -50,10 +49,7 @@ namespace Engine {
 				}
 				else
 				{
-					// If it's a file, pass it to the AssetManager to import
 					AssetManager::ImportAsset(item.Path);
-                    
-                    // Optional: You could log something here to confirm the import
                     std::cout << "Imported: " << item.Path << std::endl;
 				}
 			}
