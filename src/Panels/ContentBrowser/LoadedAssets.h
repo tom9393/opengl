@@ -14,12 +14,12 @@ namespace Engine {
 
     private:
         std::unordered_map<AssetType, bool> m_VisibleTypes = {
-            { AssetType::Texture2D, true },
-            { AssetType::Texture3D, true },
+            { AssetType::Texture2D, false },
+            { AssetType::Texture3D, false },
             { AssetType::Scene,     true },
             { AssetType::Prefab,    true },
-            { AssetType::Mesh,      true },
-            { AssetType::Material,  true },
+            { AssetType::Mesh,      false },
+            { AssetType::Material,  false },
             { AssetType::LuaScript, true },
             { AssetType::Audio,     true },
         };

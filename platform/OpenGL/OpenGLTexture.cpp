@@ -78,6 +78,12 @@ namespace Engine
         glDeleteFramebuffers(1, &drawFBO);
     }
 
+    void OpenGLTexture2D::ReadPixels(std::vector<unsigned char>& out) const
+    {
+        out.resize((size_t)m_Width * m_Height * 4);
+        glGetTextureImage(m_RendererID, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLsizei)out.size(), out.data());
+    }
+
     OpenGLTexture2D::~OpenGLTexture2D()
     {
         glDeleteTextures(1, &m_RendererID);

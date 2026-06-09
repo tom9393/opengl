@@ -3,6 +3,7 @@
 #include "SceneImporter.h"
 #include "Asset/AssimpLoader.h"
 #include "Asset/SceneBuilder.h"
+#include "Asset/PmSceneSerializer.h"
 
 namespace Engine {
 
@@ -16,6 +17,14 @@ namespace Engine {
             SceneSerializer serializer(scene);
             serializer.Deserialize(metadata.FilePath);
             return scene;
+        }
+
+        if (ext == ".pmscene")
+        {
+            std::optional<ParsedScene> parsed = PmSceneSerializer::Deserialize(metadata.FilePath);
+            if (!parsed)
+                return nullptr;
+            return SceneBuilder::BuildPrefab(metadata, *parsed);
         }
 
         std::optional<ParsedScene> parsed = AssimpLoader::LoadScene(metadata);
@@ -37,6 +46,21 @@ namespace Engine {
                 serializer.Deserialize(metadata.FilePath);
                 AssetUploadQueue::Submit([metadata, scene, cb]() {
                     if (cb) cb(scene);
+                });
+            });
+            return;
+        }
+
+        if (ext == ".pmscene")
+        {
+            Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
+                std::optional<ParsedScene> parsed = PmSceneSerializer::Deserialize(metadata.FilePath);
+                if (!parsed)
+                    return;
+
+                AssetUploadQueue::Submit([metadata, parsed = std::move(*parsed), cb]() {
+                    Shared<Prefab> prefab = SceneBuilder::BuildPrefab(metadata, parsed);
+                    if (cb) cb(prefab);
                 });
             });
             return;

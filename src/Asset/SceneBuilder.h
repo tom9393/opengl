@@ -48,7 +48,9 @@ namespace Engine
 
 
             for (const auto& [type, path] : matData.TexturePaths) {
-                std::string texturePath = data.Directory + "/" + path;
+                // Imported models give paths relative to the model directory; baked .pmscene
+                // files store the full path already (empty Directory).
+                std::string texturePath = data.Directory.empty() ? path : (data.Directory + "/" + path);
                 if (!std::filesystem::exists(texturePath)) continue;
                 UUID texHandle = AssetManager::ImportAsset(texturePath);
                 AssetMetadata metadata = AssetManager::GetMetadata(texHandle);

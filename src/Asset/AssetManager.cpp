@@ -9,11 +9,14 @@
 #include "ScriptImporter.h"
 #include "TextureImporter.h"
 #include "AudioImporter.h"
+#include "PmSceneSerializer.h"
+#include "Prefab.h"
 
 namespace Engine {
 
     static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = {
             { ".pmblend", AssetType::Scene },
+            { ".pmscene", AssetType::Scene },
             { ".png", AssetType::Texture2D },
             { ".jpg", AssetType::Texture2D },
             { ".jpeg", AssetType::Texture2D },
@@ -35,6 +38,7 @@ namespace Engine {
     }
 
     void AssetManager::Shutdown() {
+        BakeLoadedModelScenes();
         SaveAssetRegistry();
     }
 
@@ -51,7 +55,7 @@ namespace Engine {
         metadata.Name = filepath.stem().string();
         
         std::string ext = filepath.extension().string();
-        if (ext == ".pmblend" || ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Scene;
+        if (ext == ".pmblend" || ext == ".pmscene" || ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Scene;
         else if (ext == ".prefab") metadata.Type = AssetType::Prefab;
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
@@ -134,6 +138,42 @@ namespace Engine {
             return handle;
         }
         return 0;
+    }
+
+    UUID AssetManager::GetHandleForAsset(const Shared<Asset>& asset)
+    {
+        if (!asset) return 0;
+        for (const auto& [handle, loaded] : m_LoadedAssets)
+            if (loaded == asset) return handle;
+        return 0;
+    }
+
+    void AssetManager::BakeLoadedModelScenes()
+    {
+        // Collect first; baking repoints FilePath, which we don't want to do while iterating.
+        std::vector<UUID> toBake;
+        for (const auto& [handle, metadata] : m_AssetRegistry)
+        {
+            if (metadata.Type != AssetType::Scene) continue;
+            std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
+            bool isModel = (ext == ".gltf" || ext == ".fbx" || ext == ".obj" || ext == ".assbin");
+            if (!isModel) continue;
+            if (!IsAssetLoaded(handle)) continue; // No live data to bake this session
+            toBake.push_back(handle);
+        }
+
+        for (UUID handle : toBake)
+        {
+            AssetMetadata& metadata = m_AssetRegistry[handle];
+            Shared<Prefab> prefab = GetAsset<Prefab>(handle);
+            if (!prefab) continue;
+
+            std::filesystem::path pmscenePath = std::filesystem::path(metadata.FilePath).replace_extension(".pmscene");
+            PmSceneSerializer::Serialize(prefab, pmscenePath.string());
+
+            metadata.FilePath = pmscenePath.string();
+            std::cout << "Baked scene to " << metadata.FilePath << std::endl;
+        }
     }
 
     void AssetManager::SaveAssetRegistry() 

@@ -28,6 +28,9 @@ namespace Engine
 
         virtual void Copy(uint32_t rendererID, uint32_t width, uint32_t height) = 0;
         virtual void ResizeCopy(uint32_t rendererID, uint32_t width, uint32_t height) = 0;
+
+        // Reads the level-0 image back from the GPU as tightly-packed RGBA8 (width*height*4 bytes).
+        virtual void ReadPixels(std::vector<unsigned char>& out) const = 0;
     };
 
     class Texture3D : public Texture

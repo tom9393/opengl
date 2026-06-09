@@ -14,6 +14,8 @@ namespace Engine
         void Copy(uint32_t rendererID, uint32_t width, uint32_t height) override;
         void ResizeCopy(uint32_t rendererID, uint32_t width, uint32_t height) override;
 
+        void ReadPixels(std::vector<unsigned char>& out) const override;
+
         unsigned int GetWidth() const override { return m_Width; }
         unsigned int GetHeight() const override { return m_Height; }
 

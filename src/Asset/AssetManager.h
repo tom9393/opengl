@@ -37,11 +37,18 @@ namespace Engine {
         // Names assumed unique; first asset wins
         static UUID GetHandleByName(const std::string& name, AssetType type = AssetType::None);
 
+        // Reverse lookup: find the handle of an already-loaded asset (0 if not loaded).
+        static UUID GetHandleForAsset(const Shared<Asset>& asset);
+
     private:
         static Shared<Asset> GetAssetInternal(UUID handle);
         static void GetAssetInternalAsync(UUID handle, std::function<void(Shared<Asset>)> cb);
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();
+
+        // Bake every loaded model-sourced Scene (.gltf/.fbx/.obj/.assbin) to a sibling
+        // .pmscene and repoint its registry entry at it. Runs once at shutdown.
+        static void BakeLoadedModelScenes();
 
     private:
         static inline std::unordered_map<UUID, Shared<Asset>> m_LoadedAssets;
