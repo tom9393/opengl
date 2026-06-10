@@ -114,6 +114,7 @@ Before implementing:
 **Minimum code that solves the problem. Nothing speculative.**
 
 - Avoid clever one liners and other hacky solutions. Write code that is easy to understand and simple.
+- Code should be extensible.
 - No features beyond what was asked.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
