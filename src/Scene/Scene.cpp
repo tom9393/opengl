@@ -7,6 +7,7 @@
 #include "Entity.h"
 #include "Events/MouseEvent.h"
 #include "Events/EventBroker.h"
+#include "ParticleSystem.h"
 #include "Physics/RigidBody.h"
 #include "Render/Renderer.h"
 #include "Scripting/LuaBindings.h"
@@ -106,6 +107,7 @@ namespace Engine
 		PhysicsEngine::OnUpdate(ts);
 		ScriptEngine::OnUpdate(ts);
 		AudioEngine::OnUpdate(ts);
+		ParticleEngine::OnUpdate(this, ts);
 	};
 
 	// Calls the matching lifecycle function on an entity's Lua script, if it defines one.
@@ -137,6 +139,12 @@ namespace Engine
 	void Scene::OnRuntimeStart()
 	{
         EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMousePress), this);
+
+		// The play-mode copy shallow-shares the editor's particle systems; reset so
+		// play gets fresh state and the editor preview stays untouched.
+		auto emitters = m_Registry.view<ParticleEmitterComponent>();
+		for (auto e : emitters)
+			emitters.get<ParticleEmitterComponent>(e).Runtime = nullptr;
 
 		PhysicsEngine::RuntimeStart(this);
 		AudioEngine::RuntimeStart(this);

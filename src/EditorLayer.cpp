@@ -9,6 +9,7 @@
 #include "Events/EventBroker.h"
 #include "Render/Renderer.h"
 #include "Scene/Entity.h"
+#include "Scene/ParticleSystem.h"
 #include "Scene/SceneSerializer.h"
 #include "Scripting/ScriptEngine.h"
 #include "Utils/PlatformUtils.h"
@@ -74,6 +75,7 @@ namespace Engine
             case Engine::SceneState::Edit:
             {
                 m_EditorCamera->OnUpdate();
+                ParticleEngine::OnUpdate(m_EditingScene.get(), ts); // live emitter preview
                 m_SceneRenderer->RenderEditor(m_EditorCamera->GetViewProjection(), m_EditorCamera->GetPosition(), m_EditorCamera->GetNearClip(), m_EditorCamera->GetFarClip());
                 break;
             }

@@ -27,6 +27,7 @@ namespace Engine
         virtual void SetDepthTest(bool enabled) = 0;
         virtual void SetFaceCulling(bool enabled) = 0;
         virtual void SetAdditiveBlend(bool enabled) = 0;
+        virtual void SetAlphaBlend(bool enabled) = 0;
 
         // Bind a 2D texture (by renderer id) to a sampler slot.
         virtual void BindTexture2D(unsigned int slot, unsigned int rendererID) = 0;

@@ -62,6 +62,12 @@ namespace Engine
 			newEntity.AddComponent<LuaScriptComponent>(sourceEntity.GetComponent<LuaScriptComponent>());
 		}
 
+		// The particle pool is per-entity; the clone grows its own on first update.
+		if (sourceEntity.HasComponent<ParticleEmitterComponent>()) {
+			auto& pe = newEntity.AddComponent<ParticleEmitterComponent>(sourceEntity.GetComponent<ParticleEmitterComponent>());
+			pe.Runtime = nullptr;
+		}
+
 		auto children = sourceEntity.GetChildren(); 
 		for (auto& child : children) 
 		{ 

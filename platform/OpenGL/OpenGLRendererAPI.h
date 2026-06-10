@@ -16,6 +16,7 @@ namespace Engine
         void SetDepthTest(bool enabled) override;
         void SetFaceCulling(bool enabled) override;
         void SetAdditiveBlend(bool enabled) override;
+        void SetAlphaBlend(bool enabled) override;
 
         void BindTexture2D(unsigned int slot, unsigned int rendererID) override;
 

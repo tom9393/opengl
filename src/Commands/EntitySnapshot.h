@@ -122,6 +122,26 @@ namespace Engine {
                    a.OuterCutOff == b.OuterCutOff;
         }
 
+        // Runtime (the live particle pool) is intentionally ignored.
+        inline bool EditablyEqual(const ParticleEmitterComponent& a, const ParticleEmitterComponent& b)
+        {
+            return a.Looping       == b.Looping &&
+                   a.Rate          == b.Rate &&
+                   a.BurstCount    == b.BurstCount &&
+                   a.MaxParticles  == b.MaxParticles &&
+                   a.Lifetime      == b.Lifetime &&
+                   a.Direction     == b.Direction &&
+                   a.Spread        == b.Spread &&
+                   a.Speed         == b.Speed &&
+                   a.Gravity       == b.Gravity &&
+                   a.StartSize     == b.StartSize &&
+                   a.EndSize       == b.EndSize &&
+                   a.StartColor    == b.StartColor &&
+                   a.EndColor      == b.EndColor &&
+                   a.Additive      == b.Additive &&
+                   (uint64_t)a.TextureHandle == (uint64_t)b.TextureHandle;
+        }
+
         template <typename T>
         inline bool OptionalDiffers(const std::optional<T>& a, const std::optional<T>& b)
         {

@@ -10,7 +10,8 @@ namespace Engine
     // Binary editor-scene format: magic "PSCN", then scene settings and every entity's
     // components with asset-handle references. Shares the .pmscene extension with baked
     // models ("PMSC", PmSceneSerializer); the magic tells them apart.
-    static constexpr uint32_t SCENE_VERSION = 1;
+    // Version 2: ParticleEmitterComponent block (between light and parent link).
+    static constexpr uint32_t SCENE_VERSION = 2;
 
     // --- binary helpers -----------------------------------------------------
     template<typename T> static void Write(std::ostream& o, const T& v) { o.write(reinterpret_cast<const char*>(&v), sizeof(T)); }
@@ -121,6 +122,30 @@ namespace Engine
             Write(out, lc.OuterCutOff);
         }
 
+        has = e.HasComponent<ParticleEmitterComponent>() ? 1 : 0;
+        Write(out, has);
+        if (has)
+        {
+            auto& pe = e.GetComponent<ParticleEmitterComponent>();
+            uint8_t looping = pe.Looping ? 1 : 0;
+            uint8_t additive = pe.Additive ? 1 : 0;
+            Write(out, looping);
+            Write(out, pe.Rate);
+            Write(out, pe.BurstCount);
+            Write(out, pe.MaxParticles);
+            Write(out, pe.Lifetime);
+            Write(out, pe.Direction);
+            Write(out, pe.Spread);
+            Write(out, pe.Speed);
+            Write(out, pe.Gravity);
+            Write(out, pe.StartSize);
+            Write(out, pe.EndSize);
+            Write(out, pe.StartColor);
+            Write(out, pe.EndColor);
+            Write(out, additive);
+            Write(out, (uint64_t)pe.TextureHandle);
+        }
+
         has = e.HasComponent<ParentComponent>() ? 1 : 0;
         Write(out, has);
         if (has)
@@ -165,7 +190,8 @@ namespace Engine
     };
 
     static Entity DeserializeEntity(std::istream& in, const Shared<Scene>& scene,
-                                    std::vector<std::pair<uint64_t, uint64_t>>& parentLinks)
+                                    std::vector<std::pair<uint64_t, uint64_t>>& parentLinks,
+                                    uint32_t version)
     {
         uint64_t uuid = 0;
         Read(in, uuid);
@@ -272,6 +298,35 @@ namespace Engine
             Read(in, light.OuterCutOff);
         }
 
+        if (version >= 2)
+        {
+            Read(in, has);
+            if (has)
+            {
+                auto& pe = entity.AddComponent<ParticleEmitterComponent>();
+                uint8_t looping = 0, additive = 0;
+                uint64_t textureHandle = 0;
+                Read(in, looping);
+                Read(in, pe.Rate);
+                Read(in, pe.BurstCount);
+                Read(in, pe.MaxParticles);
+                Read(in, pe.Lifetime);
+                Read(in, pe.Direction);
+                Read(in, pe.Spread);
+                Read(in, pe.Speed);
+                Read(in, pe.Gravity);
+                Read(in, pe.StartSize);
+                Read(in, pe.EndSize);
+                Read(in, pe.StartColor);
+                Read(in, pe.EndColor);
+                Read(in, additive);
+                Read(in, textureHandle);
+                pe.Looping = looping != 0;
+                pe.Additive = additive != 0;
+                pe.TextureHandle = textureHandle;
+            }
+        }
+
         Read(in, has);
         if (has)
         {
@@ -318,7 +373,7 @@ namespace Engine
         std::vector<std::pair<uint64_t, uint64_t>> parentLinks; // child UUID, parent UUID
         for (uint32_t i = 0; i < count; i++)
         {
-            Entity e = DeserializeEntity(in, m_Scene, parentLinks);
+            Entity e = DeserializeEntity(in, m_Scene, parentLinks, version);
             loadedEntities[e.GetUUID()] = e;
         }
 

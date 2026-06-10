@@ -112,6 +112,24 @@ namespace Engine
             out << YAML::Key << "OuterCutOff" << YAML::Value << lc.OuterCutOff;
 		});
 
+		SerializeComponent<ParticleEmitterComponent>(out, e, "ParticleEmitterComponent", [](auto& out, auto& pe) {
+			out << YAML::Key << "Looping"       << YAML::Value << pe.Looping;
+			out << YAML::Key << "Rate"          << YAML::Value << pe.Rate;
+			out << YAML::Key << "BurstCount"    << YAML::Value << pe.BurstCount;
+			out << YAML::Key << "MaxParticles"  << YAML::Value << pe.MaxParticles;
+			out << YAML::Key << "Lifetime"      << YAML::Value << pe.Lifetime;
+			out << YAML::Key << "Direction"     << YAML::Value << pe.Direction;
+			out << YAML::Key << "Spread"        << YAML::Value << pe.Spread;
+			out << YAML::Key << "Speed"         << YAML::Value << pe.Speed;
+			out << YAML::Key << "Gravity"       << YAML::Value << pe.Gravity;
+			out << YAML::Key << "StartSize"     << YAML::Value << pe.StartSize;
+			out << YAML::Key << "EndSize"       << YAML::Value << pe.EndSize;
+			out << YAML::Key << "StartColor"    << YAML::Value << pe.StartColor;
+			out << YAML::Key << "EndColor"      << YAML::Value << pe.EndColor;
+			out << YAML::Key << "Additive"      << YAML::Value << pe.Additive;
+			out << YAML::Key << "TextureHandle" << YAML::Value << pe.TextureHandle;
+		});
+
 		if (includeParent && e.HasComponent<ParentComponent>())
         {
             Entity parent{ e.GetComponent<ParentComponent>().Parent, e.GetScene() };
@@ -228,6 +246,29 @@ namespace Engine
 		}
 	}
 
+	template <>
+	void DeserializeComponent<ParticleEmitterComponent>(Entity &entity, const Shared<Scene> &scene, YAML::Node node) {
+		if (node)
+		{
+			auto& pe = entity.AddComponent<ParticleEmitterComponent>();
+			pe.Looping       = node["Looping"].as<bool>();
+			pe.Rate          = node["Rate"].as<float>();
+			pe.BurstCount    = node["BurstCount"].as<uint32_t>();
+			pe.MaxParticles  = node["MaxParticles"].as<uint32_t>();
+			pe.Lifetime      = node["Lifetime"].as<float>();
+			pe.Direction     = node["Direction"].as<glm::vec3>();
+			pe.Spread        = node["Spread"].as<float>();
+			pe.Speed         = node["Speed"].as<float>();
+			pe.Gravity       = node["Gravity"].as<glm::vec3>();
+			pe.StartSize     = node["StartSize"].as<float>();
+			pe.EndSize       = node["EndSize"].as<float>();
+			pe.StartColor    = node["StartColor"].as<glm::vec4>();
+			pe.EndColor      = node["EndColor"].as<glm::vec4>();
+			pe.Additive      = node["Additive"].as<bool>();
+			pe.TextureHandle = node["TextureHandle"].as<uint64_t>();
+		}
+	}
+
 	Entity EntitySerializer::DeserializeEntity(const Shared<Scene> &scene, YAML::Node& node) {
 		uint64_t uuid = node["Entity"].as<uint64_t>();
 		std::string tag = node["TagComponent"]["Tag"].as<std::string>("");
@@ -242,6 +283,7 @@ namespace Engine
 		DeserializeComponent<RigidBodyComponent>(entity, scene, node["RigidBodyComponent"]);
 		DeserializeComponent<LuaScriptComponent>(entity, scene, node["LuaScriptComponent"]);
 		DeserializeComponent<LightComponent>(entity, scene, node["LightComponent"]);
+		DeserializeComponent<ParticleEmitterComponent>(entity, scene, node["ParticleEmitterComponent"]);
 
 		return entity;
 	}

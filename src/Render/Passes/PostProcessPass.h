@@ -18,14 +18,14 @@ namespace Engine {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
             Output("FinalColor", FramebufferTextureFormat::RGBA8);
-            Input("SceneColor");
+            Input("SceneColorParticles");
             SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
         }
 
         void Execute(RenderContext& ctx, const RenderView& view) override {
             const PostProcessSettings& post = view.Post;
 
-            Shared<FramebufferHandle> sceneFb = m_RenderGraph->GetResource("SceneColor");
+            Shared<FramebufferHandle> sceneFb = m_RenderGraph->GetResource("SceneColorParticles");
             if (!sceneFb) return;
             unsigned int sceneTex = sceneFb->GetColorAttachmentRendererID(0);
 

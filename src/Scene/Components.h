@@ -211,6 +211,38 @@ namespace Engine
         LightComponent(const LightComponent&) = default;
     };
 
+    class ParticleSystem;
+
+    struct ParticleEmitterComponent
+    {
+        // Emission
+        bool Looping = true;        // false = one-shot burst
+        float Rate = 20.0f;         // particles per second while looping
+        uint32_t BurstCount = 30;   // particles per burst (one-shot / Emit)
+        uint32_t MaxParticles = 1000;
+
+        // Initial particle state
+        float Lifetime = 2.0f;
+        glm::vec3 Direction = glm::vec3(0.0f, 1.0f, 0.0f); // local emission axis
+        float Spread = 15.0f;                              // cone half-angle in degrees
+        float Speed = 2.0f;
+        glm::vec3 Gravity = glm::vec3(0.0f, -9.8f, 0.0f);
+
+        // Lerped over each particle's lifetime
+        float StartSize = 0.2f;
+        float EndSize = 0.0f;
+        glm::vec4 StartColor = glm::vec4(1.0f);
+        glm::vec4 EndColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+
+        bool Additive = true;    // additive vs alpha blending
+        UUID TextureHandle = 0;  // optional Texture2D; 0 = procedural soft circle
+
+        Shared<ParticleSystem> Runtime = nullptr;
+
+        ParticleEmitterComponent() = default;
+        ParticleEmitterComponent(const ParticleEmitterComponent&) = default;
+    };
+
     template<typename... Components>
     struct ComponentGroup {};
 
@@ -229,6 +261,7 @@ namespace Engine
         RigidBodyComponent,
         NativeScriptComponent,
         LuaScriptComponent,
-        LightComponent>;
+        LightComponent,
+        ParticleEmitterComponent>;
 
 };

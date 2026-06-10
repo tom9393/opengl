@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include "LightExtractor.h"
 #include "MeshExtractor.h"
+#include "ParticleExtractor.h"
 #include "Render/RenderView.h"
 #include "Render/Camera.h"
 #include "Scene.h"
@@ -26,7 +27,10 @@ namespace Engine {
         // 2. Extract and Cull Meshes
         MeshExtractor::Extract(scene, frustum, view);
 
-        // 3. Sort
+        // 3. Extract particles
+        ParticleExtractor::Extract(scene, ctx, view);
+
+        // 4. Sort
         SortDrawCommands(view);
 
         // 4. Environment / IBL + post-processing settings

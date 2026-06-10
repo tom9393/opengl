@@ -8,6 +8,7 @@
 #include "DrawRigidBody.h"
 #include "DrawLight.h"
 #include "DrawLua.h"
+#include "DrawParticleEmitter.h"
 #include "Commands/SceneCommands.h"
 #include "Scene/Entity.h"
 
@@ -146,6 +147,12 @@ namespace Engine {
 				ImGui::CloseCurrentPopup();
 			}
 
+			if (ImGui::MenuItem("Particle Emitter"))
+			{
+				RecordEntityEdit(selection, [&]{ selection.AddComponent<ParticleEmitterComponent>(); });
+				ImGui::CloseCurrentPopup();
+			}
+
 			ImGui::EndPopup();
 		}
 
@@ -158,5 +165,6 @@ namespace Engine {
         DrawComponent<RigidBodyComponent>("RigidbodyComponent", entity, DrawRigidBody);
         DrawComponent<LightComponent>("LightComponent", entity, DrawLight);
         DrawComponent<LuaScriptComponent>("LuaComponent", entity, DrawLua);
+        DrawComponent<ParticleEmitterComponent>("ParticleEmitterComponent", entity, DrawParticleEmitter);
     }
 }

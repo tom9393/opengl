@@ -7,6 +7,7 @@
 #include "Bindings/CameraBindings.h"
 #include "Bindings/LightBindings.h"
 #include "Bindings/MaterialBindings.h"
+#include "Bindings/ParticleBindings.h"
 #include "Bindings/EntityBindings.h"
 #include "Bindings/SceneBindings.h"
 #include "Bindings/AudioBindings.h"
@@ -26,6 +27,7 @@ namespace Engine {
         CameraBindings::Register(state);
         LightBindings::Register(state);
         MaterialBindings::Register(state);
+        ParticleBindings::Register(state);
         EntityBindings::Register(state);
         SceneBindings::Register(state);
         AudioBindings::Register(state);
@@ -113,6 +115,13 @@ namespace Engine {
         e.GetComponent<LuaScriptComponent>().Environment["Light"] = &e.GetComponent<LightComponent>();
     }
 
+    template <>
+    void LuaBindings::BindComponent<ParticleEmitterComponent>(Entity &e)
+    {
+        if (!e.HasComponent<ParticleEmitterComponent>()) return;
+        e.GetComponent<LuaScriptComponent>().Environment["Particles"] = &e.GetComponent<ParticleEmitterComponent>();
+    }
+
     void LuaBindings::CallOnDestroy(Entity entity)
     {
         if (!entity.HasComponent<LuaScriptComponent>()) return;
@@ -147,6 +156,7 @@ namespace Engine {
         BindComponent<SceneCameraComponent>(entity);
         BindComponent<RigidBodyComponent>(entity);
         BindComponent<LightComponent>(entity);
+        BindComponent<ParticleEmitterComponent>(entity);
 
         AssetMetadata scriptMetadata = AssetManager::GetMetadata(script.ScriptHandle);
         std::filesystem::path path = scriptMetadata.FilePath;

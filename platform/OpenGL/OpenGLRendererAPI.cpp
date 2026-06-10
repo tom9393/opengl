@@ -42,6 +42,20 @@ namespace Engine
         }
     };
 
+    void OpenGLRendererAPI::SetAlphaBlend(bool enabled)
+    {
+        if (enabled)
+        {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendEquation(GL_FUNC_ADD);
+        }
+        else
+        {
+            glDisable(GL_BLEND);
+        }
+    };
+
     void OpenGLRendererAPI::BindTexture2D(unsigned int slot, unsigned int rendererID)
     {
         glActiveTexture(GL_TEXTURE0 + slot);

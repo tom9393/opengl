@@ -36,6 +36,10 @@ namespace Engine
         {
             s_RendererAPI->SetAdditiveBlend(enabled);
         }
+        inline static void SetAlphaBlend(bool enabled)
+        {
+            s_RendererAPI->SetAlphaBlend(enabled);
+        }
 
         inline static void BindTexture2D(unsigned int slot, unsigned int rendererID)
         {

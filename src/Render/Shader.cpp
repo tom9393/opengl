@@ -76,6 +76,15 @@ namespace Engine
         Shared<Shader> postShader = Shader::Create("PostProcess");
         postShader->AddShaders({fullscreenVert, shaderDir + "post.frag"});
         Add(postShader);
+
+        // --- Particles ---
+        Shared<Shader> particleShader = Shader::Create("Particle");
+        particleShader->AddShaders({shaderDir + "particle.vert", shaderDir + "particle.frag"});
+        Add(particleShader);
+
+        Shared<Shader> copyShader = Shader::Create("FullscreenCopy");
+        copyShader->AddShaders({fullscreenVert, shaderDir + "copy.frag"});
+        Add(copyShader);
     }
 
     void ShaderLibrary::Shutdown()
