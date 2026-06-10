@@ -10,7 +10,7 @@ namespace Engine
     class Scene;
     class Entity;
 
-    // Serializes/deserializes a single entity's components. Shared by SceneSerializer and PrefabSerializer.
+    // Serializes/deserializes a single entity's components (YAML). Used by PrefabSerializer.
     class EntitySerializer
     {
         public:

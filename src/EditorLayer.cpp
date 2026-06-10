@@ -130,7 +130,7 @@ namespace Engine
 
     void EditorLayer::OpenScene()
     {
-        std::string filepath = FileDialogs::OpenFile("*.pmblend");
+        std::string filepath = FileDialogs::OpenFile("*.pmscene");
         if (!filepath.empty())
         {
             m_EditingScene = MakeShared<Scene>();
@@ -148,7 +148,7 @@ namespace Engine
 
     void EditorLayer::SaveScene()
     {
-        std::string filepath = FileDialogs::SaveFile("*.pmblend");
+        std::string filepath = FileDialogs::SaveFile("*.pmscene");
         if (!filepath.empty())
         {
             SceneSerializer serializer(m_EditingScene);

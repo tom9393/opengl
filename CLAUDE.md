@@ -61,7 +61,7 @@ Render-graph passes draw into fixed-size `Framebuffer` attachments. Offscreen su
 
 Model import (`.obj/.fbx/.gltf`, registered as `AssetType::Scene`) is a two-phase pipeline so heavy parsing stays off the main thread: `SceneImporter::LoadScene` calls `AssimpLoader::LoadScene`, which reads the file via Assimp into a CPU-only `ParsedScene` tree (`ParsedScene.h` — `ParsedSceneNode`s carrying transforms, meshes, lights, cameras, plus a scene-global `ParsedMaterial` list), then `SceneBuilder::BuildPrefab` runs on the main thread to upload meshes/textures and assemble the entity hierarchy into a `Prefab` (a `Scene` subclass). For async loads, `LoadScene` runs on the thread pool and `BuildPrefab` is deferred to the main thread via `AssetUploadQueue`. `AssimpLoader` assigns each parsed mesh/material a deterministic FNV-1a `Hash` (from its name + vertex positions / texture data) that becomes the asset handle, so re-imports reuse the same handles and shared meshes/materials dedupe across loads.
 
-Scene and prefab files are YAML (yaml-cpp): `SceneSerializer` reads/writes `.pmblend` scenes and `PrefabSerializer` reads/writes `.prefab` files (an entity subtree saved as component data + asset-handle references); both delegate per-entity component (de)serialization to the shared `EntitySerializer`, which deserializes in two passes — create every entity, then relink parents. Prefabs thus have two origins: imported models (built live by `SceneBuilder`) and saved `.prefab` assets (loaded by `PrefabImporter` via `PrefabSerializer`).
+Editor scenes are binary `.pmscene` files: `SceneSerializer` writes scene settings (environment, post-process) plus per-entity component data + asset-handle references, deserialized in two passes — create every entity, then relink parents. The `.pmscene` extension carries two formats distinguished by magic: editor scenes ("PSCN", `SceneSerializer`) and baked imported models ("PMSC", `PmSceneSerializer` — a binary `ParsedScene` with embedded geometry, loaded via `SceneBuilder::BuildPrefab`); `SceneImporter` dispatches on the magic. Prefab files are YAML (yaml-cpp): `PrefabSerializer` reads/writes `.prefab` files (an entity subtree saved as component data + asset-handle references) via `EntitySerializer`. Prefabs thus have two origins: imported models (built live by `SceneBuilder`) and saved `.prefab` assets (loaded by `PrefabImporter` via `PrefabSerializer`).
 
 ### Material System
 
@@ -89,7 +89,7 @@ Scene and prefab files are YAML (yaml-cpp): `SceneSerializer` reads/writes `.pmb
 | Bullet3 | Physics simulation |
 | Sol2 | Lua C++ bindings |
 | glad / GLFW | OpenGL loader / window & input |
-| yaml-cpp | Scene serialization |
+| yaml-cpp | Prefab & asset-registry serialization |
 | stb_image / ktx | Texture loading |
 | miniaudio | Audio playback (vendored single header, not a submodule) |
 

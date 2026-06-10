@@ -21,7 +21,6 @@ namespace Engine {
     {
         std::string ext = path.extension().string();
 
-        if (ext == ".pmblend") return AssetType::Scene;
         if (ext == ".pmscene") return AssetType::Scene;
         if (ext == ".png")     return AssetType::Texture2D;
         if (ext == ".jpg")     return AssetType::Texture2D;

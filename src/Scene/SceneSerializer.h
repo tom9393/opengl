@@ -16,6 +16,10 @@ namespace Engine
         void Serialize(const std::string &path);
         bool Deserialize(const std::string &path);
 
+        // True when the file is a serialized editor scene ("PSCN" magic), as opposed
+        // to a baked model ("PMSC") sharing the .pmscene extension.
+        static bool IsSceneFile(const std::string &path);
+
         private:
         Shared<Scene> m_Scene;
     };

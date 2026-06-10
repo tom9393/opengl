@@ -15,7 +15,6 @@
 namespace Engine {
 
     static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = {
-            { ".pmblend", AssetType::Scene },
             { ".pmscene", AssetType::Scene },
             { ".png", AssetType::Texture2D },
             { ".jpg", AssetType::Texture2D },
@@ -55,7 +54,7 @@ namespace Engine {
         metadata.Name = filepath.stem().string();
         
         std::string ext = filepath.extension().string();
-        if (ext == ".pmblend" || ext == ".pmscene" || ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Scene;
+        if (ext == ".pmscene" || ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Scene;
         else if (ext == ".prefab") metadata.Type = AssetType::Prefab;
         else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
         else if (ext == ".lua") metadata.Type = AssetType::LuaScript;

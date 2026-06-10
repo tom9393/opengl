@@ -11,16 +11,16 @@ namespace Engine {
     {
         std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
 
-        if (ext == ".pmblend")
-        {
-            Shared<Scene> scene = MakeShared<Scene>();
-            SceneSerializer serializer(scene);
-            serializer.Deserialize(metadata.FilePath);
-            return scene;
-        }
-
         if (ext == ".pmscene")
         {
+            if (SceneSerializer::IsSceneFile(metadata.FilePath))
+            {
+                Shared<Scene> scene = MakeShared<Scene>();
+                SceneSerializer serializer(scene);
+                serializer.Deserialize(metadata.FilePath);
+                return scene;
+            }
+
             std::optional<ParsedScene> parsed = PmSceneSerializer::Deserialize(metadata.FilePath);
             if (!parsed)
                 return nullptr;
@@ -38,21 +38,21 @@ namespace Engine {
     {
         std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
 
-        if (ext == ".pmblend")
-        {
-            Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
-                Shared<Scene> scene = MakeShared<Scene>();
-                SceneSerializer serializer(scene);
-                serializer.Deserialize(metadata.FilePath);
-                AssetUploadQueue::Submit([metadata, scene, cb]() {
-                    if (cb) cb(scene);
-                });
-            });
-            return;
-        }
-
         if (ext == ".pmscene")
         {
+            if (SceneSerializer::IsSceneFile(metadata.FilePath))
+            {
+                Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
+                    Shared<Scene> scene = MakeShared<Scene>();
+                    SceneSerializer serializer(scene);
+                    serializer.Deserialize(metadata.FilePath);
+                    AssetUploadQueue::Submit([metadata, scene, cb]() {
+                        if (cb) cb(scene);
+                    });
+                });
+                return;
+            }
+
             Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
                 std::optional<ParsedScene> parsed = PmSceneSerializer::Deserialize(metadata.FilePath);
                 if (!parsed)
