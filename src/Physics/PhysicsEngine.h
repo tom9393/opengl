@@ -48,7 +48,7 @@ namespace Engine {
 
     struct RaycastResult {
         bool Hit;
-        Entity* HitEntity;
+        entt::entity HitHandle = entt::null;
         glm::vec3 Position;
         glm::vec3 Normal;
     };
@@ -83,7 +83,11 @@ namespace Engine {
         btDiscreteDynamicsWorld* getWorld() { return s_PhysicsWorldConfiguration->World.get(); }
 
         static void RenderDebug(const glm::mat4 &viewProjection);
-        static RaycastResult Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float distance);
+        // `ignore` skips one entity's body (typically the caster itself).
+        static RaycastResult Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float distance, entt::entity ignore = entt::null);
+        static std::vector<RaycastResult> RaycastAll(const glm::vec3 &origin, const glm::vec3 &direction, float distance);
+        // Entities whose bodies overlap a sphere (each entity reported once).
+        static std::vector<entt::entity> OverlapSphere(const glm::vec3 &center, float radius);
 
         static Scene* GetScene() { return s_Scene; }
         static void SetScene(Scene* scene) { s_Scene = scene; }

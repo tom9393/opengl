@@ -81,6 +81,10 @@ namespace Engine
             {
                 m_RuntimeScene->OnUpdate(ts);
                 m_SceneRenderer->RenderRuntime();
+
+                // Scene.Load from a script: swap scenes between frames, never mid-update.
+                std::string requested = SceneManager::ConsumeSceneLoadRequest();
+                if (!requested.empty()) LoadRuntimeScene(requested);
                 break;
             }
         }
@@ -164,6 +168,30 @@ namespace Engine
         m_SceneRenderer->SetScene(m_RuntimeScene.get());
         m_RuntimeScene->OnRuntimeStart();
         Application::Get().GetWindow().DisableCursor();
+    }
+
+    void EditorLayer::LoadRuntimeScene(const std::string& name)
+    {
+        UUID handle = AssetManager::GetHandleByName(name, AssetType::Scene);
+        if (handle == 0)
+        {
+            std::cerr << "Scene.Load: no scene named '" << name << "'" << std::endl;
+            return;
+        }
+
+        Shared<Scene> scene = AssetManager::GetAsset<Scene>(handle);
+        if (!scene)
+        {
+            std::cerr << "Scene.Load: failed to load '" << name << "'" << std::endl;
+            return;
+        }
+
+        m_RuntimeScene->OnRuntimeStop();
+
+        // Play on a copy so the cached scene asset stays pristine (same as OnScenePlay).
+        m_RuntimeScene = Scene::Copy(scene);
+        m_SceneRenderer->SetScene(m_RuntimeScene.get());
+        m_RuntimeScene->OnRuntimeStart();
     }
 
     void EditorLayer::OnSceneStop()

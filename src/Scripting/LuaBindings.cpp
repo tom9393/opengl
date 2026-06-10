@@ -1,7 +1,15 @@
 #include "LuaBindings.h"
-#include "MathBindings.h"
-#include "InputBindings.h"
-#include "ComponentBindings.h"
+#include "Bindings/MathBindings.h"
+#include "Bindings/InputBindings.h"
+#include "Bindings/TransformBindings.h"
+#include "Bindings/TagBindings.h"
+#include "Bindings/RigidBodyBindings.h"
+#include "Bindings/CameraBindings.h"
+#include "Bindings/LightBindings.h"
+#include "Bindings/MaterialBindings.h"
+#include "Bindings/EntityBindings.h"
+#include "Bindings/SceneBindings.h"
+#include "Bindings/AudioBindings.h"
 #include "Asset/AssetManager.h"
 #include "Physics/RigidBody.h"
 #include "Scene/Components.h"
@@ -12,7 +20,29 @@ namespace Engine {
     void LuaBindings::Register(sol::state& state) {
         MathBindings::Register(state);
         InputBindings::Register(state);
-        ComponentBindings::Register(state);
+        TransformBindings::Register(state);
+        TagBindings::Register(state);
+        RigidBodyBindings::Register(state);
+        CameraBindings::Register(state);
+        LightBindings::Register(state);
+        MaterialBindings::Register(state);
+        EntityBindings::Register(state);
+        SceneBindings::Register(state);
+        AudioBindings::Register(state);
+
+        // Time.Delta / Time.Elapsed (seconds), refreshed by ScriptEngine each frame.
+        sol::table time = state.create_table("Time");
+        time["Delta"] = 0.0f;
+        time["Elapsed"] = 0.0f;
+
+        // Timer.After(seconds, fn) -> runs fn once after the delay (game time).
+        sol::table timer = state.create_table("Timer");
+        timer.set_function("After", &ScriptEngine::Schedule);
+
+        sol::table log = state.create_table("Log");
+        log.set_function("Info",  [](const std::string& msg) { std::cout << "[Info] "  << msg << std::endl; });
+        log.set_function("Warn",  [](const std::string& msg) { std::cout << "[Warn] "  << msg << std::endl; });
+        log.set_function("Error", [](const std::string& msg) { std::cerr << "[Error] " << msg << std::endl; });
     }
 
     void LuaBindings::ReloadScripts(Scene* scene)
@@ -76,6 +106,31 @@ namespace Engine {
         e.GetComponent<LuaScriptComponent>().Environment["RigidBody"] = rbComponent.RuntimeBody;
     }
 
+    template <>
+    void LuaBindings::BindComponent<LightComponent>(Entity &e)
+    {
+        if (!e.HasComponent<LightComponent>()) return;
+        e.GetComponent<LuaScriptComponent>().Environment["Light"] = &e.GetComponent<LightComponent>();
+    }
+
+    void LuaBindings::CallOnDestroy(Entity entity)
+    {
+        if (!entity.HasComponent<LuaScriptComponent>()) return;
+
+        auto& env = entity.GetComponent<LuaScriptComponent>().Environment;
+        if (!env.valid()) return;
+
+        sol::protected_function onDestroy = env["OnDestroy"];
+        if (!onDestroy.valid()) return;
+
+        auto result = onDestroy();
+        if (!result.valid())
+        {
+            sol::error err = result;
+            std::cerr << "OnDestroy error: " << err.what() << std::endl;
+        }
+    }
+
     void LuaBindings::BindEntity(Entity entity)
     {
         auto& lua = ScriptEngine::GetState();
@@ -91,6 +146,7 @@ namespace Engine {
         BindComponent<TransformComponent>(entity);
         BindComponent<SceneCameraComponent>(entity);
         BindComponent<RigidBodyComponent>(entity);
+        BindComponent<LightComponent>(entity);
 
         AssetMetadata scriptMetadata = AssetManager::GetMetadata(script.ScriptHandle);
         std::filesystem::path path = scriptMetadata.FilePath;
@@ -117,6 +173,8 @@ namespace Engine {
 		auto luaScripts = scene->m_Registry.view<LuaScriptComponent>();
 		for (auto& e : luaScripts)
         {
+			CallOnDestroy({ e, scene });
+
 			auto& script = luaScripts.get<LuaScriptComponent>(e);
 			script.Environment = sol::lua_nil;
 		}

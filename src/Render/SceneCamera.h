@@ -18,6 +18,8 @@ namespace Engine
                 void SetOrthographic(float size, float near, float far);
 
                 void SetViewportSize(unsigned int width, unsigned int height);
+                unsigned int GetViewportWidth() const { return m_ViewportWidth; }
+                unsigned int GetViewportHeight() const { return m_ViewportHeight; }
 
                 float GetPerspectiveVerticalFOV() const { return m_PerspectiveFOV; }
                 void SetPerspectiveVerticalFOV(float verticalFov) { m_PerspectiveFOV = verticalFov; RecalculateProjection(); }
@@ -52,6 +54,7 @@ namespace Engine
                 float m_OrthographicNear = -1.0f, m_OrthographicFar = 1.0f;
 
                 float m_AspectRatio = 1.0f;
+                unsigned int m_ViewportWidth = 0, m_ViewportHeight = 0;
         };
 
 };

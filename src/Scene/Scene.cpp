@@ -203,6 +203,8 @@ namespace Engine
 	{
 		if (!entity) return;
 
+		LuaBindings::CallOnDestroy(entity);
+
 		Entity nullparent {};
 		entity.SetParent(nullparent);
 

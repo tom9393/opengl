@@ -27,9 +27,19 @@ namespace Engine {
         static void SetSceneState(SceneState state) { s_SceneState = state; }
         static bool HasSelectedEntity() { return s_SelectedEntity != entt::null; }
 
+        // Scene switch requested from Lua (Scene.Load); consumed by the editor
+        // between frames so the running scene is never torn down mid-update.
+        static void RequestSceneLoad(const std::string& name) { s_PendingSceneLoad = name; }
+        static std::string ConsumeSceneLoadRequest() {
+            std::string name = s_PendingSceneLoad;
+            s_PendingSceneLoad.clear();
+            return name;
+        }
+
         private:
         inline static entt::entity s_SelectedEntity = entt::null;
         inline static Scene* s_Context = nullptr;
         inline static SceneState s_SceneState = SceneState::Edit;
+        inline static std::string s_PendingSceneLoad;
     };
 }

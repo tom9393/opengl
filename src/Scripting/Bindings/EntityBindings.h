@@ -4,7 +4,7 @@
 
 namespace Engine {
 
-    class ComponentBindings {
+    class EntityBindings {
     public:
         static void Register(sol::state& state);
     };

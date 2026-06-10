@@ -42,6 +42,9 @@ namespace Engine
         void OnScenePlay();
         void OnSceneStop();
 
+        // Swaps the running scene for the named scene asset (Lua's Scene.Load).
+        void LoadRuntimeScene(const std::string& name);
+
         void ClearStaleSelection();
 
         bool OnKeyEvent(KeyboardPressEvent &e);
