@@ -37,7 +37,7 @@ namespace Engine {
         Init();
         s_Elapsed = 0.0f;
 
-		auto scripts = s_Scene->m_Registry.view<NativeScriptComponent>();
+		auto scripts = s_Scene->GetRegistry().view<NativeScriptComponent>();
 		for (auto& e : scripts)
 		{
 			Entity entity = { e, s_Scene };
@@ -53,7 +53,7 @@ namespace Engine {
 
     void ScriptEngine::RuntimeStop()
     {
-		auto scripts = s_Scene->m_Registry.view<NativeScriptComponent>();
+		auto scripts = s_Scene->GetRegistry().view<NativeScriptComponent>();
 		for (auto e : scripts)
 		{
 			Entity entity = { e, s_Scene };
@@ -101,7 +101,7 @@ namespace Engine {
 			}
 		}
 
-		auto scripts = s_Scene->m_Registry.view<NativeScriptComponent>();
+		auto scripts = s_Scene->GetRegistry().view<NativeScriptComponent>();
 		for (auto& e : scripts)
 		{
 			Entity entity = { e, s_Scene };
@@ -110,7 +110,7 @@ namespace Engine {
 				nsc.instance->OnUpdate(ts);
 		}
 
-		auto luaScripts = s_Scene->m_Registry.view<LuaScriptComponent>();
+		auto luaScripts = s_Scene->GetRegistry().view<LuaScriptComponent>();
 		for (auto entity : luaScripts)
 		{
 			auto& script = luaScripts.get<LuaScriptComponent>(entity);

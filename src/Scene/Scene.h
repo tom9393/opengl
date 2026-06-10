@@ -59,15 +59,6 @@ namespace Engine
         std::string m_EnvironmentPath;
         float m_EnvironmentIntensity = 1.0f;
         PostProcessSettings m_PostSettings;
-
-        friend class SceneRenderer;
-        friend class Entity;
-        friend class SceneSerializer;
-        friend class SceneHierarchyPanel;
-        friend class NativeScript;
-        friend class PhysicsEngine;
-        friend class ScriptEngine;
-        friend class LuaBindings;
     };
 
 };

@@ -169,14 +169,14 @@ namespace Engine {
         s_Scene = scene;
         Init();
 
-		auto view = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent>();
+		auto view = s_Scene->GetRegistry().view<RigidBodyComponent, TransformComponent>();
 		for (auto& e : view)
 			AddRuntimeBody({ e, s_Scene });
     }
 
     void PhysicsEngine::RuntimeStop()
     {
-		auto view = s_Scene->m_Registry.view<RigidBodyComponent>();
+		auto view = s_Scene->GetRegistry().view<RigidBodyComponent>();
 		for (auto e : view)
 		{
 			Entity entity = { e, s_Scene };
@@ -212,7 +212,7 @@ namespace Engine {
         StepSimulation(ts);
         CheckCollisions(); // Rethink in case of multithreading
 
-		auto physics = s_Scene->m_Registry.view<RigidBodyComponent, TransformComponent>();
+		auto physics = s_Scene->GetRegistry().view<RigidBodyComponent, TransformComponent>();
 		for (auto& e : physics)
 		{
 			auto [rb, transform] = physics.get<RigidBodyComponent, TransformComponent>(e);

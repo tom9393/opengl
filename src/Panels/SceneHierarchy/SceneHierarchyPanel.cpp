@@ -70,7 +70,7 @@ namespace Engine
             }
         }
 
-        context->m_Registry.view<entt::entity>().each([this, &context](entt::entity entity)
+        context->GetRegistry().view<entt::entity>().each([this, &context](entt::entity entity)
         {
             Entity e { entity, context };
             
@@ -122,7 +122,7 @@ namespace Engine
     {
 		Scene* context = SceneManager::GetContext();
 		Entity selected = SceneManager::GetSelectedEntity();
-        auto& tag = context->m_Registry.get<TagComponent>(entity.GetHandle());
+        auto& tag = context->GetRegistry().get<TagComponent>(entity.GetHandle());
         
         // Check if we have children to determine if we should render as a Leaf or a Tree Node
         bool hasChildren = entity.HasComponent<ChildrenComponent>() && !entity.GetComponent<ChildrenComponent>().Children.empty();

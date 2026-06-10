@@ -197,7 +197,7 @@ namespace Engine
         enum class LightType { Point = 0, Directional = 1, Cone = 2 };
 
         LightType Type = LightType::Point;
-        
+
         glm::vec3 Color = glm::vec3(1.0f);
         float Intensity = 1000.0f; // High for point/cone, usually lower (~1.0f) for directional
 
@@ -210,5 +210,25 @@ namespace Engine
         LightComponent() = default;
         LightComponent(const LightComponent&) = default;
     };
+
+    template<typename... Components>
+    struct ComponentGroup {};
+
+    // Every copyable per-entity component. Identity (IDComponent) and hierarchy
+    // (Parent/Children) are excluded: they are structural and handled explicitly
+    // wherever entities are duplicated or restored. Code that must handle "every
+    // component" (Scene::Copy, EntitySnapshot, ...) iterates this list, so a new
+    // component only needs to be added here.
+    using AllComponents = ComponentGroup<
+        TagComponent,
+        TransformComponent,
+        MeshComponent,
+        TextureComponent,
+        MaterialComponent,
+        SceneCameraComponent,
+        RigidBodyComponent,
+        NativeScriptComponent,
+        LuaScriptComponent,
+        LightComponent>;
 
 };

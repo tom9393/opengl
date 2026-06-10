@@ -87,7 +87,7 @@ namespace Engine {
 		m_ViewportHeight = height;
         m_RenderGraph.Resize(m_ViewportWidth, m_ViewportHeight);
         if (!m_Scene) return;
-		auto view = m_Scene->m_Registry.view<SceneCameraComponent>();
+		auto view = m_Scene->GetRegistry().view<SceneCameraComponent>();
 		for (auto& e : view)
 		{
 			auto& cameraComponent = view.get<SceneCameraComponent>(e);

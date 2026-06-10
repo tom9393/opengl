@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <tuple>
 
 #include "pch.h"
 #include "Scene/Components.h"
@@ -9,21 +10,24 @@
 
 namespace Engine {
 
-    // A copy of an entity's non-structural components. Identity (IDComponent) and
-    // hierarchy (Parent/Children) are deliberately excluded: identity never changes,
-    // and hierarchy is managed by the structural commands so restoring a snapshot
-    // never disturbs an entity's place in the tree.
+    namespace Detail {
+        template <typename... Component>
+        std::tuple<std::optional<Component>...> SnapshotTupleFor(ComponentGroup<Component...>);
+    }
+
+    // A copy of an entity's non-structural components (one optional per entry in
+    // AllComponents). Identity (IDComponent) and hierarchy (Parent/Children) are
+    // deliberately excluded: identity never changes, and hierarchy is managed by
+    // the structural commands so restoring a snapshot never disturbs an entity's
+    // place in the tree.
     struct EntitySnapshot {
-        std::optional<TagComponent>          Tag;
-        std::optional<TransformComponent>    Transform;
-        std::optional<MeshComponent>         Mesh;
-        std::optional<TextureComponent>      Texture;
-        std::optional<MaterialComponent>     Material;
-        std::optional<SceneCameraComponent>  Camera;
-        std::optional<RigidBodyComponent>    RigidBody;
-        std::optional<NativeScriptComponent> NativeScript;
-        std::optional<LuaScriptComponent>    Lua;
-        std::optional<LightComponent>        Light;
+        decltype(Detail::SnapshotTupleFor(AllComponents{})) Components;
+
+        template <typename T>
+        std::optional<T>& Get() { return std::get<std::optional<T>>(Components); }
+
+        template <typename T>
+        const std::optional<T>& Get() const { return std::get<std::optional<T>>(Components); }
     };
 
     inline Entity FindEntityByUUID(Scene* scene, UUID id)
@@ -37,6 +41,7 @@ namespace Engine {
     }
 
     namespace Detail {
+
         template <typename T>
         inline void CaptureOptional(Entity entity, std::optional<T>& out)
         {
@@ -50,22 +55,111 @@ namespace Engine {
             if (opt) registry.emplace_or_replace<T>(handle, *opt);
             else if (registry.all_of<T>(handle)) registry.remove<T>(handle);
         }
+
+        // "Editable equality" per component: compares only the fields a user can
+        // change in the inspector, ignoring runtime/derived state (world matrices,
+        // runtime bodies, script environments). Used solely to decide whether an
+        // interaction changed anything worth recording on the undo stack.
+
+        inline bool EditablyEqual(const TagComponent& a, const TagComponent& b)
+        {
+            return a.tag == b.tag;
+        }
+
+        inline bool EditablyEqual(const TransformComponent& a, const TransformComponent& b)
+        {
+            return a.translation == b.translation &&
+                   a.rotation    == b.rotation &&
+                   a.scale       == b.scale;
+        }
+
+        inline bool EditablyEqual(const MeshComponent& a, const MeshComponent& b)
+        {
+            return (uint64_t)a.MeshHandle == (uint64_t)b.MeshHandle;
+        }
+
+        inline bool EditablyEqual(const TextureComponent& a, const TextureComponent& b)
+        {
+            return (uint64_t)a.TextureHandle == (uint64_t)b.TextureHandle;
+        }
+
+        inline bool EditablyEqual(const MaterialComponent& a, const MaterialComponent& b)
+        {
+            return (uint64_t)a.MaterialHandle == (uint64_t)b.MaterialHandle;
+        }
+
+        inline bool EditablyEqual(const SceneCameraComponent& a, const SceneCameraComponent& b)
+        {
+            return a.primary          == b.primary &&
+                   a.fixedAspectRatio == b.fixedAspectRatio;
+        }
+
+        inline bool EditablyEqual(const RigidBodyComponent& a, const RigidBodyComponent& b)
+        {
+            return a.type    == b.type &&
+                   a.mass    == b.mass &&
+                   a.inertia == b.inertia;
+        }
+
+        // No comparable state (bound via std::function); presence is tracked, values are not.
+        inline bool EditablyEqual(const NativeScriptComponent&, const NativeScriptComponent&)
+        {
+            return true;
+        }
+
+        inline bool EditablyEqual(const LuaScriptComponent& a, const LuaScriptComponent& b)
+        {
+            return (uint64_t)a.ScriptHandle == (uint64_t)b.ScriptHandle;
+        }
+
+        inline bool EditablyEqual(const LightComponent& a, const LightComponent& b)
+        {
+            return a.Type        == b.Type &&
+                   a.Color       == b.Color &&
+                   a.Intensity   == b.Intensity &&
+                   a.CastShadows == b.CastShadows &&
+                   a.InnerCutOff == b.InnerCutOff &&
+                   a.OuterCutOff == b.OuterCutOff;
+        }
+
+        template <typename T>
+        inline bool OptionalDiffers(const std::optional<T>& a, const std::optional<T>& b)
+        {
+            if (a.has_value() != b.has_value()) return true;
+            return a && !EditablyEqual(*a, *b);
+        }
+
+        template <typename... Component>
+        inline EntitySnapshot CaptureEntity(Entity entity, ComponentGroup<Component...>)
+        {
+            EntitySnapshot snap;
+            (CaptureOptional<Component>(entity, snap.Get<Component>()), ...);
+            return snap;
+        }
+
+        template <typename... Component>
+        inline void RestoreEntity(entt::registry& registry, entt::entity handle, const EntitySnapshot& snap, ComponentGroup<Component...>)
+        {
+            (ApplyOptional<Component>(registry, handle, snap.Get<Component>()), ...);
+        }
+
+        template <typename... Component>
+        inline bool SameComponentSet(const EntitySnapshot& a, const EntitySnapshot& b, ComponentGroup<Component...>)
+        {
+            return ((a.Get<Component>().has_value() == b.Get<Component>().has_value()) && ...);
+        }
+
+        template <typename... Component>
+        inline bool SnapshotsDiffer(const EntitySnapshot& a, const EntitySnapshot& b, ComponentGroup<Component...>)
+        {
+            return (OptionalDiffers(a.Get<Component>(), b.Get<Component>()) || ...);
+        }
+
     }
 
     inline EntitySnapshot CaptureEntity(Entity entity)
     {
-        EntitySnapshot snap;
-        Detail::CaptureOptional(entity, snap.Tag);
-        Detail::CaptureOptional(entity, snap.Transform);
-        Detail::CaptureOptional(entity, snap.Mesh);
-        Detail::CaptureOptional(entity, snap.Texture);
-        Detail::CaptureOptional(entity, snap.Material);
-        Detail::CaptureOptional(entity, snap.Camera);
-        Detail::CaptureOptional(entity, snap.RigidBody);
-        Detail::CaptureOptional(entity, snap.NativeScript);
-        Detail::CaptureOptional(entity, snap.Lua);
-        Detail::CaptureOptional(entity, snap.Light);
-        return snap;
+        return Detail::CaptureEntity(entity, AllComponents{});
     }
 
     // Writes the snapshot onto the entity, adding/removing components so the set
@@ -76,19 +170,7 @@ namespace Engine {
         Entity entity = FindEntityByUUID(scene, id);
         if (!entity) return;
 
-        entt::registry& reg = scene->GetRegistry();
-        entt::entity handle = entity.GetHandle();
-
-        Detail::ApplyOptional(reg, handle, snap.Tag);
-        Detail::ApplyOptional(reg, handle, snap.Transform);
-        Detail::ApplyOptional(reg, handle, snap.Mesh);
-        Detail::ApplyOptional(reg, handle, snap.Texture);
-        Detail::ApplyOptional(reg, handle, snap.Material);
-        Detail::ApplyOptional(reg, handle, snap.Camera);
-        Detail::ApplyOptional(reg, handle, snap.RigidBody);
-        Detail::ApplyOptional(reg, handle, snap.NativeScript);
-        Detail::ApplyOptional(reg, handle, snap.Lua);
-        Detail::ApplyOptional(reg, handle, snap.Light);
+        Detail::RestoreEntity(scene->GetRegistry(), entity.GetHandle(), snap, AllComponents{});
     }
 
     // True if both snapshots have exactly the same set of components present (ignoring
@@ -96,64 +178,14 @@ namespace Engine {
     // explicitly at the action site rather than by the inspector value tracker.
     inline bool SameComponentSet(const EntitySnapshot& a, const EntitySnapshot& b)
     {
-        return a.Tag.has_value()          == b.Tag.has_value()          &&
-               a.Transform.has_value()    == b.Transform.has_value()    &&
-               a.Mesh.has_value()         == b.Mesh.has_value()         &&
-               a.Texture.has_value()      == b.Texture.has_value()      &&
-               a.Material.has_value()     == b.Material.has_value()     &&
-               a.Camera.has_value()       == b.Camera.has_value()       &&
-               a.RigidBody.has_value()    == b.RigidBody.has_value()    &&
-               a.NativeScript.has_value() == b.NativeScript.has_value() &&
-               a.Lua.has_value()          == b.Lua.has_value()          &&
-               a.Light.has_value()        == b.Light.has_value();
+        return Detail::SameComponentSet(a, b, AllComponents{});
     }
 
     // True if the user-editable state differs between two snapshots of one entity.
     // Used to discard no-op inspector interactions so they don't pollute the stack.
     inline bool SnapshotsDiffer(const EntitySnapshot& a, const EntitySnapshot& b)
     {
-        if (a.Tag.has_value()          != b.Tag.has_value())          return true;
-        if (a.Transform.has_value()    != b.Transform.has_value())    return true;
-        if (a.Mesh.has_value()         != b.Mesh.has_value())         return true;
-        if (a.Texture.has_value()      != b.Texture.has_value())      return true;
-        if (a.Material.has_value()     != b.Material.has_value())     return true;
-        if (a.Camera.has_value()       != b.Camera.has_value())       return true;
-        if (a.RigidBody.has_value()    != b.RigidBody.has_value())    return true;
-        if (a.NativeScript.has_value() != b.NativeScript.has_value()) return true;
-        if (a.Lua.has_value()          != b.Lua.has_value())          return true;
-        if (a.Light.has_value()        != b.Light.has_value())        return true;
-
-        if (a.Tag && a.Tag->tag != b.Tag->tag) return true;
-
-        if (a.Transform && (a.Transform->translation != b.Transform->translation ||
-                            a.Transform->rotation    != b.Transform->rotation ||
-                            a.Transform->scale       != b.Transform->scale))
-            return true;
-
-        if (a.Mesh && (uint64_t)a.Mesh->MeshHandle != (uint64_t)b.Mesh->MeshHandle) return true;
-        if (a.Texture && (uint64_t)a.Texture->TextureHandle != (uint64_t)b.Texture->TextureHandle) return true;
-        if (a.Material && (uint64_t)a.Material->MaterialHandle != (uint64_t)b.Material->MaterialHandle) return true;
-
-        if (a.Camera && (a.Camera->primary           != b.Camera->primary ||
-                         a.Camera->fixedAspectRatio  != b.Camera->fixedAspectRatio))
-            return true;
-
-        if (a.RigidBody && (a.RigidBody->type    != b.RigidBody->type ||
-                            a.RigidBody->mass    != b.RigidBody->mass ||
-                            a.RigidBody->inertia != b.RigidBody->inertia))
-            return true;
-
-        if (a.Light && (a.Light->Type        != b.Light->Type ||
-                        a.Light->Color       != b.Light->Color ||
-                        a.Light->Intensity   != b.Light->Intensity ||
-                        a.Light->CastShadows != b.Light->CastShadows ||
-                        a.Light->InnerCutOff != b.Light->InnerCutOff ||
-                        a.Light->OuterCutOff != b.Light->OuterCutOff))
-            return true;
-
-        if (a.Lua && (uint64_t)a.Lua->ScriptHandle != (uint64_t)b.Lua->ScriptHandle) return true;
-
-        return false;
+        return Detail::SnapshotsDiffer(a, b, AllComponents{});
     }
 
 }

@@ -85,7 +85,7 @@ namespace Engine
         template<typename T>
         void Unsubscribe(SubscriberID id) 
         {
-            EventType type = T::getStaticType();
+            EventType type = T::GetStaticType();
             
             if (m_Subscribers.count(type)) 
             {

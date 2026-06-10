@@ -14,23 +14,7 @@
 
 namespace Engine {
 
-    static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = {
-            { ".pmscene", AssetType::Scene },
-            { ".png", AssetType::Texture2D },
-            { ".jpg", AssetType::Texture2D },
-            { ".jpeg", AssetType::Texture2D },
-            { ".ktx", AssetType::Texture2D },
-            { ".ktx2", AssetType::Texture2D },
-            { ".assbin", AssetType::Scene },
-            { ".obj", AssetType::Scene },
-            { ".fbx", AssetType::Scene },
-            { ".gltf", AssetType::Scene },
-            { ".prefab", AssetType::Prefab },
-            { ".lua", AssetType::LuaScript },
-            { ".wav", AssetType::Audio },
-            { ".mp3", AssetType::Audio },
-            { ".flac", AssetType::Audio }
-    };
+    static const char* s_AssetRegistryPath = "../assets/AssetRegistry.yaml";
 
     void AssetManager::Init() {
         LoadAssetRegistry();
@@ -52,14 +36,7 @@ namespace Engine {
         metadata.Handle = UUID();
         metadata.FilePath = filepath.string();
         metadata.Name = filepath.stem().string();
-        
-        std::string ext = filepath.extension().string();
-        if (ext == ".pmscene" || ext == ".obj" || ext == ".assbin" || ext == ".gltf" || ext == ".fbx") metadata.Type = AssetType::Scene;
-        else if (ext == ".prefab") metadata.Type = AssetType::Prefab;
-        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ktx" || ext == ".ktx2") metadata.Type = AssetType::Texture2D;
-        else if (ext == ".lua") metadata.Type = AssetType::LuaScript;
-        else if (ext == ".wav" || ext == ".mp3" || ext == ".flac") metadata.Type = AssetType::Audio;
-        else metadata.Type = AssetType::None;
+        metadata.Type = AssetTypeFromFilepath(filepath);
 
         m_AssetRegistry[metadata.Handle] = metadata;
         
@@ -175,9 +152,9 @@ namespace Engine {
         }
     }
 
-    void AssetManager::SaveAssetRegistry() 
+    void AssetManager::SaveAssetRegistry()
     {
-        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
+        std::filesystem::path path = s_AssetRegistryPath;
         YAML::Emitter out;
         out << YAML::BeginMap << YAML::Key << "AssetRegistry" << YAML::Value << YAML::BeginSeq;
 
@@ -198,9 +175,9 @@ namespace Engine {
         fout << out.c_str();
     }
 
-    void AssetManager::LoadAssetRegistry() 
+    void AssetManager::LoadAssetRegistry()
     {
-        std::filesystem::path path = "/home/tom/Coding/c++/opengl/assets/AssetRegistry.yaml";
+        std::filesystem::path path = s_AssetRegistryPath;
 
         if (!std::filesystem::exists(path)) return;
 

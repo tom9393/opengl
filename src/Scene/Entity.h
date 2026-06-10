@@ -25,7 +25,7 @@ namespace Engine
                 std::cout << "Already has component" << std::endl;
                 return GetComponent<T>();
             }
-            T& component = m_Scene->m_Registry.emplace<T>(m_Handle, std::forward<Args>(args)...);
+            T& component = m_Scene->GetRegistry().emplace<T>(m_Handle, std::forward<Args>(args)...);
             return component;
         }
 
@@ -37,19 +37,19 @@ namespace Engine
                 std::cout << "Does not have component to remove" << std::endl;
                 return;
             }
-            m_Scene->m_Registry.remove<T>(m_Handle);
+            m_Scene->GetRegistry().remove<T>(m_Handle);
         }
 
         template <typename T>
         T& GetComponent()
         {
-            return m_Scene->m_Registry.get<T>(m_Handle);
+            return m_Scene->GetRegistry().get<T>(m_Handle);
         }
         
         template <typename T>
         bool HasComponent()
         {
-            return m_Scene->m_Registry.all_of<T>(m_Handle);
+            return m_Scene->GetRegistry().all_of<T>(m_Handle);
         }
 
         template <typename T>

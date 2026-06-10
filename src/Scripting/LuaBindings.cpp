@@ -48,7 +48,7 @@ namespace Engine {
     void LuaBindings::ReloadScripts(Scene* scene)
     {
 		auto& lua = ScriptEngine::GetState();
-		auto view = scene->m_Registry.view<LuaScriptComponent>();
+		auto view = scene->GetRegistry().view<LuaScriptComponent>();
 
 		for (auto entity : view) {
 			auto& script = view.get<LuaScriptComponent>(entity);
@@ -163,14 +163,14 @@ namespace Engine {
 
     void LuaBindings::BindComponents(Scene* scene)
     {
-		auto luaScripts = scene->m_Registry.view<LuaScriptComponent>();
+		auto luaScripts = scene->GetRegistry().view<LuaScriptComponent>();
         for (auto &e : luaScripts)
             BindEntity({ e, scene });
     }
 
     void LuaBindings::UnbindComponents(Scene* scene)
     {
-		auto luaScripts = scene->m_Registry.view<LuaScriptComponent>();
+		auto luaScripts = scene->GetRegistry().view<LuaScriptComponent>();
 		for (auto& e : luaScripts)
         {
 			CallOnDestroy({ e, scene });

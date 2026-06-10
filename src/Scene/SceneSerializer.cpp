@@ -152,7 +152,7 @@ namespace Engine
         Write(out, post.ChromaticAberration);
 
         std::vector<Entity> entities;
-        m_Scene->m_Registry.view<entt::entity>().each([this, &entities](entt::entity entity)
+        m_Scene->GetRegistry().view<entt::entity>().each([this, &entities](entt::entity entity)
         {
             Entity e { entity, m_Scene.get() };
             if (e) entities.push_back(e);
