@@ -23,10 +23,18 @@ namespace Engine
         {
             s_RendererAPI->Clear();
         }
+        inline static void ClearColorOnly()
+        {
+            s_RendererAPI->ClearColorOnly();
+        }
 
         inline static void SetDepthTest(bool enabled)
         {
             s_RendererAPI->SetDepthTest(enabled);
+        }
+        inline static void SetDepthWrite(bool enabled)
+        {
+            s_RendererAPI->SetDepthWrite(enabled);
         }
         inline static void SetFaceCulling(bool enabled)
         {
@@ -44,6 +52,21 @@ namespace Engine
         inline static void BindTexture2D(unsigned int slot, unsigned int rendererID)
         {
             s_RendererAPI->BindTexture2D(slot, rendererID);
+        }
+
+        inline static void BindTextureCube(unsigned int slot, unsigned int rendererID)
+        {
+            s_RendererAPI->BindTextureCube(slot, rendererID);
+        }
+
+        inline static void PushDebugGroup(const char* name)
+        {
+            s_RendererAPI->PushDebugGroup(name);
+        }
+
+        inline static void PopDebugGroup()
+        {
+            s_RendererAPI->PopDebugGroup();
         }
 
         inline static void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)

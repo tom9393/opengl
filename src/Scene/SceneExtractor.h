@@ -59,6 +59,7 @@ namespace Engine {
 
         std::sort(renderView.OpaqueItems.begin(), renderView.OpaqueItems.end(), sortFunc);
         for (auto& caster : renderView.DirectionalShadowCasters) std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
+        for (auto& caster : renderView.ConeShadowCasters)    std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
         for (auto& caster : renderView.PointShadowCasters)   std::sort(caster.RenderItems.begin(), caster.RenderItems.end(), sortFunc);
     }
 

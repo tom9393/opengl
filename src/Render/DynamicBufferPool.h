@@ -17,6 +17,14 @@ namespace Engine {
             m_FrameCapacity = m_Capacity / m_MaxFramesInFlight;
             glCreateBuffers(1, &m_RendererID);
 
+            // Offsets are handed to both glBindBufferRange targets, so they must
+            // satisfy the stricter of the two hardware alignments.
+            GLint uboAlignment = 0, ssboAlignment = 0;
+            glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uboAlignment);
+            glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &ssboAlignment);
+            m_Alignment = (size_t)(uboAlignment > ssboAlignment ? uboAlignment : ssboAlignment);
+            if (m_Alignment == 0) m_Alignment = 256;
+
             // 1. Storage Flags: Allocates the immutable memory on the GPU. 
             // FLUSH_EXPLICIT is NOT allowed here.
             GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT;
@@ -40,18 +48,17 @@ namespace Engine {
             glDeleteBuffers(1, &m_RendererID);
         }
 
+        // Returns { 0, 0 } when the current frame's block is exhausted;
+        // callers skip the draw that needed the allocation.
         Allocation Allocate(const void* data, size_t size)
         {
             PROFILE_FUNCTION();
-            // Alignment is crucial for SSBOs and UBOs! 
-            // SSBOs usually require 16 or 256 byte alignment depending on the hardware.
-            size_t alignment = 256;  // Make sure this is in alignment with UBO
-            m_Head = (m_Head + alignment - 1) & ~(alignment - 1);
+            m_Head = (m_Head + m_Alignment - 1) & ~(m_Alignment - 1);
 
             if (m_Head + size > (m_CurrentFrame + 1) * m_FrameCapacity) {
-                // In a real engine, you would assert or resize here!
-                std::cerr << "Out of memory for current frame!\n";
-                return { 0, 0 }; 
+                std::cerr << "DynamicBufferPool: out of memory for current frame, skipping allocation of "
+                          << size << " bytes\n";
+                return { 0, 0 };
             }
 
             size_t currentOffset = m_Head;
@@ -111,6 +118,7 @@ namespace Engine {
     private:
         uint32_t m_RendererID;
         size_t m_Capacity;
+        size_t m_Alignment = 256;
         uint8_t* m_MappedPtr;
         size_t m_Head = 0;
         std::queue<GLsync> m_FrameFences;

@@ -3,6 +3,7 @@
 #include "RenderPass.h"
 #include "Render/RenderGraph.h"
 #include "Render/EnvironmentMap.h"
+#include "Physics/PhysicsEngine.h"
 
 namespace Engine {
 
@@ -15,10 +16,12 @@ namespace Engine {
             SetTargetType(BufferTextureType::Texture2D);
             // HDR target: lighting outputs linear radiance; tonemap is in the post pass.
             Output("SceneColor", FramebufferTextureFormat::RGBA16F);
-            Input("GBuffer.Position");
             Input("GBuffer.Normal");
             Input("GBuffer.Albedo");
             Input("GBuffer.PBR");
+            // Sampled for world-position reconstruction, and attached (read-only) so
+            // forward geometry after the lighting quad is depth tested against the scene.
+            SetDepthInput("GBuffer.Depth");
             Input("ShadowMap2D");
             Input("PointShadowMap");
             SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
@@ -27,19 +30,19 @@ namespace Engine {
             Shared<Shader> deferredShader = ShaderLibrary::Get("DeferredLighting");
             deferredShader->Bind();
 
-            deferredShader->SetInt("gPosition", 0);
-            deferredShader->SetInt("gNormal", 1);
-            deferredShader->SetInt("gAlbedo", 2);
-            deferredShader->SetInt("gPBR", 3);
+            deferredShader->SetInt("gNormal", 0);
+            deferredShader->SetInt("gAlbedo", 1);
+            deferredShader->SetInt("gPBR",    2);
+            deferredShader->SetInt("gDepth",  3);
 
             deferredShader->SetInt("u_DirSpotShadowMaps", 4);
             deferredShader->SetInt("u_PointShadowCubemaps", 5);
-            deferredShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
+            deferredShader->SetFloat("u_FarPlane", PointShadowFarPlane);
 
-            m_RenderGraph->BindInput("GBuffer.Position", 0);
-            m_RenderGraph->BindInput("GBuffer.Normal",   1);
-            m_RenderGraph->BindInput("GBuffer.Albedo",   2);
-            m_RenderGraph->BindInput("GBuffer.PBR",      3);
+            m_RenderGraph->BindInput("GBuffer.Normal", 0);
+            m_RenderGraph->BindInput("GBuffer.Albedo", 1);
+            m_RenderGraph->BindInput("GBuffer.PBR",    2);
+            m_RenderGraph->BindInput("GBuffer.Depth",  3);
 
             if (m_RenderGraph->HasInput("ShadowMap2D"))
                 m_RenderGraph->BindInput("ShadowMap2D", 4);
@@ -59,21 +62,21 @@ namespace Engine {
             deferredShader->SetMat4("u_InverseViewProjection", glm::inverse(ctx.ViewProjection));
 
             unsigned int fallbackCube = EnvironmentMap::GetFallbackCubemap();
-            glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, env.Valid ? env.Irradiance : fallbackCube);
-            glActiveTexture(GL_TEXTURE7);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, env.Valid ? env.Prefilter : fallbackCube);
-            glActiveTexture(GL_TEXTURE8);
-            glBindTexture(GL_TEXTURE_2D, EnvironmentMap::GetBRDFLUT());
-            glActiveTexture(GL_TEXTURE9);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, env.Valid ? env.Skybox : fallbackCube);
+            RenderCommand::BindTextureCube(6, env.Valid ? env.Irradiance : fallbackCube);
+            RenderCommand::BindTextureCube(7, env.Valid ? env.Prefilter : fallbackCube);
+            RenderCommand::BindTexture2D(8, EnvironmentMap::GetBRDFLUT());
+            RenderCommand::BindTextureCube(9, env.Valid ? env.Skybox : fallbackCube);
 
+            // The lighting quad shades every pixel; don't test it against the
+            // attached G-buffer depth.
+            RenderCommand::SetDepthTest(false);
             Renderer::DrawFullscreenQuad();
+            RenderCommand::SetDepthTest(true);
 
+            // Debug geometry draws after lighting, depth tested against the scene
+            // (depth writes stay masked by the graph).
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         }
-
-        float m_PointLightFarPlane = 35.0f;
     };
 
 }

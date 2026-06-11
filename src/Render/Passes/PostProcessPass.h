@@ -50,10 +50,8 @@ namespace Engine {
             shader->SetFloat("u_VignetteStrength", post.VignetteStrength);
             shader->SetFloat("u_ChromaticAberration", post.ChromaticAberration);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, sceneTex);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, bloomTex);
+            RenderCommand::BindTexture2D(0, sceneTex);
+            RenderCommand::BindTexture2D(1, bloomTex);
 
             Renderer::DrawFullscreenQuad();
         }

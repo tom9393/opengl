@@ -14,6 +14,7 @@ namespace Engine {
             SetTargetType(BufferTextureType::Cubemap_Array);
             Output("PointShadowMap", FramebufferTextureFormat::DEPTH24STENCIL8);
             SetViewportSize(128, 128);
+            SetLayers(MaxShadowCastersPoint);
             SetCondition([](const RenderView& view) {
                 return HasFlag(view.Flags, RenderFlags::Shadows) && !view.PointShadowCasters.empty();
             });
@@ -22,9 +23,10 @@ namespace Engine {
             Shared<Shader> pointshadowShader = ShaderLibrary::Get("PointShadowShader");
             pointshadowShader->Bind();
 
-            glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, m_PointLightFarPlane);
+            glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, PointShadowFarPlane);
 
-            for (size_t layer = 0; layer < view.PointShadowCasters.size(); ++layer) {
+            size_t casterCount = std::min(view.PointShadowCasters.size(), (size_t)MaxShadowCastersPoint);
+            for (size_t layer = 0; layer < casterCount; ++layer) {
                 auto& caster = view.PointShadowCasters[layer];
                 const glm::vec3& lightPos = caster.Position;
 
@@ -35,36 +37,13 @@ namespace Engine {
                 for (int i = 0; i < 6; ++i) shadowTransforms[i] = shadowProj * glm::lookAt(lightPos, lightPos + dirs[i], ups[i]);
                 for (int i = 0; i < 6; ++i) pointshadowShader->SetMat4("u_ShadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
 
-                pointshadowShader->SetFloat("u_FarPlane", m_PointLightFarPlane);
+                pointshadowShader->SetFloat("u_FarPlane", PointShadowFarPlane);
                 pointshadowShader->SetVec3("u_LightPos", lightPos);
                 pointshadowShader->SetInt("u_BaseLayer", layer);
 
-                DrawBatched(ctx, caster.RenderItems);
+                DrawBatched(ctx, caster.RenderItems, false);
             }
         }
-
-    private:
-        void DrawBatched(RenderContext& ctx, const auto& renderItems) {
-            size_t i = 0;
-            while (i < renderItems.size()) {
-                size_t batchSize = 0;
-                while (i + batchSize < renderItems.size() && renderItems[i + batchSize].TargetMesh == renderItems[i].TargetMesh)
-                    batchSize++;
-
-                m_Transforms.clear();
-                m_Transforms.reserve(batchSize);
-                for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(renderItems[i + j].Transform);
-
-                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-                Renderer::SubmitInstancedMesh(renderItems[i].TargetMesh, nullptr, m_Transforms.size());
-                i += batchSize;
-            }
-        }
-
-        float m_PointLightFarPlane = 35.0f;
-        std::vector<glm::mat4> m_Transforms;
     };
 
 }

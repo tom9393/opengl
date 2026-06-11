@@ -52,7 +52,8 @@ private:
         renderView.LightData.Lights[idx].LightSpaceMatrix = glm::mat4(1.0f);
 
         if (!light.CastShadows) return -1;
-        int shadowIndex = renderView.PointShadowCasters.size();
+        int shadowIndex = (int)renderView.PointShadowCasters.size();
+        if (shadowIndex >= MaxShadowCastersPoint) return -1;
         renderView.PointShadowCasters.push_back({ transform.translation, {} });
         return shadowIndex;
     }
@@ -73,7 +74,10 @@ private:
         renderView.LightData.Lights[idx].LightSpaceMatrix = lightSpaceMatrix;
 
         if (!light.CastShadows) return -1;
-        int shadowIndex = renderView.DirectionalShadowCasters.size();
+        // Directional and cone casters share the 2D shadow array, so the combined
+        // count is what the capacity bounds.
+        if ((int)(renderView.DirectionalShadowCasters.size() + renderView.ConeShadowCasters.size()) >= MaxShadowCasters2D) return -1;
+        int shadowIndex = (int)renderView.DirectionalShadowCasters.size();
         renderView.DirectionalShadowCasters.push_back({ lightSpaceMatrix, {} });
         return shadowIndex;
     }
@@ -94,7 +98,8 @@ private:
         renderView.LightData.Lights[idx].LightSpaceMatrix = lightSpaceMatrix;
 
         if (!light.CastShadows) return -1;
-        int shadowIndex = renderView.ConeShadowCasters.size();
+        if ((int)(renderView.DirectionalShadowCasters.size() + renderView.ConeShadowCasters.size()) >= MaxShadowCasters2D) return -1;
+        int shadowIndex = (int)renderView.ConeShadowCasters.size();
         renderView.ConeShadowCasters.push_back({ lightSpaceMatrix, {} });
         return shadowIndex;
     }

@@ -23,14 +23,21 @@ namespace Engine
 
         virtual void SetClearColor(const glm::vec4 &color) = 0;
         virtual void Clear() = 0;
+        virtual void ClearColorOnly() = 0;
 
         virtual void SetDepthTest(bool enabled) = 0;
+        virtual void SetDepthWrite(bool enabled) = 0;
         virtual void SetFaceCulling(bool enabled) = 0;
         virtual void SetAdditiveBlend(bool enabled) = 0;
         virtual void SetAlphaBlend(bool enabled) = 0;
 
         // Bind a 2D texture (by renderer id) to a sampler slot.
         virtual void BindTexture2D(unsigned int slot, unsigned int rendererID) = 0;
+        virtual void BindTextureCube(unsigned int slot, unsigned int rendererID) = 0;
+
+        // Annotate a span of GL commands for debuggers like RenderDoc.
+        virtual void PushDebugGroup(const char* name) = 0;
+        virtual void PopDebugGroup() = 0;
 
         virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) = 0;
         virtual void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) = 0;

@@ -2,7 +2,7 @@
 
 #include "pch.h"
 #include "Core/TimeStep.h"
-#include "FramebufferPool.h"
+#include "FramebufferHandle.h"
 #include "Passes/RenderPass.h"
 #include "RenderContext.h"
 #include "RenderView.h"
@@ -40,9 +40,10 @@ namespace Engine
         // graph keeps all passes (insertion-time topological order).
         void MarkPresent(const std::string& resourceName);
 
-        // Resolve inputs to producers, validate, detect cycles, topologically sort, and
-        // cull passes not contributing to a presented resource. Idempotent; runs on the
-        // next Execute when dirty.
+        // Resolve inputs to producers, validate, detect cycles, topologically sort,
+        // cull passes not contributing to a presented resource, and allocate the
+        // framebuffers of the surviving passes. Idempotent; runs on the next Execute
+        // when dirty.
         void Compile();
 
         // Execute the compiled graph for the given view. Conditions are evaluated per pass.
@@ -79,12 +80,16 @@ namespace Engine
         struct ResourceInfo
         {
             RenderPass* producer = nullptr;
+            // Pass whose framebuffer physically holds the resource (differs from the
+            // producer for alias outputs, which render in place into another pass's target).
+            RenderPass* physicalPass = nullptr;
             unsigned int colorAttachmentIndex = 0;
             FramebufferTextureFormat format = FramebufferTextureFormat::None;
             bool isDepth = false;
         };
 
         void BuildResourceMap();
+        void AllocateFramebuffers();
         bool IsDepthFormat(FramebufferTextureFormat fmt) const
         {
             return fmt == FramebufferTextureFormat::DEPTH24STENCIL8 || fmt == FramebufferTextureFormat::Depth;
@@ -92,16 +97,16 @@ namespace Engine
 
         unsigned int m_Width, m_Height;
         std::vector<std::unique_ptr<RenderPass>> m_Passes;
-        FramebufferPool m_Pool;
 
-        // Compiled state.
+        // Compiled state. Framebuffers are allocated at compile time and resized in
+        // place; viewport-sized targets follow Resize, fixed-size ones are untouched.
         std::vector<RenderPass*> m_ExecutionOrder;
         std::unordered_map<std::string, ResourceInfo> m_Resources;
         std::unordered_set<std::string> m_Presented;
+        std::unordered_map<std::string, Shared<FramebufferHandle>> m_PassFramebuffers;
         bool m_Dirty = true;
 
-        // Per-frame state.
-        std::unordered_map<std::string, Shared<FramebufferHandle>> m_PassFramebuffers;
+        // Per-frame state: resources whose producer has executed this frame.
         std::unordered_set<std::string> m_AvailableResources;
     };
 

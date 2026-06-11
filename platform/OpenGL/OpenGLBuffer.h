@@ -116,6 +116,7 @@ namespace Engine
         void AttachLayer(unsigned int layer) override;
         void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) override;
         void AttachToDepthSlot(unsigned int idx) override;
+        void AttachExternalDepth(unsigned int textureRendererID, bool hasStencil) override;
 
         const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
         const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }
@@ -130,7 +131,7 @@ namespace Engine
         FramebufferTextureSpecification m_DepthSpec = FramebufferTextureFormat::None;
 
         std::vector<unsigned int> m_ColorAttachments;
-        unsigned int m_DepthAttachment;
+        unsigned int m_DepthAttachment = 0;
     };
 
 };

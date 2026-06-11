@@ -41,9 +41,30 @@ namespace Engine
 	            }
 	            ResourceInfo info;
 	            info.producer = pass;
-	            info.format = out.format;
-	            info.isDepth = out.isDepth;
-	            info.colorAttachmentIndex = out.colorAttachmentIndex;
+	            if (!out.aliasOf.empty())
+	            {
+	                // Alias outputs share the source resource's physical attachment.
+	                // Passes are registered in insertion order, so the source must come
+	                // from an earlier-added pass.
+	                auto src = m_Resources.find(out.aliasOf);
+	                if (src == m_Resources.end())
+	                {
+	                    std::cerr << "RenderGraph: pass '" << pass->GetName()
+	                              << "' aliases unknown resource '" << out.aliasOf << "'." << std::endl;
+	                    continue;
+	                }
+	                info.physicalPass = src->second.physicalPass;
+	                info.format = src->second.format;
+	                info.isDepth = src->second.isDepth;
+	                info.colorAttachmentIndex = src->second.colorAttachmentIndex;
+	            }
+	            else
+	            {
+	                info.physicalPass = pass;
+	                info.format = out.format;
+	                info.isDepth = out.isDepth;
+	                info.colorAttachmentIndex = out.colorAttachmentIndex;
+	            }
 	            m_Resources[out.name] = info;
 	        }
 	    }
@@ -158,55 +179,112 @@ namespace Engine
 	        }
 	    }
 
+	    AllocateFramebuffers();
+
 	    m_Dirty = false;
+	}
+
+	void RenderGraph::AllocateFramebuffers()
+	{
+	    for (RenderPass* pass : m_ExecutionOrder)
+	    {
+	        if (pass->IsInplace()) continue;
+	        if (m_PassFramebuffers.count(pass->GetName())) continue;
+
+	        FramebufferSpecification spec;
+	        spec.width = pass->GetWidth() > 0 ? pass->GetWidth() : m_Width;
+	        spec.height = pass->GetHeight() > 0 ? pass->GetHeight() : m_Height;
+	        spec.samples = 1;
+	        spec.layers = pass->GetLayers();
+	        spec.type = pass->GetTargetType() == BufferTextureType::None
+	                        ? BufferTextureType::Texture2D : pass->GetTargetType();
+	        for (auto format : pass->BuildAttachmentList())
+	            spec.attachments.Attachments.emplace_back(format);
+
+	        Shared<Framebuffer> fb = Framebuffer::Create(spec);
+	        if (!fb)
+	        {
+	            std::cerr << "RenderGraph: failed to create framebuffer for pass '"
+	                      << pass->GetName() << "'." << std::endl;
+	            continue;
+	        }
+	        m_PassFramebuffers[pass->GetName()] = MakeShared<FramebufferHandle>(fb);
+	    }
 	}
 
 	void RenderGraph::Execute(RenderContext& context, const RenderView& renderView)
 	{
 	    if (m_Dirty) Compile();
 
-	    m_PassFramebuffers.clear();
 	    m_AvailableResources.clear();
 
 	    auto camAlloc = context.InstancePool->Allocate(&renderView.Camera, sizeof(CameraData));
-	    context.InstancePool->BindAsUBO(0, camAlloc.Offset, camAlloc.Size);
+	    if (camAlloc.Size > 0) context.InstancePool->BindAsUBO(0, camAlloc.Offset, camAlloc.Size);
 
 	    auto lightAlloc = context.InstancePool->Allocate(&renderView.LightData, sizeof(SceneLightData));
-	    context.InstancePool->BindAsUBO(1, lightAlloc.Offset, lightAlloc.Size);
+	    if (lightAlloc.Size > 0) context.InstancePool->BindAsUBO(1, lightAlloc.Offset, lightAlloc.Size);
 
 	    for (RenderPass* pass : m_ExecutionOrder)
 	    {
 	        if (!pass->EvaluateCondition(renderView)) continue;
 
-	        auto attachments = pass->BuildAttachmentList();
-	        BufferTextureType type = pass->GetTargetType();
-	        if (type == BufferTextureType::None) type = BufferTextureType::Texture2D;
-
-	        unsigned int passWidth = pass->GetWidth() > 0 ? pass->GetWidth() : m_Width;
-	        unsigned int passHeight = pass->GetHeight() > 0 ? pass->GetHeight() : m_Height;
-
-	        Shared<FramebufferHandle> fbHandle = m_Pool.AcquireFramebuffer(
-	            pass->GetName(), attachments, type, passWidth, passHeight);
+	        // In-place passes render into the framebuffer that physically holds their
+	        // aliased resource; everything else owns a framebuffer allocated at compile.
+	        Shared<FramebufferHandle> fbHandle;
+	        if (pass->IsInplace())
+	        {
+	            auto rit = m_Resources.find(pass->GetOutputs()[0].aliasOf);
+	            if (rit != m_Resources.end())
+	            {
+	                auto fit = m_PassFramebuffers.find(rit->second.physicalPass->GetName());
+	                if (fit != m_PassFramebuffers.end()) fbHandle = fit->second;
+	            }
+	        }
+	        else
+	        {
+	            auto fit = m_PassFramebuffers.find(pass->GetName());
+	            if (fit != m_PassFramebuffers.end()) fbHandle = fit->second;
+	        }
 	        if (!fbHandle) continue;
 
-	        m_PassFramebuffers[pass->GetName()] = fbHandle;
 	        for (auto& out : pass->GetOutputs())
 	            m_AvailableResources.insert(out.name);
 
 	        fbHandle->GetFramebuffer()->Bind();
-	        if (pass->HasClearColor())
-	        {
-	            RenderCommand::SetClearColor(pass->GetClearColor());
-	            RenderCommand::Clear();
-	        }
-	        else
-	        {
-	            RenderCommand::Clear();
-	        }
-	        for (auto& kv : pass->GetClearInts())
-	            fbHandle->ClearAttachment(kv.first, kv.second);
 
+	        // A declared depth input is attached as a read-only depth attachment: depth
+	        // writes stay masked for the whole pass, which both protects the producer's
+	        // depth and keeps sampling it from the pass legal.
+	        bool externalDepth = pass->HasDepthInput();
+	        if (externalDepth)
+	        {
+	            auto dit = m_Resources.find(pass->GetDepthInput());
+	            Shared<FramebufferHandle> depthFb = GetResource(pass->GetDepthInput());
+	            if (dit != m_Resources.end() && depthFb)
+	            {
+	                bool hasStencil = dit->second.format == FramebufferTextureFormat::DEPTH24STENCIL8;
+	                fbHandle->GetFramebuffer()->AttachExternalDepth(
+	                    depthFb->GetDepthAttachmentRendererID(), hasStencil);
+	            }
+	            RenderCommand::SetDepthWrite(false);
+	        }
+
+	        // In-place passes load the existing contents; owning passes clear, but never
+	        // an externally attached depth.
+	        if (!pass->IsInplace())
+	        {
+	            if (pass->HasClearColor()) RenderCommand::SetClearColor(pass->GetClearColor());
+	            if (externalDepth) RenderCommand::ClearColorOnly();
+	            else               RenderCommand::Clear();
+	            for (auto& kv : pass->GetClearInts())
+	                fbHandle->ClearAttachment(kv.first, kv.second);
+	        }
+
+	        RenderCommand::PushDebugGroup(pass->GetName().c_str());
 	        pass->Execute(context, renderView);
+	        RenderCommand::PopDebugGroup();
+
+	        if (externalDepth) RenderCommand::SetDepthWrite(true);
 
 	        fbHandle->GetFramebuffer()->Unbind();
 	    }
@@ -217,7 +295,16 @@ namespace Engine
 	    if (m_Width == width && m_Height == height) return;
 	    m_Width = width;
 	    m_Height = height;
-	    m_Pool.Clear();
+
+	    // Only viewport-sized targets follow the viewport; fixed-size passes
+	    // (shadow maps) keep their attachments.
+	    for (auto& passPtr : m_Passes)
+	    {
+	        if (passPtr->GetWidth() > 0) continue;
+	        auto it = m_PassFramebuffers.find(passPtr->GetName());
+	        if (it != m_PassFramebuffers.end())
+	            it->second->GetFramebuffer()->Resize(width, height);
+	    }
 	}
 
 	Shared<FramebufferHandle> RenderGraph::GetPassFramebuffer(const std::string& passName) const
@@ -239,7 +326,7 @@ namespace Engine
 	    auto rit = m_Resources.find(resourceName);
 	    if (rit == m_Resources.end()) return nullptr;
 	    if (!m_AvailableResources.count(resourceName)) return nullptr;
-	    auto it = m_PassFramebuffers.find(rit->second.producer->GetName());
+	    auto it = m_PassFramebuffers.find(rit->second.physicalPass->GetName());
 	    if (it == m_PassFramebuffers.end()) return nullptr;
 	    return it->second;
 	}

@@ -12,45 +12,19 @@ namespace Engine {
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
-            Output("GBuffer.Position", FramebufferTextureFormat::RGBA16F);
+            // World position is not stored; the lighting pass reconstructs it from depth.
             Output("GBuffer.Normal",   FramebufferTextureFormat::RGBA16F);
             Output("GBuffer.Albedo",   FramebufferTextureFormat::RGBA8);
             Output("GBuffer.PBR",      FramebufferTextureFormat::RGBA8);
-            unsigned int entityIdx = Output("GBuffer.EntityID", FramebufferTextureFormat::RED_INTEGER);
             Output("GBuffer.Depth",    FramebufferTextureFormat::DEPTH24STENCIL8);
             SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
-            SetClearInt(entityIdx, -1);
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
             Shared<Shader> gBufferShader = ShaderLibrary::Get("GBufferShader");
             gBufferShader->Bind();
 
-            DrawBatched(ctx, view.OpaqueItems);
+            DrawBatched(ctx, view.OpaqueItems, true);
         }
-
-    private:
-        void DrawBatched(RenderContext& ctx, const auto& renderItems) {
-            size_t i = 0;
-            while (i < renderItems.size()) {
-                auto& base = renderItems[i];
-                size_t batchSize = 0;
-
-                while (i + batchSize < renderItems.size() && renderItems[i + batchSize].TargetMesh == base.TargetMesh && renderItems[i + batchSize].TargetMaterial == base.TargetMaterial)
-                    batchSize++;
-
-                m_Transforms.clear();
-                m_Transforms.reserve(batchSize);
-                for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(renderItems[i + j].Transform);
-
-                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-                Renderer::SubmitInstancedMesh(base.TargetMesh, base.TargetMaterial, m_Transforms.size());
-                i += batchSize;
-            }
-        }
-
-        std::vector<glm::mat4> m_Transforms;
     };
 
 }

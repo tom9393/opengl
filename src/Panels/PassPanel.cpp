@@ -9,7 +9,13 @@ namespace Engine {
 
     unsigned int PassPanel::GetSelectedAttachment()
     {
-        return m_AttachmentRendererID;
+        if (!m_SceneRenderer) return 0;
+
+        Shared<FramebufferHandle> fb = m_SceneRenderer->GetRenderGraph().GetPassFramebuffer(m_SelectedPass);
+        if (!fb) return 0;
+
+        return m_SelectedIsDepth ? fb->GetDepthAttachmentRendererID()
+                                 : fb->GetColorAttachmentRendererID(m_SelectedAttachment);
     }
 
     void PassPanel::OnImGuiRender() {
@@ -35,7 +41,9 @@ namespace Engine {
                     std::string label = "Depth " + framebuffer.first + " " + std::to_string(depth);
                     if (ImGui::Button(label.c_str()))
                     {
-                        m_AttachmentRendererID = framebuffer.second->GetDepthAttachmentRendererID();
+                        m_SelectedPass = framebuffer.first;
+                        m_SelectedAttachment = depth;
+                        m_SelectedIsDepth = true;
                     }
                     depth++;
                 }
@@ -44,7 +52,9 @@ namespace Engine {
                     std::string label = "Color " + framebuffer.first + " " + std::to_string(color);
                     if (ImGui::Button(label.c_str()))
                     {
-                        m_AttachmentRendererID = framebuffer.second->GetColorAttachmentRendererID(color);
+                        m_SelectedPass = framebuffer.first;
+                        m_SelectedAttachment = color;
+                        m_SelectedIsDepth = false;
                     }
                     color++;
                 }

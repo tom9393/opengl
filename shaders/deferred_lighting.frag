@@ -3,10 +3,10 @@ layout (location = 0) out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedo;
 uniform sampler2D gPBR;
+uniform sampler2D gDepth;
 
 uniform sampler2DArray u_DirSpotShadowMaps;
 uniform samplerCubeArray u_PointShadowCubemaps;
@@ -200,7 +200,6 @@ float ShadowCalculationPoint(vec3 fragPos, vec3 lightPos, int shadowIndex) {
 
 void main()
 {
-    vec3 WorldPos = texture(gPosition, TexCoords).rgb;
     vec3 N = texture(gNormal, TexCoords).rgb;
 
     // Background pixels (no geometry) draw the skybox. The G-buffer clears
@@ -212,6 +211,12 @@ void main()
         FragColor = vec4(bg, 1.0);
         return;
     }
+
+    // Reconstruct the world position from depth: the G-buffer stores no position.
+    float depth = texture(gDepth, TexCoords).r;
+    vec4 clip = vec4(TexCoords * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 world = u_InverseViewProjection * clip;
+    vec3 WorldPos = world.xyz / world.w;
 
     vec3 albedo = texture(gAlbedo, TexCoords).rgb;
     float metallic = texture(gPBR, TexCoords).r;

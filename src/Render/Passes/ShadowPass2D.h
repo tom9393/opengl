@@ -14,6 +14,7 @@ namespace Engine {
             SetTargetType(BufferTextureType::Texture2D_Array);
             Output("ShadowMap2D", FramebufferTextureFormat::DEPTH24STENCIL8);
             SetViewportSize(1024, 1024);
+            SetLayers(MaxShadowCasters2D);
             SetCondition([](const RenderView& view) {
                 return HasFlag(view.Flags, RenderFlags::Shadows) &&
                        (!view.DirectionalShadowCasters.empty() || !view.ConeShadowCasters.empty());
@@ -27,10 +28,11 @@ namespace Engine {
 
             size_t layer = 0;
             auto renderCaster = [&](const auto& caster) {
+                if (layer >= (size_t)MaxShadowCasters2D) return;
                 fb->GetFramebuffer()->AttachLayer(layer++);
                 shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
 
-                DrawBatched(ctx, caster.RenderItems);
+                DrawBatched(ctx, caster.RenderItems, false);
             };
 
             for (auto& caster : view.DirectionalShadowCasters)
@@ -39,28 +41,6 @@ namespace Engine {
             for (auto& caster : view.ConeShadowCasters)
                 renderCaster(caster);
         }
-
-    private:
-        void DrawBatched(RenderContext& ctx, const auto& renderItems) {
-            size_t i = 0;
-            while (i < renderItems.size()) {
-                size_t batchSize = 0;
-                while (i + batchSize < renderItems.size() && renderItems[i + batchSize].TargetMesh == renderItems[i].TargetMesh)
-                    batchSize++;
-
-                m_Transforms.clear();
-                m_Transforms.reserve(batchSize);
-                for (size_t j = 0; j < batchSize; j++)
-                    m_Transforms.emplace_back(renderItems[i + j].Transform);
-
-                Allocation alloc = ctx.InstancePool->Allocate(m_Transforms.data(), m_Transforms.size() * sizeof(glm::mat4));
-                ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
-                Renderer::SubmitInstancedMesh(renderItems[i].TargetMesh, nullptr, m_Transforms.size());
-                i += batchSize;
-            }
-        }
-
-        std::vector<glm::mat4> m_Transforms;
     };
 
 }

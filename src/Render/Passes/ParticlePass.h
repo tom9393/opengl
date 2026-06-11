@@ -6,10 +6,10 @@
 
 namespace Engine {
 
-    // Composites SceneColor into its own target, then blends the extracted
-    // particle batches on top as camera-facing instanced quads. The target has
-    // no depth attachment; occlusion is a manual G-buffer depth test in
-    // particle.frag.
+    // Blends the extracted particle batches as camera-facing instanced quads
+    // directly into the lit scene target: the pass renders in place on SceneColor
+    // (no copy) with the G-buffer depth attached read-only, so billboards are
+    // hardware depth tested against scene geometry without writing depth.
     class ParticlePass : public RenderPass {
     public:
         ParticlePass(const std::string& name) : RenderPass(name) {}
@@ -17,20 +17,11 @@ namespace Engine {
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
-            Output("SceneColorParticles", FramebufferTextureFormat::RGBA16F);
-            Input("SceneColor");
-            Input("GBuffer.Depth");
+            AliasOutput("SceneColorParticles", "SceneColor");
+            SetDepthInput("GBuffer.Depth");
         }
 
         void Execute(RenderContext& ctx, const RenderView& view) override {
-            // Base image: SceneColor copied into this pass's target. Always runs,
-            // since downstream passes consume this output even with no particles.
-            Shared<Shader> copyShader = ShaderLibrary::Get("FullscreenCopy");
-            copyShader->Bind();
-            copyShader->SetInt("u_Source", 0);
-            m_RenderGraph->BindInput("SceneColor", 0);
-            Renderer::DrawFullscreenQuad();
-
             if (view.ParticleBatches.empty()) return;
             if (!m_QuadVAO) InitQuad();
 
@@ -47,14 +38,9 @@ namespace Engine {
 
             Shared<Shader> shader = ShaderLibrary::Get("Particle");
             shader->Bind();
-            shader->SetInt("u_SceneDepth", 0);
-            shader->SetInt("u_Texture", 1);
+            shader->SetInt("u_Texture", 0);
             shader->SetVec3("u_CameraRight", right);
             shader->SetVec3("u_CameraUp", up);
-            shader->SetVec2("u_ViewportSize", glm::vec2(view.ViewportSize));
-            m_RenderGraph->BindInput("GBuffer.Depth", 0);
-
-            RenderCommand::SetDepthTest(false);
 
             for (const ParticleBatch& batch : view.ParticleBatches)
             {
@@ -67,10 +53,11 @@ namespace Engine {
                 bool useTexture = batch.Texture && batch.Texture->GetID() != 0;
                 shader->SetBool("u_UseTexture", useTexture);
                 if (useTexture)
-                    RenderCommand::BindTexture2D(1, batch.Texture->GetID());
+                    RenderCommand::BindTexture2D(0, batch.Texture->GetID());
 
                 Allocation alloc = ctx.InstancePool->Allocate(
                     batch.Instances.data(), batch.Instances.size() * sizeof(ParticleInstance));
+                if (alloc.Size == 0) continue;
                 ctx.InstancePool->BindAsSSBO(0, alloc.Offset, alloc.Size);
 
                 m_QuadVAO->Bind();
@@ -78,7 +65,6 @@ namespace Engine {
             }
 
             RenderCommand::SetAdditiveBlend(false); // disables GL_BLEND
-            RenderCommand::SetDepthTest(true);
         }
 
     private:

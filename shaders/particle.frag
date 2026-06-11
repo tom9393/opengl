@@ -4,19 +4,14 @@ layout (location = 0) out vec4 FragColor;
 in vec2 v_TexCoord;
 in vec4 v_Color;
 
-uniform sampler2D u_SceneDepth;
 uniform sampler2D u_Texture;
 uniform bool u_UseTexture;
 uniform bool u_Additive;
-uniform vec2 u_ViewportSize;
 
+// Occlusion against scene geometry is a hardware depth test: the pass renders
+// with the G-buffer depth attached read-only.
 void main()
 {
-    // Manual depth test against the G-buffer: this pass's target has no depth
-    // attachment, but both depths share the same projection and viewport.
-    float sceneDepth = texture(u_SceneDepth, gl_FragCoord.xy / u_ViewportSize).r;
-    if (gl_FragCoord.z > sceneDepth) discard;
-
     vec4 color = v_Color;
     if (u_UseTexture)
     {

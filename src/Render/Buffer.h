@@ -141,6 +141,10 @@ namespace Engine
         virtual void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) = 0;
         virtual void AttachToDepthSlot(unsigned int idx) = 0;
 
+        // Attach a depth texture owned by another framebuffer as this framebuffer's
+        // depth attachment (e.g. to depth-test forward passes against the G-buffer).
+        virtual void AttachExternalDepth(unsigned int textureRendererID, bool hasStencil) = 0;
+
         virtual const FramebufferSpecification &GetSpecification() const = 0;
         virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
         virtual const unsigned int GetDepthAttachmentRendererID() const = 0;

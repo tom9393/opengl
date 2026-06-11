@@ -18,9 +18,19 @@ namespace Engine
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     };
 
+    void OpenGLRendererAPI::ClearColorOnly()
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+    };
+
     void OpenGLRendererAPI::SetDepthTest(bool enabled)
     {
         enabled ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
+    };
+
+    void OpenGLRendererAPI::SetDepthWrite(bool enabled)
+    {
+        glDepthMask(enabled ? GL_TRUE : GL_FALSE);
     };
 
     void OpenGLRendererAPI::SetFaceCulling(bool enabled)
@@ -60,6 +70,22 @@ namespace Engine
     {
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, rendererID);
+    };
+
+    void OpenGLRendererAPI::BindTextureCube(unsigned int slot, unsigned int rendererID)
+    {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, rendererID);
+    };
+
+    void OpenGLRendererAPI::PushDebugGroup(const char* name)
+    {
+        glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name);
+    };
+
+    void OpenGLRendererAPI::PopDebugGroup()
+    {
+        glPopDebugGroup();
     };
 
     void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)

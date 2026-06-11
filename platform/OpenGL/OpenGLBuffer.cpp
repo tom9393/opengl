@@ -490,6 +490,7 @@ namespace Engine
         if (width == 0 || height == 0 || width > s_MaxFramebufferSize || height > s_MaxFramebufferSize)
         {
             std::cout << "Invalid size" << std::endl;
+            return;
         }
         m_Specification.width = width;
         m_Specification.height = height;
@@ -503,6 +504,7 @@ namespace Engine
 
         int pixelData = -1;
         glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
         return pixelData;
     };
@@ -558,6 +560,13 @@ namespace Engine
     {
         glActiveTexture(GL_TEXTURE0 + idx);
         glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_DepthAttachment);
+    }
+
+    void OpenGLFramebuffer::AttachExternalDepth(unsigned int textureRendererID, bool hasStencil)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        GLenum attachment = hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
+        glFramebufferTexture(GL_FRAMEBUFFER, attachment, textureRendererID, 0);
     }
 
 };

@@ -42,42 +42,20 @@ namespace Engine
             m_Framebuffer->ClearAttachment(attachmentIdx, value);
         }
 
-        void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) const
+        void AttachToTextureSlot(unsigned int slot, unsigned int attachmentIdx) const
         {
             if (!m_Framebuffer) return;
-            m_Framebuffer->AttachToTextureSlot(idx, GetColorAttachmentRendererID(rendererID));
+            m_Framebuffer->AttachToTextureSlot(slot, GetColorAttachmentRendererID(attachmentIdx));
         }
 
-        void AttachToTextureSlotDepth(unsigned int idx)
+        void AttachToTextureSlotDepth(unsigned int slot)
         {
             if (!m_Framebuffer) return;
-            m_Framebuffer->AttachToDepthSlot(idx);
+            m_Framebuffer->AttachToDepthSlot(slot);
         }
 
     private:
         Shared<Framebuffer> m_Framebuffer;
-    };
-
-    // A small pool that caches created Framebuffers keyed by size + attachment layout.
-    // It wraps your existing Framebuffer::Create(FramebufferSpecification).
-    class FramebufferPool
-    {
-    public:
-        FramebufferPool() = default;
-        ~FramebufferPool() = default;
-
-        // Acquire or create a framebuffer configured with the given attachments and size.
-        // Returns a FramebufferHandle (wrapped in Shared) that provides the convenience methods.
-        Shared<FramebufferHandle> AcquireFramebuffer(const std::string& passName, const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height);
-
-        // Clears the pool (free all resources)
-        void Clear();
-
-    private:
-        std::string BuildKey(const std::string& passName, const std::vector<FramebufferTextureFormat>& attachments, BufferTextureType type, unsigned int width, unsigned int height) const;
-
-    private:
-        std::unordered_map<std::string, Shared<FramebufferHandle>> m_Pool;
     };
 
 };
