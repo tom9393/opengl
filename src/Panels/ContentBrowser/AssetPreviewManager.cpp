@@ -23,7 +23,8 @@ namespace Engine {
         s_PreviewGraph->AddPass<ShadowPass3D>("PointShadowPass");
         s_PreviewGraph->AddPass<GeometryPass>("GeometryPass");
         s_PreviewGraph->AddPass<ScenePass>("ScenePass");
-        s_PreviewGraph->AddPass<PostProcessPass>("PostProcessPass");
+        // No ParticlePass in the preview graph, so feed post directly from SceneColor.
+        s_PreviewGraph->AddPass<PostProcessPass>("PostProcessPass", "SceneColor");
 
         s_PreviewPool = MakeShared<DynamicBufferPool>(1024 * 1024);
     }

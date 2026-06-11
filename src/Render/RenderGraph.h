@@ -23,11 +23,12 @@ namespace Engine
         ~RenderGraph();
 
         // Add a pass. Setup() is invoked immediately so the pass can declare its
-        // inputs/outputs/condition. The compiled state is invalidated.
-        template <typename Pass>
-        RenderPass& AddPass(const std::string& name)
+        // inputs/outputs/condition. The compiled state is invalidated. Extra
+        // arguments are forwarded to the pass constructor after the name.
+        template <typename Pass, typename... Args>
+        RenderPass& AddPass(const std::string& name, Args&&... args)
         {
-            std::unique_ptr<RenderPass> pass = std::make_unique<Pass>(name);
+            std::unique_ptr<RenderPass> pass = std::make_unique<Pass>(name, std::forward<Args>(args)...);
             pass->Setup(*this);
             m_Passes.push_back(std::move(pass));
             m_Dirty = true;

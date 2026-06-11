@@ -7,25 +7,27 @@
 
 namespace Engine {
 
-    // Tonemapping + post effects. Reads the HDR SceneColor, runs the bloom chain,
-    // then composites exposure / ACES tonemap / gamma / vignette / chromatic
-    // aberration into the final LDR FinalColor target.
+    // Tonemapping + post effects. Reads the HDR source resource (the particle
+    // composite by default, or plain SceneColor in graphs without a ParticlePass),
+    // runs the bloom chain, then composites exposure / ACES tonemap / gamma /
+    // vignette / chromatic aberration into the final LDR FinalColor target.
     class PostProcessPass : public RenderPass {
     public:
-        PostProcessPass(const std::string& name) : RenderPass(name) {}
+        PostProcessPass(const std::string& name, const std::string& source = "SceneColorParticles")
+            : RenderPass(name), m_Source(source) {}
 
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
             Output("FinalColor", FramebufferTextureFormat::RGBA8);
-            Input("SceneColorParticles");
+            Input(m_Source);
             SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
         }
 
         void Execute(RenderContext& ctx, const RenderView& view) override {
             const PostProcessSettings& post = view.Post;
 
-            Shared<FramebufferHandle> sceneFb = m_RenderGraph->GetResource("SceneColorParticles");
+            Shared<FramebufferHandle> sceneFb = m_RenderGraph->GetResource(m_Source);
             if (!sceneFb) return;
             unsigned int sceneTex = sceneFb->GetColorAttachmentRendererID(0);
 
@@ -57,6 +59,7 @@ namespace Engine {
         }
 
     private:
+        std::string m_Source;
         Bloom m_Bloom;
     };
 
