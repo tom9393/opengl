@@ -24,12 +24,12 @@ namespace Engine {
             Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
             shadowShader->Bind();
 
-            auto fb = m_RenderGraph->GetPassFramebuffer(GetName());
+            const Shared<Framebuffer>& fb = GetFramebuffer();
 
             size_t layer = 0;
             auto renderCaster = [&](const auto& caster) {
                 if (layer >= (size_t)MaxShadowCasters2D) return;
-                fb->GetFramebuffer()->AttachLayer(layer++);
+                fb->AttachLayer(layer++);
                 shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
 
                 DrawBatched(ctx, caster.RenderItems, false);

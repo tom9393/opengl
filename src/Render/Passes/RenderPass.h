@@ -4,6 +4,7 @@
 #include "Buffer.h"
 #include "RenderContext.h"
 #include "RenderView.h"
+#include "Render/RenderCommand.h"
 #include "Render/Renderer.h"
 
 namespace Engine
@@ -12,15 +13,17 @@ namespace Engine
     class TimeStep;
     class RenderGraph;
 
+    // Index of a declared input, returned by Input()/SetDepthInput() during Setup
+    // and resolved to the producer's texture when the graph compiles.
+    using InputHandle = size_t;
+
     struct PassOutput
     {
         std::string name;
         FramebufferTextureFormat format;
         bool isDepth = false;
-        // Index among color attachments only (undefined when isDepth).
-        unsigned int colorAttachmentIndex = 0;
         // When set, this output has no storage of its own: it names the resource
-        // whose physical attachment this pass renders into in place.
+        // whose texture this pass renders into in place.
         std::string aliasOf;
     };
 
@@ -43,41 +46,39 @@ namespace Engine
             PassOutput out;
             out.name = resourceName;
             out.format = format;
-            out.isDepth = (format == FramebufferTextureFormat::DEPTH24STENCIL8 ||
-                           format == FramebufferTextureFormat::Depth);
-            if (out.isDepth)
-                out.colorAttachmentIndex = ~0u;
-            else
-                out.colorAttachmentIndex = m_ColorAttachmentCount++;
+            out.isDepth = IsDepthFormat(format);
             m_Outputs.push_back(out);
-            return out.colorAttachmentIndex;
+            return out.isDepth ? ~0u : m_ColorAttachmentCount++;
         }
 
-        // Declare a read dependency on a named resource produced by another pass.
-        RenderPass& Input(const std::string& resourceName)
+        // Declare a read dependency on a named resource produced by another pass. The
+        // handle is resolved at compile time and bound with BindInput() during Execute.
+        InputHandle Input(const std::string& resourceName)
         {
             m_Inputs.push_back(resourceName);
-            return *this;
+            return m_Inputs.size() - 1;
         }
 
         // Declare an output that renders in place into another pass's resource instead
-        // of allocating its own attachment. The source must be declared by a pass added
-        // to the graph before this one, and is implicitly an input. A pass using alias
-        // outputs gets no framebuffer of its own and is never cleared by the graph.
-        RenderPass& AliasOutput(const std::string& resourceName, const std::string& sourceResource)
+        // of allocating its own texture. The source must be declared by a pass added
+        // to the graph before this one, and is implicitly an input. The source texture
+        // occupies the next color attachment slot of this pass's framebuffer; aliased
+        // attachments are never cleared by the graph.
+        void AliasOutput(const std::string& resourceName, const std::string& sourceResource)
         {
             PassOutput out;
             out.name = resourceName;
             out.format = FramebufferTextureFormat::None;
             out.aliasOf = sourceResource;
             m_Outputs.push_back(out);
-            return Input(sourceResource);
+            m_ColorAttachmentCount++;
+            Input(sourceResource);
         }
 
         // Declare a depth resource produced by another pass to be attached as this
         // pass's depth attachment. The attachment is read-only: the graph masks depth
         // writes while the pass executes, which also keeps it legal to sample.
-        RenderPass& SetDepthInput(const std::string& resourceName)
+        InputHandle SetDepthInput(const std::string& resourceName)
         {
             m_DepthInput = resourceName;
             return Input(resourceName);
@@ -123,15 +124,6 @@ namespace Engine
             m_Height = height;
         }
 
-        // Flatten declared outputs into a format list (for framebuffer creation).
-        std::vector<FramebufferTextureFormat> BuildAttachmentList() const
-        {
-            std::vector<FramebufferTextureFormat> v;
-            v.reserve(m_Outputs.size());
-            for (auto& o : m_Outputs) v.push_back(o.format);
-            return v;
-        }
-
         bool EvaluateCondition(const RenderView& view) const
         {
             return m_Condition ? m_Condition(view) : true;
@@ -145,15 +137,42 @@ namespace Engine
         const std::vector<std::string>& GetInputs() const { return m_Inputs; }
         const std::string& GetDepthInput() const { return m_DepthInput; }
         bool HasDepthInput() const { return !m_DepthInput.empty(); }
-        // True when this pass renders in place into another pass's framebuffer.
-        bool IsInplace() const { return !m_Outputs.empty() && !m_Outputs[0].aliasOf.empty(); }
+        // True when at least one output owns its texture. Alias-only passes load the
+        // existing contents and are never cleared by the graph.
+        bool OwnsAnOutput() const
+        {
+            for (auto& out : m_Outputs)
+                if (out.aliasOf.empty()) return true;
+            return false;
+        }
         BufferTextureType GetTargetType() const { return m_TargetType; }
         const glm::vec4& GetClearColor() const { return m_ClearColor; }
         bool HasClearColor() const { return m_HasClearColor; }
         const std::unordered_map<unsigned int, int>& GetClearInts() const { return m_ClearInts; }
         bool HasCondition() const { return static_cast<bool>(m_Condition); }
 
+        // The pass's framebuffer, composed by the graph at compile time from the
+        // textures of its outputs (plus a read-only depth input, when declared).
+        const Shared<Framebuffer>& GetFramebuffer() const { return m_Framebuffer; }
+
     protected:
+        // Bind a declared input's texture to a sampler slot. The texture is resolved
+        // at compile time and always exists while the pass is in the execution order,
+        // even when its producer was skipped this frame. No-op for inputs that failed
+        // to resolve.
+        void BindInput(InputHandle input, unsigned int slot) const
+        {
+            const Shared<RenderTarget>& target = m_CompiledInputs[input];
+            if (!target) return;
+            RenderCommand::BindTexture(slot, target->GetID(), target->GetSpecification().type);
+        }
+
+        unsigned int GetInputTextureID(InputHandle input) const
+        {
+            const Shared<RenderTarget>& target = m_CompiledInputs[input];
+            return target ? target->GetID() : 0;
+        }
+
         // Draw items as instanced batches of consecutive runs sharing a mesh (and a
         // material when bindMaterials), uploading per-batch transforms through the
         // frame's InstancePool.
@@ -200,6 +219,11 @@ namespace Engine
         ConditionFn m_Condition;
 
     private:
+        // Compiled state, filled by RenderGraph::Compile.
+        friend class RenderGraph;
+        std::vector<Shared<RenderTarget>> m_CompiledInputs; // parallel to m_Inputs
+        Shared<Framebuffer> m_Framebuffer;
+
         std::vector<glm::mat4> m_Transforms;
     };
 

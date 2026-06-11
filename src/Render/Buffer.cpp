@@ -68,7 +68,16 @@ namespace Engine
         return nullptr;
     };
 
-    Shared<Framebuffer> Framebuffer::Create(FramebufferSpecification &specification)
+    Shared<RenderTarget> RenderTarget::Create(const RenderTargetSpecification& specification)
+    {
+        switch (Renderer::Get()) {
+                case RendererAPI::API::None: return nullptr;
+                case RendererAPI::API::OpenGL: return MakeShared<OpenGLRenderTarget>(specification);
+        }
+        return nullptr;
+    };
+
+    Shared<Framebuffer> Framebuffer::Create(const FramebufferSpecification& specification)
     {
         switch (Renderer::Get()) {
                 case RendererAPI::API::None: return nullptr;

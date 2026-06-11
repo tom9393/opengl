@@ -2,7 +2,7 @@
 
 #include "pch.h"
 #include "Core/TimeStep.h"
-#include "FramebufferHandle.h"
+#include "Buffer.h"
 #include "Passes/RenderPass.h"
 #include "RenderContext.h"
 #include "RenderView.h"
@@ -16,6 +16,11 @@ namespace Engine
     // resolves their dependencies into a topologically sorted execution order. Passes that
     // do not transitively contribute to a presented resource are culled. Each pass can also
     // attach a runtime predicate that skips its execution for a given frame.
+    //
+    // The graph owns the resources: each surviving resource gets a texture at compile
+    // time, and each pass's framebuffer is composed from the textures of its outputs
+    // (plus a read-only depth input, when declared). Texture ids stay stable across
+    // resizes, since storage is respecified in place.
     class RenderGraph
     {
     public:
@@ -41,9 +46,9 @@ namespace Engine
         void MarkPresent(const std::string& resourceName);
 
         // Resolve inputs to producers, validate, detect cycles, topologically sort,
-        // cull passes not contributing to a presented resource, and allocate the
-        // framebuffers of the surviving passes. Idempotent; runs on the next Execute
-        // when dirty.
+        // cull passes not contributing to a presented resource, then allocate the
+        // surviving resources' textures and compose each pass's framebuffer from them.
+        // Idempotent; runs on the next Execute when dirty.
         void Compile();
 
         // Execute the compiled graph for the given view. Conditions are evaluated per pass.
@@ -51,24 +56,26 @@ namespace Engine
 
         void Resize(unsigned int width, unsigned int height);
 
-        // ---- Pass / resource lookup ----
+        // ---- Resource lookup ----
 
-        std::unordered_map<std::string, Shared<FramebufferHandle>>& GetFramebuffers() { return m_PassFramebuffers; }
+        struct ResourceInfo
+        {
+            RenderPass* producer = nullptr;
+            FramebufferTextureFormat format = FramebufferTextureFormat::None;
+            bool isDepth = false;
+            // Empty for resources that own their texture; otherwise the name of the
+            // (transitively resolved) resource whose texture this one renders into.
+            std::string aliasOf;
+            // Allocated at compile time for resources whose producer survives culling;
+            // alias resources share their source's texture.
+            Shared<RenderTarget> target;
+        };
 
-        Shared<FramebufferHandle> GetPassFramebuffer(const std::string& passName) const;
-        unsigned int GetPassColorAttachmentRendererID(const std::string& passName, unsigned int idx = 0) const;
+        const std::unordered_map<std::string, ResourceInfo>& GetResources() const { return m_Resources; }
 
-        // Resolve a resource name to the framebuffer of its producing pass. Returns null
-        // when the resource isn't declared, hasn't run yet this frame, or its producer was
-        // skipped by its condition.
-        Shared<FramebufferHandle> GetResource(const std::string& resourceName) const;
-
-        // True when a declared input resource is available this frame.
-        bool HasInput(const std::string& resourceName) const;
-
-        // Bind a declared input resource to a texture slot. Picks color or depth binding
-        // from the producer's declaration. No-op when the resource isn't available.
-        void BindInput(const std::string& resourceName, unsigned int slot) const;
+        // Renderer id of the resource's backing texture, or 0 when the resource is
+        // unknown or its producer was culled.
+        unsigned int GetResourceTextureID(const std::string& resourceName) const;
 
         // ---- Debugging ----
 
@@ -77,37 +84,18 @@ namespace Engine
         std::string ExportDot() const;
 
     private:
-        struct ResourceInfo
-        {
-            RenderPass* producer = nullptr;
-            // Pass whose framebuffer physically holds the resource (differs from the
-            // producer for alias outputs, which render in place into another pass's target).
-            RenderPass* physicalPass = nullptr;
-            unsigned int colorAttachmentIndex = 0;
-            FramebufferTextureFormat format = FramebufferTextureFormat::None;
-            bool isDepth = false;
-        };
-
         void BuildResourceMap();
-        void AllocateFramebuffers();
-        bool IsDepthFormat(FramebufferTextureFormat fmt) const
-        {
-            return fmt == FramebufferTextureFormat::DEPTH24STENCIL8 || fmt == FramebufferTextureFormat::Depth;
-        }
+        void AllocateResources();
+        void ComposeFramebuffers();
 
         unsigned int m_Width, m_Height;
         std::vector<std::unique_ptr<RenderPass>> m_Passes;
 
-        // Compiled state. Framebuffers are allocated at compile time and resized in
-        // place; viewport-sized targets follow Resize, fixed-size ones are untouched.
+        // Compiled state.
         std::vector<RenderPass*> m_ExecutionOrder;
         std::unordered_map<std::string, ResourceInfo> m_Resources;
         std::unordered_set<std::string> m_Presented;
-        std::unordered_map<std::string, Shared<FramebufferHandle>> m_PassFramebuffers;
         bool m_Dirty = true;
-
-        // Per-frame state: resources whose producer has executed this frame.
-        std::unordered_set<std::string> m_AvailableResources;
     };
 
 };

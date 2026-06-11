@@ -20,16 +20,15 @@ namespace Engine {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
             Output("FinalColor", FramebufferTextureFormat::RGBA8);
-            Input(m_Source);
+            m_SourceInput = Input(m_Source);
             SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
         }
 
         void Execute(RenderContext& ctx, const RenderView& view) override {
             const PostProcessSettings& post = view.Post;
 
-            Shared<FramebufferHandle> sceneFb = m_RenderGraph->GetResource(m_Source);
-            if (!sceneFb) return;
-            unsigned int sceneTex = sceneFb->GetColorAttachmentRendererID(0);
+            unsigned int sceneTex = GetInputTextureID(m_SourceInput);
+            if (sceneTex == 0) return;
 
             unsigned int bloomTex = DefaultTextures::GetBlackTexture()->GetID();
             if (post.BloomEnabled) {
@@ -38,7 +37,7 @@ namespace Engine {
             }
 
             // The bloom sub-renderer bound its own framebuffer; rebind ours.
-            m_RenderGraph->GetPassFramebuffer(GetName())->GetFramebuffer()->Bind();
+            GetFramebuffer()->Bind();
 
             Shared<Shader> shader = ShaderLibrary::Get("PostProcess");
             shader->Bind();
@@ -58,6 +57,7 @@ namespace Engine {
 
     private:
         std::string m_Source;
+        InputHandle m_SourceInput = 0;
         Bloom m_Bloom;
     };
 

@@ -34,6 +34,8 @@ namespace Engine
         // Bind a 2D texture (by renderer id) to a sampler slot.
         virtual void BindTexture2D(unsigned int slot, unsigned int rendererID) = 0;
         virtual void BindTextureCube(unsigned int slot, unsigned int rendererID) = 0;
+        // Bind a texture of any target type (array, cubemap, ...) to a sampler slot.
+        virtual void BindTexture(unsigned int slot, unsigned int rendererID, BufferTextureType type) = 0;
 
         // Annotate a span of GL commands for debuggers like RenderDoc.
         virtual void PushDebugGroup(const char* name) = 0;

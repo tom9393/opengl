@@ -99,39 +99,46 @@ namespace Engine
         unsigned int m_RendererID;
     };
 
+    GLenum BufferTextureTypeToGL(BufferTextureType type);
+
+    class OpenGLRenderTarget : public RenderTarget
+    {
+        public:
+        OpenGLRenderTarget(const RenderTargetSpecification& specification);
+        ~OpenGLRenderTarget();
+
+        unsigned int GetID() const override { return m_RendererID; }
+        void Resize(unsigned int width, unsigned int height) override;
+        const RenderTargetSpecification& GetSpecification() const override { return m_Specification; }
+
+        private:
+        void AllocateStorage();
+        void SetSamplerParameters();
+
+        RenderTargetSpecification m_Specification;
+        unsigned int m_RendererID = 0;
+    };
+
     class OpenGLFramebuffer : public Framebuffer
     {
         public:
-
-        OpenGLFramebuffer(FramebufferSpecification &specification);
+        OpenGLFramebuffer(const FramebufferSpecification& specification);
         ~OpenGLFramebuffer();
 
         void Bind() const override;
         void Unbind() const override;
 
-        void Resize(unsigned int width, unsigned int height) override;
         int ReadPixel(unsigned int attachmentIdx, int x, int y) override;
-
         void ClearAttachment(unsigned int attachmentIdx, int value) override;
         void AttachLayer(unsigned int layer) override;
-        void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) override;
-        void AttachToDepthSlot(unsigned int idx) override;
-        void AttachExternalDepth(unsigned int textureRendererID, bool hasStencil) override;
-
-        const FramebufferSpecification &GetSpecification() const override { return m_Specification; }
-        const unsigned int GetColorAttachmentRendererID(unsigned int idx = 0) const override { return m_ColorAttachments[idx]; }
-        const unsigned int GetDepthAttachmentRendererID() const override { return m_DepthAttachment; }
-        void Invalidate();
 
         private:
         unsigned int m_RendererID = 0;
-        FramebufferSpecification m_Specification;
 
-        std::vector<FramebufferTextureSpecification> m_ColorAttachmentSpecs;
-        FramebufferTextureSpecification m_DepthSpec = FramebufferTextureFormat::None;
-
-        std::vector<unsigned int> m_ColorAttachments;
-        unsigned int m_DepthAttachment = 0;
+        // Attachment textures are owned by their RenderTargets; the framebuffer
+        // only references them.
+        std::vector<Shared<RenderTarget>> m_ColorAttachments;
+        Shared<RenderTarget> m_DepthAttachment;
     };
 
 };

@@ -18,10 +18,9 @@ namespace Engine {
     private:
         Shared<SceneRenderer> m_SceneRenderer;
 
-        // Selection is stored by pass name + attachment and resolved to a texture id
-        // every frame, so it survives framebuffer resizes (which recreate textures).
-        std::string m_SelectedPass = "PostProcessPass";
-        unsigned int m_SelectedAttachment = 0;
-        bool m_SelectedIsDepth = false;
+        // Selection is stored by resource name and resolved to a texture id every
+        // frame; ids are stable across resizes, but the producer can be culled by
+        // a recompile.
+        std::string m_SelectedResource = "FinalColor";
     };
 }

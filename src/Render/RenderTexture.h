@@ -26,8 +26,8 @@ namespace Engine
     };
 
     // A sampleable texture that can also be rendered into (it owns an internal
-    // framebuffer). Unlike the render-graph Framebuffer - which models a fixed-size
-    // set of equally-sized attachments drawn as a whole - a RenderTexture targets a
+    // framebuffer). Unlike the render-graph Framebuffer - which is composed from
+    // graph-owned RenderTargets drawn as a whole - a RenderTexture targets a
     // single color image one cube face / mip level at a time. It backs offscreen
     // sub-renderers such as the bloom mip chain and the IBL cubemaps.
     class RenderTexture

@@ -59,6 +59,11 @@ namespace Engine
             s_RendererAPI->BindTextureCube(slot, rendererID);
         }
 
+        inline static void BindTexture(unsigned int slot, unsigned int rendererID, BufferTextureType type)
+        {
+            s_RendererAPI->BindTexture(slot, rendererID, type);
+        }
+
         inline static void PushDebugGroup(const char* name)
         {
             s_RendererAPI->PushDebugGroup(name);

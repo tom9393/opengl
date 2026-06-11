@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "OpenGL/OpenGLRendererAPI.h"
+#include "OpenGL/OpenGLBuffer.h"
 
 namespace Engine
 {
@@ -76,6 +77,12 @@ namespace Engine
     {
         glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_CUBE_MAP, rendererID);
+    };
+
+    void OpenGLRendererAPI::BindTexture(unsigned int slot, unsigned int rendererID, BufferTextureType type)
+    {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(BufferTextureTypeToGL(type), rendererID);
     };
 
     void OpenGLRendererAPI::PushDebugGroup(const char* name)

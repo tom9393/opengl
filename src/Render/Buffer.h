@@ -86,23 +86,6 @@ namespace Engine
         Depth
     };
 
-    struct FramebufferTextureSpecification
-    {
-        FramebufferTextureSpecification() = default;
-        FramebufferTextureSpecification(FramebufferTextureFormat format) : TextureFormat(format) {};
-
-        FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None;
-    };
-
-    struct FramebufferAttachmentSpecification
-    {
-        FramebufferAttachmentSpecification() = default;
-        FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
-        FramebufferAttachmentSpecification(std::vector<FramebufferTextureSpecification> attachments) : Attachments(attachments) {};
-
-        std::vector<FramebufferTextureSpecification> Attachments;
-    };
-
     enum class BufferTextureType
     {
         None = 0,
@@ -115,16 +98,46 @@ namespace Engine
         Cubemap_Array
     };
 
-    struct FramebufferSpecification
+    inline bool IsDepthFormat(FramebufferTextureFormat format)
     {
+        return format == FramebufferTextureFormat::DEPTH24STENCIL8 ||
+               format == FramebufferTextureFormat::Depth;
+    }
+
+    struct RenderTargetSpecification
+    {
+        FramebufferTextureFormat format = FramebufferTextureFormat::None;
+        BufferTextureType type = BufferTextureType::Texture2D;
         unsigned int width = 0, height = 0;
-        FramebufferAttachmentSpecification attachments;
-        BufferTextureType type = BufferTextureType::None;
+        unsigned int layers = 1;
         unsigned int samples = 1;
-        unsigned int layers = 64;
-        bool swapChainTarget = false;
     };
 
+    // An attachment texture owned by the render graph. Passes attach render targets
+    // to framebuffers and bind them as sampler inputs. Resize respecifies the storage
+    // in place, so the renderer id stays stable for the target's lifetime.
+    class RenderTarget
+    {
+        public:
+        virtual ~RenderTarget() = default;
+
+        virtual unsigned int GetID() const = 0;
+        virtual void Resize(unsigned int width, unsigned int height) = 0;
+        virtual const RenderTargetSpecification& GetSpecification() const = 0;
+
+        static Shared<RenderTarget> Create(const RenderTargetSpecification& specification);
+    };
+
+    struct FramebufferSpecification
+    {
+        // Attachments in declaration order: color targets become GL_COLOR_ATTACHMENT0..n
+        // in order, and at most one depth-format target becomes the depth attachment.
+        // All attachments must share the same size.
+        std::vector<Shared<RenderTarget>> attachments;
+    };
+
+    // A framebuffer composed from existing render targets; it owns no texture storage.
+    // Bind() sets the viewport from the attachments' current size.
     class Framebuffer
     {
         public:
@@ -133,22 +146,15 @@ namespace Engine
         virtual void Bind() const = 0;
         virtual void Unbind() const = 0;
 
-        virtual void Resize(unsigned int width, unsigned int height) = 0;
+        // Only valid for RED_INTEGER attachments (entity picking).
         virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
-
         virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
+
+        // Re-target the depth attachment to a single layer of its array texture
+        // (per-caster shadow map rendering).
         virtual void AttachLayer(unsigned int layer) = 0;
-        virtual void AttachToTextureSlot(unsigned int idx, unsigned int rendererID) = 0;
-        virtual void AttachToDepthSlot(unsigned int idx) = 0;
 
-        // Attach a depth texture owned by another framebuffer as this framebuffer's
-        // depth attachment (e.g. to depth-test forward passes against the G-buffer).
-        virtual void AttachExternalDepth(unsigned int textureRendererID, bool hasStencil) = 0;
-
-        virtual const FramebufferSpecification &GetSpecification() const = 0;
-        virtual const unsigned int GetColorAttachmentRendererID(unsigned int idx) const = 0;
-        virtual const unsigned int GetDepthAttachmentRendererID() const = 0;
-        static Shared<Framebuffer> Create(FramebufferSpecification &specification);
+        static Shared<Framebuffer> Create(const FramebufferSpecification& specification);
     };
 
 };

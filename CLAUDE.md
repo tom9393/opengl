@@ -54,7 +54,7 @@ The rendering pipeline uses a true render graph (`src/Render/RenderGraph.h`) wit
 
 `Renderer` is a static low-level API; `RendererAPI` is the abstract interface implemented by `platform/OpenGL/OpenGLRendererAPI`.
 
-Render-graph passes draw into fixed-size `Framebuffer` attachments. Offscreen sub-renderers that need cube faces or mip levels instead use `RenderTexture` (`src/Render/RenderTexture.h`) — a sampleable texture that owns an internal framebuffer and is bound one face/mip at a time. Both `Bloom` (the dual-filter mip chain) and `EnvironmentMap` build on it, going through `RenderCommand`/`RenderTexture` rather than direct GL. `EnvironmentMap` bakes image-based lighting from an equirectangular `.hdr` (loaded via `TextureImporter::LoadHDR` as a float texture): an environment cubemap, a diffuse irradiance map, a roughness-mipped specular prefilter map, and a once-built shared BRDF integration LUT.
+The graph owns per-resource `RenderTarget` textures and composes each pass's `Framebuffer` from them at compile time; texture ids stay stable across viewport resizes (storage is respecified in place). Offscreen sub-renderers that need cube faces or mip levels instead use `RenderTexture` (`src/Render/RenderTexture.h`) — a sampleable texture that owns an internal framebuffer and is bound one face/mip at a time. Both `Bloom` (the dual-filter mip chain) and `EnvironmentMap` build on it, going through `RenderCommand`/`RenderTexture` rather than direct GL. `EnvironmentMap` bakes image-based lighting from an equirectangular `.hdr` (loaded via `TextureImporter::LoadHDR` as a float texture): an environment cubemap, a diffuse irradiance map, a roughness-mipped specular prefilter map, and a once-built shared BRDF integration LUT.
 
 ### Asset System
 

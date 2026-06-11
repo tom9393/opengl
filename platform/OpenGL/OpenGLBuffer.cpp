@@ -102,6 +102,7 @@ namespace Engine
 
     OpenGLVertexArray::~OpenGLVertexArray()
     {
+        glDeleteVertexArrays(1, &m_RendererID);
     };
 
     void OpenGLVertexArray::Bind() const
@@ -159,8 +160,8 @@ namespace Engine
 				case ShaderDataType::Mat4:
 				{
                     // A mat4 has 4 rows (vec4s), a mat3 has 3 rows (vec3s)
-                    uint8_t rowCount = (element.Type == ShaderDataType::Mat4) ? 4 : 3; 
-                    
+                    uint8_t rowCount = (element.Type == ShaderDataType::Mat4) ? 4 : 3;
+
                     for (uint8_t i = 0; i < rowCount; i++)
                     {
                         glEnableVertexAttribArray(m_VertexBufferIndex);
@@ -170,9 +171,9 @@ namespace Engine
                             element.Normalized ? GL_TRUE : GL_FALSE,
                             layout.GetStride(), // This stride will now just be sizeof(mat4)
                             (const void*)(element.Offset + sizeof(float) * rowCount * i)); // Offset by 16 bytes per row
-                        
+
                         // This makes it per-instance!
-                        glVertexAttribDivisor(m_VertexBufferIndex, 1); 
+                        glVertexAttribDivisor(m_VertexBufferIndex, 1);
                         m_VertexBufferIndex++;
                     }
                     break;
@@ -196,6 +197,7 @@ namespace Engine
 
     OpenGLUniformBuffer::~OpenGLUniformBuffer()
     {
+        glDeleteBuffers(1, &m_RendererID);
     };
 
     void OpenGLUniformBuffer::Bind(unsigned int index) const
@@ -246,18 +248,7 @@ namespace Engine
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data);
     }
 
-    static bool IsDepthFormat(FramebufferTextureFormat format)
-    {
-        switch (format)
-        {
-            case FramebufferTextureFormat::DEPTH24STENCIL8: return true;
-            case FramebufferTextureFormat::Depth: return true;
-        }
-
-        return false;
-    };
-
-    static GLenum BufferTextureTypeToGL(BufferTextureType type)
+    GLenum BufferTextureTypeToGL(BufferTextureType type)
     {
         switch (type)
         {
@@ -266,215 +257,149 @@ namespace Engine
             case BufferTextureType::Texture2D_Multisample: return GL_TEXTURE_2D_MULTISAMPLE;
             case BufferTextureType::Cubemap: return GL_TEXTURE_CUBE_MAP;
             case BufferTextureType::Cubemap_Array: return GL_TEXTURE_CUBE_MAP_ARRAY;
+            default: return GL_NONE;
         }
-        return GL_NONE;
     }
 
-    static void CreateTexture(BufferTextureType type, unsigned int* outID, unsigned int count)
-    {
-        glCreateTextures(BufferTextureTypeToGL(type), count, outID);
-    };
+    struct GLFormat { GLenum internal; GLenum pixel; GLenum data; };
 
-    static void AttachColorTexture(unsigned int id, BufferTextureType type, unsigned int samples, GLenum internalFormat, GLenum format, GLenum dataType, unsigned int width, unsigned int height, int index)
-    {
-        switch (type)
-        {
-            case BufferTextureType::Texture2D: {
-                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, nullptr);
-
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                break;
-            }
-            case BufferTextureType::Texture2D_Multisample: {
-                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, width, height, GL_FALSE);
-                break;
-            }
-            case BufferTextureType::Cubemap: {
-                for (unsigned int i = 0; i < 6; ++i)
-                {
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, dataType, nullptr);
-                }
-                
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-                break;
-            }
-        }
-
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, id, 0);
-    };
-
-    static void AttachDepthTexture(unsigned int id, BufferTextureType type, int samples, unsigned int layers, GLenum format, GLenum attachmentType, int width, unsigned int height)
-    {
-        switch (type)
-        {
-            case BufferTextureType::Texture2D: {
-                glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
-
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                break;
-            }
-            case BufferTextureType::Texture2D_Array: {
-                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32F;
-                GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
-                GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
-                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, pixelFormat, typeFormat, nullptr);
-    
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-                
-                float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-                glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
-                break;
-
-            }
-            case BufferTextureType::Texture2D_Multisample: {
-                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, width, height, GL_FALSE);
-                break;
-            }
-            case BufferTextureType::Cubemap: {
-                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32F;
-                GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
-                GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
-
-                for (unsigned int i = 0; i < 6; ++i) {
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, pixelFormat, typeFormat, NULL);
-                }
-
-                // Note: Shadows usually look better with GL_NEAREST or hardware PCF, but GL_LINEAR is fine for testing
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-                break;
-            }
-            case BufferTextureType::Cubemap_Array: {
-                GLenum internalFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32F;
-                GLenum pixelFormat = (format == GL_DEPTH24_STENCIL8) ? GL_DEPTH_STENCIL : GL_DEPTH_COMPONENT;
-                GLenum typeFormat = (format == GL_DEPTH24_STENCIL8) ? GL_UNSIGNED_INT_24_8 : GL_FLOAT;
-                glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, internalFormat, width, height, layers * 6, 0, pixelFormat, typeFormat, nullptr);
-    
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-                break;
-            }
-        }
-
-        glFramebufferTexture(GL_FRAMEBUFFER, attachmentType, id, 0);
-    };
-
-    static GLenum FBTextureFormatToGL(FramebufferTextureFormat format)
+    static GLFormat ToGLFormat(FramebufferTextureFormat format)
     {
         switch (format)
         {
-            case FramebufferTextureFormat::RGBA8: return GL_RGBA8;
-            case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
-        };
-        
-        return 0;
-    };
-
-    OpenGLFramebuffer::OpenGLFramebuffer(FramebufferSpecification &specification) : m_Specification(specification)
-    {
-
-        for (auto format : m_Specification.attachments.Attachments)
-        {
-            if (!IsDepthFormat(format.TextureFormat)) m_ColorAttachmentSpecs.emplace_back(format);
-            else m_DepthSpec = format;
-        };
-
-        Invalidate();
-    };
-
-    OpenGLFramebuffer::~OpenGLFramebuffer()
-    {
-        glDeleteFramebuffers(1, &m_RendererID);
-        glDeleteTextures(m_ColorAttachments.size(), m_ColorAttachments.data());
-        glDeleteTextures(1, &m_DepthAttachment);
-    };
-
-    void OpenGLFramebuffer::Bind() const
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-        glViewport(0, 0, m_Specification.width, m_Specification.height);
-    };
-
-    void OpenGLFramebuffer::Unbind() const
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    };
-
-    void OpenGLFramebuffer::Invalidate()
-    {
-        if (m_RendererID)
-        {
-            glDeleteFramebuffers(1, &m_RendererID);
-            glDeleteTextures(m_ColorAttachments.size(), m_ColorAttachments.data());
-            glDeleteTextures(1, &m_DepthAttachment);
-
-            m_ColorAttachments.clear();
-            m_DepthAttachment = 0;
+            case FramebufferTextureFormat::RGBA8:           return { GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE };
+            case FramebufferTextureFormat::RGBA16F:         return { GL_RGBA16F, GL_RGBA, GL_FLOAT };
+            case FramebufferTextureFormat::RED_INTEGER:     return { GL_R32I, GL_RED_INTEGER, GL_INT };
+            case FramebufferTextureFormat::DEPTH24STENCIL8: return { GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8 };
+            case FramebufferTextureFormat::Depth:           return { GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT };
+            default:                                        return { GL_NONE, GL_NONE, GL_NONE };
         }
+    }
 
+    static GLenum DepthAttachmentPoint(FramebufferTextureFormat format)
+    {
+        return format == FramebufferTextureFormat::DEPTH24STENCIL8 ? GL_DEPTH_STENCIL_ATTACHMENT
+                                                                   : GL_DEPTH_ATTACHMENT;
+    }
+
+    OpenGLRenderTarget::OpenGLRenderTarget(const RenderTargetSpecification& specification)
+        : m_Specification(specification)
+    {
+        glCreateTextures(BufferTextureTypeToGL(m_Specification.type), 1, &m_RendererID);
+        AllocateStorage();
+        SetSamplerParameters();
+    }
+
+    OpenGLRenderTarget::~OpenGLRenderTarget()
+    {
+        glDeleteTextures(1, &m_RendererID);
+    }
+
+    // Storage uses the mutable glTexImage* family so Resize can respecify it in
+    // place without changing the renderer id.
+    void OpenGLRenderTarget::AllocateStorage()
+    {
+        GLenum target = BufferTextureTypeToGL(m_Specification.type);
+        GLFormat fmt = ToGLFormat(m_Specification.format);
+        unsigned int w = m_Specification.width, h = m_Specification.height;
+
+        glBindTexture(target, m_RendererID);
+        switch (m_Specification.type)
+        {
+            case BufferTextureType::Texture2D:
+                glTexImage2D(GL_TEXTURE_2D, 0, fmt.internal, w, h, 0, fmt.pixel, fmt.data, nullptr);
+                break;
+            case BufferTextureType::Texture2D_Array:
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, fmt.internal, w, h, m_Specification.layers, 0, fmt.pixel, fmt.data, nullptr);
+                break;
+            case BufferTextureType::Texture2D_Multisample:
+                glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, m_Specification.samples, fmt.internal, w, h, GL_FALSE);
+                break;
+            case BufferTextureType::Cubemap:
+                for (unsigned int i = 0; i < 6; ++i)
+                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, fmt.internal, w, h, 0, fmt.pixel, fmt.data, nullptr);
+                break;
+            case BufferTextureType::Cubemap_Array:
+                glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, fmt.internal, w, h, m_Specification.layers * 6, 0, fmt.pixel, fmt.data, nullptr);
+                break;
+            default:
+                break;
+        }
+    }
+
+    void OpenGLRenderTarget::SetSamplerParameters()
+    {
+        // Sampler parameters are illegal on multisample textures.
+        if (m_Specification.type == BufferTextureType::Texture2D_Multisample) return;
+
+        GLenum target = BufferTextureTypeToGL(m_Specification.type);
+        bool depth = IsDepthFormat(m_Specification.format);
+        bool array = m_Specification.type == BufferTextureType::Texture2D_Array ||
+                     m_Specification.type == BufferTextureType::Cubemap_Array;
+
+        // Depth arrays (shadow maps) sample with NEAREST; everything else LINEAR.
+        GLenum filter = (depth && array) ? GL_NEAREST : GL_LINEAR;
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filter);
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filter);
+
+        if (depth && m_Specification.type == BufferTextureType::Texture2D_Array)
+        {
+            // Outside a 2D shadow map means "not in shadow".
+            glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+            glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR, borderColor);
+        }
+        else
+        {
+            glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            if (target == GL_TEXTURE_CUBE_MAP || target == GL_TEXTURE_CUBE_MAP_ARRAY)
+                glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        }
+    }
+
+    void OpenGLRenderTarget::Resize(unsigned int width, unsigned int height)
+    {
+        if (width == 0 || height == 0 || width > s_MaxFramebufferSize || height > s_MaxFramebufferSize)
+        {
+            std::cerr << "OpenGLRenderTarget: invalid size " << width << "x" << height << std::endl;
+            return;
+        }
+        if (width == m_Specification.width && height == m_Specification.height) return;
+
+        m_Specification.width = width;
+        m_Specification.height = height;
+        AllocateStorage();
+    }
+
+    OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& specification)
+    {
         glCreateFramebuffers(1, &m_RendererID);
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
-        if (m_ColorAttachmentSpecs.size())
+        for (auto& target : specification.attachments)
         {
-            m_ColorAttachments.resize(m_ColorAttachmentSpecs.size());
-            glCreateTextures(BufferTextureTypeToGL(m_Specification.type), m_ColorAttachments.size(), m_ColorAttachments.data());
-            for (unsigned int i = 0; i < m_ColorAttachments.size(); i++)
+            if (!target) continue;
+            if (IsDepthFormat(target->GetSpecification().format))
             {
-                glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_ColorAttachments[i]);
-                switch (m_ColorAttachmentSpecs[i].TextureFormat)
-                {
-                    case FramebufferTextureFormat::RGBA8:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, m_Specification.width, m_Specification.height, i);
-                        break;
-                    case FramebufferTextureFormat::RGBA16F:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_RGBA16F, GL_RGBA, GL_FLOAT, m_Specification.width, m_Specification.height, i);
-                        break;
-                    case FramebufferTextureFormat::RED_INTEGER:
-                        AttachColorTexture(m_ColorAttachments[i], m_Specification.type, m_Specification.samples, GL_R32I, GL_RED_INTEGER, GL_INT, m_Specification.width, m_Specification.height, i);
-                        break;
-                }
-            };
-        };
-
-        if (m_DepthSpec.TextureFormat != FramebufferTextureFormat::None)
-        {
-            glCreateTextures(BufferTextureTypeToGL(m_Specification.type), 1, &m_DepthAttachment);
-            glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_DepthAttachment);
-            switch (m_DepthSpec.TextureFormat)
+                if (m_DepthAttachment)
+                    std::cerr << "OpenGLFramebuffer: more than one depth attachment." << std::endl;
+                m_DepthAttachment = target;
+                glFramebufferTexture(GL_FRAMEBUFFER, DepthAttachmentPoint(target->GetSpecification().format), target->GetID(), 0);
+            }
+            else
             {
-                case FramebufferTextureFormat::DEPTH24STENCIL8:
-                    AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, m_Specification.layers, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.width, m_Specification.height);
-                    break;
-                case FramebufferTextureFormat::Depth:
-                    AttachDepthTexture(m_DepthAttachment, m_Specification.type, m_Specification.samples, m_Specification.layers, GL_DEPTH_COMPONENT24, GL_DEPTH_ATTACHMENT, m_Specification.width, m_Specification.height);
-                    break;
-            };
-        };
+                glFramebufferTexture(GL_FRAMEBUFFER, (GLenum)(GL_COLOR_ATTACHMENT0 + m_ColorAttachments.size()), target->GetID(), 0);
+                m_ColorAttachments.push_back(target);
+            }
+        }
 
         if (!m_ColorAttachments.empty())
         {
-            GLenum buffers[12] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11 };
-            glDrawBuffers(m_ColorAttachments.size(), buffers);
+            std::vector<GLenum> buffers(m_ColorAttachments.size());
+            for (size_t i = 0; i < buffers.size(); i++) buffers[i] = (GLenum)(GL_COLOR_ATTACHMENT0 + i);
+            glDrawBuffers(buffers.size(), buffers.data());
         }
         else
         {
@@ -482,23 +407,48 @@ namespace Engine
             glReadBuffer(GL_NONE);
         }
 
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE)
+            std::cerr << "OpenGLFramebuffer: incomplete framebuffer (status 0x"
+                      << std::hex << status << std::dec << ")." << std::endl;
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    OpenGLFramebuffer::~OpenGLFramebuffer()
+    {
+        glDeleteFramebuffers(1, &m_RendererID);
+    }
+
+    void OpenGLFramebuffer::Bind() const
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+
+        // Attachment storage is respecified in place on resize, so the attachments'
+        // current size is always the framebuffer's size.
+        const Shared<RenderTarget>& any = m_ColorAttachments.empty() ? m_DepthAttachment : m_ColorAttachments[0];
+        if (any)
+        {
+            const RenderTargetSpecification& spec = any->GetSpecification();
+            glViewport(0, 0, spec.width, spec.height);
+        }
     };
 
-    void OpenGLFramebuffer::Resize(unsigned int width, unsigned int height)
+    void OpenGLFramebuffer::Unbind() const
     {
-        if (width == 0 || height == 0 || width > s_MaxFramebufferSize || height > s_MaxFramebufferSize)
-        {
-            std::cout << "Invalid size" << std::endl;
-            return;
-        }
-        m_Specification.width = width;
-        m_Specification.height = height;
-        Invalidate();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     };
 
     int OpenGLFramebuffer::ReadPixel(unsigned int attachmentIdx, int x, int y)
     {
+        if (attachmentIdx >= m_ColorAttachments.size() ||
+            m_ColorAttachments[attachmentIdx]->GetSpecification().format != FramebufferTextureFormat::RED_INTEGER)
+        {
+            std::cerr << "OpenGLFramebuffer::ReadPixel: attachment " << attachmentIdx
+                      << " is not a RED_INTEGER attachment." << std::endl;
+            return -1;
+        }
+
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
         glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIdx);
 
@@ -511,62 +461,28 @@ namespace Engine
 
     void OpenGLFramebuffer::ClearAttachment(unsigned int attachmentIdx, int value)
     {
-        // auto& spec = m_ColorAttachmentSpecs[attachmentIdx];
-        // glClearTexImage(m_ColorAttachments[attachmentIdx], 0, FBTextureFormatToGL(spec.TextureFormat), GL_INT, &value);
+        if (attachmentIdx >= m_ColorAttachments.size()) return;
 
-        auto& spec = m_ColorAttachmentSpecs[attachmentIdx];
-
-        // If this is an integer attachment (RED_INTEGER / R32I), clear via the bound framebuffer with glClearBufferiv.
-        // This works regardless of multisampling on the FBO (glClearTexImage cannot be used on multisample textures).
-        if (spec.TextureFormat == FramebufferTextureFormat::RED_INTEGER)
+        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        if (m_ColorAttachments[attachmentIdx]->GetSpecification().format == FramebufferTextureFormat::RED_INTEGER)
         {
-            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
             GLint clearValue = value;
             glClearBufferiv(GL_COLOR, attachmentIdx, &clearValue);
         }
         else
         {
-            // For color attachments like RGBA8, clearing via glClearBufferfv is safe and simple.
-            glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-            GLfloat clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-            // If you want to accept a color parameter, extend the API. For now we clear to zero.
+            GLfloat clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
             glClearBufferfv(GL_COLOR, attachmentIdx, clearColor);
         }
     };
 
     void OpenGLFramebuffer::AttachLayer(unsigned int layer)
     {
-        // Ensure the FBO is bound first
+        if (!m_DepthAttachment) return;
+
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-
-        unsigned int attachmentFormat = 0;
-        switch (m_DepthSpec.TextureFormat)
-        {
-            case FramebufferTextureFormat::DEPTH24STENCIL8: attachmentFormat = GL_DEPTH_STENCIL_ATTACHMENT; break;
-            case FramebufferTextureFormat::Depth: attachmentFormat = GL_DEPTH_ATTACHMENT; break;
-        }
-        
-        // m_DepthAttachment is the OpenGL ID of your generated Texture2DArray
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, attachmentFormat, m_DepthAttachment, 0, layer);
-    }
-
-    void OpenGLFramebuffer::AttachToTextureSlot(unsigned int idx, unsigned int rendererID)
-    {
-        glActiveTexture(GL_TEXTURE0 + idx);
-        glBindTexture(GL_TEXTURE_2D, rendererID);
-    }
-
-    void OpenGLFramebuffer::AttachToDepthSlot(unsigned int idx)
-    {
-        glActiveTexture(GL_TEXTURE0 + idx);
-        glBindTexture(BufferTextureTypeToGL(m_Specification.type), m_DepthAttachment);
-    }
-
-    void OpenGLFramebuffer::AttachExternalDepth(unsigned int textureRendererID, bool hasStencil)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-        GLenum attachment = hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
-        glFramebufferTexture(GL_FRAMEBUFFER, attachment, textureRendererID, 0);
+        GLenum attachment = DepthAttachmentPoint(m_DepthAttachment->GetSpecification().format);
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, m_DepthAttachment->GetID(), 0, layer);
     }
 
 };

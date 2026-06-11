@@ -16,14 +16,14 @@ namespace Engine {
             SetTargetType(BufferTextureType::Texture2D);
             // HDR target: lighting outputs linear radiance; tonemap is in the post pass.
             Output("SceneColor", FramebufferTextureFormat::RGBA16F);
-            Input("GBuffer.Normal");
-            Input("GBuffer.Albedo");
-            Input("GBuffer.PBR");
+            m_Normal = Input("GBuffer.Normal");
+            m_Albedo = Input("GBuffer.Albedo");
+            m_PBR    = Input("GBuffer.PBR");
             // Sampled for world-position reconstruction, and attached (read-only) so
             // forward geometry after the lighting quad is depth tested against the scene.
-            SetDepthInput("GBuffer.Depth");
-            Input("ShadowMap2D");
-            Input("PointShadowMap");
+            m_Depth  = SetDepthInput("GBuffer.Depth");
+            m_Shadow2D    = Input("ShadowMap2D");
+            m_ShadowPoint = Input("PointShadowMap");
             SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
@@ -39,15 +39,16 @@ namespace Engine {
             deferredShader->SetInt("u_PointShadowCubemaps", 5);
             deferredShader->SetFloat("u_FarPlane", PointShadowFarPlane);
 
-            m_RenderGraph->BindInput("GBuffer.Normal", 0);
-            m_RenderGraph->BindInput("GBuffer.Albedo", 1);
-            m_RenderGraph->BindInput("GBuffer.PBR",    2);
-            m_RenderGraph->BindInput("GBuffer.Depth",  3);
+            BindInput(m_Normal, 0);
+            BindInput(m_Albedo, 1);
+            BindInput(m_PBR,    2);
+            BindInput(m_Depth,  3);
 
-            if (m_RenderGraph->HasInput("ShadowMap2D"))
-                m_RenderGraph->BindInput("ShadowMap2D", 4);
-            if (m_RenderGraph->HasInput("PointShadowMap"))
-                m_RenderGraph->BindInput("PointShadowMap", 5);
+            // Always bound (type-correct even when the shadow passes were skipped this
+            // frame); lights only carry shadow indices when a caster was extracted, so
+            // stale contents are never sampled.
+            BindInput(m_Shadow2D,    4);
+            BindInput(m_ShadowPoint, 5);
 
             // --- Image-based lighting ---
             const EnvironmentRenderData& env = view.Environment;
@@ -77,6 +78,10 @@ namespace Engine {
             // (depth writes stay masked by the graph).
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         }
+
+    private:
+        InputHandle m_Normal = 0, m_Albedo = 0, m_PBR = 0, m_Depth = 0;
+        InputHandle m_Shadow2D = 0, m_ShadowPoint = 0;
     };
 
 }

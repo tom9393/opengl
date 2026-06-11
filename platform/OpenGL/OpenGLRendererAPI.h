@@ -22,6 +22,7 @@ namespace Engine
 
         void BindTexture2D(unsigned int slot, unsigned int rendererID) override;
         void BindTextureCube(unsigned int slot, unsigned int rendererID) override;
+        void BindTexture(unsigned int slot, unsigned int rendererID, BufferTextureType type) override;
 
         void PushDebugGroup(const char* name) override;
         void PopDebugGroup() override;

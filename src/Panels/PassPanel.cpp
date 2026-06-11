@@ -10,55 +10,20 @@ namespace Engine {
     unsigned int PassPanel::GetSelectedAttachment()
     {
         if (!m_SceneRenderer) return 0;
-
-        Shared<FramebufferHandle> fb = m_SceneRenderer->GetRenderGraph().GetPassFramebuffer(m_SelectedPass);
-        if (!fb) return 0;
-
-        return m_SelectedIsDepth ? fb->GetDepthAttachmentRendererID()
-                                 : fb->GetColorAttachmentRendererID(m_SelectedAttachment);
+        return m_SceneRenderer->GetRenderGraph().GetResourceTextureID(m_SelectedResource);
     }
 
     void PassPanel::OnImGuiRender() {
         ImGui::Begin("PassPanel");
 
-        std::unordered_map<std::string, Shared<FramebufferHandle>> framebuffers = m_SceneRenderer->GetRenderGraph().GetFramebuffers();
-
-        for (auto& framebuffer : framebuffers)
+        for (auto& [name, info] : m_SceneRenderer->GetRenderGraph().GetResources())
         {
-            unsigned int color = 0;
-            unsigned int depth = 0;
+            if (!info.aliasOf.empty()) continue; // shares its source's texture
+            if (!info.target) continue;          // producer culled
+            if (info.target->GetSpecification().type != BufferTextureType::Texture2D) continue;
 
-            FramebufferSpecification spec = framebuffer.second->GetFramebuffer()->GetSpecification();
-
-            if (spec.type != BufferTextureType::Texture2D) continue;
-
-            std::vector<FramebufferTextureSpecification> textureSpecs = spec.attachments.Attachments;
-
-            for (auto& specification : textureSpecs)
-            {
-                if (specification.TextureFormat == FramebufferTextureFormat::DEPTH24STENCIL8 || specification.TextureFormat == FramebufferTextureFormat::Depth)
-                {
-                    std::string label = "Depth " + framebuffer.first + " " + std::to_string(depth);
-                    if (ImGui::Button(label.c_str()))
-                    {
-                        m_SelectedPass = framebuffer.first;
-                        m_SelectedAttachment = depth;
-                        m_SelectedIsDepth = true;
-                    }
-                    depth++;
-                }
-                else
-                {
-                    std::string label = "Color " + framebuffer.first + " " + std::to_string(color);
-                    if (ImGui::Button(label.c_str()))
-                    {
-                        m_SelectedPass = framebuffer.first;
-                        m_SelectedAttachment = color;
-                        m_SelectedIsDepth = false;
-                    }
-                    color++;
-                }
-            }
+            if (ImGui::Button(name.c_str()))
+                m_SelectedResource = name;
         }
 
         ImGui::End();

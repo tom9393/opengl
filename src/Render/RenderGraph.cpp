@@ -1,8 +1,8 @@
 #include "RenderGraph.h"
 #include "RenderCommand.h"
-#include "Renderer.h"
 #include "Passes/RenderPass.h"
 
+#include <cassert>
 #include <iostream>
 #include <queue>
 #include <sstream>
@@ -37,33 +37,32 @@ namespace Engine
 	                std::cerr << "RenderGraph: resource '" << out.name
 	                          << "' declared as output by both '" << existing->second.producer->GetName()
 	                          << "' and '" << pass->GetName() << "'. Keeping the first." << std::endl;
+	                assert(false && "RenderGraph: duplicate output declaration");
 	                continue;
 	            }
 	            ResourceInfo info;
 	            info.producer = pass;
 	            if (!out.aliasOf.empty())
 	            {
-	                // Alias outputs share the source resource's physical attachment.
-	                // Passes are registered in insertion order, so the source must come
-	                // from an earlier-added pass.
+	                // Alias outputs share the source resource's texture. Passes are
+	                // registered in insertion order, so the source must come from an
+	                // earlier-added pass. Chains resolve to the owning root.
 	                auto src = m_Resources.find(out.aliasOf);
 	                if (src == m_Resources.end())
 	                {
 	                    std::cerr << "RenderGraph: pass '" << pass->GetName()
 	                              << "' aliases unknown resource '" << out.aliasOf << "'." << std::endl;
+	                    assert(false && "RenderGraph: alias of unknown resource");
 	                    continue;
 	                }
-	                info.physicalPass = src->second.physicalPass;
+	                info.aliasOf = src->second.aliasOf.empty() ? out.aliasOf : src->second.aliasOf;
 	                info.format = src->second.format;
 	                info.isDepth = src->second.isDepth;
-	                info.colorAttachmentIndex = src->second.colorAttachmentIndex;
 	            }
 	            else
 	            {
-	                info.physicalPass = pass;
 	                info.format = out.format;
 	                info.isDepth = out.isDepth;
-	                info.colorAttachmentIndex = out.colorAttachmentIndex;
 	            }
 	            m_Resources[out.name] = info;
 	        }
@@ -86,6 +85,7 @@ namespace Engine
 	                std::cerr << "RenderGraph: pass '" << passPtr->GetName()
 	                          << "' declares input '" << inputName
 	                          << "' but no pass produces it." << std::endl;
+	                assert(false && "RenderGraph: input without producer");
 	            }
 	        }
 	    }
@@ -136,6 +136,7 @@ namespace Engine
 	    {
 	        std::cerr << "RenderGraph: cycle detected during topological sort. "
 	                     "Falling back to insertion order." << std::endl;
+	        assert(false && "RenderGraph: dependency cycle");
 	        sorted.clear();
 	        for (auto& p : m_Passes) sorted.push_back(p.get());
 	    }
@@ -150,6 +151,7 @@ namespace Engine
 	        {
 	            std::cerr << "RenderGraph: presented resource '" << name
 	                      << "' has no producer." << std::endl;
+	            assert(false && "RenderGraph: presented resource without producer");
 	            continue;
 	        }
 	        if (required.insert(it->second.producer).second) rq.push(it->second.producer);
@@ -179,44 +181,87 @@ namespace Engine
 	        }
 	    }
 
-	    AllocateFramebuffers();
+	    AllocateResources();
+	    ComposeFramebuffers();
 
 	    m_Dirty = false;
 	}
 
-	void RenderGraph::AllocateFramebuffers()
+	void RenderGraph::AllocateResources()
+	{
+	    std::unordered_set<RenderPass*> live(m_ExecutionOrder.begin(), m_ExecutionOrder.end());
+
+	    for (auto& kv : m_Resources)
+	    {
+	        ResourceInfo& info = kv.second;
+	        if (!info.aliasOf.empty()) continue;
+	        if (!live.count(info.producer)) continue;
+
+	        RenderPass* producer = info.producer;
+	        RenderTargetSpecification spec;
+	        spec.format = info.format;
+	        spec.type = producer->GetTargetType() == BufferTextureType::None
+	                        ? BufferTextureType::Texture2D : producer->GetTargetType();
+	        spec.width = producer->GetWidth() > 0 ? producer->GetWidth() : m_Width;
+	        spec.height = producer->GetHeight() > 0 ? producer->GetHeight() : m_Height;
+	        spec.layers = producer->GetLayers();
+
+	        info.target = RenderTarget::Create(spec);
+	        if (!info.target)
+	            std::cerr << "RenderGraph: failed to create texture for resource '"
+	                      << kv.first << "'." << std::endl;
+	    }
+
+	    // Alias resources share their root's texture.
+	    for (auto& kv : m_Resources)
+	    {
+	        ResourceInfo& info = kv.second;
+	        if (info.aliasOf.empty()) continue;
+	        auto root = m_Resources.find(info.aliasOf);
+	        if (root != m_Resources.end()) info.target = root->second.target;
+	    }
+	}
+
+	void RenderGraph::ComposeFramebuffers()
 	{
 	    for (RenderPass* pass : m_ExecutionOrder)
 	    {
-	        if (pass->IsInplace()) continue;
-	        if (m_PassFramebuffers.count(pass->GetName())) continue;
-
 	        FramebufferSpecification spec;
-	        spec.width = pass->GetWidth() > 0 ? pass->GetWidth() : m_Width;
-	        spec.height = pass->GetHeight() > 0 ? pass->GetHeight() : m_Height;
-	        spec.samples = 1;
-	        spec.layers = pass->GetLayers();
-	        spec.type = pass->GetTargetType() == BufferTextureType::None
-	                        ? BufferTextureType::Texture2D : pass->GetTargetType();
-	        for (auto format : pass->BuildAttachmentList())
-	            spec.attachments.Attachments.emplace_back(format);
-
-	        Shared<Framebuffer> fb = Framebuffer::Create(spec);
-	        if (!fb)
+	        for (auto& out : pass->GetOutputs())
 	        {
+	            auto it = m_Resources.find(out.name);
+	            // Skips outputs lost to a duplicate declaration (reported in BuildResourceMap).
+	            if (it == m_Resources.end() || it->second.producer != pass || !it->second.target) continue;
+	            spec.attachments.push_back(it->second.target);
+	        }
+
+	        // A declared depth input becomes the pass's depth attachment; Execute masks
+	        // depth writes while the pass runs, so it stays read-only.
+	        if (pass->HasDepthInput())
+	        {
+	            auto it = m_Resources.find(pass->GetDepthInput());
+	            if (it != m_Resources.end() && it->second.target)
+	                spec.attachments.push_back(it->second.target);
+	        }
+
+	        pass->m_Framebuffer = Framebuffer::Create(spec);
+	        if (!pass->m_Framebuffer)
 	            std::cerr << "RenderGraph: failed to create framebuffer for pass '"
 	                      << pass->GetName() << "'." << std::endl;
-	            continue;
+
+	        // Resolve declared inputs to their textures.
+	        pass->m_CompiledInputs.assign(pass->GetInputs().size(), nullptr);
+	        for (size_t i = 0; i < pass->GetInputs().size(); i++)
+	        {
+	            auto it = m_Resources.find(pass->GetInputs()[i]);
+	            if (it != m_Resources.end()) pass->m_CompiledInputs[i] = it->second.target;
 	        }
-	        m_PassFramebuffers[pass->GetName()] = MakeShared<FramebufferHandle>(fb);
 	    }
 	}
 
 	void RenderGraph::Execute(RenderContext& context, const RenderView& renderView)
 	{
 	    if (m_Dirty) Compile();
-
-	    m_AvailableResources.clear();
 
 	    auto camAlloc = context.InstancePool->Allocate(&renderView.Camera, sizeof(CameraData));
 	    if (camAlloc.Size > 0) context.InstancePool->BindAsUBO(0, camAlloc.Offset, camAlloc.Size);
@@ -228,56 +273,26 @@ namespace Engine
 	    {
 	        if (!pass->EvaluateCondition(renderView)) continue;
 
-	        // In-place passes render into the framebuffer that physically holds their
-	        // aliased resource; everything else owns a framebuffer allocated at compile.
-	        Shared<FramebufferHandle> fbHandle;
-	        if (pass->IsInplace())
-	        {
-	            auto rit = m_Resources.find(pass->GetOutputs()[0].aliasOf);
-	            if (rit != m_Resources.end())
-	            {
-	                auto fit = m_PassFramebuffers.find(rit->second.physicalPass->GetName());
-	                if (fit != m_PassFramebuffers.end()) fbHandle = fit->second;
-	            }
-	        }
-	        else
-	        {
-	            auto fit = m_PassFramebuffers.find(pass->GetName());
-	            if (fit != m_PassFramebuffers.end()) fbHandle = fit->second;
-	        }
-	        if (!fbHandle) continue;
+	        const Shared<Framebuffer>& fb = pass->GetFramebuffer();
+	        if (!fb) continue;
 
-	        for (auto& out : pass->GetOutputs())
-	            m_AvailableResources.insert(out.name);
+	        fb->Bind();
 
-	        fbHandle->GetFramebuffer()->Bind();
-
-	        // A declared depth input is attached as a read-only depth attachment: depth
-	        // writes stay masked for the whole pass, which both protects the producer's
-	        // depth and keeps sampling it from the pass legal.
+	        // A declared depth input is attached read-only: depth writes stay masked
+	        // for the whole pass, which both protects the producer's depth and keeps
+	        // sampling it from the pass legal.
 	        bool externalDepth = pass->HasDepthInput();
-	        if (externalDepth)
-	        {
-	            auto dit = m_Resources.find(pass->GetDepthInput());
-	            Shared<FramebufferHandle> depthFb = GetResource(pass->GetDepthInput());
-	            if (dit != m_Resources.end() && depthFb)
-	            {
-	                bool hasStencil = dit->second.format == FramebufferTextureFormat::DEPTH24STENCIL8;
-	                fbHandle->GetFramebuffer()->AttachExternalDepth(
-	                    depthFb->GetDepthAttachmentRendererID(), hasStencil);
-	            }
-	            RenderCommand::SetDepthWrite(false);
-	        }
+	        if (externalDepth) RenderCommand::SetDepthWrite(false);
 
-	        // In-place passes load the existing contents; owning passes clear, but never
-	        // an externally attached depth.
-	        if (!pass->IsInplace())
+	        // Alias-only passes load the existing contents; owning passes clear, but
+	        // never an externally attached depth.
+	        if (pass->OwnsAnOutput())
 	        {
 	            if (pass->HasClearColor()) RenderCommand::SetClearColor(pass->GetClearColor());
 	            if (externalDepth) RenderCommand::ClearColorOnly();
 	            else               RenderCommand::Clear();
 	            for (auto& kv : pass->GetClearInts())
-	                fbHandle->ClearAttachment(kv.first, kv.second);
+	                fb->ClearAttachment(kv.first, kv.second);
 	        }
 
 	        RenderCommand::PushDebugGroup(pass->GetName().c_str());
@@ -286,7 +301,7 @@ namespace Engine
 
 	        if (externalDepth) RenderCommand::SetDepthWrite(true);
 
-	        fbHandle->GetFramebuffer()->Unbind();
+	        fb->Unbind();
 	    }
 	}
 
@@ -296,60 +311,23 @@ namespace Engine
 	    m_Width = width;
 	    m_Height = height;
 
-	    // Only viewport-sized targets follow the viewport; fixed-size passes
-	    // (shadow maps) keep their attachments.
-	    for (auto& passPtr : m_Passes)
+	    // Texture storage is respecified in place (ids stay stable), so the composed
+	    // framebuffers don't need rebuilding. Fixed-size targets (shadow maps) are
+	    // untouched; aliases follow their root.
+	    for (auto& kv : m_Resources)
 	    {
-	        if (passPtr->GetWidth() > 0) continue;
-	        auto it = m_PassFramebuffers.find(passPtr->GetName());
-	        if (it != m_PassFramebuffers.end())
-	            it->second->GetFramebuffer()->Resize(width, height);
+	        ResourceInfo& info = kv.second;
+	        if (!info.aliasOf.empty() || !info.target) continue;
+	        if (info.producer->GetWidth() > 0) continue;
+	        info.target->Resize(width, height);
 	    }
 	}
 
-	Shared<FramebufferHandle> RenderGraph::GetPassFramebuffer(const std::string& passName) const
+	unsigned int RenderGraph::GetResourceTextureID(const std::string& resourceName) const
 	{
-	    auto it = m_PassFramebuffers.find(passName);
-	    if (it == m_PassFramebuffers.end()) return nullptr;
-	    return it->second;
-	}
-
-	unsigned int RenderGraph::GetPassColorAttachmentRendererID(const std::string& passName, unsigned int idx) const
-	{
-	    auto fb = GetPassFramebuffer(passName);
-	    if (!fb) return 0;
-	    return fb->GetColorAttachmentRendererID(idx);
-	}
-
-	Shared<FramebufferHandle> RenderGraph::GetResource(const std::string& resourceName) const
-	{
-	    auto rit = m_Resources.find(resourceName);
-	    if (rit == m_Resources.end()) return nullptr;
-	    if (!m_AvailableResources.count(resourceName)) return nullptr;
-	    auto it = m_PassFramebuffers.find(rit->second.physicalPass->GetName());
-	    if (it == m_PassFramebuffers.end()) return nullptr;
-	    return it->second;
-	}
-
-	bool RenderGraph::HasInput(const std::string& resourceName) const
-	{
-	    return m_AvailableResources.count(resourceName) > 0;
-	}
-
-	void RenderGraph::BindInput(const std::string& resourceName, unsigned int slot) const
-	{
-	    auto rit = m_Resources.find(resourceName);
-	    if (rit == m_Resources.end())
-	    {
-	        std::cerr << "RenderGraph::BindInput: unknown resource '" << resourceName << "'." << std::endl;
-	        return;
-	    }
-	    auto fb = GetResource(resourceName);
-	    if (!fb) return;
-	    if (rit->second.isDepth)
-	        fb->AttachToTextureSlotDepth(slot);
-	    else
-	        fb->AttachToTextureSlot(slot, rit->second.colorAttachmentIndex);
+	    auto it = m_Resources.find(resourceName);
+	    if (it == m_Resources.end() || !it->second.target) return 0;
+	    return it->second.target->GetID();
 	}
 
 	std::string RenderGraph::ExportDot() const

@@ -2,9 +2,13 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices=18) out;
 
-// Passed in from C++ SceneRenderer when doing Point Light Shadow pass
-uniform mat4 u_ShadowMatrices[6];
-uniform int u_BaseLayer; // Sent from SceneRenderer.cpp to specify which light we are drawing
+// Per-light cube face matrices, uploaded by ShadowPass3D through the frame pool.
+layout(std140, binding = 2) uniform ShadowMatrices
+{
+    mat4 u_ShadowMatrices[6];
+};
+
+uniform int u_BaseLayer; // Specifies which light we are drawing
 
 out vec4 FragPos;
 
