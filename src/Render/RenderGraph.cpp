@@ -2,20 +2,35 @@
 #include "RenderCommand.h"
 #include "Passes/RenderPass.h"
 
-#include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <queue>
+#include <set>
 #include <sstream>
 
 namespace Engine
 {
+
+	// A misdeclared graph is a programming error; abort loudly at compile time
+	// (typically startup) in every build configuration instead of limping on
+	// with a broken frame.
+	[[noreturn]] static void GraphError(const std::string& message)
+	{
+	    std::cerr << "RenderGraph: " << message << std::endl;
+	    std::abort();
+	}
 
 	RenderGraph::RenderGraph(unsigned int width, unsigned int height)
 	    : m_Width(width), m_Height(height)
 	{
 	}
 
-	RenderGraph::~RenderGraph() = default;
+	RenderGraph::~RenderGraph()
+	{
+	    for (auto& kv : m_PassTimers)
+	        for (unsigned int id : kv.second.ids)
+	            if (id) RenderCommand::DeleteTimerQuery(id);
+	}
 
 	void RenderGraph::MarkPresent(const std::string& resourceName)
 	{
@@ -34,11 +49,8 @@ namespace Engine
 	            auto existing = m_Resources.find(out.name);
 	            if (existing != m_Resources.end())
 	            {
-	                std::cerr << "RenderGraph: resource '" << out.name
-	                          << "' declared as output by both '" << existing->second.producer->GetName()
-	                          << "' and '" << pass->GetName() << "'. Keeping the first." << std::endl;
-	                assert(false && "RenderGraph: duplicate output declaration");
-	                continue;
+	                GraphError("resource '" + out.name + "' declared as output by both '"
+	                           + existing->second.producer->GetName() + "' and '" + pass->GetName() + "'.");
 	            }
 	            ResourceInfo info;
 	            info.producer = pass;
@@ -50,10 +62,8 @@ namespace Engine
 	                auto src = m_Resources.find(out.aliasOf);
 	                if (src == m_Resources.end())
 	                {
-	                    std::cerr << "RenderGraph: pass '" << pass->GetName()
-	                              << "' aliases unknown resource '" << out.aliasOf << "'." << std::endl;
-	                    assert(false && "RenderGraph: alias of unknown resource");
-	                    continue;
+	                    GraphError("pass '" + pass->GetName() + "' aliases unknown resource '"
+	                               + out.aliasOf + "'.");
 	                }
 	                info.aliasOf = src->second.aliasOf.empty() ? out.aliasOf : src->second.aliasOf;
 	                info.format = src->second.format;
@@ -82,10 +92,8 @@ namespace Engine
 	        {
 	            if (m_Resources.find(inputName) == m_Resources.end())
 	            {
-	                std::cerr << "RenderGraph: pass '" << passPtr->GetName()
-	                          << "' declares input '" << inputName
-	                          << "' but no pass produces it." << std::endl;
-	                assert(false && "RenderGraph: input without producer");
+	                GraphError("pass '" + passPtr->GetName() + "' declares input '"
+	                           + inputName + "' but no pass produces it.");
 	            }
 	        }
 	    }
@@ -93,24 +101,52 @@ namespace Engine
 	    // Build adjacency (producer -> consumers) and in-degree counts.
 	    std::unordered_map<RenderPass*, std::vector<RenderPass*>> adj;
 	    std::unordered_map<RenderPass*, int> inDegree;
+	    std::set<std::pair<RenderPass*, RenderPass*>> edges;
 	    for (auto& p : m_Passes)
 	    {
 	        inDegree[p.get()] = 0;
 	        adj[p.get()];
 	    }
+	    auto addEdge = [&](RenderPass* from, RenderPass* to)
+	    {
+	        if (from == to) return;
+	        if (!edges.insert({ from, to }).second) return;
+	        adj[from].push_back(to);
+	        inDegree[to]++;
+	    };
+
+	    // Read-after-write: a consumer runs after the producer of each input.
 	    for (auto& passPtr : m_Passes)
 	    {
 	        RenderPass* consumer = passPtr.get();
-	        std::unordered_set<RenderPass*> seenProducers;
 	        for (auto& inputName : consumer->GetInputs())
 	        {
 	            auto it = m_Resources.find(inputName);
 	            if (it == m_Resources.end()) continue;
-	            RenderPass* producer = it->second.producer;
-	            if (producer == consumer) continue;
-	            if (!seenProducers.insert(producer).second) continue;
-	            adj[producer].push_back(consumer);
-	            inDegree[consumer]++;
+	            addEdge(it->second.producer, consumer);
+	        }
+	    }
+
+	    // Write-after-read: a pass that renders in place into another resource
+	    // must wait for every other reader of that resource, or those readers
+	    // would sample the overwritten contents.
+	    for (auto& passPtr : m_Passes)
+	    {
+	        RenderPass* writer = passPtr.get();
+	        for (auto& out : writer->GetOutputs())
+	        {
+	            if (out.aliasOf.empty()) continue;
+	            for (auto& readerPtr : m_Passes)
+	            {
+	                RenderPass* reader = readerPtr.get();
+	                if (reader == writer) continue;
+	                for (auto& inputName : reader->GetInputs())
+	                {
+	                    if (inputName != out.aliasOf) continue;
+	                    addEdge(reader, writer);
+	                    break;
+	                }
+	            }
 	        }
 	    }
 
@@ -134,11 +170,7 @@ namespace Engine
 
 	    if (sorted.size() != m_Passes.size())
 	    {
-	        std::cerr << "RenderGraph: cycle detected during topological sort. "
-	                     "Falling back to insertion order." << std::endl;
-	        assert(false && "RenderGraph: dependency cycle");
-	        sorted.clear();
-	        for (auto& p : m_Passes) sorted.push_back(p.get());
+	        GraphError("cycle detected during topological sort.");
 	    }
 
 	    // Cull: reverse-walk from presented resources.
@@ -149,10 +181,7 @@ namespace Engine
 	        auto it = m_Resources.find(name);
 	        if (it == m_Resources.end())
 	        {
-	            std::cerr << "RenderGraph: presented resource '" << name
-	                      << "' has no producer." << std::endl;
-	            assert(false && "RenderGraph: presented resource without producer");
-	            continue;
+	            GraphError("presented resource '" + name + "' has no producer.");
 	        }
 	        if (required.insert(it->second.producer).second) rq.push(it->second.producer);
 	    }
@@ -202,8 +231,11 @@ namespace Engine
 	        spec.format = info.format;
 	        spec.type = producer->GetTargetType() == BufferTextureType::None
 	                        ? BufferTextureType::Texture2D : producer->GetTargetType();
-	        spec.width = producer->GetWidth() > 0 ? producer->GetWidth() : m_Width;
-	        spec.height = producer->GetHeight() > 0 ? producer->GetHeight() : m_Height;
+	        float scale = producer->GetSizeScale();
+	        spec.width = producer->GetWidth() > 0 ? producer->GetWidth()
+	                        : std::max(1u, (unsigned int)((float)m_Width * scale));
+	        spec.height = producer->GetHeight() > 0 ? producer->GetHeight()
+	                        : std::max(1u, (unsigned int)((float)m_Height * scale));
 	        spec.layers = producer->GetLayers();
 
 	        info.target = RenderTarget::Create(spec);
@@ -230,8 +262,7 @@ namespace Engine
 	        for (auto& out : pass->GetOutputs())
 	        {
 	            auto it = m_Resources.find(out.name);
-	            // Skips outputs lost to a duplicate declaration (reported in BuildResourceMap).
-	            if (it == m_Resources.end() || it->second.producer != pass || !it->second.target) continue;
+	            if (it == m_Resources.end() || !it->second.target) continue;
 	            spec.attachments.push_back(it->second.target);
 	        }
 
@@ -259,6 +290,18 @@ namespace Engine
 	    }
 	}
 
+	static void ApplyPipelineState(const PipelineState& state)
+	{
+	    RenderCommand::SetDepthTest(state.depthTest);
+	    RenderCommand::SetDepthWrite(state.depthWrite);
+	    switch (state.blend)
+	    {
+	        case PassBlend::Off:      RenderCommand::SetAdditiveBlend(false); break; // disables blending
+	        case PassBlend::Alpha:    RenderCommand::SetAlphaBlend(true);     break;
+	        case PassBlend::Additive: RenderCommand::SetAdditiveBlend(true);  break;
+	    }
+	}
+
 	void RenderGraph::Execute(RenderContext& context, const RenderView& renderView)
 	{
 	    if (m_Dirty) Compile();
@@ -269,40 +312,79 @@ namespace Engine
 	    auto lightAlloc = context.InstancePool->Allocate(&renderView.LightData, sizeof(SceneLightData));
 	    if (lightAlloc.Size > 0) context.InstancePool->BindAsUBO(1, lightAlloc.Offset, lightAlloc.Size);
 
+	    m_PassTimings.clear();
+
 	    for (RenderPass* pass : m_ExecutionOrder)
 	    {
-	        if (!pass->EvaluateCondition(renderView)) continue;
+	        if (!pass->EvaluateCondition(renderView))
+	        {
+	            m_PassTimings.push_back({ pass->GetName(), 0.0f });
+	            continue;
+	        }
 
 	        const Shared<Framebuffer>& fb = pass->GetFramebuffer();
 	        if (!fb) continue;
 
+	        // Harvest the elapsed time recorded in this slot a few frames ago,
+	        // then reuse its query for this frame.
+	        PassTimerQueries& timer = m_PassTimers[pass];
+	        unsigned int& query = timer.ids[timer.next];
+	        if (query == 0) query = RenderCommand::CreateTimerQuery();
+	        if (timer.used[timer.next])
+	        {
+	            uint64_t ns = 0;
+	            if (RenderCommand::GetTimerQueryResult(query, ns))
+	                timer.lastMs = (float)((double)ns / 1.0e6);
+	        }
+	        RenderCommand::BeginTimerQuery(query);
+
 	        fb->Bind();
 
-	        // A declared depth input is attached read-only: depth writes stay masked
-	        // for the whole pass, which both protects the producer's depth and keeps
-	        // sampling it from the pass legal.
-	        bool externalDepth = pass->HasDepthInput();
-	        if (externalDepth) RenderCommand::SetDepthWrite(false);
+	        // The declared state is the pass's baseline; a declared depth input is
+	        // attached read-only, so depth writes are forced off, which both
+	        // protects the producer's depth and keeps sampling it legal.
+	        PipelineState state = pass->GetPipelineState();
+	        if (pass->HasDepthInput()) state.depthWrite = false;
+	        ApplyPipelineState(state);
 
-	        // Alias-only passes load the existing contents; owning passes clear, but
-	        // never an externally attached depth.
-	        if (pass->OwnsAnOutput())
+	        // Owning passes clear their attachments individually; aliased outputs
+	        // load the existing contents, and an externally attached depth is
+	        // never cleared (it isn't an output).
+	        if (pass->OwnsAnOutput() && !pass->IsClearDisabled())
 	        {
-	            if (pass->HasClearColor()) RenderCommand::SetClearColor(pass->GetClearColor());
-	            if (externalDepth) RenderCommand::ClearColorOnly();
-	            else               RenderCommand::Clear();
-	            for (auto& kv : pass->GetClearInts())
-	                fb->ClearAttachment(kv.first, kv.second);
+	            unsigned int colorIdx = 0;
+	            for (auto& out : pass->GetOutputs())
+	            {
+	                if (!out.aliasOf.empty()) { colorIdx++; continue; }
+	                if (out.isDepth)
+	                {
+	                    fb->ClearDepthAttachment();
+	                    continue;
+	                }
+	                auto intClear = pass->GetClearInts().find(colorIdx);
+	                if (intClear != pass->GetClearInts().end())
+	                    fb->ClearAttachment(colorIdx, intClear->second);
+	                else
+	                    fb->ClearColorAttachment(colorIdx, pass->GetClearValue(colorIdx));
+	                colorIdx++;
+	            }
 	        }
 
 	        RenderCommand::PushDebugGroup(pass->GetName().c_str());
 	        pass->Execute(context, renderView);
 	        RenderCommand::PopDebugGroup();
 
-	        if (externalDepth) RenderCommand::SetDepthWrite(true);
+	        RenderCommand::EndTimerQuery();
+	        timer.used[timer.next] = true;
+	        timer.next = (timer.next + 1) % 3;
+	        m_PassTimings.push_back({ pass->GetName(), timer.lastMs });
 
 	        fb->Unbind();
 	    }
+
+	    // Leave the context in the default state for whatever renders next
+	    // (UI, offscreen bakes).
+	    ApplyPipelineState(PipelineState{});
 	}
 
 	void RenderGraph::Resize(unsigned int width, unsigned int height)
@@ -313,13 +395,15 @@ namespace Engine
 
 	    // Texture storage is respecified in place (ids stay stable), so the composed
 	    // framebuffers don't need rebuilding. Fixed-size targets (shadow maps) are
-	    // untouched; aliases follow their root.
+	    // untouched; scaled targets follow at their scale; aliases follow their root.
 	    for (auto& kv : m_Resources)
 	    {
 	        ResourceInfo& info = kv.second;
 	        if (!info.aliasOf.empty() || !info.target) continue;
 	        if (info.producer->GetWidth() > 0) continue;
-	        info.target->Resize(width, height);
+	        float scale = info.producer->GetSizeScale();
+	        info.target->Resize(std::max(1u, (unsigned int)((float)width * scale)),
+	                            std::max(1u, (unsigned int)((float)height * scale)));
 	    }
 	}
 

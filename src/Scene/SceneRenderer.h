@@ -27,9 +27,16 @@ namespace Engine {
         RenderGraph &GetRenderGraph() { return m_RenderGraph; }
 
     private:
+        // Applies a debounced viewport resize once the requested size has
+        // settled; called at the start of each render.
+        void ApplyPendingResize();
+
         Scene* m_Scene;
         unsigned int m_ViewportWidth = 1024;
         unsigned int m_ViewportHeight = 1024;
+        unsigned int m_PendingWidth = 1024;
+        unsigned int m_PendingHeight = 1024;
+        unsigned int m_FramesSincePendingResize = 0;
         RenderGraph m_RenderGraph;
 
         Shared<DynamicBufferPool> m_InstancePool;

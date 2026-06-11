@@ -21,16 +21,17 @@ namespace Engine {
             });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
-            Shared<Shader> shadowShader = ShaderLibrary::Get("ShadowShader");
-            shadowShader->Bind();
+            if (!m_Shader) m_Shader = ShaderLibrary::Get("ShadowShader");
+            m_Shader->Bind();
 
-            const Shared<Framebuffer>& fb = GetFramebuffer();
-
+            // The whole array stays attached (layered framebuffer, so the graph's
+            // depth clear hits every layer); the geometry stage routes each caster
+            // to its layer via gl_Layer.
             size_t layer = 0;
             auto renderCaster = [&](const auto& caster) {
                 if (layer >= (size_t)MaxShadowCasters2D) return;
-                fb->AttachLayer(layer++);
-                shadowShader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
+                m_Shader->SetInt("u_Layer", (int)layer++);
+                m_Shader->SetMat4("u_LightSpaceMatrix", caster.LightSpaceMatrix);
 
                 DrawBatched(ctx, caster.RenderItems, false);
             };
@@ -41,6 +42,9 @@ namespace Engine {
             for (auto& caster : view.ConeShadowCasters)
                 renderCaster(caster);
         }
+
+    private:
+        Shared<Shader> m_Shader;
     };
 
 }

@@ -2,26 +2,34 @@
 
 #include "RenderPass.h"
 #include "Render/RenderGraph.h"
-#include "Render/Bloom.h"
 #include "Asset/DefaultTextures.h"
 
 namespace Engine {
 
     // Tonemapping + post effects. Reads the HDR source resource (the particle
-    // composite by default, or plain SceneColor in graphs without a ParticlePass),
-    // runs the bloom chain, then composites exposure / ACES tonemap / gamma /
-    // vignette / chromatic aberration into the final LDR FinalColor target.
+    // composite by default, or plain SceneColor in graphs without a ParticlePass)
+    // plus the bloom chain's largest mip, then composites exposure / ACES tonemap /
+    // gamma / vignette / chromatic aberration into the final LDR FinalColor target.
+    // Graphs without bloom passes construct with withBloom = false.
     class PostProcessPass : public RenderPass {
     public:
-        PostProcessPass(const std::string& name, const std::string& source = "SceneColorParticles")
-            : RenderPass(name), m_Source(source) {}
+        PostProcessPass(const std::string& name, const std::string& source = "SceneColorParticles",
+                        bool withBloom = true)
+            : RenderPass(name), m_Source(source), m_WithBloom(withBloom) {}
 
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
             Output("FinalColor", FramebufferTextureFormat::RGBA8);
             m_SourceInput = Input(m_Source);
-            SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+            if (m_WithBloom) m_BloomInput = Input("Bloom.Up0");
+
+            // The composite quad covers every pixel; no clear needed.
+            DisableClear();
+            PipelineState state;
+            state.depthTest = false;
+            state.depthWrite = false;
+            SetPipelineState(state);
         }
 
         void Execute(RenderContext& ctx, const RenderView& view) override {
@@ -30,24 +38,17 @@ namespace Engine {
             unsigned int sceneTex = GetInputTextureID(m_SourceInput);
             if (sceneTex == 0) return;
 
-            unsigned int bloomTex = DefaultTextures::GetBlackTexture()->GetID();
-            if (post.BloomEnabled) {
-                m_Bloom.Resize(view.ViewportSize.x, view.ViewportSize.y);
-                bloomTex = m_Bloom.Render(sceneTex, post.BloomThreshold);
-            }
+            bool bloomEnabled = m_WithBloom && post.BloomEnabled;
+            unsigned int bloomTex = bloomEnabled ? GetInputTextureID(m_BloomInput)
+                                                 : DefaultTextures::GetBlackTexture()->GetID();
 
-            // The bloom sub-renderer bound its own framebuffer; rebind ours.
-            GetFramebuffer()->Bind();
-
-            Shared<Shader> shader = ShaderLibrary::Get("PostProcess");
-            shader->Bind();
-            shader->SetInt("u_SceneColor", 0);
-            shader->SetInt("u_BloomColor", 1);
-            shader->SetFloat("u_Exposure", post.Exposure);
-            shader->SetInt("u_BloomEnabled", post.BloomEnabled ? 1 : 0);
-            shader->SetFloat("u_BloomIntensity", post.BloomIntensity);
-            shader->SetFloat("u_VignetteStrength", post.VignetteStrength);
-            shader->SetFloat("u_ChromaticAberration", post.ChromaticAberration);
+            if (!m_Shader) m_Shader = ShaderLibrary::Get("PostProcess");
+            m_Shader->Bind();
+            m_Shader->SetFloat("u_Exposure", post.Exposure);
+            m_Shader->SetInt("u_BloomEnabled", bloomEnabled ? 1 : 0);
+            m_Shader->SetFloat("u_BloomIntensity", post.BloomIntensity);
+            m_Shader->SetFloat("u_VignetteStrength", post.VignetteStrength);
+            m_Shader->SetFloat("u_ChromaticAberration", post.ChromaticAberration);
 
             RenderCommand::BindTexture2D(0, sceneTex);
             RenderCommand::BindTexture2D(1, bloomTex);
@@ -57,8 +58,10 @@ namespace Engine {
 
     private:
         std::string m_Source;
+        bool m_WithBloom;
         InputHandle m_SourceInput = 0;
-        Bloom m_Bloom;
+        InputHandle m_BloomInput = 0;
+        Shared<Shader> m_Shader;
     };
 
 }

@@ -130,7 +130,8 @@ namespace Engine
 
         int ReadPixel(unsigned int attachmentIdx, int x, int y) override;
         void ClearAttachment(unsigned int attachmentIdx, int value) override;
-        void AttachLayer(unsigned int layer) override;
+        void ClearColorAttachment(unsigned int attachmentIdx, const glm::vec4& value) override;
+        void ClearDepthAttachment() override;
 
         private:
         unsigned int m_RendererID = 0;

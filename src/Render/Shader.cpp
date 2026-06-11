@@ -33,8 +33,9 @@ namespace Engine
 
         Shared<Shader> shadowShader = Shader::Create("ShadowShader");
         const std::string svert = "/home/tom/Coding/c++/opengl/shaders/shadow.vert";
+        const std::string sgeom = "/home/tom/Coding/c++/opengl/shaders/shadow.geom";
         const std::string sfrag = "/home/tom/Coding/c++/opengl/shaders/shadow.frag";
-        shadowShader->AddShaders({svert, sfrag});
+        shadowShader->AddShaders({svert, sgeom, sfrag});
         Add(shadowShader);
 
         Shared<Shader> deferredlightingShader = Shader::Create("DeferredLighting");

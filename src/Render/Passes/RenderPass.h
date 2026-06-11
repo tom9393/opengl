@@ -27,6 +27,19 @@ namespace Engine
         std::string aliasOf;
     };
 
+    enum class PassBlend { Off, Alpha, Additive };
+
+    // Render state declared by a pass and applied by the graph before Execute,
+    // so no pass inherits whatever the previous one left behind. Passes may
+    // still change state mid-execution; the graph re-applies the next pass's
+    // declared state regardless.
+    struct PipelineState
+    {
+        bool depthTest = true;
+        bool depthWrite = true;
+        PassBlend blend = PassBlend::Off;
+    };
+
     class RenderPass
     {
     public:
@@ -91,6 +104,21 @@ namespace Engine
             return *this;
         }
 
+        // Size this pass's outputs relative to the viewport (e.g. 0.5 = half
+        // resolution). Scaled resources follow viewport resizes. Ignored when a
+        // fixed size was set with SetViewportSize.
+        RenderPass& SetSizeScale(float scale)
+        {
+            m_SizeScale = scale;
+            return *this;
+        }
+
+        RenderPass& SetPipelineState(const PipelineState& state)
+        {
+            m_PipelineState = state;
+            return *this;
+        }
+
         RenderPass& SetTargetType(BufferTextureType type)
         {
             m_TargetType = type;
@@ -104,10 +132,18 @@ namespace Engine
             return *this;
         }
 
+        // Default clear value for every owned color attachment.
         RenderPass& SetClearColor(const glm::vec4& color)
         {
             m_ClearColor = color;
-            m_HasClearColor = true;
+            return *this;
+        }
+
+        // Per-attachment clear value, overriding the pass clear color.
+        // attachmentIndex is the color-attachment index returned by Output().
+        RenderPass& SetClearValue(unsigned int attachmentIndex, const glm::vec4& value)
+        {
+            m_ClearValues[attachmentIndex] = value;
             return *this;
         }
 
@@ -115,6 +151,14 @@ namespace Engine
         RenderPass& SetClearInt(unsigned int attachmentIndex, int value)
         {
             m_ClearInts[attachmentIndex] = value;
+            return *this;
+        }
+
+        // Skip clearing entirely; for passes whose draws cover every pixel of
+        // every attachment (fullscreen filters).
+        RenderPass& DisableClear()
+        {
+            m_ClearDisabled = true;
             return *this;
         }
 
@@ -146,8 +190,16 @@ namespace Engine
             return false;
         }
         BufferTextureType GetTargetType() const { return m_TargetType; }
-        const glm::vec4& GetClearColor() const { return m_ClearColor; }
-        bool HasClearColor() const { return m_HasClearColor; }
+        float GetSizeScale() const { return m_SizeScale; }
+        const PipelineState& GetPipelineState() const { return m_PipelineState; }
+        bool IsClearDisabled() const { return m_ClearDisabled; }
+        // Clear value for a color attachment: the per-attachment override when
+        // set, otherwise the pass clear color.
+        const glm::vec4& GetClearValue(unsigned int attachmentIndex) const
+        {
+            auto it = m_ClearValues.find(attachmentIndex);
+            return it != m_ClearValues.end() ? it->second : m_ClearColor;
+        }
         const std::unordered_map<unsigned int, int>& GetClearInts() const { return m_ClearInts; }
         bool HasCondition() const { return static_cast<bool>(m_Condition); }
 
@@ -171,6 +223,15 @@ namespace Engine
         {
             const Shared<RenderTarget>& target = m_CompiledInputs[input];
             return target ? target->GetID() : 0;
+        }
+
+        // Current size of a declared input's texture (zero when unresolved).
+        glm::uvec2 GetInputSize(InputHandle input) const
+        {
+            const Shared<RenderTarget>& target = m_CompiledInputs[input];
+            if (!target) return { 0, 0 };
+            const RenderTargetSpecification& spec = target->GetSpecification();
+            return { spec.width, spec.height };
         }
 
         // Draw items as instanced batches of consecutive runs sharing a mesh (and a
@@ -211,11 +272,14 @@ namespace Engine
         unsigned int m_ColorAttachmentCount = 0;
         BufferTextureType m_TargetType = BufferTextureType::Texture2D;
         glm::vec4 m_ClearColor = glm::vec4(0.0f);
-        bool m_HasClearColor = false;
+        bool m_ClearDisabled = false;
+        std::unordered_map<unsigned int, glm::vec4> m_ClearValues;
         std::unordered_map<unsigned int, int> m_ClearInts;
         unsigned int m_Width = 0;
         unsigned int m_Height = 0;
         unsigned int m_Layers = 1;
+        float m_SizeScale = 1.0f;
+        PipelineState m_PipelineState;
         ConditionFn m_Condition;
 
     private:

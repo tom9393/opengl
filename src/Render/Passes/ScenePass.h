@@ -25,19 +25,18 @@ namespace Engine {
             m_Shadow2D    = Input("ShadowMap2D");
             m_ShadowPoint = Input("PointShadowMap");
             SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
+
+            // The lighting quad shades every pixel, so the baseline skips the
+            // depth test; debug geometry re-enables it mid-pass.
+            PipelineState state;
+            state.depthTest = false;
+            SetPipelineState(state);
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
-            Shared<Shader> deferredShader = ShaderLibrary::Get("DeferredLighting");
-            deferredShader->Bind();
+            if (!m_Shader) m_Shader = ShaderLibrary::Get("DeferredLighting");
+            m_Shader->Bind();
 
-            deferredShader->SetInt("gNormal", 0);
-            deferredShader->SetInt("gAlbedo", 1);
-            deferredShader->SetInt("gPBR",    2);
-            deferredShader->SetInt("gDepth",  3);
-
-            deferredShader->SetInt("u_DirSpotShadowMaps", 4);
-            deferredShader->SetInt("u_PointShadowCubemaps", 5);
-            deferredShader->SetFloat("u_FarPlane", PointShadowFarPlane);
+            m_Shader->SetFloat("u_FarPlane", PointShadowFarPlane);
 
             BindInput(m_Normal, 0);
             BindInput(m_Albedo, 1);
@@ -53,14 +52,10 @@ namespace Engine {
             // --- Image-based lighting ---
             const EnvironmentRenderData& env = view.Environment;
 
-            deferredShader->SetInt("u_IrradianceMap", 6);
-            deferredShader->SetInt("u_PrefilterMap",  7);
-            deferredShader->SetInt("u_BrdfLUT",       8);
-            deferredShader->SetInt("u_Skybox",        9);
-            deferredShader->SetBool("u_HasEnvironment", env.Valid);
-            deferredShader->SetFloat("u_EnvIntensity", env.Intensity);
-            deferredShader->SetFloat("u_PrefilterMaxLod", (float)env.PrefilterMips - 1.0f);
-            deferredShader->SetMat4("u_InverseViewProjection", glm::inverse(ctx.ViewProjection));
+            m_Shader->SetBool("u_HasEnvironment", env.Valid);
+            m_Shader->SetFloat("u_EnvIntensity", env.Intensity);
+            m_Shader->SetFloat("u_PrefilterMaxLod", (float)env.PrefilterMips - 1.0f);
+            m_Shader->SetMat4("u_InverseViewProjection", glm::inverse(ctx.ViewProjection));
 
             unsigned int fallbackCube = EnvironmentMap::GetFallbackCubemap();
             RenderCommand::BindTextureCube(6, env.Valid ? env.Irradiance : fallbackCube);
@@ -68,20 +63,18 @@ namespace Engine {
             RenderCommand::BindTexture2D(8, EnvironmentMap::GetBRDFLUT());
             RenderCommand::BindTextureCube(9, env.Valid ? env.Skybox : fallbackCube);
 
-            // The lighting quad shades every pixel; don't test it against the
-            // attached G-buffer depth.
-            RenderCommand::SetDepthTest(false);
             Renderer::DrawFullscreenQuad();
-            RenderCommand::SetDepthTest(true);
 
             // Debug geometry draws after lighting, depth tested against the scene
             // (depth writes stay masked by the graph).
+            RenderCommand::SetDepthTest(true);
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         }
 
     private:
         InputHandle m_Normal = 0, m_Albedo = 0, m_PBR = 0, m_Depth = 0;
         InputHandle m_Shadow2D = 0, m_ShadowPoint = 0;
+        Shared<Shader> m_Shader;
     };
 
 }

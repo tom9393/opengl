@@ -95,6 +95,40 @@ namespace Engine
         glPopDebugGroup();
     };
 
+    unsigned int OpenGLRendererAPI::CreateTimerQuery()
+    {
+        GLuint id = 0;
+        glGenQueries(1, &id);
+        return id;
+    };
+
+    void OpenGLRendererAPI::DeleteTimerQuery(unsigned int id)
+    {
+        glDeleteQueries(1, &id);
+    };
+
+    void OpenGLRendererAPI::BeginTimerQuery(unsigned int id)
+    {
+        glBeginQuery(GL_TIME_ELAPSED, id);
+    };
+
+    void OpenGLRendererAPI::EndTimerQuery()
+    {
+        glEndQuery(GL_TIME_ELAPSED);
+    };
+
+    bool OpenGLRendererAPI::GetTimerQueryResult(unsigned int id, uint64_t& nanoseconds)
+    {
+        GLint available = 0;
+        glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, &available);
+        if (!available) return false;
+
+        GLuint64 result = 0;
+        glGetQueryObjectui64v(id, GL_QUERY_RESULT, &result);
+        nanoseconds = result;
+        return true;
+    };
+
     void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
     {
         glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);

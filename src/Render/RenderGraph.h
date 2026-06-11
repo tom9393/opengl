@@ -77,6 +77,18 @@ namespace Engine
         // unknown or its producer was culled.
         unsigned int GetResourceTextureID(const std::string& resourceName) const;
 
+        // ---- Profiling ----
+
+        struct PassTiming
+        {
+            std::string Name;
+            float GpuMs = 0.0f; // 0 for passes skipped by their condition
+        };
+
+        // GPU time per executed pass, refreshed every Execute. Results lag a few
+        // frames behind (queries are polled without stalling).
+        const std::vector<PassTiming>& GetPassTimings() const { return m_PassTimings; }
+
         // ---- Debugging ----
 
         // Emit the compiled graph as Graphviz DOT. Culled passes are shown dashed in gray;
@@ -96,6 +108,18 @@ namespace Engine
         std::unordered_map<std::string, ResourceInfo> m_Resources;
         std::unordered_set<std::string> m_Presented;
         bool m_Dirty = true;
+
+        // Per-pass GPU timer queries, ring-buffered so results from a few frames
+        // back can be read without stalling on in-flight frames.
+        struct PassTimerQueries
+        {
+            unsigned int ids[3] = { 0, 0, 0 };
+            bool used[3] = { false, false, false };
+            unsigned int next = 0;
+            float lastMs = 0.0f;
+        };
+        std::unordered_map<RenderPass*, PassTimerQueries> m_PassTimers;
+        std::vector<PassTiming> m_PassTimings;
     };
 
 };

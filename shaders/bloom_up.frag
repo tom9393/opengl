@@ -4,7 +4,7 @@ layout (location = 0) out vec3 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D u_SrcTexture;
+layout(binding = 0) uniform sampler2D u_SrcTexture;
 uniform float u_FilterRadius;
 
 void main()

@@ -149,10 +149,11 @@ namespace Engine
         // Only valid for RED_INTEGER attachments (entity picking).
         virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
         virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
-
-        // Re-target the depth attachment to a single layer of its array texture
-        // (per-caster shadow map rendering).
-        virtual void AttachLayer(unsigned int layer) = 0;
+        // Clear a single color attachment to the given value (float formats).
+        virtual void ClearColorAttachment(unsigned int attachmentIdx, const glm::vec4& value) = 0;
+        // Clear the depth (and stencil, when present) attachment. For layered
+        // attachments (arrays, cubemaps) every layer is cleared.
+        virtual void ClearDepthAttachment() = 0;
 
         static Shared<Framebuffer> Create(const FramebufferSpecification& specification);
     };

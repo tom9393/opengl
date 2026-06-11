@@ -6,6 +6,7 @@
 #include "Passes/GeometryPass.h"
 #include "Passes/ScenePass.h"
 #include "Passes/ParticlePass.h"
+#include "Passes/BloomPass.h"
 #include "Passes/PostProcessPass.h"
 #include "Render/Renderer.h"
 #include "Render/SceneCamera.h"
@@ -25,6 +26,7 @@ namespace Engine {
         m_RenderGraph.AddPass<GeometryPass>("GeometryPass");
         m_RenderGraph.AddPass<ScenePass>("ScenePass");
         m_RenderGraph.AddPass<ParticlePass>("ParticlePass");
+        AddBloomPasses(m_RenderGraph, "SceneColorParticles");
         m_RenderGraph.AddPass<PostProcessPass>("PostProcessPass");
 
         // FinalColor (post-processed) is the presented viewport texture; this drives culling.
@@ -32,8 +34,25 @@ namespace Engine {
         m_RenderGraph.Compile();
     }
 
+    // Editor viewport drags fire OnViewportResize every frame; respecifying the
+    // whole graph's texture storage each time is wasteful, so the resize is
+    // applied once the requested size has been stable for a few frames. Cameras
+    // get the new aspect immediately, so the stretched blit stays proportional.
+    static constexpr unsigned int ResizeSettleFrames = 10;
+
+    void SceneRenderer::ApplyPendingResize()
+    {
+        if (m_PendingWidth == m_ViewportWidth && m_PendingHeight == m_ViewportHeight) return;
+        if (++m_FramesSincePendingResize < ResizeSettleFrames) return;
+
+        m_ViewportWidth = m_PendingWidth;
+        m_ViewportHeight = m_PendingHeight;
+        m_RenderGraph.Resize(m_ViewportWidth, m_ViewportHeight);
+    }
+
     void SceneRenderer::RenderEditor(const glm::mat4& viewProj, const glm::vec3& camPos, float nearPlane, float farPlane)
     {
+        ApplyPendingResize();
         m_InstancePool->BeginFrame();
 
         RenderContext ctx;
@@ -55,6 +74,7 @@ namespace Engine {
 
     void SceneRenderer::RenderRuntime()
     {
+        ApplyPendingResize();
         auto view = m_Scene->GetRegistry().view<TransformComponent, SceneCameraComponent>();
         for (auto entity : view) 
         {
@@ -85,9 +105,13 @@ namespace Engine {
 
     void SceneRenderer::OnViewportResize(unsigned int width, unsigned int height)
     {
-		m_ViewportWidth = width;
-		m_ViewportHeight = height;
-        m_RenderGraph.Resize(m_ViewportWidth, m_ViewportHeight);
+        if (width == 0 || height == 0) return;
+        if (width != m_PendingWidth || height != m_PendingHeight)
+        {
+            m_PendingWidth = width;
+            m_PendingHeight = height;
+            m_FramesSincePendingResize = 0;
+        }
         if (!m_Scene) return;
 		auto view = m_Scene->GetRegistry().view<SceneCameraComponent>();
 		for (auto& e : view)

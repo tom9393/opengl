@@ -41,6 +41,15 @@ namespace Engine
         virtual void PushDebugGroup(const char* name) = 0;
         virtual void PopDebugGroup() = 0;
 
+        // GPU elapsed-time queries (one may be active at a time; they don't nest).
+        virtual unsigned int CreateTimerQuery() = 0;
+        virtual void DeleteTimerQuery(unsigned int id) = 0;
+        virtual void BeginTimerQuery(unsigned int id) = 0;
+        virtual void EndTimerQuery() = 0;
+        // Non-blocking; returns true and writes the elapsed time when the result
+        // is available.
+        virtual bool GetTimerQueryResult(unsigned int id, uint64_t& nanoseconds) = 0;
+
         virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) = 0;
         virtual void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) = 0;
         virtual void DrawLines(const std::shared_ptr<VertexArray> &vertexArray, uint32_t count) = 0;

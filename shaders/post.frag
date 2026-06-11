@@ -3,8 +3,8 @@ layout (location = 0) out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D u_SceneColor;  // HDR scene
-uniform sampler2D u_BloomColor;  // bloom result (mip 0 of the chain)
+layout(binding = 0) uniform sampler2D u_SceneColor;  // HDR scene
+layout(binding = 1) uniform sampler2D u_BloomColor;  // bloom result (mip 0 of the chain)
 
 uniform float u_Exposure;
 uniform float u_BloomIntensity;

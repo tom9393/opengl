@@ -47,14 +47,17 @@ Scenes are built on **EnTT**. `Scene` owns the registry; `Entity` is a thin hand
 The rendering pipeline uses a true render graph (`src/Render/RenderGraph.h`) with named input/output resources, automatic dependency resolution via topological sort, and unused-pass culling. The main passes are:
 
 - **GeometryPass** — deferred G-buffer generation
-- **ShadowPass2D / ShadowPass3D** — directional and point light shadows
+- **ShadowPass2D / ShadowPass3D** — directional and point light shadows, rendered layered (`gl_Layer` via geometry shaders) into array targets
 - **ScenePass** — lighting composition and forward rendering
-- **ParticlePass** — copies `SceneColor` into `SceneColorParticles`, then blends particle billboards on top (see Particles)
-- **PostProcessPass** — tone mapping plus bloom/exposure/vignette/chromatic-aberration, driven by the scene's `PostProcessSettings`; consumes `SceneColorParticles`
+- **ParticlePass** — blends particle billboards in place on `SceneColor` (aliased as `SceneColorParticles`, see Particles)
+- **BloomDownsamplePass / BloomUpsamplePass** (`BloomPass.h`, registered via `AddBloomPasses`) — progressive dual-filter bloom over viewport-relative `Bloom.MipN` resources; upsamples blend additively in place (aliased as `Bloom.UpN`)
+- **PostProcessPass** — tone mapping plus exposure/vignette/chromatic-aberration, driven by the scene's `PostProcessSettings`; consumes `SceneColorParticles` and `Bloom.Up0`
+
+Passes declare a `PipelineState` (depth test/write, blend) that the graph applies before each `Execute`, per-attachment clear values, and an optional viewport-relative size scale. The graph adds write-after-read edges so readers of an aliased resource are ordered before the in-place writer, times every pass with GPU timer queries (shown in `StatsPanel`), and aborts on misdeclared graphs at compile. `SceneRenderer` debounces viewport resizes until the size settles.
 
 `Renderer` is a static low-level API; `RendererAPI` is the abstract interface implemented by `platform/OpenGL/OpenGLRendererAPI`.
 
-The graph owns per-resource `RenderTarget` textures and composes each pass's `Framebuffer` from them at compile time; texture ids stay stable across viewport resizes (storage is respecified in place). Offscreen sub-renderers that need cube faces or mip levels instead use `RenderTexture` (`src/Render/RenderTexture.h`) — a sampleable texture that owns an internal framebuffer and is bound one face/mip at a time. Both `Bloom` (the dual-filter mip chain) and `EnvironmentMap` build on it, going through `RenderCommand`/`RenderTexture` rather than direct GL. `EnvironmentMap` bakes image-based lighting from an equirectangular `.hdr` (loaded via `TextureImporter::LoadHDR` as a float texture): an environment cubemap, a diffuse irradiance map, a roughness-mipped specular prefilter map, and a once-built shared BRDF integration LUT.
+The graph owns per-resource `RenderTarget` textures and composes each pass's `Framebuffer` from them at compile time; texture ids stay stable across viewport resizes (storage is respecified in place). Offscreen sub-renderers that need cube faces or mip levels instead use `RenderTexture` (`src/Render/RenderTexture.h`) — a sampleable texture that owns an internal framebuffer and is bound one face/mip at a time. `EnvironmentMap` builds on it, going through `RenderCommand`/`RenderTexture` rather than direct GL. `EnvironmentMap` bakes image-based lighting from an equirectangular `.hdr` (loaded via `TextureImporter::LoadHDR` as a float texture): an environment cubemap, a diffuse irradiance map, a roughness-mipped specular prefilter map, and a once-built shared BRDF integration LUT.
 
 ### Asset System
 

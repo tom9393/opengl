@@ -20,11 +20,14 @@ namespace Engine {
             SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
-            Shared<Shader> gBufferShader = ShaderLibrary::Get("GBufferShader");
-            gBufferShader->Bind();
+            if (!m_Shader) m_Shader = ShaderLibrary::Get("GBufferShader");
+            m_Shader->Bind();
 
             DrawBatched(ctx, view.OpaqueItems, true);
         }
+
+    private:
+        Shared<Shader> m_Shader;
     };
 
 }

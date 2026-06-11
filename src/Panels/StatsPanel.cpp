@@ -2,8 +2,13 @@
 #include "pch.h"
 #include "Core/Application.h"
 #include "Render/Renderer.h"
+#include "Scene/SceneRenderer.h"
 
 namespace Engine {
+    void StatsPanel::SetRenderer(Shared<SceneRenderer> renderer) {
+        m_SceneRenderer = renderer;
+    }
+
     void StatsPanel::OnImGuiRender() {
         ImGui::Begin("Stats");
 
@@ -18,6 +23,17 @@ namespace Engine {
         ImGui::Text("Material switches: %d", MaterialSwitches);
         ImGui::Text("Vertices count: %d", VerticeCount);
         ImGui::Text("Indices count: %d", IndicesCount);
+
+        if (m_SceneRenderer) {
+            ImGui::Separator();
+            ImGui::Text("GPU pass times");
+            float total = 0.0f;
+            for (auto& timing : m_SceneRenderer->GetRenderGraph().GetPassTimings()) {
+                ImGui::Text("%s: %.3f ms", timing.Name.c_str(), timing.GpuMs);
+                total += timing.GpuMs;
+            }
+            ImGui::Text("Total: %.3f ms", total);
+        }
 
         ImGui::End();
     }

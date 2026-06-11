@@ -35,6 +35,7 @@ namespace Engine
         SceneManager::SetContext(m_EditingScene.get());
 
         m_ViewportPanel.SetViewportContext({ m_EditingScene, m_SceneRenderer, m_EditorCamera });
+        m_StatsPanel.SetRenderer(m_SceneRenderer);
 
         m_ToolbarPanel.SetPlayCallback([this]() { OnScenePlay();});
         m_ToolbarPanel.SetStopCallback([this]() { OnSceneStop();});

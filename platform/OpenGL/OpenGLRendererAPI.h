@@ -27,6 +27,12 @@ namespace Engine
         void PushDebugGroup(const char* name) override;
         void PopDebugGroup() override;
 
+        unsigned int CreateTimerQuery() override;
+        void DeleteTimerQuery(unsigned int id) override;
+        void BeginTimerQuery(unsigned int id) override;
+        void EndTimerQuery() override;
+        bool GetTimerQueryResult(unsigned int id, uint64_t& nanoseconds) override;
+
         void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) override;
         void DrawIndexedInstances(const std::shared_ptr<VertexArray> &vertexArray, unsigned int count) override;
         void DrawLines(const std::shared_ptr<VertexArray> &lines, uint32_t size) override;

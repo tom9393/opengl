@@ -20,8 +20,8 @@ namespace Engine {
             });
         }
         void Execute(RenderContext& ctx, const RenderView& view) override {
-            Shared<Shader> pointshadowShader = ShaderLibrary::Get("PointShadowShader");
-            pointshadowShader->Bind();
+            if (!m_Shader) m_Shader = ShaderLibrary::Get("PointShadowShader");
+            m_Shader->Bind();
 
             glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, PointShadowFarPlane);
 
@@ -42,13 +42,16 @@ namespace Engine {
                 if (alloc.Size == 0) continue;
                 ctx.InstancePool->BindAsUBO(2, alloc.Offset, alloc.Size);
 
-                pointshadowShader->SetFloat("u_FarPlane", PointShadowFarPlane);
-                pointshadowShader->SetVec3("u_LightPos", lightPos);
-                pointshadowShader->SetInt("u_BaseLayer", layer);
+                m_Shader->SetFloat("u_FarPlane", PointShadowFarPlane);
+                m_Shader->SetVec3("u_LightPos", lightPos);
+                m_Shader->SetInt("u_BaseLayer", layer);
 
                 DrawBatched(ctx, caster.RenderItems, false);
             }
         }
+
+    private:
+        Shared<Shader> m_Shader;
     };
 
 }

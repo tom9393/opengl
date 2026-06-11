@@ -74,6 +74,31 @@ namespace Engine
             s_RendererAPI->PopDebugGroup();
         }
 
+        inline static unsigned int CreateTimerQuery()
+        {
+            return s_RendererAPI->CreateTimerQuery();
+        }
+
+        inline static void DeleteTimerQuery(unsigned int id)
+        {
+            s_RendererAPI->DeleteTimerQuery(id);
+        }
+
+        inline static void BeginTimerQuery(unsigned int id)
+        {
+            s_RendererAPI->BeginTimerQuery(id);
+        }
+
+        inline static void EndTimerQuery()
+        {
+            s_RendererAPI->EndTimerQuery();
+        }
+
+        inline static bool GetTimerQueryResult(unsigned int id, uint64_t& nanoseconds)
+        {
+            return s_RendererAPI->GetTimerQueryResult(id, nanoseconds);
+        }
+
         inline static void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray)
         {
             s_RendererAPI->DrawIndexed(vertexArray);

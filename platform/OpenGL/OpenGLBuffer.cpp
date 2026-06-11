@@ -476,13 +476,28 @@ namespace Engine
         }
     };
 
-    void OpenGLFramebuffer::AttachLayer(unsigned int layer)
+    void OpenGLFramebuffer::ClearColorAttachment(unsigned int attachmentIdx, const glm::vec4& value)
+    {
+        if (attachmentIdx >= m_ColorAttachments.size()) return;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+        glClearBufferfv(GL_COLOR, attachmentIdx, &value.x);
+    }
+
+    void OpenGLFramebuffer::ClearDepthAttachment()
     {
         if (!m_DepthAttachment) return;
 
         glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
-        GLenum attachment = DepthAttachmentPoint(m_DepthAttachment->GetSpecification().format);
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, m_DepthAttachment->GetID(), 0, layer);
+        if (m_DepthAttachment->GetSpecification().format == FramebufferTextureFormat::DEPTH24STENCIL8)
+        {
+            glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0f, 0);
+        }
+        else
+        {
+            GLfloat depth = 1.0f;
+            glClearBufferfv(GL_DEPTH, 0, &depth);
+        }
     }
 
 };

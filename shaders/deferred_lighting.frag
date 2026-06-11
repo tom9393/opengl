@@ -3,20 +3,20 @@ layout (location = 0) out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gNormal;
-uniform sampler2D gAlbedo;
-uniform sampler2D gPBR;
-uniform sampler2D gDepth;
+layout(binding = 0) uniform sampler2D gNormal;
+layout(binding = 1) uniform sampler2D gAlbedo;
+layout(binding = 2) uniform sampler2D gPBR;
+layout(binding = 3) uniform sampler2D gDepth;
 
-uniform sampler2DArray u_DirSpotShadowMaps;
-uniform samplerCubeArray u_PointShadowCubemaps;
+layout(binding = 4) uniform sampler2DArray u_DirSpotShadowMaps;
+layout(binding = 5) uniform samplerCubeArray u_PointShadowCubemaps;
 uniform float u_FarPlane;
 
 // Image-based lighting
-uniform samplerCube u_IrradianceMap;
-uniform samplerCube u_PrefilterMap;
-uniform sampler2D   u_BrdfLUT;
-uniform samplerCube u_Skybox;
+layout(binding = 6) uniform samplerCube u_IrradianceMap;
+layout(binding = 7) uniform samplerCube u_PrefilterMap;
+layout(binding = 8) uniform sampler2D   u_BrdfLUT;
+layout(binding = 9) uniform samplerCube u_Skybox;
 uniform bool        u_HasEnvironment;
 uniform float       u_EnvIntensity;
 uniform float       u_PrefilterMaxLod;

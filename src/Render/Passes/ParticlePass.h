@@ -19,6 +19,12 @@ namespace Engine {
             SetTargetType(BufferTextureType::Texture2D);
             AliasOutput("SceneColorParticles", "SceneColor");
             SetDepthInput("GBuffer.Depth");
+
+            // Alpha blend is the baseline; additive batches switch mid-pass.
+            PipelineState state;
+            state.depthWrite = false;
+            state.blend = PassBlend::Alpha;
+            SetPipelineState(state);
         }
 
         void Execute(RenderContext& ctx, const RenderView& view) override {
@@ -36,11 +42,10 @@ namespace Engine {
             glm::vec3 right = glm::normalize(unproject(1.0f, 0.0f) - origin);
             glm::vec3 up = glm::normalize(unproject(0.0f, 1.0f) - origin);
 
-            Shared<Shader> shader = ShaderLibrary::Get("Particle");
-            shader->Bind();
-            shader->SetInt("u_Texture", 0);
-            shader->SetVec3("u_CameraRight", right);
-            shader->SetVec3("u_CameraUp", up);
+            if (!m_Shader) m_Shader = ShaderLibrary::Get("Particle");
+            m_Shader->Bind();
+            m_Shader->SetVec3("u_CameraRight", right);
+            m_Shader->SetVec3("u_CameraUp", up);
 
             for (const ParticleBatch& batch : view.ParticleBatches)
             {
@@ -48,10 +53,10 @@ namespace Engine {
 
                 if (batch.Additive) RenderCommand::SetAdditiveBlend(true);
                 else                RenderCommand::SetAlphaBlend(true);
-                shader->SetBool("u_Additive", batch.Additive);
+                m_Shader->SetBool("u_Additive", batch.Additive);
 
                 bool useTexture = batch.Texture && batch.Texture->GetID() != 0;
-                shader->SetBool("u_UseTexture", useTexture);
+                m_Shader->SetBool("u_UseTexture", useTexture);
                 if (useTexture)
                     RenderCommand::BindTexture2D(0, batch.Texture->GetID());
 
@@ -63,8 +68,6 @@ namespace Engine {
                 m_QuadVAO->Bind();
                 RenderCommand::DrawIndexedInstances(m_QuadVAO, (unsigned int)batch.Instances.size());
             }
-
-            RenderCommand::SetAdditiveBlend(false); // disables GL_BLEND
         }
 
     private:
@@ -89,6 +92,7 @@ namespace Engine {
         }
 
         Shared<VertexArray> m_QuadVAO;
+        Shared<Shader> m_Shader;
     };
 
 }

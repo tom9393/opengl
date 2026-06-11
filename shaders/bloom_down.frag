@@ -6,7 +6,7 @@ layout (location = 0) out vec3 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D u_SrcTexture;
+layout(binding = 0) uniform sampler2D u_SrcTexture;
 uniform vec2 u_SrcResolution;
 uniform float u_Threshold;
 uniform int u_FirstMip; // 1 on the first downsample, 0 otherwise

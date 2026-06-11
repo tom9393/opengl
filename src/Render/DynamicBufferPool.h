@@ -25,17 +25,15 @@ namespace Engine {
             m_Alignment = (size_t)(uboAlignment > ssboAlignment ? uboAlignment : ssboAlignment);
             if (m_Alignment == 0) m_Alignment = 256;
 
-            // 1. Storage Flags: Allocates the immutable memory on the GPU. 
-            // FLUSH_EXPLICIT is NOT allowed here.
-            GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT;
-            
-            // 2. Map Flags: Tells OpenGL how we intend to access the pointer.
-            // FLUSH_EXPLICIT is required here so we can use glFlushMappedNamedBufferRange.
-            GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT;
-            
+            // Coherent persistent mapping: writes become visible to GL commands
+            // without per-allocation flushes (write-combined memory either way;
+            // the frame fence provides the cross-frame ordering).
+            GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+            GLbitfield mapFlags = storageFlags;
+
             // Allocate the storage
             glNamedBufferStorage(m_RendererID, m_Capacity, nullptr, storageFlags);
-            
+
             // Map the pointer
             m_MappedPtr = (uint8_t*)glMapNamedBufferRange(m_RendererID, 0, m_Capacity, mapFlags);
             if (m_MappedPtr == nullptr) {
@@ -62,12 +60,10 @@ namespace Engine {
             }
 
             size_t currentOffset = m_Head;
-            
+
             // Copy data directly to mapped GPU memory (Zero driver overhead!)
             memcpy(m_MappedPtr + currentOffset, data, size);
-            // Tell opengl what memory just changed
-            glFlushMappedNamedBufferRange(m_RendererID, currentOffset, size);
-            
+
             m_Head += size;
             
             return { currentOffset, size };
