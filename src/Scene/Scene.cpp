@@ -136,6 +136,21 @@ namespace Engine
 			callback(otherEntity);
 	}
 
+	// Calls OnCollision on an entity's native script for a contact enter.
+	static void DispatchCollisionToNative(Scene* scene, entt::entity self, entt::entity other, const glm::vec3& point, const glm::vec3& normal, float impulse)
+	{
+		if (!scene->GetRegistry().valid(self)) return;
+
+		Entity e{ self, scene };
+		if (!e.HasComponent<NativeScriptComponent>()) return;
+
+		auto& nsc = e.GetComponent<NativeScriptComponent>();
+		if (!nsc.instance) return;
+
+		CollisionData data{ other, point, normal, impulse };
+		nsc.instance->OnCollision(data);
+	}
+
 	void Scene::OnRuntimeStart()
 	{
         EventBroker::Get().Subscribe<MouseButtonPressedEvent>(BIND_FN(OnMousePress), this);
@@ -150,35 +165,19 @@ namespace Engine
 		AudioEngine::RuntimeStart(this);
 		ScriptEngine::RuntimeStart(this);
 
-		// Enter/exit collision & trigger events -> Lua scripts on both entities.
-		PhysicsEngine::RegisterContactCallback([this](entt::entity a, entt::entity b, const glm::vec3& point, const glm::vec3& normal, bool entered, bool trigger){
-				DispatchContactToLua(this, a, b, point, normal, entered, trigger);
-				DispatchContactToLua(this, b, a, point, -normal, entered, trigger);
-			});
+		// Contact enter/exit events -> Lua lifecycle functions and native scripts,
+		// dispatched to both entities of the pair with the normal flipped for B.
+		PhysicsEngine::RegisterContactCallback([this](const ContactEvent& e){
+				DispatchContactToLua(this, e.A, e.B, e.Point, e.Normal, e.Entered, e.Trigger);
+				DispatchContactToLua(this, e.B, e.A, e.Point, -e.Normal, e.Entered, e.Trigger);
 
-		PhysicsEngine::RegisterCollisionCallback([this](void* ptrA, void* ptrB, glm::vec3 &hitPos, glm::vec3 &normal){
-                entt::entity a = (entt::entity)(uintptr_t)ptrA;
-                entt::entity b = (entt::entity)(uintptr_t)ptrB;
-
-				Entity collider = Entity { a, this };
-
-				if (collider.HasComponent<NativeScriptComponent>())
+				// Native scripts only get solid contact enters.
+				if (e.Entered && !e.Trigger)
 				{
-					auto& nsc = collider.GetComponent<NativeScriptComponent>();
-					if (nsc.instance)
-					{
-						Entity other = { b, this };
-
-						CollisionData data;
-						data.OtherPointer = ptrB;
-						data.HitPoint = hitPos;
-						data.Normal = normal;
-						data.Impulse = 20.0f;
-
-						nsc.instance->OnCollision(data); 
-					}
+					DispatchCollisionToNative(this, e.A, e.B, e.Point, e.Normal, e.Impulse);
+					DispatchCollisionToNative(this, e.B, e.A, e.Point, -e.Normal, e.Impulse);
 				}
-				});
+			});
 	}
 
 	void Scene::OnRuntimeStop()
@@ -223,10 +222,16 @@ namespace Engine
 			}
 		}
 
-		std::cout << (uint32_t)entity.GetHandle() << std::endl;
-
 		if (entity.HasComponent<RigidBodyComponent>())
+		{
+			// The component owns the runtime body; pull it out of the Bullet world
+			// before the registry destroys it, or the world keeps a dangling pointer.
+			auto& rb = entity.GetComponent<RigidBodyComponent>();
+			if (rb.RuntimeBody)
+				PhysicsEngine::RemoveRigidBody(rb.RuntimeBody);
+
 			CollisionBaker::Release(entity);
+		}
 
 		m_Registry.destroy(entity);
 	};

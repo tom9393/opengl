@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pch.h"
+#include "Asset/Asset.h"
 #include "Core/TimeStep.h"
 #include "Core/UUID.h"
 #include "Events/MouseEvent.h"

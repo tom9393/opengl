@@ -4,6 +4,7 @@
 #include "Asset/AssetManager.h"
 #include "Asset/Prefab.h"
 #include "Physics/PhysicsEngine.h"
+#include "Physics/PhysicsQueries.h"
 #include "Scene/Components.h"
 #include "Scene/Entity.h"
 #include "Scene/Scene.h"
@@ -60,16 +61,16 @@ namespace Engine {
         // Optional 4th argument: an entity whose body the ray should pass through
         // (typically Self, so the caster doesn't hit its own collider).
         "Raycast", [](Scene& scene, const glm::vec3 origin, const glm::vec3 dir, float dist, sol::optional<Entity> ignore) {
-            return PhysicsEngine::Raycast(origin, dir, dist, ignore ? ignore->GetHandle() : entt::null);
+            return PhysicsQueries::Raycast(origin, dir, dist, ignore ? ignore->GetHandle() : entt::null);
         },
         // Every body along the ray, nearest first, as a list of RaycastResults.
         "RaycastAll", [](Scene& scene, const glm::vec3 origin, const glm::vec3 dir, float dist) {
-            return PhysicsEngine::RaycastAll(origin, dir, dist);
+            return PhysicsQueries::RaycastAll(origin, dir, dist);
         },
         // Entities whose bodies overlap the sphere (e.g. blast radius queries).
         "OverlapSphere", [](Scene& scene, const glm::vec3 center, float radius) {
             std::vector<Entity> entities;
-            for (auto handle : PhysicsEngine::OverlapSphere(center, radius))
+            for (auto handle : PhysicsQueries::OverlapSphere(center, radius))
                 entities.push_back(Entity{ handle, &scene });
             return entities;
         },

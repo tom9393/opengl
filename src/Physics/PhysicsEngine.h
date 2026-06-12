@@ -1,41 +1,26 @@
 #pragma once
 
 #include "pch.h"
+#include "ContactTracker.h"
 #include "Core/TimeStep.h"
-#include "LinearMath/btVector3.h"
-#include "RigidBody.h"
-#include <bullet/src/btBulletDynamicsCommon.h>
 #include <entt/src/entt/entt.hpp>
+
+class btDiscreteDynamicsWorld;
 
 namespace Engine {
 
+    // Passed to NativeScript::OnCollision on contact enter.
     struct CollisionData
     {
-        void* OtherPointer;
+        entt::entity Other = entt::null;
         glm::vec3 HitPoint;
         glm::vec3 Normal;
         float Impulse;
     };
 
-    class PhysicsDebugDrawer;
-
-    struct PhysicsWorldConfiguration
-    {
-        std::unique_ptr<btDefaultCollisionConfiguration> CollisionConfig;
-        std::unique_ptr<btCollisionDispatcher> Dispatcher;
-        std::unique_ptr<btDbvtBroadphase> Broadphase;
-        std::unique_ptr<btSequentialImpulseConstraintSolver> Solver;
-        std::unique_ptr<btDiscreteDynamicsWorld> World;
-        std::unique_ptr<PhysicsDebugDrawer> Debug;
-    };
-
-    struct PhysicsWorldObjects
-    {
-        std::vector<std::unique_ptr<btCollisionShape>> CollisionShapes;
-        std::vector<std::unique_ptr<btCompoundShape>> CompoundShapes;
-        std::vector<std::unique_ptr<btDefaultMotionState>> MotionStates;
-
-    };
+    // Bullet world plumbing (dispatcher, broadphase, solver, world, debug
+    // drawer); defined in the .cpp so Bullet headers stay out of this one.
+    struct PhysicsWorldConfiguration;
 
     struct PhysicsSettings
     {
@@ -45,18 +30,12 @@ namespace Engine {
 
     class Scene;
     class Entity;
+    class RigidBody;
 
-    struct RaycastResult {
-        bool Hit;
-        entt::entity HitHandle = entt::null;
-        glm::vec3 Position;
-        glm::vec3 Normal;
-    };
-
-    using Callback = std::function<void(void*, void*, glm::vec3&, glm::vec3&)>;
-
-    // self, other, contact point, normal, entered (true = enter / false = exit), trigger
-    using ContactCallback = std::function<void(entt::entity, entt::entity, const glm::vec3&, const glm::vec3&, bool, bool)>;
+    // Entity handles are stored in Bullet user pointers offset by one so the
+    // first entt handle (0) is distinguishable from an unset user pointer.
+    inline void* EntityToUserPointer(entt::entity e) { return (void*)((uintptr_t)e + 1); }
+    inline entt::entity UserPointerToEntity(void* ptr) { return (entt::entity)((uintptr_t)ptr - 1); }
 
     class PhysicsEngine {
     public:
@@ -76,18 +55,11 @@ namespace Engine {
         // Used both at runtime start and when spawning prefabs mid-play.
         static Shared<RigidBody> AddRuntimeBody(Entity entity);
 
-        static void RegisterCollisionCallback(Callback cb) { s_Callback = cb; }
-        static void RegisterContactCallback(ContactCallback cb) { s_ContactCallback = cb; }
-        static void CheckCollisions();
+        static void RegisterContactCallback(ContactCallback cb) { s_Contacts.SetCallback(std::move(cb)); }
 
-        btDiscreteDynamicsWorld* getWorld() { return s_PhysicsWorldConfiguration->World.get(); }
+        static btDiscreteDynamicsWorld* GetWorld();
 
         static void RenderDebug(const glm::mat4 &viewProjection);
-        // `ignore` skips one entity's body (typically the caster itself).
-        static RaycastResult Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float distance, entt::entity ignore = entt::null);
-        static std::vector<RaycastResult> RaycastAll(const glm::vec3 &origin, const glm::vec3 &direction, float distance);
-        // Entities whose bodies overlap a sphere (each entity reported once).
-        static std::vector<entt::entity> OverlapSphere(const glm::vec3 &center, float radius);
 
         static Scene* GetScene() { return s_Scene; }
         static void SetScene(Scene* scene) { s_Scene = scene; }
@@ -100,17 +72,10 @@ namespace Engine {
     private:
 
         static std::unique_ptr<PhysicsWorldConfiguration> s_PhysicsWorldConfiguration;
-        static std::unique_ptr<PhysicsWorldObjects> s_PhysicsWorldObjects;
         static Scene* s_Scene;
         static PhysicsSettings s_Settings;
 
-        inline static Callback s_Callback;
-        inline static ContactCallback s_ContactCallback;
-
-        // Pairs currently touching, keyed by their two entity handles, so we can
-        // diff against the previous frame to emit enter/exit events.
-        struct ContactPair { entt::entity a; entt::entity b; bool trigger; glm::vec3 point; glm::vec3 normal; };
-        inline static std::unordered_map<uint64_t, ContactPair> s_ActivePairs;
+        inline static ContactTracker s_Contacts;
     };
 
 }

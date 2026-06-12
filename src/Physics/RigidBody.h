@@ -13,10 +13,11 @@
 
 namespace Engine {
 
-    static glm::vec3 BulletToGlm(const btVector3 &vec) { return glm::vec3(vec.getX(), vec.getY(), vec.getZ()); }
-    static btVector3 GlmToBullet(const glm::vec3 &vec) { return btVector3(vec.x, vec.y, vec.z); }
+    inline glm::vec3 BulletToGlm(const btVector3 &vec) { return glm::vec3(vec.getX(), vec.getY(), vec.getZ()); }
+    inline btVector3 GlmToBullet(const glm::vec3 &vec) { return btVector3(vec.x, vec.y, vec.z); }
+    inline glm::quat BulletToGlm(const btQuaternion &q) { return glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()); }
+    inline btQuaternion GlmToBullet(const glm::quat &q) { return btQuaternion(q.x, q.y, q.z, q.w); }
 
-    // Todo: fix all of this, leaking a lot of memory
     class RBShape
     {
         public:
@@ -96,19 +97,15 @@ namespace Engine {
         RigidBody(RBShape* shape, const glm::vec3 &translation = glm::vec3(0, 0, 0), const glm::vec3 &rotation = glm::vec3(0, 0, 0), const glm::vec3 &scale = glm::vec3(1, 1, 1), const glm::vec3 &inertia = glm::vec3(0, 0, 0), float mass = 0.0f) : m_Shape(shape)
         {
             m_Shape->GetShape()->setLocalScaling(GlmToBullet(scale));
-            
+
+            // A nonzero inertia overrides the tensor derived from the shape.
             btVector3 localInertia = GlmToBullet(inertia);
-            if (mass > 0.0f) {
+            if (mass > 0.0f && inertia == glm::vec3(0.0f)) {
                 m_Shape->GetShape()->calculateLocalInertia(mass, localInertia);
             }
 
-            btTransform btTrans;
-            btTrans.setIdentity();
-            btTrans.setOrigin({translation.x, translation.y, translation.z});
-
-            btQuaternion btRot;
-            btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
-            btTrans.setRotation(btRot);
+            // Rotation goes through glm::quat so the Euler convention matches TransformComponent.
+            btTransform btTrans(GlmToBullet(glm::quat(rotation)), GlmToBullet(translation));
 
             m_MotionState = std::make_unique<btDefaultMotionState>(btTrans);
 
@@ -153,7 +150,10 @@ namespace Engine {
 
             btVector3 forward = (targetBt - origin).normalized();
             btVector3 up(0, 1, 0); // Default world up
-            
+
+            // Forward parallel to world up would zero the cross product; pick another axis.
+            if (btFabs(forward.dot(up)) > 0.999f) up = btVector3(1, 0, 0);
+
             // Calculate right and true up to create an orthonormal basis
             btVector3 right = up.cross(forward).normalized();
             up = forward.cross(right).normalized();
@@ -173,7 +173,8 @@ namespace Engine {
         float GetDistanceTo(const glm::vec3& target) const {
             btTransform trans;
             m_Body->getMotionState()->getWorldTransform(trans);
-            return (BulletToGlm(trans.getOrigin()) - target).length();
+            // glm's member length() is the component count; glm::length is the magnitude.
+            return glm::length(BulletToGlm(trans.getOrigin()) - target);
         }
 
         void GetAABB(glm::vec3& min, glm::vec3& max) const {
@@ -183,35 +184,41 @@ namespace Engine {
             max = BulletToGlm(aabbMax);
         }
 
-        void SetTransform(const glm::vec3 &translation, const glm::vec3 &rotation)
+        // World-space pose, quaternion based -- the engine's sync path.
+        void SetWorldTransform(const glm::vec3 &translation, const glm::quat &rotation)
         {
-            btTransform btTransform;
-            btTransform.setIdentity();
-            btTransform.setOrigin({translation.x, translation.y, translation.z});
+            btTransform trans(GlmToBullet(rotation), GlmToBullet(translation));
 
-            btQuaternion btRot;
-            btRot.setEulerZYX(rotation.z, rotation.y, rotation.x);
-            btTransform.setRotation(btRot);
-
-            m_Body->setWorldTransform(btTransform);
+            m_Body->setWorldTransform(trans);
             if (m_Body->getMotionState())
             {
-                m_Body->getMotionState()->setWorldTransform(btTransform);
+                m_Body->getMotionState()->setWorldTransform(trans);
             }
             m_Body->activate(true);
         }
 
+        void GetWorldTransform(glm::vec3 &translation, glm::quat &rotation) const
+        {
+            btTransform trans;
+            m_Body->getMotionState()->getWorldTransform(trans);
+            translation = BulletToGlm(trans.getOrigin());
+            rotation = BulletToGlm(trans.getRotation());
+        }
+
+        // Euler wrappers kept for Lua; same convention as TransformComponent.
+        void SetTransform(const glm::vec3 &translation, const glm::vec3 &rotation)
+        {
+            SetWorldTransform(translation, glm::quat(rotation));
+        }
+
         void GetTransform(glm::vec3 &translation, glm::vec3 &rotation)
         {
-            btTransform btTransform;
-            m_Body->getMotionState()->getWorldTransform(btTransform);
-
-            btVector3 pos = btTransform.getOrigin();
-            translation = { pos.getX(), pos.getY(), pos.getZ() };
-
-            btQuaternion q = btTransform.getRotation();
-            rotation = glm::eulerAngles(glm::quat(q.getW(), q.getX(), q.getY(), q.getZ()));
+            glm::quat q;
+            GetWorldTransform(translation, q);
+            rotation = glm::eulerAngles(q);
         }
+
+        bool IsActive() const { return m_Body->isActive(); }
 
         void SetMass(float mass)
         {
@@ -330,7 +337,9 @@ namespace Engine {
                 m_Body->setActivationState(DISABLE_DEACTIVATION);
             } else {
                 m_Body->setCollisionFlags(m_Body->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
-                m_Body->setActivationState(WANTS_DEACTIVATION);
+                // Undo DISABLE_DEACTIVATION and wake the body so it simulates again.
+                m_Body->forceActivationState(ACTIVE_TAG);
+                m_Body->activate(true);
             }
         }
 
