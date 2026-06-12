@@ -6,18 +6,18 @@ namespace Engine {
 
     class AssetUploadQueue {
     public:
-        // Worker threads call this to push GPU tasks back to the main thread
+        // Worker thread submits tasks that need to be ran on main thread
         static void Submit(std::function<void()> uploadTask) {
             std::lock_guard<std::mutex> lock(s_Mutex);
             s_Queue.push(std::move(uploadTask));
         }
 
-        // The Main thread calls this every frame to process the queue
+        // Main thread calls this to process previously submitted tasks
         static void Process() {
             std::lock_guard<std::mutex> lock(s_Mutex);
             while (!s_Queue.empty()) {
                 auto task = s_Queue.front();
-                task(); // Execute the OpenGL creation logic
+                task();
                 s_Queue.pop();
             }
         }

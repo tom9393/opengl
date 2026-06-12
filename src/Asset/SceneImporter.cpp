@@ -11,8 +11,10 @@ namespace Engine {
     {
         std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
 
+        // If .pmscene exists use that
         if (ext == ".pmscene")
         {
+            // If scene
             if (SceneSerializer::IsSceneFile(metadata.FilePath))
             {
                 Shared<Scene> scene = MakeShared<Scene>();
@@ -21,16 +23,19 @@ namespace Engine {
                 return scene;
             }
 
+            // If prefab
             std::optional<ParsedScene> parsed = PmSceneSerializer::Deserialize(metadata.FilePath);
             if (!parsed)
                 return nullptr;
             return SceneBuilder::BuildPrefab(metadata, *parsed);
         }
 
+        // Otherwise load other scene types by their extension
         std::optional<ParsedScene> parsed = AssimpLoader::LoadScene(metadata);
         if (!parsed)
             return nullptr;
 
+        // And parse them into a scene usable by engine
         return SceneBuilder::BuildPrefab(metadata, *parsed);
     }
 
@@ -40,6 +45,7 @@ namespace Engine {
 
         if (ext == ".pmscene")
         {
+            // Scene
             if (SceneSerializer::IsSceneFile(metadata.FilePath))
             {
                 Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
@@ -53,6 +59,7 @@ namespace Engine {
                 return;
             }
 
+            // Prefab
             Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
                 std::optional<ParsedScene> parsed = PmSceneSerializer::Deserialize(metadata.FilePath);
                 if (!parsed)
@@ -66,6 +73,7 @@ namespace Engine {
             return;
         }
 
+        // Other type scene
         Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
             std::optional<ParsedScene> parsed = AssimpLoader::LoadScene(metadata);
             if (!parsed)

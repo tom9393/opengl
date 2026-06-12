@@ -9,9 +9,7 @@ namespace Engine
 {
     class AudioClip;
 
-    // RAII wrapper around a single miniaudio ma_sound. This is the runtime handle,
-    // owned by the AudioEngine while it plays, analogous to a RigidBody's RuntimeBody.
-    // The sound reads from a per-instance cursor over the clip's shared PCM buffer.
+    // RAII wrapper for audio instance
     class AudioInstance
     {
         public:

@@ -126,7 +126,6 @@ namespace Engine {
 
     void AssetManager::BakeLoadedModelScenes()
     {
-        // Collect first; baking repoints FilePath, which we don't want to do while iterating.
         std::vector<UUID> toBake;
         for (const auto& [handle, metadata] : m_AssetRegistry)
         {
@@ -134,10 +133,11 @@ namespace Engine {
             std::string ext = std::filesystem::path(metadata.FilePath).extension().string();
             bool isModel = (ext == ".gltf" || ext == ".fbx" || ext == ".obj" || ext == ".assbin");
             if (!isModel) continue;
-            if (!IsAssetLoaded(handle)) continue; // No live data to bake this session
+            if (!IsAssetLoaded(handle)) continue;
             toBake.push_back(handle);
         }
 
+        // Todo: do not bake non-changes scenes
         for (UUID handle : toBake)
         {
             AssetMetadata& metadata = m_AssetRegistry[handle];

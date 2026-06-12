@@ -15,11 +15,8 @@ namespace Engine {
         std::tuple<std::optional<Component>...> SnapshotTupleFor(ComponentGroup<Component...>);
     }
 
-    // A copy of an entity's non-structural components (one optional per entry in
-    // AllComponents). Identity (IDComponent) and hierarchy (Parent/Children) are
-    // deliberately excluded: identity never changes, and hierarchy is managed by
-    // the structural commands so restoring a snapshot never disturbs an entity's
-    // place in the tree.
+    // Entity snapshot
+    // ID and parent/child components are ignored
     struct EntitySnapshot {
         decltype(Detail::SnapshotTupleFor(AllComponents{})) Components;
 
@@ -56,10 +53,8 @@ namespace Engine {
             else if (registry.all_of<T>(handle)) registry.remove<T>(handle);
         }
 
-        // "Editable equality" per component: compares only the fields a user can
-        // change in the inspector, ignoring runtime/derived state (world matrices,
-        // runtime bodies, script environments). Used solely to decide whether an
-        // interaction changed anything worth recording on the undo stack.
+        // Editable equality -> compare only fields user can change in editor,
+        // ignore things such as runtime bodies of physics
 
         inline bool EditablyEqual(const TagComponent& a, const TagComponent& b)
         {
@@ -101,7 +96,7 @@ namespace Engine {
                    a.inertia == b.inertia;
         }
 
-        // No comparable state (bound via std::function); presence is tracked, values are not.
+        // No comparable state, only presence/absence of component is tracked
         inline bool EditablyEqual(const NativeScriptComponent&, const NativeScriptComponent&)
         {
             return true;
@@ -122,7 +117,7 @@ namespace Engine {
                    a.OuterCutOff == b.OuterCutOff;
         }
 
-        // Runtime (the live particle pool) is intentionally ignored.
+        // Ignore runtime
         inline bool EditablyEqual(const ParticleEmitterComponent& a, const ParticleEmitterComponent& b)
         {
             return a.Looping       == b.Looping &&
@@ -182,9 +177,8 @@ namespace Engine {
         return Detail::CaptureEntity(entity, AllComponents{});
     }
 
-    // Writes the snapshot onto the entity, adding/removing components so the set
-    // matches what was captured. Operates on the registry directly (bypassing the
-    // logging/guards in Entity::Add/RemoveComponent).
+    // Writes a snapshot onto the entity, add/remove components
+    // Operates on registry directly, bypass Entity::Add/RemoveComponent
     inline void RestoreEntity(Scene* scene, UUID id, const EntitySnapshot& snap)
     {
         Entity entity = FindEntityByUUID(scene, id);
@@ -193,16 +187,13 @@ namespace Engine {
         Detail::RestoreEntity(scene->GetRegistry(), entity.GetHandle(), snap, AllComponents{});
     }
 
-    // True if both snapshots have exactly the same set of components present (ignoring
-    // values). A differing set means a component was added/removed, which is recorded
-    // explicitly at the action site rather than by the inspector value tracker.
+    // True if both snapshots have the same components, ignoring values
     inline bool SameComponentSet(const EntitySnapshot& a, const EntitySnapshot& b)
     {
         return Detail::SameComponentSet(a, b, AllComponents{});
     }
 
-    // True if the user-editable state differs between two snapshots of one entity.
-    // Used to discard no-op inspector interactions so they don't pollute the stack.
+    // True if user editable state differs between two snapshots
     inline bool SnapshotsDiffer(const EntitySnapshot& a, const EntitySnapshot& b)
     {
         return Detail::SnapshotsDiffer(a, b, AllComponents{});

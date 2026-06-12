@@ -9,6 +9,7 @@ namespace Engine {
     {
         None = 0,
         
+        // Maps
         Albedo,
         Normal,
         Metallic,
@@ -20,6 +21,7 @@ namespace Engine {
         Diffuse,
         Specular,
 
+        // Multipliers
         Transparency,
         
         AlbedoTint,

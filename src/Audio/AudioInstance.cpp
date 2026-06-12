@@ -11,7 +11,7 @@ namespace Engine
     {
         if (!clip || !clip->IsValid()) return;
 
-        // Each instance gets its own cursor over the clip's shared PCM.
+        // Each instance gets its own cursor over the clip's shared PCM
         ma_audio_buffer_ref* bufferRef = new ma_audio_buffer_ref();
         m_BufferRef = bufferRef;
         ma_result result = ma_audio_buffer_ref_init((ma_format)clip->Format(), clip->Channels(), clip->Data().data(), clip->FrameCount(), bufferRef);
@@ -22,6 +22,7 @@ namespace Engine
             m_BufferRef = nullptr;
             return;
         }
+
         bufferRef->sampleRate = clip->SampleRate();
 
         m_Sound = new ma_sound();

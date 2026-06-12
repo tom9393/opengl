@@ -14,12 +14,13 @@ namespace Engine {
         public:
         Shared<Shader> TargetShader;
 
+        // Todo: implement these
         BlendMode mode = BlendMode::Opaque;
         bool DepthWrite = true;
         bool DoubleSided = false;
 
-        std::unordered_map<MaterialType, PropertyValue> m_Properties;
-        std::unordered_map<MaterialType, std::string> m_Bindings;
+        std::unordered_map<MaterialType, PropertyValue> m_Properties; // Material type and data
+        std::unordered_map<MaterialType, std::string> m_Bindings; // What uniforms the shader has available for binding (e.g. MaterialType::Albedo -> pbr.albedoMap)
 
         void Add(const MaterialProperty& property)
         {
@@ -63,6 +64,7 @@ namespace Engine {
             slot++;
         }
 
+        // Scalar as in non-texture i.e. RGBA
         void BindScalar(MaterialType key, const std::string& uniformName) const
         {
             auto it = m_Properties.find(key);

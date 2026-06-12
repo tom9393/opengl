@@ -20,7 +20,6 @@ namespace Engine {
         return metadata;
     }
 
-    // Fully decodes the file to interleaved f32 PCM (native channels/sample rate).
     Shared<AudioClip> AudioImporter::Decode(const std::string &path)
     {
         ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
@@ -56,14 +55,10 @@ namespace Engine {
     {
         PROFILE_FUNCTION();
         Application::Get().GetThreadPool().Enqueue([metadata, cb]() {
-            // --- THIS RUNS ON A WORKER THREAD ---
             Shared<AudioClip> clip = Decode(metadata.FilePath);
             if (!clip) return;
 
-            // No GPU upload, but route registration back to the main thread so the
-            // registry stays single-threaded (same pattern as TextureImporter).
             AssetUploadQueue::Submit([metadata, clip, cb]() {
-                // --- THIS RUNS ON THE MAIN THREAD ---
                 Shared<Asset> cast = clip;
                 AssetManager::RegisterAsset(metadata, cast);
                 if (cb) cb(clip);

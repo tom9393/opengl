@@ -37,7 +37,7 @@ namespace Engine {
         // Names assumed unique; first asset wins
         static UUID GetHandleByName(const std::string& name, AssetType type = AssetType::None);
 
-        // Reverse lookup: find the handle of an already-loaded asset (0 if not loaded).
+        // Find the handle of an already-loaded asset (0 if not loaded).
         static UUID GetHandleForAsset(const Shared<Asset>& asset);
 
     private:
@@ -46,8 +46,7 @@ namespace Engine {
         static void LoadAssetRegistry();
         static void SaveAssetRegistry();
 
-        // Bake every loaded model-sourced Scene (.gltf/.fbx/.obj/.assbin) to a sibling
-        // .pmscene and repoint its registry entry at it. Runs once at shutdown.
+        // Bakes .gltf/.fbx/.obj/.assbin etc. to a custom .pmscene
         static void BakeLoadedModelScenes();
 
     private:
@@ -55,7 +54,7 @@ namespace Engine {
         static inline std::unordered_map<UUID, AssetMetadata> m_AssetRegistry;
         static inline std::unordered_map<UUID, AssetState> m_AssetStates;
         
-        static inline AssetMetadata s_NullMetadata; // Returned when handle is invalid
+        static inline AssetMetadata s_NullMetadata; // Returned for invalid handle
 
         friend class SceneHierarchyPanel;
         friend class LoadedAssets;

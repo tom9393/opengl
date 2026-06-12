@@ -39,6 +39,7 @@ namespace Engine
         static std::shared_ptr<Texture3D> Create(const std::filesystem::path &path);
     };
 
+    // For now unused
     class BindlessTexture
     {
         public:

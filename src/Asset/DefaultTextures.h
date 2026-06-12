@@ -49,10 +49,7 @@ namespace Engine {
             return normalTexture;
         }
 
-        // CRITICAL: Call this before shutting down your OpenGL context!
         static void Shutdown() {
-            // By resetting the shared pointers, we force the destructors 
-            // to run while the GL context is still alive.
             GetWhiteTexture().reset();
             GetBlackTexture().reset();
             GetNormalTexture().reset();

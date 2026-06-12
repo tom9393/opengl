@@ -86,6 +86,8 @@ namespace Engine
 
     class AssimpLoader
     {
+        // Processes a scene into ParsedScene which will be used to instantiate the scene in our engine
+        // Node transforms and names are in tree-formed nodes, materials and meshes global and indexed
         public:
         static std::optional<ParsedScene> LoadScene(const AssetMetadata& metadata)
         {
@@ -93,7 +95,7 @@ namespace Engine
             const aiScene* scene = importer.ReadFile(metadata.FilePath, s_AssimpFlags);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-                std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+                std::cerr << "Assimp failed to load file: " << importer.GetErrorString() << std::endl;
                 return std::nullopt;
             }
 
@@ -112,6 +114,7 @@ namespace Engine
         }
 
     private:
+        // Mesh/material UUIDs are hashed to ensure they are always the same
         // FNV-1a; chains so callers can fold several buffers into one stable key
         static uint64_t HashBytes(uint64_t hash, const void* data, size_t size) {
             const uint8_t* bytes = static_cast<const uint8_t*>(data);
@@ -249,6 +252,7 @@ namespace Engine
                 MaterialType matType = AssimpToTextureType(type);
                 if (matType != MaterialType::None) {
                     parsedMat.TexturePaths[matType] = std::string(str.C_Str());
+                    // Embedded textures will be saved in scene, non-embedded ones are referenced via their path
                     if (const aiTexture* embeddedTex = scene->GetEmbeddedTexture(str.C_Str())) {
                         size_t byteCount = embeddedTex->mHeight == 0 ? embeddedTex->mWidth : (size_t)embeddedTex->mWidth * embeddedTex->mHeight * sizeof(aiTexel);
                         hash = HashBytes(hash, embeddedTex->pcData, byteCount);
@@ -275,14 +279,11 @@ namespace Engine
                 case aiLightSource_POINT:       out.Type = LightComponent::LightType::Point;       break;
                 case aiLightSource_SPOT:        out.Type = LightComponent::LightType::Cone;         break;
                 default: // Currently no support for area/ambient light
-                    std::cout << "Warning: Skipping unsupported light type for node: " << light->mName.C_Str() << std::endl;
                     return false;
             }
 
             out.Name = light->mName.C_Str();
 
-            // Assimp folds intensity into the diffuse color. Split it back into a normalized
-            // color + scalar intensity to match the engine's representation.
             glm::vec3 color = { light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b };
             float intensity = glm::max(color.r, glm::max(color.g, color.b));
 
@@ -305,7 +306,7 @@ namespace Engine
             out.NearClip = camera->mClipPlaneNear;
             out.FarClip = camera->mClipPlaneFar;
 
-            // Fall back to a 16:9 aspect when the file omits one (mAspect == 0).
+            // Fall back case
             float aspect = camera->mAspect > 0.0f ? camera->mAspect : (16.0f / 9.0f);
 
             if (camera->mOrthographicWidth > 0.0f)
@@ -343,7 +344,6 @@ namespace Engine
             aiColor4D color;
             float emission = 0.0f;
             if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
-                // Average the RGB values to get a scalar emission intensity
                 emission = (color.r + color.g + color.b) / 3.0f;
             }
             return emission;
@@ -351,11 +351,10 @@ namespace Engine
 
         static float GetRoughness(aiMaterial* mat)
         {
-            float roughness = 0.5f; // Safe default
+            float roughness = 0.5f;
             float shininess = 0.0f;
             if (AI_SUCCESS == aiGetMaterialFloat(mat, AI_MATKEY_SHININESS, &shininess)) {
                 // Prevent division by zero.
-                // Math: High shininess (e.g., 714) = very smooth = low roughness.
                 roughness = glm::sqrt(2.0f / (shininess + 2.0f));
             }
             return roughness;
@@ -366,7 +365,6 @@ namespace Engine
             aiColor4D color;
             float metallic = 0.0f;
             if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &color)) {
-                // In legacy formats, highly reflective grey/colored specular usually implies metal.
                 float specAverage = (color.r + color.g + color.b) / 3.0f;
                 if (specAverage > 0.8f) {
                     metallic = 1.0f;

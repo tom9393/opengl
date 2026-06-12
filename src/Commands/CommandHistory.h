@@ -5,16 +5,15 @@
 
 namespace Engine {
 
-    // Undo/redo stacks of Commands. There is one Global() instance for scene editing;
-    // the mesh-edit session owns a separate instance so edit-mode undo stays local.
+    // Undo/redo stacks of Commands
+    // Scene editing -> SceneCommands
+    // Mesh/UV editing -> MeshEditCommand & MaterialEditCommand
     class CommandHistory {
     public:
-        // Apply a freshly-built command (calls Redo) and record it. Use for actions
-        // that have not been performed yet.
+        // Fresh command
         void Execute(Unique<Command> command);
 
-        // Record a command whose effect has already been applied live (e.g. an
-        // ImGui drag the user just finished). Does not call Redo.
+        // Push fresh command onto the stack; wipe m_Redo
         void Push(Unique<Command> command);
 
         void Undo();
@@ -27,7 +26,6 @@ namespace Engine {
         static CommandHistory& Global();
 
     private:
-        // Oldest commands are dropped once the undo stack exceeds this depth.
         static constexpr size_t s_MaxDepth = 100;
 
         std::vector<Unique<Command>> m_Undo;

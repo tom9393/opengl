@@ -9,6 +9,7 @@
 namespace Engine
 {
 
+    // Todo: implement this when loading geometry
     struct GeometrySpecification
     {
         bool CalculateNormals;
@@ -20,13 +21,13 @@ namespace Engine
 
     struct ParsedMesh {
         std::string Name;
-        std::vector<float> Vertices;
-        std::vector<unsigned int> Indices;
-        BufferLayout Layout; // Describes how Vertices is packed; only the attributes the source mesh actually provides
-        uint32_t MaterialIndex = 0;
+        std::vector<float> Vertices; // Raw vertices
+        std::vector<unsigned int> Indices; // Raw indices
+        BufferLayout Layout; // VBO layout
+        uint32_t MaterialIndex = 0; // Index of the material this mesh uses
         glm::vec3 MinExtents;
         glm::vec3 MaxExtents;
-        uint64_t Hash = 0; // Deterministic key derived from name + vertex positions; becomes the asset handle so it survives reloads
+        uint64_t Hash = 0;
     };
 
     struct ParsedMaterial {
@@ -37,7 +38,7 @@ namespace Engine
         float Metallic;
         std::unordered_map<MaterialType, std::string> TexturePaths;
         std::unordered_map<MaterialType, TextureLoadData> EmbeddedTextures;
-        uint64_t Hash = 0; // Deterministic key derived from name + texture data/paths; becomes the asset handle so it survives reloads
+        uint64_t Hash = 0;
     };
 
     struct ParsedLight {
@@ -77,8 +78,7 @@ namespace Engine
     struct ParsedScene {
         std::string Name;
         std::string Directory;
-        // Shared by all meshes in the scene; indexed by ParsedMesh::MaterialIndex.
-        std::vector<ParsedMaterial> Materials;
+        std::vector<ParsedMaterial> Materials; // Referenced by ParsedMesh.MaterialIndex
         ParsedSceneNode RootNode;
     };
 

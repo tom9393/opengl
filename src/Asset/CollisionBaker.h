@@ -112,7 +112,7 @@ namespace Engine {
             out.write((char*)&meshCount, sizeof(uint32_t));
 
             for (const auto& mesh : meshes) {
-                // 1. Create a temporary hull from raw mesh vertices
+                // Create a temporary hull from raw mesh vertices
                 btConvexHullShape tempShape;
                 uint32_t stride = mesh->GetVBOs()[0]->GetLayout().GetStride() / sizeof(float);
                 const std::vector<float>& verts = mesh->GetVertices();
@@ -121,11 +121,11 @@ namespace Engine {
                     tempShape.addPoint(btVector3(verts[i], verts[i+1], verts[i+2]));
                 }
 
-                // 2. Simplify the hull using Bullet's utility (The "Bake" step)
+                // Simplify the hull using Bullet's utility (The "Bake" step)
                 btShapeHull hullScanner(&tempShape);
                 hullScanner.buildHull(tempShape.getMargin());
 
-                // 3. Save only the simplified vertex indices
+                // Save only the simplified vertex indices
                 uint32_t vCount = (uint32_t)hullScanner.numVertices();
                 const btVector3* hullVerts = hullScanner.getVertexPointer();
 
@@ -136,7 +136,7 @@ namespace Engine {
                 }
             }
             out.close();
-            std::cout << "[Baker] Finished baking: " << path << std::endl;
+            std::cout << "Finished baking collision: " << path << std::endl;
         }
 
         // Drop a collision shape if no longer used by any entity
@@ -153,7 +153,7 @@ namespace Engine {
             }
 
             std::filesystem::remove(path);
-            std::cout << "[Baker] Removed orphaned collision: " << path << std::endl;
+            std::cout << "Removed orphaned collision: " << path << std::endl;
         }
     };
 }

@@ -8,8 +8,8 @@
 
 namespace Engine {
 
-    // The user-editable state of a Material asset. Bindings and the shader are set at
-    // load time and not touched by the inspector, so they are not snapshotted.
+    // The user-editable state of a material asset
+    // Bindings and shader set at load time and not touched by inspector and thus not snapshotted
     struct MaterialState {
         BlendMode mode = BlendMode::Opaque;
         bool DepthWrite = true;
@@ -33,9 +33,9 @@ namespace Engine {
                a.DoubleSided != b.DoubleSided || a.properties != b.properties;
     }
 
-    // True if both states have the same set of property keys (ignoring values). A
-    // differing set means a parameter/map was added or removed, which is recorded at
-    // its action site rather than by the inspector value tracker.
+    // True if both states have the same set of property keys (ignoring values)
+    // Differing set means a parameter/map was added or removed, which is recorded at
+    // its action site rather than by the inspector value tracker
     inline bool MaterialKeysEqual(const MaterialState& a, const MaterialState& b)
     {
         if (a.properties.size() != b.properties.size()) return false;
@@ -44,8 +44,7 @@ namespace Engine {
         return true;
     }
 
-    // Undo/redo for a Material asset (parameters, maps, blend settings). The material
-    // is resolved by handle so the command survives asset reloads.
+    // Undo/redo for a Material asset; parameters, maps, blend settings etc.
     class MaterialEditCommand : public Command {
     public:
         MaterialEditCommand(UUID handle, MaterialState before, MaterialState after)
@@ -73,7 +72,7 @@ namespace Engine {
 
     // Runs a structural material change (add/remove a parameter or map) and records a
     // single MaterialEditCommand if it changed anything. Use for discrete actions; the
-    // inspector value tracker handles in-place parameter edits.
+    // inspector value tracker handles in-place parameter edits
     template <typename Fn>
     inline void RecordMaterialEdit(UUID handle, Fn&& mutate)
     {

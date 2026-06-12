@@ -5,10 +5,8 @@
 
 namespace Engine {
 
-    // Undo/redo for a single in-session mesh edit (extrude, delete/subdivide faces,
-    // vertex move, UV move). It restores the whole session geometry and re-syncs the
-    // render mesh. These commands live on the global command history, which is cleared
-    // when the session ends, so the session pointer is always valid when they run.
+    // Undo/redo for mesh edit session (extrude, delete/subdivide faces, vertex move, uv move)
+    // Restores geometry and re-syncs the render mesh
     class MeshEditCommand : public Command {
     public:
         MeshEditCommand(MeshEditSession* session,

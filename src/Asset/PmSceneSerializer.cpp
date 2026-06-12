@@ -17,7 +17,11 @@ namespace Engine
 {
     static constexpr uint32_t PMSCENE_VERSION = 1;
 
-    // --- binary helpers -----------------------------------------------------
+    // Forward declarations
+    static ParsedScene ExtractParsedScene(const Shared<Prefab>& prefab);
+    static void WriteBinary(const ParsedScene& scene, const std::string& path);
+    static std::optional<ParsedScene> ReadBinary(const std::string& path);
+
     template<typename T> static void Write(std::ostream& o, const T& v) { o.write(reinterpret_cast<const char*>(&v), sizeof(T)); }
     template<typename T> static void Read(std::istream& i, T& v) { i.read(reinterpret_cast<char*>(&v), sizeof(T)); }
 
@@ -37,7 +41,23 @@ namespace Engine
         return s;
     }
 
-    // --- extract a ParsedScene from a live prefab ---------------------------
+    void PmSceneSerializer::Serialize(const Shared<Prefab>& prefab, const std::string& path)
+    {
+        ParsedScene scene = ExtractParsedScene(prefab);
+        WriteBinary(scene, path);
+
+        // ExtractMaterial malloc'd embedded-texture pixels purely to write them out
+        for (ParsedMaterial& m : scene.Materials)
+            for (auto& [type, data] : m.EmbeddedTextures)
+                if (data.Pixels) { free(data.Pixels); data.Pixels = nullptr; }
+    }
+
+    std::optional<ParsedScene> PmSceneSerializer::Deserialize(const std::string& path)
+    {
+        return ReadBinary(path);
+    }
+
+    // Reverse a material into ParsedMaterial
     static ParsedMaterial ExtractMaterial(const Shared<Material>& mat, UUID handle)
     {
         ParsedMaterial pm;
@@ -68,8 +88,7 @@ namespace Engine
             Shared<Texture2D> tex = std::get<Shared<Texture2D>>(value);
             if (!tex) continue;
 
-            // External textures (a real file on disk) are referenced by path; everything else
-            // (in-model textures with no file) is embedded via a GPU readback.
+            // Embedded -> GPU readback, external -> disk
             UUID texHandle = AssetManager::GetHandleForAsset(std::static_pointer_cast<Asset>(tex));
             bool external = false;
             if (texHandle != 0)
@@ -100,6 +119,87 @@ namespace Engine
         return pm;
     }
 
+    // Reverse an entity subtree into ParsedSceneNodes, collecting materials into scene.Materials
+    static ParsedSceneNode ExtractNode(Entity e, ParsedScene& scene, std::unordered_map<uint64_t, uint32_t>& materialIndex)
+    {
+        ParsedSceneNode node;
+        node.Name = e.HasComponent<TagComponent>() ? e.GetComponent<TagComponent>().tag : "";
+
+        auto& tc = e.GetComponent<TransformComponent>();
+        node.Translation = tc.translation;
+        node.Rotation = tc.rotation;
+        node.Scale = tc.scale;
+
+        if (e.HasComponent<LightComponent>())
+        {
+            auto& lc = e.GetComponent<LightComponent>();
+            ParsedLight pl;
+            pl.Type = lc.Type;
+            pl.Color = lc.Color;
+            pl.Intensity = lc.Intensity;
+            pl.CastShadows = lc.CastShadows;
+            pl.InnerCutOff = lc.InnerCutOff;
+            pl.OuterCutOff = lc.OuterCutOff;
+            node.Light = pl;
+        }
+
+        if (e.HasComponent<SceneCameraComponent>())
+        {
+            auto& cc = e.GetComponent<SceneCameraComponent>();
+            auto& cam = cc.sceneCamera;
+            ParsedCamera pc;
+            pc.Orthographic = cam->GetProjectionType() == SceneCamera::ProjectionType::Orthographic;
+            pc.VerticalFOV = cam->GetPerspectiveVerticalFOV();
+            pc.OrthographicSize = cam->GetOrthographicSize();
+            pc.NearClip = cam->GetNearClip();
+            pc.FarClip = cam->GetFarClip();
+            pc.Primary = cc.primary;
+            node.Camera = pc;
+        }
+
+        if (e.HasComponent<MeshComponent>())
+        {
+            UUID meshHandle = e.GetComponent<MeshComponent>().MeshHandle;
+            Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshHandle);
+            if (mesh)
+            {
+                ParsedMesh pm;
+                pm.Name = node.Name;
+                pm.Hash = (uint64_t)meshHandle;
+                pm.Vertices = mesh->GetVertices();
+                pm.Indices = mesh->GetIndices();
+                if (!mesh->GetVBOs().empty())
+                    pm.Layout = mesh->GetVBOs()[0]->GetLayout();
+                pm.MinExtents = mesh->GetAABB().Min;
+                pm.MaxExtents = mesh->GetAABB().Max;
+                pm.MaterialIndex = UINT32_MAX; // sentinel: no material (BuildPrefab skips it)
+
+                if (e.HasComponent<MaterialComponent>())
+                {
+                    UUID matHandle = e.GetComponent<MaterialComponent>().MaterialHandle;
+                    auto it = materialIndex.find((uint64_t)matHandle);
+                    if (it != materialIndex.end())
+                        pm.MaterialIndex = it->second;
+                    else if (Shared<Material> mat = AssetManager::GetAsset<Material>(matHandle))
+                    {
+                        uint32_t idx = (uint32_t)scene.Materials.size();
+                        scene.Materials.push_back(ExtractMaterial(mat, matHandle));
+                        materialIndex[(uint64_t)matHandle] = idx;
+                        pm.MaterialIndex = idx;
+                    }
+                }
+
+                node.Meshes.push_back(std::move(pm));
+            }
+        }
+
+        for (entt::entity child : e.GetChildren())
+            node.Children.push_back(ExtractNode(Entity{ child, e.GetScene() }, scene, materialIndex));
+
+        return node;
+    }
+
+    // Reverse a prefab into a ParsedScene
     static ParsedScene ExtractParsedScene(const Shared<Prefab>& prefab)
     {
         ParsedScene scene;
@@ -110,94 +210,17 @@ namespace Engine
         scene.Name = root.GetComponent<TagComponent>().tag;
 
         std::unordered_map<uint64_t, uint32_t> materialIndex; // handle -> index into scene.Materials
-
-        std::function<ParsedSceneNode(Entity)> build = [&](Entity e) -> ParsedSceneNode {
-            ParsedSceneNode node;
-            node.Name = e.HasComponent<TagComponent>() ? e.GetComponent<TagComponent>().tag : "";
-
-            auto& tc = e.GetComponent<TransformComponent>();
-            node.Translation = tc.translation;
-            node.Rotation = tc.rotation;
-            node.Scale = tc.scale;
-
-            if (e.HasComponent<LightComponent>())
-            {
-                auto& lc = e.GetComponent<LightComponent>();
-                ParsedLight pl;
-                pl.Type = lc.Type;
-                pl.Color = lc.Color;
-                pl.Intensity = lc.Intensity;
-                pl.CastShadows = lc.CastShadows;
-                pl.InnerCutOff = lc.InnerCutOff;
-                pl.OuterCutOff = lc.OuterCutOff;
-                node.Light = pl;
-            }
-
-            if (e.HasComponent<SceneCameraComponent>())
-            {
-                auto& cc = e.GetComponent<SceneCameraComponent>();
-                auto& cam = cc.sceneCamera;
-                ParsedCamera pc;
-                pc.Orthographic = cam->GetProjectionType() == SceneCamera::ProjectionType::Orthographic;
-                pc.VerticalFOV = cam->GetPerspectiveVerticalFOV();
-                pc.OrthographicSize = cam->GetOrthographicSize();
-                pc.NearClip = cam->GetNearClip();
-                pc.FarClip = cam->GetFarClip();
-                pc.Primary = cc.primary;
-                node.Camera = pc;
-            }
-
-            if (e.HasComponent<MeshComponent>())
-            {
-                UUID meshHandle = e.GetComponent<MeshComponent>().MeshHandle;
-                Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(meshHandle);
-                if (mesh)
-                {
-                    ParsedMesh pm;
-                    pm.Name = node.Name;
-                    pm.Hash = (uint64_t)meshHandle;
-                    pm.Vertices = mesh->GetVertices();
-                    pm.Indices = mesh->GetIndices();
-                    if (!mesh->GetVBOs().empty())
-                        pm.Layout = mesh->GetVBOs()[0]->GetLayout();
-                    pm.MinExtents = mesh->GetAABB().Min;
-                    pm.MaxExtents = mesh->GetAABB().Max;
-                    pm.MaterialIndex = UINT32_MAX; // sentinel: no material (BuildPrefab skips it)
-
-                    if (e.HasComponent<MaterialComponent>())
-                    {
-                        UUID matHandle = e.GetComponent<MaterialComponent>().MaterialHandle;
-                        auto it = materialIndex.find((uint64_t)matHandle);
-                        if (it != materialIndex.end())
-                            pm.MaterialIndex = it->second;
-                        else if (Shared<Material> mat = AssetManager::GetAsset<Material>(matHandle))
-                        {
-                            uint32_t idx = (uint32_t)scene.Materials.size();
-                            scene.Materials.push_back(ExtractMaterial(mat, matHandle));
-                            materialIndex[(uint64_t)matHandle] = idx;
-                            pm.MaterialIndex = idx;
-                        }
-                    }
-
-                    node.Meshes.push_back(std::move(pm));
-                }
-            }
-
-            for (entt::entity child : e.GetChildren())
-                node.Children.push_back(build(Entity{ child, e.GetScene() }));
-
-            return node;
-        };
-
-        scene.RootNode = build(root);
+        scene.RootNode = ExtractNode(root, scene, materialIndex);
         return scene;
     }
 
-    // --- binary write -------------------------------------------------------
     static void WriteBinary(const ParsedScene& scene, const std::string& path)
     {
         std::ofstream out(path, std::ios::binary);
-        if (!out) { std::cerr << "Failed to open .pmscene for writing: " << path << std::endl; return; }
+        if (!out) {
+            std::cerr << "Failed to open .pmscene for writing: " << path << std::endl;
+            return;
+        }
 
         out.write("PMSC", 4);
         uint32_t version = PMSCENE_VERSION;
@@ -234,6 +257,7 @@ namespace Engine
         }
 
         // Mesh table (geometry deduped by hash; nodes reference it by index)
+        // This is because multiple nodes may share same mesh
         std::vector<const ParsedMesh*> meshTable;
         std::unordered_map<uint64_t, uint32_t> meshIndex;
         std::function<void(const ParsedSceneNode&)> collect = [&](const ParsedSceneNode& n) {
@@ -245,6 +269,7 @@ namespace Engine
                 }
             for (const auto& c : n.Children) collect(c);
         };
+
         collect(scene.RootNode);
 
         uint32_t meshCount = (uint32_t)meshTable.size();
@@ -279,11 +304,13 @@ namespace Engine
 
         // Node tree
         std::function<void(const ParsedSceneNode&)> writeNode = [&](const ParsedSceneNode& n) {
+            // Transform
             WriteString(out, n.Name);
             Write(out, n.Translation);
             Write(out, n.Rotation);
             Write(out, n.Scale);
 
+            // Lights
             uint8_t hasLight = n.Light ? 1 : 0;
             Write(out, hasLight);
             if (n.Light)
@@ -298,6 +325,7 @@ namespace Engine
                 Write(out, n.Light->OuterCutOff);
             }
 
+            // Camera
             uint8_t hasCam = n.Camera ? 1 : 0;
             Write(out, hasCam);
             if (n.Camera)
@@ -312,6 +340,7 @@ namespace Engine
                 Write(out, prim);
             }
 
+            // Mesh IDs
             uint32_t nm = (uint32_t)n.Meshes.size();
             Write(out, nm);
             for (const ParsedMesh& pm : n.Meshes)
@@ -321,14 +350,66 @@ namespace Engine
                 Write(out, pm.MaterialIndex);
             }
 
+            // Children
             uint32_t cc = (uint32_t)n.Children.size();
             Write(out, cc);
             for (const auto& c : n.Children) writeNode(c);
         };
+
         writeNode(scene.RootNode);
     }
 
-    // --- binary read --------------------------------------------------------
+    // Read a node subtree, resolving mesh references through meshTable
+    static ParsedSceneNode ReadNode(std::istream& in, const std::vector<ParsedMesh>& meshTable)
+    {
+        ParsedSceneNode n;
+        n.Name = ReadString(in);
+        Read(in, n.Translation);
+        Read(in, n.Rotation);
+        Read(in, n.Scale);
+
+        uint8_t hasLight; Read(in, hasLight);
+        if (hasLight)
+        {
+            ParsedLight pl;
+            int32_t lt; Read(in, lt); pl.Type = (LightComponent::LightType)lt;
+            Read(in, pl.Color);
+            Read(in, pl.Intensity);
+            uint8_t cs; Read(in, cs); pl.CastShadows = cs != 0;
+            Read(in, pl.InnerCutOff);
+            Read(in, pl.OuterCutOff);
+            n.Light = pl;
+        }
+
+        uint8_t hasCam; Read(in, hasCam);
+        if (hasCam)
+        {
+            ParsedCamera pc;
+            uint8_t ortho; Read(in, ortho); pc.Orthographic = ortho != 0;
+            Read(in, pc.VerticalFOV);
+            Read(in, pc.OrthographicSize);
+            Read(in, pc.NearClip);
+            Read(in, pc.FarClip);
+            uint8_t prim; Read(in, prim); pc.Primary = prim != 0;
+            n.Camera = pc;
+        }
+
+        uint32_t nm; Read(in, nm);
+        for (uint32_t i = 0; i < nm; i++)
+        {
+            uint32_t ti, mi;
+            Read(in, ti);
+            Read(in, mi);
+            ParsedMesh pm = meshTable[ti]; // copy geometry; pair with this usage's material
+            pm.MaterialIndex = mi;
+            n.Meshes.push_back(std::move(pm));
+        }
+
+        uint32_t cc; Read(in, cc);
+        for (uint32_t i = 0; i < cc; i++) n.Children.push_back(ReadNode(in, meshTable));
+        return n;
+    }
+
     static std::optional<ParsedScene> ReadBinary(const std::string& path)
     {
         std::ifstream in(path, std::ios::binary);
@@ -336,7 +417,10 @@ namespace Engine
 
         char magic[4];
         in.read(magic, 4);
-        if (std::strncmp(magic, "PMSC", 4) != 0) { std::cerr << "Not a .pmscene file: " << path << std::endl; return std::nullopt; }
+        if (std::strncmp(magic, "PMSC", 4) != 0) {
+            std::cerr << "Not a .pmscene file: " << path << std::endl;
+            return std::nullopt;
+        }
 
         uint32_t version = 0;
         Read(in, version);
@@ -345,6 +429,7 @@ namespace Engine
         scene.Directory = "";
         scene.Name = ReadString(in);
 
+        // Materials
         uint32_t matCount = 0;
         Read(in, matCount);
         scene.Materials.resize(matCount);
@@ -383,6 +468,7 @@ namespace Engine
             }
         }
 
+        // Meshes
         uint32_t meshCount = 0;
         Read(in, meshCount);
         std::vector<ParsedMesh> meshTable(meshCount);
@@ -418,73 +504,9 @@ namespace Engine
             if (icount) in.read(reinterpret_cast<char*>(pm.Indices.data()), icount * sizeof(unsigned int));
         }
 
-        std::function<ParsedSceneNode()> readNode = [&]() -> ParsedSceneNode {
-            ParsedSceneNode n;
-            n.Name = ReadString(in);
-            Read(in, n.Translation);
-            Read(in, n.Rotation);
-            Read(in, n.Scale);
-
-            uint8_t hasLight; Read(in, hasLight);
-            if (hasLight)
-            {
-                ParsedLight pl;
-                int32_t lt; Read(in, lt); pl.Type = (LightComponent::LightType)lt;
-                Read(in, pl.Color);
-                Read(in, pl.Intensity);
-                uint8_t cs; Read(in, cs); pl.CastShadows = cs != 0;
-                Read(in, pl.InnerCutOff);
-                Read(in, pl.OuterCutOff);
-                n.Light = pl;
-            }
-
-            uint8_t hasCam; Read(in, hasCam);
-            if (hasCam)
-            {
-                ParsedCamera pc;
-                uint8_t ortho; Read(in, ortho); pc.Orthographic = ortho != 0;
-                Read(in, pc.VerticalFOV);
-                Read(in, pc.OrthographicSize);
-                Read(in, pc.NearClip);
-                Read(in, pc.FarClip);
-                uint8_t prim; Read(in, prim); pc.Primary = prim != 0;
-                n.Camera = pc;
-            }
-
-            uint32_t nm; Read(in, nm);
-            for (uint32_t i = 0; i < nm; i++)
-            {
-                uint32_t ti, mi;
-                Read(in, ti);
-                Read(in, mi);
-                ParsedMesh pm = meshTable[ti]; // copy geometry; pair with this usage's material
-                pm.MaterialIndex = mi;
-                n.Meshes.push_back(std::move(pm));
-            }
-
-            uint32_t cc; Read(in, cc);
-            for (uint32_t i = 0; i < cc; i++) n.Children.push_back(readNode());
-            return n;
-        };
-        scene.RootNode = readNode();
+        scene.RootNode = ReadNode(in, meshTable);
 
         return scene;
     }
 
-    // --- public API ---------------------------------------------------------
-    void PmSceneSerializer::Serialize(const Shared<Prefab>& prefab, const std::string& path)
-    {
-        ParsedScene scene = ExtractParsedScene(prefab);
-        WriteBinary(scene, path);
-
-        // ExtractMaterial malloc'd embedded-texture pixels purely to write them out.
-        for (ParsedMaterial& m : scene.Materials)
-            for (auto& [type, data] : m.EmbeddedTextures)
-                if (data.Pixels) { free(data.Pixels); data.Pixels = nullptr; }
-    }
-
-    std::optional<ParsedScene> PmSceneSerializer::Deserialize(const std::string& path)
-    {
-        return ReadBinary(path);
-    }
 }

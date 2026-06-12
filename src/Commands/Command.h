@@ -2,9 +2,7 @@
 
 namespace Engine {
 
-    // An undoable editor action. Undo() reverts the action, Redo() (re)applies it.
-    // A command must be self-contained: it resolves whatever it needs (entities by
-    // UUID, the active scene, etc.) at Undo/Redo time, not by holding raw handles.
+    // Undoable editor action using command pattern
     class Command {
     public:
         virtual ~Command() = default;

@@ -25,7 +25,7 @@ namespace Engine
         static float GetMouseX();
         static float GetMouseY();
 
-        // Locks and hides the cursor (for FPS-style camera control), or restores it.
+        // Locks and hides the cursor
         static void SetCursorLocked(bool locked);
     };
 

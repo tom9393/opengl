@@ -5,11 +5,7 @@
 
 namespace Engine
 {
-    // CPU-side audio asset: the whole file decoded to interleaved f32 PCM in RAM.
-    // One AudioClip is shared by every AudioInstance that plays it (each instance
-    // reads through its own cursor), mirroring how Texture2D backs the GPU.
-    // Format is stored as the underlying ma_format value so this header stays
-    // free of the large miniaudio.h include.
+    // Decoded to f32 PCM
     class AudioClip : public Asset
     {
         public:

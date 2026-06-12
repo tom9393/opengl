@@ -38,7 +38,7 @@ namespace Engine {
             try {
                 data = YAML::LoadFile(filepath);
             } catch (const YAML::ParserException& e) {
-                std::cout << "[Material Loader] YAML Error: " << e.what() << std::endl;
+                std::cerr << "Material loader YAML error: " << e.what() << std::endl;
                 return nullptr;
             }
 

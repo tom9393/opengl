@@ -19,7 +19,7 @@ namespace Engine
         s_Engine = new ma_engine();
         if (ma_engine_init(nullptr, s_Engine) != MA_SUCCESS)
         {
-            std::cerr << "Failed to initialise audio engine!" << std::endl;
+            std::cerr << "Failed to initialise audio engine" << std::endl;
             delete s_Engine;
             s_Engine = nullptr;
         }
@@ -33,6 +33,7 @@ namespace Engine
             delete s_Engine;
             s_Engine = nullptr;
         }
+
         s_Scene = nullptr;
     }
 
@@ -60,7 +61,7 @@ namespace Engine
         UUID clipHandle = AssetManager::GetHandleByName(clipName, AssetType::Audio);
         if (clipHandle == 0)
         {
-            std::cerr << "Audio.Play: no audio clip named '" << clipName << "'" << std::endl;
+            std::cerr << "Audio.Play: no audio clip named: " << clipName << std::endl;
             return nullptr;
         }
 
@@ -72,9 +73,8 @@ namespace Engine
 
         instance->Play();
 
-        // The engine owns the live sound, keeping it alive until it finishes
-        // (reaped in OnUpdate) even if the script discards the returned handle.
-        // Spatial sounds follow their emitter's transform there.
+        // Engine owns the sound and keeps it alive until it finishes
+        // Finished sounds are discarded via OnUpdate once per game loop
         s_Sounds.push_back({ instance, emitter.GetHandle(), params.Spatial });
         return instance;
     }
@@ -113,8 +113,8 @@ namespace Engine
             break;
         }
 
-        // Drop finished/stopped sounds, then keep spatial ones positioned at their
-        // emitter entity (skipping any whose emitter no longer exists).
+        // Drop finished/stopped sounds, then keep spatial ones positioned at their emitting entity
+        // Skip those whose emitter no longer exists
         s_Sounds.erase(std::remove_if(s_Sounds.begin(), s_Sounds.end(),
             [](const PlayingSound& sound) { return !sound.Instance || !sound.Instance->IsPlaying(); }),
             s_Sounds.end());

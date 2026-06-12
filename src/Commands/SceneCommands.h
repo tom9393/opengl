@@ -11,13 +11,7 @@
 
 namespace Engine {
 
-    // ---- Subtree memento (an entity plus all its descendants) -------------------
-    //
-    // Captures everything needed to rebuild an entity hierarchy identically: UUIDs,
-    // every non-structural component, and the parent / sibling position of the root.
-    // Used by Create (undo destroys, redo rebuilds) and Delete (undo rebuilds, redo
-    // destroys). UUIDs are preserved so cross-references and repeated undo/redo stay
-    // stable; the entt handles are rebuilt fresh on restore.
+    // Captures everything needed to rebuild an entity with identical hierarchy
 
     struct SubtreeNode {
         UUID id;
@@ -109,9 +103,7 @@ namespace Engine {
         if (entity) scene->DestroyEntity(entity);
     }
 
-    // ---- Commands ---------------------------------------------------------------
-
-    // In-place edit of one entity's components (field edits, component add/remove).
+    // In-place edit of one entity's components (field edits, component add/remove)
     class ModifyEntityCommand : public Command {
     public:
         ModifyEntityCommand(UUID entity, EntitySnapshot before, EntitySnapshot after)
@@ -127,8 +119,8 @@ namespace Engine {
         EntitySnapshot m_After;
     };
 
-    // Records the creation of an entity that has already been built in the scene.
-    // Push (not Execute) this so the live entity is left as-is.
+    // Records the creation of an entity that has already been built in the scene
+    // Push (not Execute) this so the live entity is left as is
     class CreateEntityCommand : public Command {
     public:
         explicit CreateEntityCommand(Entity created) : m_Memento(CaptureSubtree(created)) {}
@@ -142,7 +134,7 @@ namespace Engine {
     };
 
     // Deletes an entity subtree. The constructor captures the subtree, so build this
-    // and Execute it (which performs the deletion) rather than deleting separately.
+    // and Execute it (which performs the deletion)
     class DeleteEntityCommand : public Command {
     public:
         explicit DeleteEntityCommand(Entity entity) : m_Memento(CaptureSubtree(entity)) {}
@@ -155,7 +147,7 @@ namespace Engine {
         SubtreeMemento m_Memento;
     };
 
-    // Re-parents an entity. Built by RecordReparent after the move has been applied.
+    // Re-parents an entity. Built by RecordReparent after the move has been applied
     class ReparentCommand : public Command {
     public:
         ReparentCommand(UUID child, UUID oldParent, int oldIndex, UUID newParent, int newIndex)
@@ -191,10 +183,7 @@ namespace Engine {
         UUID m_NewParent; int m_NewIndex;
     };
 
-    // ---- Recording helpers ------------------------------------------------------
-
-    // Runs a component mutation (add/remove/edit) on an entity and records a single
-    // ModifyEntityCommand if it changed anything. Use for discrete inspector actions.
+    // Runs a component mutation (add/remove/edit) on an entity and records a ModifyEntityCommand if it changed anything
     template <typename Fn>
     inline void RecordEntityEdit(Entity entity, Fn&& mutate)
     {
@@ -221,7 +210,7 @@ namespace Engine {
         return it != children.end() ? (int)std::distance(children.begin(), it) : -1;
     }
 
-    // Applies a re-parent and records it. `newParent` may be a null entity to detach.
+    // Re-parent and make a record of it
     inline void RecordReparent(Entity child, Entity newParent)
     {
         UUID childId = child.GetUUID();

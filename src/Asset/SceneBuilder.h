@@ -39,7 +39,7 @@ namespace Engine
 
     private:
         static UUID CreateMaterialAsset(const ParsedMaterial& matData, const ParsedScene& data) {
-            Shared<Material> material = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
+            Shared<Material> material = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef"); // For now hardcoded
 
             material->Add({MaterialType::AlbedoTint, matData.AlbedoTint});
             material->Add({MaterialType::Emission, matData.Emission});
@@ -52,6 +52,7 @@ namespace Engine
                 // files store the full path already (empty Directory).
                 std::string texturePath = data.Directory.empty() ? path : (data.Directory + "/" + path);
                 if (!std::filesystem::exists(texturePath)) continue;
+
                 UUID texHandle = AssetManager::ImportAsset(texturePath);
                 AssetMetadata metadata = AssetManager::GetMetadata(texHandle);
 

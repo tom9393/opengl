@@ -19,7 +19,6 @@ namespace Engine {
         static Shared<Texture2D> LoadTexture2D(const AssetMetadata &metadata);
         static void LoadTexture2DAsync(const AssetMetadata metadata, std::function<void(Shared<Asset>)> cb);
 
-        // Loads an HDR equirectangular image as a float (16F) texture. Returns nullptr on failure.
         static Shared<Texture2D> LoadHDR(const std::string& path);
 
         static Shared<AssetMetadata> ImportTexture2D(const std::filesystem::path &path);
