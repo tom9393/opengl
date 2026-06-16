@@ -129,8 +129,7 @@ namespace Engine {
         bool snap = Input::IsKeyPressed(KEY_LEFT_SHIFT);
         auto result = GizmoManager::Manipulate(*m_EditorCamera, transform, snap);
 
-        // Snapshot the transform at drag start, apply during the drag, and record one
-        // undo step at drag end (so a whole gizmo manipulation is a single Ctrl+Z).
+        // Snapshot the transform at drag start, apply during the drag, and record one undo step at the drag end
         if (result.IsUsing && !m_GizmoUsing) {
             m_GizmoEntity = selectedEntity.GetUUID();
             m_GizmoBefore = CaptureEntity(selectedEntity);

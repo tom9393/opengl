@@ -8,26 +8,26 @@
 
 namespace Engine {
 
-    void UVViewportPanel::Enter() {
+    void UVViewportPanel::Enter()
+    {
         if (m_Session.IsActive())
             return;
-        // Start from a clean view/selection: this session is independent of any previous
-        // one (and re-clones the entity's current mesh, picking up Modeling edits).
         m_Selected.clear();
         m_Drag = Drag::None;
         m_ViewInitialized = false;
         m_Session.Begin(SceneManager::GetSelectedEntity());
     }
 
-    void UVViewportPanel::Exit() {
+    void UVViewportPanel::Exit()
+    {
         if (!m_Session.IsActive())
             return;
         m_Session.End(true);
     }
 
-    void UVViewportPanel::OnImGuiRender() {
+    void UVViewportPanel::OnImGuiRender()
+    {
         if (!m_Session.IsActive()) {
-            // No edit session: drop any stale state and re-fit when one next begins.
             m_Selected.clear();
             m_Drag = Drag::None;
             m_ViewInitialized = false;
@@ -56,7 +56,8 @@ namespace Engine {
         Draw(canvasMin, canvasMax);
     }
 
-    void UVViewportPanel::DrawToolbar() {
+    void UVViewportPanel::DrawToolbar()
+    {
         auto toolButton = [&](const char* label, Tool t) {
             bool active = (m_Tool == t);
             if (active)
@@ -88,7 +89,8 @@ namespace Engine {
         ImGui::Text("Selected: %d", (int)m_Selected.size());
     }
 
-    void UVViewportPanel::FitView(const ImVec2& canvasSize) {
+    void UVViewportPanel::FitView(const ImVec2& canvasSize)
+    {
         float side = 0.8f * std::min(canvasSize.x, canvasSize.y);
         if (side < 1.0f)
             side = 1.0f;
@@ -96,7 +98,8 @@ namespace Engine {
         m_Pan = { (canvasSize.x - side) * 0.5f, (canvasSize.y - side) * 0.5f };
     }
 
-    void UVViewportPanel::ZoomAt(const glm::vec2& mouse, const ImVec2& canvasMin, float wheel) {
+    void UVViewportPanel::ZoomAt(const glm::vec2& mouse, const ImVec2& canvasMin, float wheel)
+    {
         glm::vec2 uvUnder = ScreenToUV(mouse, canvasMin);
         float factor = (wheel > 0.0f) ? 1.15f : (1.0f / 1.15f);
         m_Zoom = glm::clamp(m_Zoom * factor, 8.0f, 16384.0f);
@@ -105,17 +108,18 @@ namespace Engine {
         m_Pan.y = mouse.y - canvasMin.y - (1.0f - uvUnder.y) * m_Zoom;
     }
 
-    ImVec2 UVViewportPanel::UVToScreen(const glm::vec2& uv, const ImVec2& canvasMin) const {
-        return ImVec2(canvasMin.x + m_Pan.x + uv.x * m_Zoom,
-                      canvasMin.y + m_Pan.y + (1.0f - uv.y) * m_Zoom);
+    ImVec2 UVViewportPanel::UVToScreen(const glm::vec2& uv, const ImVec2& canvasMin) const
+    {
+        return ImVec2(canvasMin.x + m_Pan.x + uv.x * m_Zoom, canvasMin.y + m_Pan.y + (1.0f - uv.y) * m_Zoom);
     }
 
-    glm::vec2 UVViewportPanel::ScreenToUV(const glm::vec2& s, const ImVec2& canvasMin) const {
-        return glm::vec2((s.x - canvasMin.x - m_Pan.x) / m_Zoom,
-                         1.0f - (s.y - canvasMin.y - m_Pan.y) / m_Zoom);
+    glm::vec2 UVViewportPanel::ScreenToUV(const glm::vec2& s, const ImVec2& canvasMin) const
+    {
+        return glm::vec2((s.x - canvasMin.x - m_Pan.x) / m_Zoom, 1.0f - (s.y - canvasMin.y - m_Pan.y) / m_Zoom);
     }
 
-    std::vector<bool> UVViewportPanel::ReferencedVerts() const {
+    std::vector<bool> UVViewportPanel::ReferencedVerts() const
+    {
         const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         const std::vector<int>& corner = m_Session.CornerUV();
         std::vector<bool> ref(uvs.size(), false);
@@ -125,7 +129,8 @@ namespace Engine {
         return ref;
     }
 
-    void UVViewportPanel::SelectAll() {
+    void UVViewportPanel::SelectAll()
+    {
         m_Selected.clear();
         std::vector<bool> ref = ReferencedVerts();
         for (int i = 0; i < (int)ref.size(); ++i)
@@ -133,7 +138,8 @@ namespace Engine {
                 m_Selected.push_back(i);
     }
 
-    int UVViewportPanel::PickVert(const glm::vec2& mouse, const ImVec2& canvasMin) const {
+    int UVViewportPanel::PickVert(const glm::vec2& mouse, const ImVec2& canvasMin) const
+    {
         const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         std::vector<bool> ref = ReferencedVerts();
         const float threshold = 8.0f;
@@ -150,10 +156,12 @@ namespace Engine {
                 hit = i;
             }
         }
+
         return hit;
     }
 
-    void UVViewportPanel::BeginTransform(const glm::vec2& mouse) {
+    void UVViewportPanel::BeginTransform(const glm::vec2& mouse)
+    {
         m_DragStartMouse = mouse;
         const std::vector<glm::vec2>& uvs = m_Session.UVVerts();
         m_DragStartUVs.clear();
@@ -168,7 +176,8 @@ namespace Engine {
         m_DragPivotUV = centroid;
     }
 
-    void UVViewportPanel::ApplyTransform(const glm::vec2& mouse, const ImVec2& canvasMin) {
+    void UVViewportPanel::ApplyTransform(const glm::vec2& mouse, const ImVec2& canvasMin)
+    {
         if (m_Selected.empty())
             return;
         ImGuiIO& io = ImGui::GetIO();
@@ -180,7 +189,7 @@ namespace Engine {
         glm::vec2 pivotScreen(pivot.x, pivot.y);
 
         // Transform is computed in screen space (about the selection's pivot) and mapped
-        // back to UV, which keeps rotate/scale visually intuitive despite the v-flip.
+        // back to UV, which keeps rotate/scale visually intuitive despite the v-flip
         for (size_t i = 0; i < m_Selected.size() && i < m_DragStartUVs.size(); ++i) {
             ImVec2 startS = UVToScreen(m_DragStartUVs[i], canvasMin);
             glm::vec2 startScreen(startS.x, startS.y);
@@ -215,7 +224,8 @@ namespace Engine {
         m_Session.SyncToMesh();
     }
 
-    void UVViewportPanel::FinalizeBox(const ImVec2& canvasMin) {
+    void UVViewportPanel::FinalizeBox(const ImVec2& canvasMin)
+    {
         float minx = std::min(m_BoxStart.x, m_BoxEnd.x);
         float maxx = std::max(m_BoxStart.x, m_BoxEnd.x);
         float miny = std::min(m_BoxStart.y, m_BoxEnd.y);
@@ -236,7 +246,8 @@ namespace Engine {
         }
     }
 
-    void UVViewportPanel::HandleInput(const ImVec2& canvasMin, bool hovered) {
+    void UVViewportPanel::HandleInput(const ImVec2& canvasMin, bool hovered)
+    {
         ImGuiIO& io = ImGui::GetIO();
         glm::vec2 mouse(io.MousePos.x, io.MousePos.y);
 
@@ -307,7 +318,8 @@ namespace Engine {
             ZoomAt(mouse, canvasMin, io.MouseWheel);
     }
 
-    unsigned int UVViewportPanel::AlbedoTextureID() const {
+    unsigned int UVViewportPanel::AlbedoTextureID() const
+    {
         Entity e = m_Session.GetEntity();
         if (!e || !e.HasComponent<MaterialComponent>())
             return 0;
@@ -325,7 +337,8 @@ namespace Engine {
         return tex ? tex->GetID() : 0;
     }
 
-    void UVViewportPanel::Draw(const ImVec2& canvasMin, const ImVec2& canvasMax) {
+    void UVViewportPanel::Draw(const ImVec2& canvasMin, const ImVec2& canvasMax)
+    {
         ImDrawList* dl = ImGui::GetWindowDrawList();
         dl->PushClipRect(canvasMin, canvasMax, true);
 
@@ -340,7 +353,7 @@ namespace Engine {
             }
         }
 
-        // 0..1 grid; the outer lines (i == 0 / 4) mark the unit square.
+        // 0..1 grid; the outer lines (i == 0 / 4) mark the unit square
         for (int i = 0; i <= 4; ++i) {
             float t = i / 4.0f;
             ImU32 col = (i == 0 || i == 4) ? IM_COL32(130, 130, 130, 255) : IM_COL32(70, 70, 70, 255);
@@ -366,7 +379,7 @@ namespace Engine {
             }
         }
 
-        // UV verts (only those referenced by a corner); selected ones highlighted.
+        // UV verts (only those referenced by a corner); selected ones highlighted
         std::vector<bool> ref = ReferencedVerts();
         std::vector<bool> sel(uvs.size(), false);
         for (int i : m_Selected)

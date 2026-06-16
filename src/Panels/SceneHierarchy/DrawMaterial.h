@@ -66,6 +66,7 @@ namespace Engine {
         UUID handle = component.MaterialHandle;
         if (!AssetManager::IsAssetLoaded(handle))
         {
+            // Hardcoded default material for now
             Shared<Material> newMaterial = MatdefLoader::LoadMaterial("/home/tom/Coding/c++/opengl/shaders/PBR_Standard.matdef");
 
             newMaterial->Add({MaterialType::AlbedoTint, glm::vec4(1.0f)});
@@ -192,10 +193,6 @@ namespace Engine {
             ImGui::TreePop();
         }
 
-        // Coalesce in-place parameter edits (drag floats, color pickers, blend/depth
-        // toggles) into one undo step, mirroring the entity inspector tracker. Adding or
-        // removing a parameter (a key-set change) is recorded above, so it is skipped
-        // here. Single material is edited at a time, so static state is sufficient.
         {
             static bool s_Editing = false;
             static UUID s_Handle = 0;

@@ -12,7 +12,6 @@ namespace Engine {
 
     void Directory::OnImGuiRender()
     {
-		PROFILE_FUNCTION();
 		if (m_CurrentDirectory != std::filesystem::path(s_AssetPath))
 		{
 			if (ImGui::Button("Back"))

@@ -25,7 +25,7 @@ namespace Engine {
         ModelingViewportPanel m_Modeling;
         UVViewportPanel m_UV;
 
-        ViewportTab* m_Tabs[3];
+        ViewportPanelBase* m_Tabs[3];
 
         Tab m_ActiveTab = Tab::Layout;
     };

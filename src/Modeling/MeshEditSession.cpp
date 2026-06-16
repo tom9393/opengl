@@ -5,11 +5,13 @@
 
 namespace Engine {
 
-    bool MeshEditSession::Begin(Entity entity) {
+    bool MeshEditSession::Begin(Entity entity)
+    {
         if (m_Active) {
             std::cout << "[MeshEditSession] A session is already active." << std::endl;
             return false;
         }
+
         if (!entity || !entity.HasComponent<MeshComponent>()) {
             std::cout << "[MeshEditSession] Entity has no mesh to edit." << std::endl;
             return false;
@@ -40,6 +42,7 @@ namespace Engine {
             else if (e.Name == "a_Tangent")  tanOff = fo;
             else if (e.Name == "a_Bitangent") bitanOff = fo;
         }
+
         if (posOff < 0) {
             std::cout << "[MeshEditSession] Source layout has no a_Position." << std::endl;
             return false;
@@ -51,12 +54,13 @@ namespace Engine {
             int b = v * floatStride + off;
             return glm::vec3(verts[b], verts[b + 1], verts[b + 2]);
         };
+
         auto readVec2 = [&](int v, int off) {
             int b = v * floatStride + off;
             return glm::vec2(verts[b], verts[b + 1]);
         };
 
-        // Weld render vertices into topological vertices by quantized position.
+        // Weld render vertices into topological vertices by quantized position
         const float weldScale = 100000.0f; // ~1e-5 tolerance
         std::map<std::array<long long, 3>, int> weldMap;
         std::vector<glm::vec3> positions;
@@ -88,9 +92,8 @@ namespace Engine {
             }
         }
 
-        // Each render triangle becomes a face on welded indices; drop degenerates. The
-        // per-corner UVs are read from the original (pre-weld) render vertices so seams
-        // survive into the corner UV layer built below.
+        // Each render triangle becomes a face on welded indices; drop degenerates
+        // The per-corner UVs are read from the original (pre-weld) render vertices so seams survive into the corner UV layer built below
         std::vector<std::vector<int>> faces;
         std::vector<std::vector<glm::vec2>> faceCornerUV;
         for (size_t t = 0; t + 2 < indices.size(); t += 3) {
@@ -132,15 +135,15 @@ namespace Engine {
         return true;
     }
 
-    void MeshEditSession::SyncToMesh() {
+    void MeshEditSession::SyncToMesh()
+    {
         if (!m_Active)
             return;
 
         int vCount = (int)m_HalfEdge.Vertices().size();
         int faceCount = (int)m_HalfEdge.Faces().size();
 
-        // Recompute smooth (area-weighted) normals per welded vertex from a fan
-        // triangulation of every face.
+        // Recompute smooth (area-weighted) normals per welded vertex from a fan triangulation of every face
         std::vector<glm::vec3> normals(vCount, glm::vec3(0.0f));
         for (int f = 0; f < faceCount; ++f) {
             std::vector<int> fv = m_HalfEdge.FaceVertices(f);
@@ -153,14 +156,15 @@ namespace Engine {
                 normals[c] += fn;
             }
         }
+
         for (glm::vec3& n : normals) {
             float len = glm::length(n);
             n = len > 0.0f ? n / len : glm::vec3(0.0f, 1.0f, 0.0f);
         }
 
-        // Emit one render vertex per (welded vertex, UV vert) pair so the mesh splits at
-        // UV seams; position/normal/tangent come from the welded vertex, UV from the
-        // per-corner layer. Faces are fan-triangulated by their corner half-edges.
+        // Emit one render vertex per (welded vertex, UV vert) pair so the mesh splits at UV seams
+        // Position/normal/tangent come from the welded vertex, UV from the per corner layer
+        // Faces are fan-triangulated by their corner half-edges
         const int floatsPerVertex = 14;
         std::map<std::pair<int, int>, unsigned int> cornerToRender;
         std::vector<float> vertices;
@@ -234,11 +238,13 @@ namespace Engine {
         AssetManager::RegisterAsset(metadata, asset);
     }
 
-    MeshEditSession::State MeshEditSession::CaptureState() const {
+    MeshEditSession::State MeshEditSession::CaptureState() const
+    {
         return { m_HalfEdge, m_UV, m_Tangent, m_Bitangent, m_UVVerts, m_CornerUV };
     }
 
-    void MeshEditSession::RestoreState(const State& state) {
+    void MeshEditSession::RestoreState(const State& state)
+    {
         m_HalfEdge = state.HalfEdge;
         m_UV = state.UV;
         m_Tangent = state.Tangent;
@@ -247,7 +253,8 @@ namespace Engine {
         m_CornerUV = state.CornerUV;
     }
 
-    void MeshEditSession::End(bool commit) {
+    void MeshEditSession::End(bool commit)
+    {
         if (!m_Active)
             return;
 
@@ -267,8 +274,9 @@ namespace Engine {
         m_EditMeshHandle = 0;
     }
 
-    // Append carried attributes for each appended vertex, copied from its source vertex.
-    void MeshEditSession::AppendCarriedAttributes(const std::vector<int>& sources) {
+    // Append carried attributes for each appended vertex, copied from its source vertex
+    void MeshEditSession::AppendCarriedAttributes(const std::vector<int>& sources)
+    {
         for (int src : sources) {
             m_UV.push_back(m_UV[src]);
             m_Tangent.push_back(m_Tangent[src]);
@@ -276,7 +284,8 @@ namespace Engine {
         }
     }
 
-    bool MeshEditSession::ExtrudeFaces(const std::vector<int>& faces) {
+    bool MeshEditSession::ExtrudeFaces(const std::vector<int>& faces)
+    {
         if (!m_Active)
             return false;
 
@@ -291,7 +300,8 @@ namespace Engine {
         return true;
     }
 
-    bool MeshEditSession::SubdivideFaces(const std::vector<int>& faces) {
+    bool MeshEditSession::SubdivideFaces(const std::vector<int>& faces)
+    {
         if (!m_Active)
             return false;
 
@@ -306,7 +316,8 @@ namespace Engine {
         return true;
     }
 
-    bool MeshEditSession::DeleteFaces(const std::vector<int>& faces) {
+    bool MeshEditSession::DeleteFaces(const std::vector<int>& faces)
+    {
         if (!m_Active)
             return false;
 
@@ -315,7 +326,7 @@ namespace Engine {
         if (!m_HalfEdge.DeleteFaces(faces, remap, heRemap))
             return false;
 
-        // Compact the carried attributes the same way (new index <= old, so forward-safe).
+        // Compact the carried attributes the same way (new index <= old, so forward-safe)
         int newCount = 0;
         for (int v : remap)
             if (v >= 0) newCount = std::max(newCount, v + 1);
@@ -334,8 +345,8 @@ namespace Engine {
         m_Tangent = std::move(tan);
         m_Bitangent = std::move(bit);
 
-        // Compact the per-corner UVs onto the new half-edge indexing; UV verts that lose
-        // all their corners simply go unreferenced (the editor ignores them).
+        // Compact the per-corner UVs onto the new half-edge indexing
+        // UV verts that lose all their corners simply go unreferenced (the editor ignores them)
         std::vector<int> cornerUV((int)m_HalfEdge.HalfEdges().size(), -1);
         for (int he = 0; he < (int)heRemap.size(); ++he)
             if (heRemap[he] >= 0)
@@ -346,14 +357,13 @@ namespace Engine {
         return true;
     }
 
-    void MeshEditSession::BuildCornerUVs(const std::vector<std::vector<int>>& faces,
-                                         const std::vector<std::vector<glm::vec2>>& faceCornerUV) {
+    void MeshEditSession::BuildCornerUVs(const std::vector<std::vector<int>>& faces, const std::vector<std::vector<glm::vec2>>& faceCornerUV)
+    {
         m_UVVerts.clear();
         m_CornerUV.assign(m_HalfEdge.HalfEdges().size(), -1);
 
-        // A corner's UV vert is keyed by (welded vertex, quantized UV): same vertex with
-        // the same UV across faces shares a vert (one island); a differing UV at the same
-        // vertex splits into a second vert (a seam). The scale matches the position weld.
+        // A corner's UV vert is keyed by (welded vertex, quantized UV): same vertex with the same UV across faces shares a vert (one island)
+        // A differing UV at the same vertex splits into a second vert (a seam). The scale matches the position weld.
         const float uvScale = 100000.0f;
         std::map<std::array<long long, 3>, int> uvMap;
 
@@ -382,13 +392,13 @@ namespace Engine {
         }
     }
 
-    void MeshEditSession::SeedNewCornerUVs(int oldHalfEdgeCount) {
+    void MeshEditSession::SeedNewCornerUVs(int oldHalfEdgeCount)
+    {
         int newHECount = (int)m_HalfEdge.HalfEdges().size();
         m_CornerUV.resize(newHECount, -1);
 
-        // New interior corners are seeded from the per-vertex UV; corners at the same
-        // vertex with the same seed share a UV vert so new faces stay connected in UV
-        // space. Boundary half-edges keep -1.
+        // New interior corners are seeded from the per-vertex UV; corners at the same vertex with the same seed share a UV vert so new faces stay connected in UV space
+        // Boundary half-edges keep -1.
         const float uvScale = 100000.0f;
         std::map<std::array<long long, 3>, int> uvMap;
         for (int he = oldHalfEdgeCount; he < newHECount; ++he) {

@@ -100,13 +100,13 @@ namespace Engine {
         auto& transformComponent = entity.GetComponent<TransformComponent>();
         auto& rigidbodyComponent = entity.GetComponent<RigidBodyComponent>();
 
-        // Bodies simulate in world space; bake the parent chain into the spawn pose.
+        // Bodies simulate in world space; bake the parent chain into the spawn pose
         glm::vec3 translation, rotation, scale;
         MathTools::DecomposeMatrix(ParentWorldMatrix(entity) * transformComponent.GetTransform(), translation, rotation, scale);
 
         RBComplexShape* shape = new RBComplexShape(CollisionBaker::GetShapePath(entity));
 
-        // Only dynamic bodies simulate with mass; static and kinematic are fixed (mass 0) in Bullet.
+        // Only dynamic bodies simulate with mass; static and kinematic are fixed (mass 0) in Bullet
         float mass = rigidbodyComponent.type == RigidBodyComponent::BodyType::Dynamic ? rigidbodyComponent.mass : 0.0f;
         Shared<RigidBody> body = MakeShared<RigidBody>(shape, translation, rotation, scale, rigidbodyComponent.inertia, mass);
 
@@ -153,8 +153,7 @@ namespace Engine {
     {
 		auto physics = s_Scene->GetRegistry().view<RigidBodyComponent, TransformComponent>();
 
-		// Kinematic bodies are driven by their transform; push world poses before
-		// stepping so the solver sees them this frame.
+		// Kinematic bodies are driven by their transform; push world poses before stepping so the solver sees them this frame
 		for (auto& e : physics)
 		{
 			auto [rb, transform] = physics.get<RigidBodyComponent, TransformComponent>(e);
@@ -181,10 +180,8 @@ namespace Engine {
             Entity entity { e, s_Scene };
             if (entity.GetParent() != entt::null)
             {
-                // Bring the world-space pose back into the parent's space.
-                // Scale is left untouched -- the simulation never changes it.
-                glm::mat4 local = glm::inverse(ParentWorldMatrix(entity))
-                    * glm::translate(glm::mat4(1.0f), worldPos) * glm::toMat4(worldRot);
+                // Bring the world-space pose back into the parent's space, scale is left untouched as the simulation never changes it
+                glm::mat4 local = glm::inverse(ParentWorldMatrix(entity)) * glm::translate(glm::mat4(1.0f), worldPos) * glm::toMat4(worldRot);
                 glm::vec3 translation, rotation, scale;
                 MathTools::DecomposeMatrix(local, translation, rotation, scale);
                 transform.translation = translation;

@@ -1,24 +1,20 @@
 #include "SceneHierarchyPanel.h"
-#include "../../Scene/Entity.h"
-#include "../../Scene/Scene.h"
-#include "../../Scene/PrefabSerializer.h"
-#include "../../Scene/Components.h"
-#include "../../Asset/CollisionBaker.h"
-#include "../../Asset/Asset.h"
-#include "../../Commands/SceneCommands.h"
-#include "../../Scripting/PlayerScript.h"
-#include "../../Utils/SceneManager.h"
+#include "Scene/Entity.h"
+#include "Scene/Scene.h"
+#include "Scene/PrefabSerializer.h"
+#include "Scene/Components.h"
+#include "Asset/CollisionBaker.h"
+#include "Asset/Asset.h"
+#include "Commands/SceneCommands.h"
+#include "Scripting/PlayerScript.h"
+#include "Utils/SceneManager.h"
 #include "DrawComponent.h"
 
 namespace Engine
 {
 
 	namespace {
-		// Coalesces an inspector interaction (a drag, a typed value, etc.) into one undo
-		// step. While any ImGui item is active we hold a snapshot taken when it first
-		// became active; when the interaction ends we push a single ModifyEntityCommand
-		// if anything actually changed. Editing a different panel snapshots the (then
-		// unchanged) selection harmlessly.
+        // While any ImGui item is active we hold a snapshot taken when it first became active; when the interaction ends we push a ModifyEntityCommand to record the change
 		void TrackInspectorEdit(Entity selection)
 		{
 			static bool s_Editing = false;
@@ -39,8 +35,7 @@ namespace Engine
 				if (entity)
 				{
 					EntitySnapshot after = CaptureEntity(entity);
-					// Component add/remove (a set change) is recorded at its action site;
-					// the tracker only commits in-place value edits.
+					// Component add/remove (a set change) is recorded at its action site, the tracker only commits in-place value edits
 					if (SameComponentSet(s_Before, after) && SnapshotsDiffer(s_Before, after))
 						CommandHistory::Global().Push(
 							MakeUnique<ModifyEntityCommand>(s_Entity, s_Before, after));
@@ -56,7 +51,6 @@ namespace Engine
 		Scene* context = SceneManager::GetContext();
 		if (!context) return;
 
-        // --- NEW: Provide a drop target on the empty window space to un-parent entities ---
         if (ImGui::BeginDragDropTarget())
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
@@ -64,7 +58,6 @@ namespace Engine
                 entt::entity payloadEntity = *(const entt::entity*)payload->Data;
                 Entity child{ payloadEntity, context };
 
-                // An empty entity implies "remove parent" in a robust SetParent implementation
                 Entity nullParent{};
                 RecordReparent(child, nullParent);
             }
@@ -74,7 +67,6 @@ namespace Engine
         {
             Entity e { entity, context };
             
-            // --- NEW: Only draw ROOT entities in the main loop ---
             if (!e.HasParent())
             {
                 DrawEntityNode(e);
@@ -138,7 +130,6 @@ namespace Engine
 			SceneManager::SetSelectedEntity(entity.GetHandle());
         }
 
-        // --- NEW: Drag and Drop Implementation ---
         if (ImGui::BeginDragDropSource())
         {
             entt::entity entityHandle = entity.GetHandle();
@@ -154,7 +145,7 @@ namespace Engine
                 entt::entity payloadEntity = *(const entt::entity*)payload->Data;
                 Entity child{ payloadEntity, context };
                 
-                // Prevent parenting to yourself or your own children (prevents infinite loops!)
+                // Prevent parenting to yourself or your own children in order to prevent infinite loops
                 if (child != entity)
                 {
                     RecordReparent(child, entity);
@@ -202,7 +193,6 @@ namespace Engine
             ImGui::EndPopup();
         }
 
-        // --- NEW: Recursive drawing of children ---
         if (opened)
         {
             if (hasChildren)

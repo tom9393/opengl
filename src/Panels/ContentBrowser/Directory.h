@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../../../pch.h"
-#include "../../Asset/Texture.h"
-#include "../../Asset/AssetManager.h"
+#include "pch.h"
+#include "Asset/Texture.h"
+#include "Asset/AssetManager.h"
 #include "Renderer.h"
 
 namespace Engine {

@@ -9,7 +9,7 @@ class btDiscreteDynamicsWorld;
 
 namespace Engine {
 
-    // Passed to NativeScript::OnCollision on contact enter.
+    // Passed to NativeScript::OnCollision on contact enter
     struct CollisionData
     {
         entt::entity Other = entt::null;
@@ -18,8 +18,6 @@ namespace Engine {
         float Impulse;
     };
 
-    // Bullet world plumbing (dispatcher, broadphase, solver, world, debug
-    // drawer); defined in the .cpp so Bullet headers stay out of this one.
     struct PhysicsWorldConfiguration;
 
     struct PhysicsSettings
@@ -32,8 +30,7 @@ namespace Engine {
     class Entity;
     class RigidBody;
 
-    // Entity handles are stored in Bullet user pointers offset by one so the
-    // first entt handle (0) is distinguishable from an unset user pointer.
+    // Entity handles are stored in Bullet user pointers offset by one so the first entt handle (0) is distinguishable from an unset user pointer
     inline void* EntityToUserPointer(entt::entity e) { return (void*)((uintptr_t)e + 1); }
     inline entt::entity UserPointerToEntity(void* ptr) { return (entt::entity)((uintptr_t)ptr - 1); }
 
@@ -51,8 +48,6 @@ namespace Engine {
         static void AddRigidBody(Shared<RigidBody> &body);
         static void RemoveRigidBody(Shared<RigidBody> &body);
 
-        // Builds the runtime rigid body for one entity and adds it to the world.
-        // Used both at runtime start and when spawning prefabs mid-play.
         static Shared<RigidBody> AddRuntimeBody(Entity entity);
 
         static void RegisterContactCallback(ContactCallback cb) { s_Contacts.SetCallback(std::move(cb)); }

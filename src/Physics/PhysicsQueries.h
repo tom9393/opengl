@@ -12,13 +12,13 @@ namespace Engine {
         glm::vec3 Normal;
     };
 
-    // Stateless spatial queries against the world owned by PhysicsEngine.
+    // Stateless spatial queries
     namespace PhysicsQueries {
 
-        // `ignore` skips one entity's body (typically the caster itself).
+        // Ignore skips entity's body (i.e. the caster itself)
         RaycastResult Raycast(const glm::vec3 &origin, const glm::vec3 &direction, float distance, entt::entity ignore = entt::null);
         std::vector<RaycastResult> RaycastAll(const glm::vec3 &origin, const glm::vec3 &direction, float distance);
-        // Entities whose bodies overlap a sphere (each entity reported once).
+        // Entities whose bodies overlap a sphere (each entity reported once)
         std::vector<entt::entity> OverlapSphere(const glm::vec3 &center, float radius);
 
     }

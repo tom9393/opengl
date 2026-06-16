@@ -15,12 +15,12 @@ namespace Engine {
 
     void PhysicsDebugDrawer::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
     {
-        // You can leave this empty for now if you don't need to see contact points
+        // Empty for now
     }
 
     void PhysicsDebugDrawer::draw3dText(const btVector3& location, const char* textString)
     {
-        // Leave empty for now
+        // Empty for now
     }
 
     void PhysicsDebugDrawer::setDebugMode(int debugMode)
@@ -35,7 +35,7 @@ namespace Engine {
 
     void PhysicsDebugDrawer::reportErrorWarning(const char* warningString) 
     {
-        std::cout << "[Physics] " << warningString << std::endl; 
+        std::cout << "Physics: " << warningString << std::endl; 
     }
 
 }

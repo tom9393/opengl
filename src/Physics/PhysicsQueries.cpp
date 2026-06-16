@@ -6,7 +6,7 @@
 
 namespace Engine {
 
-    // Closest-hit callback that skips one body (e.g. the caster itself).
+    // Closest-hit callback that skips one body (e.g. the caster itself)
     struct IgnoreEntityRayCallback : btCollisionWorld::ClosestRayResultCallback
     {
         void* m_Ignore;
@@ -27,7 +27,7 @@ namespace Engine {
         btVector3 rayFrom = GlmToBullet(origin);
         btVector3 rayTo = GlmToBullet(origin + direction * distance);
 
-        // No body carries the encoded null handle as user pointer, so this never matches when ignore is entt::null.
+        // No body carries the encoded null handle as user pointer, so this never matches when ignore is entt::null
         IgnoreEntityRayCallback callback(rayFrom, rayTo, EntityToUserPointer(ignore));
 
         PhysicsEngine::GetWorld()->rayTest(rayFrom, rayTo, callback);
@@ -56,7 +56,7 @@ namespace Engine {
             results.push_back({ true, handle, BulletToGlm(callback.m_hitPointWorld[i]), BulletToGlm(callback.m_hitNormalWorld[i]) });
         }
 
-        // Bullet reports hits in arbitrary order; sort nearest-first.
+        // Bullet reports hits in arbitrary order; sort nearest-first
         std::sort(results.begin(), results.end(), [&origin](const RaycastResult& a, const RaycastResult& b) {
             return glm::distance(origin, a.Position) < glm::distance(origin, b.Position);
         });
@@ -64,7 +64,7 @@ namespace Engine {
         return results;
     }
 
-    // Collects the entities whose bodies touch the query object.
+    // Collects the entities whose bodies touch the query object
     struct OverlapResultCallback : btCollisionWorld::ContactResultCallback
     {
         const btCollisionObject* m_Self = nullptr;

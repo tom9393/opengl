@@ -22,7 +22,6 @@ namespace Engine {
 
 			if (ImGui::TreeNodeEx("Mesh Attributes", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				// 1. Fetch the mesh from the AssetManager using the component's handle
 				Shared<Mesh> mesh = AssetManager::GetAsset<Mesh>(component.MeshHandle);
 				
 				if (mesh)
@@ -34,13 +33,10 @@ namespace Engine {
 					ImGui::Separator();
 					ImGui::Spacing();
 
-					// 2. Fetch ALL Vertex Buffers
 					const auto& vertexBuffers = vertexArray->GetVertexBuffers();
 					
-					// This tracks the OpenGL layout(location = X) index across ALL buffers
 					uint32_t globalAttributeIndex = 0; 
 
-					// 3. Iterate through every VBO
 					for (size_t i = 0; i < vertexBuffers.size(); i++)
 					{
 						auto& vertexBuffer = vertexBuffers[i];
@@ -48,7 +44,6 @@ namespace Engine {
 						// Push a unique ID for this specific VBO block so ImGui doesn't mix up the tables
 						ImGui::PushID((int)i); 
 						
-						// Create a collapsible header for each VBO
 						if (ImGui::TreeNodeEx("VBO_Node", ImGuiTreeNodeFlags_DefaultOpen, "Vertex Buffer %zu", i))
 						{
 							if (ImGui::BeginTable("BufferLayoutTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
@@ -66,7 +61,6 @@ namespace Engine {
 									ImGui::TableNextRow();
 									ImGui::TableSetColumnIndex(0);
 									
-									// Push the global attribute index as the ID for the checkbox
 									ImGui::PushID(globalAttributeIndex);
 									
 									if (ImGui::Checkbox("##enabled", const_cast<bool*>(&element.Enabled)))
@@ -91,14 +85,13 @@ namespace Engine {
 									ImGui::TableSetColumnIndex(3);
 									ImGui::Text("%d bytes", element.Size);
 
-									// Increment layout location for the next attribute!
 									globalAttributeIndex++;
 								}
 								ImGui::EndTable();
 							}
-							ImGui::TreePop(); // Pop VBO TreeNode
+							ImGui::TreePop();
 						}
-						ImGui::PopID(); // Pop VBO Block ID
+						ImGui::PopID();
 						ImGui::Spacing();
 					}
 				}
@@ -106,7 +99,7 @@ namespace Engine {
 				{
 					ImGui::TextDisabled("No Mesh Loaded");
 				}
-				ImGui::TreePop(); // Pop main Mesh Attributes TreeNode
+				ImGui::TreePop();
 			}
 		};
 }

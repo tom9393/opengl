@@ -14,7 +14,7 @@ namespace Engine {
 		// Persist selection per-control (keyed by label)
 		static std::unordered_map<std::string, int> s_selectedAxis;
 
-		// ensure a default of -1 (no axis selected)
+		// Ensure a default of -1 (no axis selected)
 		if (s_selectedAxis.find(label) == s_selectedAxis.end())
 		s_selectedAxis[label] = -1;
 
@@ -29,7 +29,6 @@ namespace Engine {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 4});
 
-		// button sizing
 		float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
 		ImVec2 buttonSize = { lineHeight + 4.0f, lineHeight };
 
@@ -41,14 +40,12 @@ namespace Engine {
 		ImVec4(0.12f, 0.25f, 0.75f, 1.0f)  // blue-ish Z
 		};
 
-		// Render three inline axis controls: [Button(X)] [DragFloat]
 		for (int i = 0; i < 3; ++i)
 		{
 			ImGui::PushID(i);
 
 			bool isSelected = (selected == i);
 
-			// color the button if selected (and slightly darker when not)
 			ImVec4 baseBtnColor = ImGui::GetStyleColorVec4(ImGuiCol_Button);
 			ImVec4 btnColor = isSelected ? axisColors[i] : ImVec4(baseBtnColor.x * 0.7f, baseBtnColor.y * 0.7f, baseBtnColor.z * 0.7f, baseBtnColor.w);
 
@@ -59,9 +56,7 @@ namespace Engine {
 
 			if (ImGui::Button(axisNames[i], buttonSize))
 			{
-				// toggle selection (click same axis again to deselect)
 				selected = (isSelected ? -1 : i);
-				// optional: reset when selecting
 				if (!isSelected)
 				{
 					*axisVals[i] = resetValue;
@@ -74,11 +69,10 @@ namespace Engine {
 
 			ImGui::SameLine();
 
-			// unique ID for the DragFloat. Use hidden label with the main label to avoid collisions.
+			// Unique ID for the DragFloat. Use hidden label with the main label to avoid collisions
 			char dragLabel[64];
 			std::snprintf(dragLabel, sizeof(dragLabel), "##%s_%c", label.c_str(), 'X' + i);
 
-			// set width and render DragFloat
 			ImGui::SetNextItemWidth(120.0f);
 			if (ImGui::DragFloat(dragLabel, axisVals[i], 0.1f))
 				modified = true;
@@ -88,7 +82,7 @@ namespace Engine {
 			if (i < 2) ImGui::SameLine();
 		}
 
-		ImGui::PopStyleVar(); // ItemSpacing
+		ImGui::PopStyleVar();
 		ImGui::Columns(1);
 		ImGui::PopID();
 

@@ -24,6 +24,7 @@ namespace Engine {
     }
 
     void EditorIcons::Init() {
+        // Todo; pathing
         s_File   = Load("../assets/icons/documentIcon.png");
         s_Folder = Load("../assets/icons/folderIcon.png");
         s_Lua    = Load("../assets/icons/luaIcon.png");

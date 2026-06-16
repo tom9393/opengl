@@ -10,7 +10,8 @@ namespace Engine {
 
     namespace {
         // Squared distance from point p to segment a-b, in screen pixels.
-        float PointSegmentDistSq(const ImVec2& p, const ImVec2& a, const ImVec2& b) {
+        float PointSegmentDistSq(const ImVec2& p, const ImVec2& a, const ImVec2& b)
+        {
             float vx = b.x - a.x, vy = b.y - a.y;
             float wx = p.x - a.x, wy = p.y - a.y;
             float len2 = vx * vx + vy * vy;
@@ -22,7 +23,8 @@ namespace Engine {
         }
     }
 
-    void ModelingViewportPanel::OnDraw() {
+    void ModelingViewportPanel::OnDraw()
+    {
         if (m_Session.IsActive()) {
             DrawOverlay();
             DrawGizmo();
@@ -30,7 +32,8 @@ namespace Engine {
         DrawToolbar();
     }
 
-    void ModelingViewportPanel::Enter() {
+    void ModelingViewportPanel::Enter()
+    {
         if (m_Session.IsActive())
             return;
         Entity selected = SceneManager::GetSelectedEntity();
@@ -38,14 +41,16 @@ namespace Engine {
             ClearSelection();
     }
 
-    void ModelingViewportPanel::Exit() {
+    void ModelingViewportPanel::Exit()
+    {
         if (!m_Session.IsActive())
             return;
         m_Session.End(true);
         ClearSelection();
     }
 
-    void ModelingViewportPanel::DrawToolbar() {
+    void ModelingViewportPanel::DrawToolbar()
+    {
         ImGui::SetCursorScreenPos(ImVec2(m_ViewportBounds[0].x + 8.0f, m_ViewportBounds[0].y + 8.0f));
 
         if (!m_Session.IsActive()) {
@@ -65,8 +70,6 @@ namespace Engine {
             return;
         }
 
-        // Switching the select mode clears the previous mode's selection (the element
-        // types don't map onto each other in v1).
         auto modeButton = [&](const char* label, SelectMode mode) {
             bool active = (m_SelectMode == mode);
             if (active)
@@ -94,8 +97,6 @@ namespace Engine {
         ImGui::SameLine();
         ImGui::Text("Selected: %d", selCount);
 
-        // Topology ops act on selected faces (v1). Extrude keeps the lifted caps
-        // selected so the gizmo can pull them out; delete/subdivide reindex faces.
         if (m_SelectMode == SelectMode::Face && !m_SelectedFaces.empty()) {
             ImGui::SameLine();
             ImGui::Dummy(ImVec2(12.0f, 0.0f));
@@ -111,7 +112,8 @@ namespace Engine {
         }
     }
 
-    bool ModelingViewportPanel::TryGetMVP(glm::mat4& mvp) {
+    bool ModelingViewportPanel::TryGetMVP(glm::mat4& mvp)
+    {
         if (!m_Session.IsActive() || !m_EditorCamera)
             return false;
 
@@ -124,7 +126,8 @@ namespace Engine {
         return true;
     }
 
-    bool ModelingViewportPanel::WorldToScreen(const glm::mat4& mvp, const glm::vec3& local, ImVec2& out) const {
+    bool ModelingViewportPanel::WorldToScreen(const glm::mat4& mvp, const glm::vec3& local, ImVec2& out) const
+    {
         glm::vec4 clip = mvp * glm::vec4(local, 1.0f);
         if (clip.w <= 0.0f)
             return false;
@@ -138,13 +141,12 @@ namespace Engine {
         return true;
     }
 
-    void ModelingViewportPanel::DrawOverlay() {
+    void ModelingViewportPanel::DrawOverlay()
+    {
         glm::mat4 mvp;
         if (!TryGetMVP(mvp))
             return;
 
-        // The edge wireframe is always drawn for shape context; verts/faces overlay on
-        // top only in their respective modes.
         DrawEdgeOverlay(mvp);
         if (m_SelectMode == SelectMode::Vertex)
             DrawVertexOverlay(mvp);
@@ -152,7 +154,8 @@ namespace Engine {
             DrawFaceOverlay(mvp);
     }
 
-    void ModelingViewportPanel::DrawVertexOverlay(const glm::mat4& mvp) {
+    void ModelingViewportPanel::DrawVertexOverlay(const glm::mat4& mvp)
+    {
         const HalfEdgeMesh& mesh = m_Session.Mesh();
         int vCount = (int)mesh.Vertices().size();
 
@@ -176,7 +179,8 @@ namespace Engine {
         }
     }
 
-    void ModelingViewportPanel::DrawEdgeOverlay(const glm::mat4& mvp) {
+    void ModelingViewportPanel::DrawEdgeOverlay(const glm::mat4& mvp)
+    {
         const HalfEdgeMesh& mesh = m_Session.Mesh();
         std::vector<std::pair<int, int>> edges = mesh.Edges();
 
@@ -201,7 +205,8 @@ namespace Engine {
         }
     }
 
-    void ModelingViewportPanel::DrawFaceOverlay(const glm::mat4& mvp) {
+    void ModelingViewportPanel::DrawFaceOverlay(const glm::mat4& mvp)
+    {
         const HalfEdgeMesh& mesh = m_Session.Mesh();
         int fCount = (int)mesh.Faces().size();
 
@@ -212,7 +217,7 @@ namespace Engine {
 
         ImDrawList* draw = ImGui::GetWindowDrawList();
         for (int f = 0; f < fCount; ++f) {
-            // Translucent fill marks selected faces (convex fill: fine for tris/quads).
+            // Translucent fill marks selected faces (convex fill: fine for tris/quads)
             if (selected[f]) {
                 std::vector<int> fv = mesh.FaceVertices(f);
                 std::vector<ImVec2> pts;
@@ -226,7 +231,7 @@ namespace Engine {
                     draw->AddConvexPolyFilled(pts.data(), (int)pts.size(), IM_COL32(255, 160, 0, 80));
             }
 
-            // Centroid dot is the click target for the face.
+            // Centroid dot is the click target for the face
             ImVec2 c;
             if (!WorldToScreen(mvp, mesh.FaceCentroid(f), c))
                 continue;
@@ -236,7 +241,8 @@ namespace Engine {
         }
     }
 
-    void ModelingViewportPanel::DrawGizmo() {
+    void ModelingViewportPanel::DrawGizmo()
+    {
         if (!HasSelection() || !m_EditorCamera)
             return;
 
@@ -250,7 +256,7 @@ namespace Engine {
 
         HalfEdgeMesh& mesh = m_Session.Mesh();
 
-        // World-space centroid of the moved vertices drives the gizmo position.
+        // World-space centroid of the moved vertices drives the gizmo position
         glm::vec3 localCentroid(0.0f);
         for (int v : verts)
             localCentroid += mesh.Position(v);
@@ -275,8 +281,7 @@ namespace Engine {
         if (result.IsUsing) {
             glm::vec3 deltaWorld = glm::vec3(result.Transform[3]) - worldCentroid;
             if (deltaWorld != glm::vec3(0.0f)) {
-                // A world-space translation maps to a local displacement through the
-                // inverse model (handles the entity's rotation/scale).
+                // A world-space translation maps to a local displacement through the inverse model
                 glm::vec3 deltaLocal = glm::vec3(glm::inverse(model) * glm::vec4(deltaWorld, 0.0f));
                 for (int v : verts)
                     mesh.Position(v) += deltaLocal;
@@ -293,7 +298,8 @@ namespace Engine {
         m_VertGizmoUsing = result.IsUsing;
     }
 
-    int ModelingViewportPanel::PickVertex(const ImVec2& mouse) {
+    int ModelingViewportPanel::PickVertex(const ImVec2& mouse)
+    {
         glm::mat4 mvp;
         if (!TryGetMVP(mvp))
             return -1;
@@ -316,10 +322,12 @@ namespace Engine {
                 best = v;
             }
         }
+
         return best;
     }
 
-    int ModelingViewportPanel::PickEdge(const ImVec2& mouse) {
+    int ModelingViewportPanel::PickEdge(const ImVec2& mouse)
+    {
         glm::mat4 mvp;
         if (!TryGetMVP(mvp))
             return -1;
@@ -343,10 +351,12 @@ namespace Engine {
                 best = e;
             }
         }
+
         return best;
     }
 
-    int ModelingViewportPanel::PickFace(const ImVec2& mouse) {
+    int ModelingViewportPanel::PickFace(const ImVec2& mouse)
+    {
         glm::mat4 mvp;
         if (!TryGetMVP(mvp))
             return -1;
@@ -369,10 +379,12 @@ namespace Engine {
                 best = f;
             }
         }
+
         return best;
     }
 
-    std::vector<int> ModelingViewportPanel::SelectedVertexSet() const {
+    std::vector<int> ModelingViewportPanel::SelectedVertexSet() const
+    {
         const HalfEdgeMesh& mesh = m_Session.Mesh();
         int vCount = (int)mesh.Vertices().size();
 
@@ -405,36 +417,36 @@ namespace Engine {
                         add(v);
                 break;
         }
+
         return result;
     }
 
-    bool ModelingViewportPanel::HasSelection() const {
+    bool ModelingViewportPanel::HasSelection() const
+    {
         switch (m_SelectMode) {
             case SelectMode::Vertex: return !m_SelectedVertices.empty();
             case SelectMode::Edge:   return !m_SelectedEdges.empty();
             case SelectMode::Face:   return !m_SelectedFaces.empty();
         }
+
         return false;
     }
 
-    void ModelingViewportPanel::ClearSelection() {
+    void ModelingViewportPanel::ClearSelection()
+    {
         m_SelectedVertices.clear();
         m_SelectedEdges.clear();
         m_SelectedFaces.clear();
     }
 
-    bool ModelingViewportPanel::OnMousePressed(MouseButtonPressedEvent& e) {
+    bool ModelingViewportPanel::OnMousePressed(MouseButtonPressedEvent& e)
+    {
         if (!m_Session.IsActive())
             return false;
         if (e.GetMouseButton() != MOUSE_BUTTON_LEFT || !IsHovered())
             return false;
-        // The toolbar buttons overlay the viewport, but IsHovered() is sampled on the
-        // image before they are submitted, so it reports hovered even over them. Without
-        // this guard a click on (e.g.) Extrude would also run a pick that clears the
-        // selection before the button's command fires.
         if (ImGui::IsAnyItemHovered())
             return false;
-        // When a gizmo is shown, clicking it should drag, not reselect.
         if (HasSelection() && ImGuizmo::IsOver())
             return false;
 
@@ -462,6 +474,7 @@ namespace Engine {
                 break;
             }
         }
+
         return false;
     }
 

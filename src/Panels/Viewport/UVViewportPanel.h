@@ -1,26 +1,15 @@
 #pragma once
 
 #include "pch.h"
-#include "ViewportTab.h"
+#include "ViewportPanelBase.h"
 #include "Modeling/MeshEditSession.h"
 
 namespace Engine {
 
-    // 2D UV map editor (Blender-style). Owns its own MeshEditSession and edits its
-    // per-corner UV layer: it draws the UV layout over a 0..1 grid (optionally with the
-    // mesh's albedo texture behind it) and lets the user select UV verts and
-    // move/rotate/scale them. Edits write straight to the session's UV verts and re-sync
-    // the render mesh. The session begins on the selected entity when the UV tab is
-    // opened and commits when it is left; a hint is shown if no session is active (e.g.
-    // nothing selected, or the mesh could not be edited).
-    class UVViewportPanel : public ViewportTab {
+    class UVViewportPanel : public ViewportPanelBase {
     public:
         UVViewportPanel() = default;
 
-        // Edit-mode lifecycle (overrides ViewportTab), driven by the Viewport tab change:
-        // opening the UV tab enters edit mode, leaving it commits. Enter begins a session
-        // on the selected entity (no-op if already active or nothing valid is selected);
-        // Exit commits.
         void Enter() override;
         void Exit() override;
 
@@ -37,7 +26,7 @@ namespace Engine {
         void FitView(const ImVec2& canvasSize);
         void ZoomAt(const glm::vec2& mouse, const ImVec2& canvasMin, float wheel);
 
-        // The view maps UV (0,0) to the bottom-left and (1,1) to the top-right.
+        // The view maps UV (0,0) to the bottom-left and (1,1) to the top-right
         ImVec2 UVToScreen(const glm::vec2& uv, const ImVec2& canvasMin) const;
         glm::vec2 ScreenToUV(const glm::vec2& s, const ImVec2& canvasMin) const;
 
@@ -71,7 +60,7 @@ namespace Engine {
         glm::vec2 m_BoxEnd = { 0.0f, 0.0f };
 
         // Session geometry snapshot at the start of a UV transform drag; recorded as one
-        // undo step (on the global command history) when the drag ends, if it moved anything.
+        // undo step (on the global command history) when the drag ends, if it moved anything
         MeshEditSession::State m_TransformBefore;
         bool m_TransformMoved = false;
     };

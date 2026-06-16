@@ -7,7 +7,7 @@ namespace Engine {
 
     void ContactTracker::Update(btCollisionDispatcher* dispatcher)
     {
-        // Pairs touching this frame, so we can diff against m_ActivePairs for enter/exit.
+        // Pairs touching this frame, so we can diff against m_ActivePairs
         std::unordered_map<uint64_t, ContactEvent> current;
 
         int numManifolds = dispatcher->getNumManifolds();
@@ -35,10 +35,8 @@ namespace Engine {
             uint32_t ua = (uint32_t)a, ub = (uint32_t)b;
             uint64_t key = ua < ub ? ((uint64_t)ua << 32 | ub) : ((uint64_t)ub << 32 | ua);
 
-            // A body flagged with CF_NO_CONTACT_RESPONSE (see RigidBody::SetTrigger)
-            // makes this a trigger overlap.
-            bool trigger = (objA->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE)
-                        || (objB->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE);
+            // A body flagged with CF_NO_CONTACT_RESPONSE (see RigidBody::SetTrigger) makes this a trigger overlap
+            bool trigger = (objA->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) || (objB->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
             current[key] = { a, b, BulletToGlm(cp.m_positionWorldOnB), BulletToGlm(cp.m_normalWorldOnB), cp.m_appliedImpulse, true, trigger };
         }

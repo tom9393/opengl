@@ -3,14 +3,15 @@
 
 namespace Engine {
 
-    void HalfEdgeMesh::Clear() {
+    void HalfEdgeMesh::Clear()
+    {
         m_Vertices.clear();
         m_HalfEdges.clear();
         m_Faces.clear();
     }
 
-    bool HalfEdgeMesh::Build(const std::vector<glm::vec3>& positions,
-                             const std::vector<std::vector<int>>& faces) {
+    bool HalfEdgeMesh::Build(const std::vector<glm::vec3>& positions, const std::vector<std::vector<int>>& faces)
+    {
         Clear();
 
         for (const auto& face : faces) {
@@ -18,6 +19,7 @@ namespace Engine {
                 std::cout << "[HalfEdgeMesh] Rejected face with fewer than 3 vertices." << std::endl;
                 return false;
             }
+
             for (int v : face) {
                 if (v < 0 || v >= (int)positions.size()) {
                     std::cout << "[HalfEdgeMesh] Face references out-of-range vertex." << std::endl;
@@ -30,8 +32,7 @@ namespace Engine {
         for (size_t i = 0; i < positions.size(); ++i)
             m_Vertices[i].Position = positions[i];
 
-        // Directed edge (origin, dest) -> half-edge index. Drives twin matching, and a
-        // repeated directed edge means the input is non-manifold or inconsistently wound.
+        // (origin, dest) -> half-edge index. For twin matching, repeated directed edge means input is non-manifold or badly wound
         std::map<std::pair<int, int>, int> edgeMap;
 
         for (size_t f = 0; f < faces.size(); ++f) {
@@ -66,7 +67,7 @@ namespace Engine {
             m_Faces.push_back({ base });
         }
 
-        // Match interior twins; the rest are edges on the boundary.
+        // Match interior twins; the rest are edges on the boundary
         std::vector<int> boundaryInterior;
         for (int he = 0; he < (int)m_HalfEdges.size(); ++he) {
             int origin = m_HalfEdges[he].Origin;
@@ -78,9 +79,8 @@ namespace Engine {
                 boundaryInterior.push_back(he);
         }
 
-        // Create one boundary half-edge (Face == InvalidIndex) per boundary edge,
-        // running opposite to its interior twin. A vertex with two outgoing boundary
-        // half-edges is a non-manifold (bowtie) vertex.
+        // Create one boundary half-edge (Face == InvalidIndex) per boundary edge running opposite to its interior twin
+        // A vertex with two outgoing boundary half-edges is a non-manifold vertex
         std::map<int, int> boundaryByOrigin;
         for (int interior : boundaryInterior) {
             int dest = m_HalfEdges[m_HalfEdges[interior].Next].Origin;
@@ -102,7 +102,7 @@ namespace Engine {
             m_Vertices[dest].HalfEdge = bIndex;
         }
 
-        // Close each boundary loop: the boundary half-edge after b starts where b ends.
+        // Close boundary loops, the boundary half-edge after b starts where b ends
         for (auto& kv : boundaryByOrigin) {
             int bIndex = kv.second;
             int destOfB = m_HalfEdges[m_HalfEdges[bIndex].Twin].Origin;
@@ -118,19 +118,22 @@ namespace Engine {
         return true;
     }
 
-    bool HalfEdgeMesh::IsBoundaryEdge(int he) const {
-        return m_HalfEdges[he].Face == InvalidIndex
-            || m_HalfEdges[m_HalfEdges[he].Twin].Face == InvalidIndex;
+    bool HalfEdgeMesh::IsBoundaryEdge(int he) const
+    {
+        return m_HalfEdges[he].Face == InvalidIndex || m_HalfEdges[m_HalfEdges[he].Twin].Face == InvalidIndex;
     }
 
-    bool HalfEdgeMesh::IsBoundaryVertex(int v) const {
+    bool HalfEdgeMesh::IsBoundaryVertex(int v) const
+    {
         for (int he : OutgoingHalfEdges(v))
             if (IsBoundaryHalfEdge(he))
                 return true;
+
         return false;
     }
 
-    std::vector<int> HalfEdgeMesh::FaceHalfEdges(int face) const {
+    std::vector<int> HalfEdgeMesh::FaceHalfEdges(int face) const
+    {
         std::vector<int> result;
         int start = m_Faces[face].HalfEdge;
         int he = start;
@@ -138,17 +141,20 @@ namespace Engine {
             result.push_back(he);
             he = m_HalfEdges[he].Next;
         } while (he != start);
+
         return result;
     }
 
-    std::vector<int> HalfEdgeMesh::FaceVertices(int face) const {
+    std::vector<int> HalfEdgeMesh::FaceVertices(int face) const
+    {
         std::vector<int> result;
         for (int he : FaceHalfEdges(face))
             result.push_back(m_HalfEdges[he].Origin);
         return result;
     }
 
-    std::vector<int> HalfEdgeMesh::OutgoingHalfEdges(int v) const {
+    std::vector<int> HalfEdgeMesh::OutgoingHalfEdges(int v) const
+    {
         std::vector<int> result;
         int start = m_Vertices[v].HalfEdge;
         if (start == InvalidIndex)
@@ -158,37 +164,45 @@ namespace Engine {
             result.push_back(he);
             he = m_HalfEdges[m_HalfEdges[he].Twin].Next; // rotate around v
         } while (he != start);
+
         return result;
     }
 
-    std::vector<int> HalfEdgeMesh::VertexNeighbors(int v) const {
+    std::vector<int> HalfEdgeMesh::VertexNeighbors(int v) const
+    {
         std::vector<int> result;
         for (int he : OutgoingHalfEdges(v))
             result.push_back(Destination(he));
+
         return result;
     }
 
-    std::vector<std::pair<int, int>> HalfEdgeMesh::Edges() const {
+    std::vector<std::pair<int, int>> HalfEdgeMesh::Edges() const
+    {
         std::vector<std::pair<int, int>> result;
         for (int he = 0; he < (int)m_HalfEdges.size(); ++he) {
             int twin = m_HalfEdges[he].Twin;
             if (he < twin)
                 result.emplace_back(m_HalfEdges[he].Origin, m_HalfEdges[twin].Origin);
         }
+
         return result;
     }
 
-    glm::vec3 HalfEdgeMesh::FaceCentroid(int face) const {
+    glm::vec3 HalfEdgeMesh::FaceCentroid(int face) const
+    {
         glm::vec3 centroid(0.0f);
         std::vector<int> verts = FaceVertices(face);
         if (verts.empty())
             return centroid;
         for (int v : verts)
             centroid += m_Vertices[v].Position;
+
         return centroid / (float)verts.size();
     }
 
-    glm::vec3 HalfEdgeMesh::FaceNormal(int face) const {
+    glm::vec3 HalfEdgeMesh::FaceNormal(int face) const
+    {
         glm::vec3 normal(0.0f);
         std::vector<int> verts = FaceVertices(face);
         int count = (int)verts.size();
@@ -199,11 +213,13 @@ namespace Engine {
             normal.y += (cur.z - nxt.z) * (cur.x + nxt.x);
             normal.z += (cur.x - nxt.x) * (cur.y + nxt.y);
         }
+
         float len = glm::length(normal);
         return len > 0.0f ? normal / len : normal;
     }
 
-    bool HalfEdgeMesh::CheckConsistency() const {
+    bool HalfEdgeMesh::CheckConsistency() const
+    {
         int n = (int)m_HalfEdges.size();
         for (int he = 0; he < n; ++he) {
             const HalfEdge& h = m_HalfEdges[he];
@@ -229,6 +245,7 @@ namespace Engine {
                 return false;
             }
         }
+
         for (int f = 0; f < (int)m_Faces.size(); ++f) {
             int he = m_Faces[f].HalfEdge;
             if (he < 0 || he >= n || m_HalfEdges[he].Face != f) {
@@ -236,12 +253,15 @@ namespace Engine {
                 return false;
             }
         }
+
         return true;
     }
 
-    void HalfEdgeMesh::RebuildVertexHalfEdges() {
+    void HalfEdgeMesh::RebuildVertexHalfEdges()
+    {
         for (Vertex& v : m_Vertices)
             v.HalfEdge = InvalidIndex;
+
         for (int he = 0; he < (int)m_HalfEdges.size(); ++he) {
             int o = m_HalfEdges[he].Origin;
             if (m_Vertices[o].HalfEdge == InvalidIndex)
@@ -251,7 +271,8 @@ namespace Engine {
         }
     }
 
-    bool HalfEdgeMesh::RelinkBoundaryLoops() {
+    bool HalfEdgeMesh::RelinkBoundaryLoops()
+    {
         std::map<int, int> boundaryByOrigin;
         for (int he = 0; he < (int)m_HalfEdges.size(); ++he) {
             if (m_HalfEdges[he].Face != InvalidIndex)
@@ -261,7 +282,9 @@ namespace Engine {
                 return false;
             boundaryByOrigin[o] = he;
         }
-        for (auto& kv : boundaryByOrigin) {
+
+        for (auto& kv : boundaryByOrigin)
+        {
             int b = kv.second;
             int dest = m_HalfEdges[m_HalfEdges[b].Twin].Origin;
             auto it = boundaryByOrigin.find(dest);
@@ -269,10 +292,12 @@ namespace Engine {
                 return false;
             m_HalfEdges[b].Next = it->second;
         }
+
         return true;
     }
 
-    bool HalfEdgeMesh::ExtrudeFaces(const std::vector<int>& faces, std::vector<int>& newVertexSources) {
+    bool HalfEdgeMesh::ExtrudeFaces(const std::vector<int>& faces, std::vector<int>& newVertexSources)
+    {
         newVertexSources.clear();
         if (faces.empty())
             return false;
@@ -284,8 +309,8 @@ namespace Engine {
             selFace[f] = true;
         }
 
-        // Region-boundary half-edges: a selected face's half-edge whose twin is not in the
-        // region. Capture each one's original endpoints + twin before any rewiring.
+        // Region-boundary half-edges: a selected face's half-edge whose twin is not in the region
+        // Capture each one's original endpoints + twin before any rewiring
         struct Bhe { int he, oldA, oldB, twin; };
         std::vector<Bhe> boundary;
         for (int he = 0; he < (int)m_HalfEdges.size(); ++he) {
@@ -310,7 +335,7 @@ namespace Engine {
             std::cout << "[HalfEdgeMesh] Extrude failed: " << why << "; reverted." << std::endl;
         };
 
-        // Duplicate each region-boundary vertex once.
+        // Duplicate each region-boundary vertex once
         std::map<int, int> dup;
         auto duplicate = [&](int v) {
             if (dup.count(v))
@@ -324,8 +349,7 @@ namespace Engine {
         };
         for (const Bhe& b : boundary) { duplicate(b.oldA); duplicate(b.oldB); }
 
-        // Lift the selected faces onto the duplicates: a selected-face half-edge whose
-        // origin was duplicated now starts at the duplicate.
+        // Lift the selected faces onto the duplicates: a selected-face half-edge whose origin was duplicated now starts at the duplicate
         for (int he = 0; he < (int)m_HalfEdges.size(); ++he) {
             int f = m_HalfEdges[he].Face;
             if (f == InvalidIndex || !selFace[f])
@@ -335,8 +359,8 @@ namespace Engine {
                 m_HalfEdges[he].Origin = it->second;
         }
 
-        // Build a side-wall quad per region-boundary edge and re-twin. Verticals
-        // (old->dup) are matched between adjacent walls through this map.
+        // Build a side-wall quad per region-boundary edge and re-twin
+        // Verticals (old->dup) are matched between adjacent walls through this map
         std::map<std::pair<int, int>, int> verticalMap;
         for (const Bhe& b : boundary) {
             int oldA = b.oldA, oldB = b.oldB;
@@ -354,7 +378,7 @@ namespace Engine {
             HalfEdge h4; h4.Origin = na;   h4.Face = fIdx; h4.Next = e1; m_HalfEdges.push_back(h4);
             m_Faces.push_back({ e1 });
 
-            // e1 (oldA->oldB) takes over the old twin t; e3 (nb->na) twins the lifted he.
+            // e1 (oldA->oldB) takes over the old twin t; e3 (nb->na) twins the lifted he
             m_HalfEdges[e1].Twin = t;  m_HalfEdges[t].Twin = e1;
             m_HalfEdges[e3].Twin = he; m_HalfEdges[he].Twin = e3;
 
@@ -362,7 +386,7 @@ namespace Engine {
             verticalMap[{ na, oldA }] = e4; // e4: na->oldA
         }
 
-        // Match vertical twins between adjacent walls (reciprocal direction).
+        // Match vertical twins between adjacent walls (reciprocal direction)
         for (auto& kv : verticalMap) {
             auto it = verticalMap.find({ kv.first.second, kv.first.first });
             if (it == verticalMap.end()) {
@@ -381,8 +405,8 @@ namespace Engine {
         return true;
     }
 
-    bool HalfEdgeMesh::DeleteFaces(const std::vector<int>& faces, std::vector<int>& vertexRemap,
-                                   std::vector<int>& halfEdgeRemap) {
+    bool HalfEdgeMesh::DeleteFaces(const std::vector<int>& faces, std::vector<int>& vertexRemap, std::vector<int>& halfEdgeRemap)
+    {
         vertexRemap.clear();
         halfEdgeRemap.clear();
         if (faces.empty())
@@ -408,7 +432,7 @@ namespace Engine {
         int heCount = (int)m_HalfEdges.size();
         std::vector<bool> removeHE(heCount, false);
 
-        // Classify each half-edge of a deleted face.
+        // Classify each half-edge of a deleted face
         for (int he = 0; he < heCount; ++he) {
             int f = m_HalfEdges[he].Face;
             if (f == InvalidIndex || !selFace[f])
@@ -416,19 +440,19 @@ namespace Engine {
             int twin = m_HalfEdges[he].Twin;
             int tf = m_HalfEdges[twin].Face;
             if (tf == InvalidIndex) {
-                // Edge sat on the mesh boundary: the whole edge disappears.
+                // Edge sat on the mesh boundary: the whole edge disappears
                 removeHE[he] = true;
                 removeHE[twin] = true;
             } else if (selFace[tf]) {
-                // Interior edge of the deleted region: disappears with both faces.
+                // Interior edge of the deleted region: disappears with both faces
                 removeHE[he] = true;
             } else {
-                // Twin survives: repurpose this half-edge as the new boundary edge.
+                // Twin survives: repurpose this half-edge as the new boundary edge
                 m_HalfEdges[he].Face = InvalidIndex;
             }
         }
 
-        // A vertex survives iff some kept half-edge starts there.
+        // A vertex survives iff some kept half-edge starts there
         std::vector<bool> vAlive(m_Vertices.size(), false);
         for (int he = 0; he < heCount; ++he)
             if (!removeHE[he])
@@ -462,7 +486,7 @@ namespace Engine {
             h.Origin = vertexRemap[h.Origin];
             h.Twin   = heRemap[h.Twin];
             // A repurposed boundary half-edge's Next may now point at a removed half-edge;
-            // RelinkBoundaryLoops re-derives all boundary Next links below.
+            // RelinkBoundaryLoops re-derives all boundary Next links below
             h.Next   = (h.Next >= 0 && heRemap[h.Next] >= 0) ? heRemap[h.Next] : InvalidIndex;
             h.Face   = (h.Face == InvalidIndex) ? InvalidIndex : fRemap[h.Face];
             nh[heRemap[he]] = h;
@@ -492,7 +516,8 @@ namespace Engine {
         return true;
     }
 
-    bool HalfEdgeMesh::SubdivideFaces(const std::vector<int>& faces, std::vector<int>& newVertexSources) {
+    bool HalfEdgeMesh::SubdivideFaces(const std::vector<int>& faces, std::vector<int>& newVertexSources)
+    {
         newVertexSources.clear();
         if (faces.empty())
             return false;
@@ -513,7 +538,7 @@ namespace Engine {
             std::cout << "[HalfEdgeMesh] Subdivide failed: " << why << "; reverted." << std::endl;
         };
 
-        // --- Step A: split every edge incident to a selected face at its midpoint. ---
+        // Split every edge incident to a selected face at its midpoint
         int origHE = (int)m_HalfEdges.size();
         std::vector<bool> visited(origHE, false);
         for (int he = 0; he < origHE; ++he) {
@@ -552,7 +577,7 @@ namespace Engine {
             m_HalfEdges[tw].Next = tw2; m_HalfEdges[tw].Twin = h2;  // tw is now b->m
         }
 
-        // --- Step B: replace each selected face with quads around a new centre. ---
+        // Replace each selected face with quads around a new centre
         for (int f = 0; f < (int)selFace.size(); ++f) {
             if (!selFace[f])
                 continue;
@@ -565,7 +590,7 @@ namespace Engine {
             }
             int n = total / 2;
 
-            // Centre = average of the corner positions (even loop slots are corner-origins).
+            // Centre = average of the corner positions (even loop slots are corner-origins)
             glm::vec3 centroid(0.0f);
             for (int i = 0; i < n; ++i)
                 centroid += m_Vertices[m_HalfEdges[loop[2 * i]].Origin].Position;
@@ -577,7 +602,7 @@ namespace Engine {
             m_Vertices.push_back(centre);
             newVertexSources.push_back(firstCorner);
 
-            // Spokes (mid<->centre) matched within this face via reciprocal direction.
+            // Spokes (mid<->centre) matched within this face via reciprocal direction
             std::map<std::pair<int, int>, int> spokeMap;
             for (int i = 0; i < n; ++i) {
                 int out = loop[2 * i];                  // c_i -> m_i (existing)

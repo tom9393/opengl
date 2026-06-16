@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pch.h"
-#include "ViewportTab.h"
 #include "Scene/Scene.h"
 #include "Scene/SceneRenderer.h"
 #include "Render/EditorCamera.h"
@@ -17,7 +16,7 @@ namespace Engine {
         Shared<EditorCamera> Camera;
     };
 
-    class ViewportPanelBase : public ViewportTab {
+    class ViewportPanelBase {
     public:
         ViewportPanelBase();
         virtual ~ViewportPanelBase();
@@ -25,7 +24,10 @@ namespace Engine {
         void SetViewportContext(const ViewportContext& ctx);
         void SetPassPanel(PassPanel* passPanel);
 
-        void OnImGuiRender() override;
+        virtual void OnImGuiRender();
+
+        virtual void Enter() {}
+        virtual void Exit() {}
 
         bool IsHovered() const { return m_IsHovered; }
         bool IsFocused() const { return m_IsFocused; }

@@ -18,9 +18,7 @@ namespace Engine {
     private:
         Shared<SceneRenderer> m_SceneRenderer;
 
-        // Selection is stored by resource name and resolved to a texture id every
-        // frame; ids are stable across resizes, but the producer can be culled by
-        // a recompile.
+        // Todo; fix this
         std::string m_SelectedResource = "FinalColor";
     };
 }

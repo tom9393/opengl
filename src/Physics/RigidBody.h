@@ -8,7 +8,7 @@
 #include "BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h"
 #include "BulletDynamics/Dynamics/btRigidBody.h"
 #include "LinearMath/btDefaultMotionState.h"
-#include "../Asset/Mesh.h"
+#include "Asset/Mesh.h"
 #include "src/entt/entity/fwd.hpp"
 
 namespace Engine {
@@ -61,7 +61,7 @@ namespace Engine {
             std::ifstream in(modelPath, std::ios::binary);
 
             if (!in.is_open()) {
-                std::cerr << "[Physics] No bake file found for " << modelPath << std::endl;
+                std::cerr << "Physics: no bake file found for " << modelPath << std::endl;
                 return;
             }
 
@@ -151,7 +151,7 @@ namespace Engine {
             btVector3 forward = (targetBt - origin).normalized();
             btVector3 up(0, 1, 0); // Default world up
 
-            // Forward parallel to world up would zero the cross product; pick another axis.
+            // Forward parallel to world up would zero the cross product; pick another axis
             if (btFabs(forward.dot(up)) > 0.999f) up = btVector3(1, 0, 0);
 
             // Calculate right and true up to create an orthonormal basis
@@ -173,7 +173,6 @@ namespace Engine {
         float GetDistanceTo(const glm::vec3& target) const {
             btTransform trans;
             m_Body->getMotionState()->getWorldTransform(trans);
-            // glm's member length() is the component count; glm::length is the magnitude.
             return glm::length(BulletToGlm(trans.getOrigin()) - target);
         }
 
@@ -184,7 +183,6 @@ namespace Engine {
             max = BulletToGlm(aabbMax);
         }
 
-        // World-space pose, quaternion based -- the engine's sync path.
         void SetWorldTransform(const glm::vec3 &translation, const glm::quat &rotation)
         {
             btTransform trans(GlmToBullet(rotation), GlmToBullet(translation));
@@ -205,7 +203,7 @@ namespace Engine {
             rotation = BulletToGlm(trans.getRotation());
         }
 
-        // Euler wrappers kept for Lua; same convention as TransformComponent.
+        // Euler wrappers kept for Lua
         void SetTransform(const glm::vec3 &translation, const glm::vec3 &rotation)
         {
             SetWorldTransform(translation, glm::quat(rotation));
@@ -270,8 +268,6 @@ namespace Engine {
             m_Body->applyTorque(GlmToBullet(torque));
         }
 
-        // --- Velocity Control ---
-
         void SetLinearVelocity(const glm::vec3& velocity) {
             m_Body->activate(true);
             m_Body->setLinearVelocity(GlmToBullet(velocity));
@@ -285,8 +281,6 @@ namespace Engine {
             m_Body->activate(true);
             m_Body->setAngularVelocity(GlmToBullet(velocity));
         }
-
-        // --- Physical Properties ---
 
         // Damping simulates air resistance (0.0 = no resistance, 1.0 = instant stop)
         void SetDamping(float linear, float angular) {
@@ -310,8 +304,6 @@ namespace Engine {
             m_Body->setAngularFactor(GlmToBullet(factor));
         }
 
-        // --- State Management ---
-
         void ClearForces() {
             m_Body->clearForces();
         }
@@ -320,8 +312,7 @@ namespace Engine {
             m_Body->setGravity(GlmToBullet(gravity));
         }
 
-        // Trigger bodies detect overlaps but produce no physical response
-        // (used for pickups, zones, doors). Drives OnTrigger* callbacks in scripts.
+        // Trigger bodies detect overlaps but produce no physical response (used for pickups, zones, doors). Drives OnTrigger callbacks in scripts
         void SetTrigger(bool isTrigger) {
             if (isTrigger) {
                 m_Body->setCollisionFlags(m_Body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
@@ -337,7 +328,6 @@ namespace Engine {
                 m_Body->setActivationState(DISABLE_DEACTIVATION);
             } else {
                 m_Body->setCollisionFlags(m_Body->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
-                // Undo DISABLE_DEACTIVATION and wake the body so it simulates again.
                 m_Body->forceActivationState(ACTIVE_TAG);
                 m_Body->activate(true);
             }
