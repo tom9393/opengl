@@ -6,20 +6,18 @@
 namespace Engine
 {
 
-    // Editable post-processing parameters. Lives on the Scene (serialized) and is
-    // snapshotted into the RenderView each frame for the PostProcessPass.
+    // Lives on the Scene, snapshotted into RenderView each frame
     struct PostProcessSettings
     {
         bool  BloomEnabled        = true;
-        float BloomIntensity      = 0.04f; // blend weight of bloom into the scene
-        float BloomThreshold      = 1.0f;  // luminance above which pixels bloom
+        float BloomIntensity      = 0.04f; // Blend weight of bloom into the scene
+        float BloomThreshold      = 1.0f;  // Luminance above which pixels bloom
         float Exposure            = 1.0f;
         float VignetteStrength    = 0.0f;
         float ChromaticAberration = 0.0f;
     };
 
-    // Snapshot of the environment's GL texture handles consumed by render passes
-    // for one frame. Plain ids so render-side headers stay free of EnvironmentMap.
+    // Snapshot of the environment's GL texture handles consumed by render passes for one frame
     struct EnvironmentRenderData
     {
         unsigned int Skybox        = 0;
@@ -31,15 +29,10 @@ namespace Engine
         bool         Valid         = false;
     };
 
-    // Builds and owns the image-based-lighting cubemaps for a single
-    // equirectangular .hdr map: the environment cubemap (skybox), a diffuse
-    // irradiance map, and a roughness-mipped specular prefilter map. The
-    // env-independent BRDF integration LUT is built once and shared statically.
     class EnvironmentMap
     {
     public:
-        // Load and bake an equirectangular .hdr file. Returns null on failure.
-        // Must be called on the thread owning the GL context.
+        // .hdr file
         static Shared<EnvironmentMap> Load(const std::string& hdrPath);
 
         unsigned int GetSkybox() const { return m_EnvironmentCubemap ? m_EnvironmentCubemap->GetID() : 0; }
@@ -48,14 +41,9 @@ namespace Engine
         unsigned int GetPrefilterMips() const { return m_PrefilterMips; }
         const std::string& GetPath() const { return m_Path; }
 
-        // Env-independent BRDF integration LUT, built lazily and shared.
         static unsigned int GetBRDFLUT();
-        // 1x1 cubemap bound to IBL samplers when no environment is set, so the
-        // samplers always reference a complete texture.
         static unsigned int GetFallbackCubemap();
 
-        // Release the shared BRDF LUT / fallback cubemap while the GL context is
-        // still alive.
         static void Shutdown();
 
     private:

@@ -4,14 +4,9 @@
 
 namespace Engine {
 
-    // Shadow atlas capacities, shared by LightExtractor (which stops handing out
-    // shadow indices past them) and the shadow passes (which size their layered
-    // targets from them). Directional and cone casters share one 2D array.
     constexpr int MaxShadowCasters2D = 16;
     constexpr int MaxShadowCastersPoint = 8;
 
-    // Far plane used both when rendering point-light shadow cubemaps and when
-    // reconstructing distances from them in the deferred lighting shader.
     constexpr float PointShadowFarPlane = 35.0f;
 
     struct GPULight {

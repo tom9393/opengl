@@ -17,8 +17,7 @@ namespace Engine {
             m_FrameCapacity = m_Capacity / m_MaxFramesInFlight;
             glCreateBuffers(1, &m_RendererID);
 
-            // Offsets are handed to both glBindBufferRange targets, so they must
-            // satisfy the stricter of the two hardware alignments.
+            // Offsets are handed to both glBindBufferRange targets, so they must satisfy the stricter of the two hardware alignments
             GLint uboAlignment = 0, ssboAlignment = 0;
             glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uboAlignment);
             glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &ssboAlignment);
@@ -27,14 +26,12 @@ namespace Engine {
 
             // Coherent persistent mapping: writes become visible to GL commands
             // without per-allocation flushes (write-combined memory either way;
-            // the frame fence provides the cross-frame ordering).
+            // the frame fence provides the cross-frame ordering)
             GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
             GLbitfield mapFlags = storageFlags;
 
-            // Allocate the storage
             glNamedBufferStorage(m_RendererID, m_Capacity, nullptr, storageFlags);
 
-            // Map the pointer
             m_MappedPtr = (uint8_t*)glMapNamedBufferRange(m_RendererID, 0, m_Capacity, mapFlags);
             if (m_MappedPtr == nullptr) {
                 std::cerr << "FATAL ERROR: Failed to map persistent buffer! OpenGL Error: " << glGetError() << std::endl;
@@ -46,22 +43,20 @@ namespace Engine {
             glDeleteBuffers(1, &m_RendererID);
         }
 
-        // Returns { 0, 0 } when the current frame's block is exhausted;
-        // callers skip the draw that needed the allocation.
+        // Returns { 0, 0 } when the current frame's block is exhausted; callers skip the draw that needed the allocation
         Allocation Allocate(const void* data, size_t size)
         {
             PROFILE_FUNCTION();
             m_Head = (m_Head + m_Alignment - 1) & ~(m_Alignment - 1);
 
             if (m_Head + size > (m_CurrentFrame + 1) * m_FrameCapacity) {
-                std::cerr << "DynamicBufferPool: out of memory for current frame, skipping allocation of "
-                          << size << " bytes\n";
+                std::cerr << "DynamicBufferPool: out of memory for current frame, skipping allocation of " << size << " bytes\n";
                 return { 0, 0 };
             }
 
             size_t currentOffset = m_Head;
 
-            // Copy data directly to mapped GPU memory (Zero driver overhead!)
+            // Copy data directly to mapped GPU memory
             memcpy(m_MappedPtr + currentOffset, data, size);
 
             m_Head += size;
@@ -85,8 +80,6 @@ namespace Engine {
             while (m_FrameFences.size() >= m_MaxFramesInFlight) {
                 GLsync oldestSync = m_FrameFences.front();
                 
-                // Block for up to 1 second (1,000,000,000 ns). 
-                // The driver will put the thread to sleep optimally.
                 GLuint64 timeout = 1000000000; 
                 GLenum waitReturn = glClientWaitSync(oldestSync, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
                 

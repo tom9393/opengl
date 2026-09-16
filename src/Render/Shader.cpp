@@ -48,7 +48,7 @@ namespace Engine
         const std::string fullscreenVert = dlvert; // shared NDC fullscreen-quad vertex stage
         const std::string cubeVert = shaderDir + "cubemap.vert";
 
-        // --- Image-based lighting bake shaders ---
+        // Image-based lighting bake
         Shared<Shader> equirectShader = Shader::Create("EquirectToCube");
         equirectShader->AddShaders({cubeVert, shaderDir + "equirect_to_cube.frag"});
         Add(equirectShader);
@@ -65,7 +65,7 @@ namespace Engine
         brdfShader->AddShaders({fullscreenVert, shaderDir + "brdf.frag"});
         Add(brdfShader);
 
-        // --- Post processing shaders ---
+        // Post processing
         Shared<Shader> bloomDownShader = Shader::Create("BloomDownsample");
         bloomDownShader->AddShaders({fullscreenVert, shaderDir + "bloom_down.frag"});
         Add(bloomDownShader);
@@ -78,7 +78,7 @@ namespace Engine
         postShader->AddShaders({fullscreenVert, shaderDir + "post.frag"});
         Add(postShader);
 
-        // --- Particles ---
+        // Particles
         Shared<Shader> particleShader = Shader::Create("Particle");
         particleShader->AddShaders({shaderDir + "particle.vert", shaderDir + "particle.frag"});
         Add(particleShader);

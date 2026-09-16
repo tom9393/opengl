@@ -13,8 +13,6 @@ namespace Engine
     class TimeStep;
     class RenderGraph;
 
-    // Index of a declared input, returned by Input()/SetDepthInput() during Setup
-    // and resolved to the producer's texture when the graph compiles.
     using InputHandle = size_t;
 
     struct PassOutput
@@ -22,17 +20,11 @@ namespace Engine
         std::string name;
         FramebufferTextureFormat format;
         bool isDepth = false;
-        // When set, this output has no storage of its own: it names the resource
-        // whose texture this pass renders into in place.
         std::string aliasOf;
     };
 
     enum class PassBlend { Off, Alpha, Additive };
 
-    // Render state declared by a pass and applied by the graph before Execute,
-    // so no pass inherits whatever the previous one left behind. Passes may
-    // still change state mid-execution; the graph re-applies the next pass's
-    // declared state regardless.
     struct PipelineState
     {
         bool depthTest = true;
@@ -51,9 +43,6 @@ namespace Engine
         virtual void Setup(RenderGraph& graph) = 0;
         virtual void Execute(RenderContext& ctx, const RenderView& view) = 0;
 
-        // Declare a named output resource. Each call appends an attachment to the pass's
-        // framebuffer in declaration order. Returns the color attachment index for color
-        // formats, or ~0u for depth formats.
         unsigned int Output(const std::string& resourceName, FramebufferTextureFormat format)
         {
             PassOutput out;
@@ -64,19 +53,14 @@ namespace Engine
             return out.isDepth ? ~0u : m_ColorAttachmentCount++;
         }
 
-        // Declare a read dependency on a named resource produced by another pass. The
-        // handle is resolved at compile time and bound with BindInput() during Execute.
         InputHandle Input(const std::string& resourceName)
         {
             m_Inputs.push_back(resourceName);
             return m_Inputs.size() - 1;
         }
 
-        // Declare an output that renders in place into another pass's resource instead
-        // of allocating its own texture. The source must be declared by a pass added
-        // to the graph before this one, and is implicitly an input. The source texture
-        // occupies the next color attachment slot of this pass's framebuffer; aliased
-        // attachments are never cleared by the graph.
+        // Declare an output that renders in place into another pass's resource instead of allocating its own texture
+        // The source must be declared by a pass added to the graph before this one
         void AliasOutput(const std::string& resourceName, const std::string& sourceResource)
         {
             PassOutput out;
@@ -97,16 +81,14 @@ namespace Engine
             return Input(resourceName);
         }
 
-        // Layer count for array target types (shadow map atlases). Ignored for plain 2D targets.
+        // Layer count for array target types (shadow map atlases)
         RenderPass& SetLayers(unsigned int layers)
         {
             m_Layers = layers;
             return *this;
         }
 
-        // Size this pass's outputs relative to the viewport (e.g. 0.5 = half
-        // resolution). Scaled resources follow viewport resizes. Ignored when a
-        // fixed size was set with SetViewportSize.
+        // Ignore when a fixed size was set with SetViewportSize
         RenderPass& SetSizeScale(float scale)
         {
             m_SizeScale = scale;
@@ -125,37 +107,34 @@ namespace Engine
             return *this;
         }
 
-        // Predicate evaluated each frame; pass is skipped when it returns false.
+        // Returning false skips the pass
         RenderPass& SetCondition(ConditionFn fn)
         {
             m_Condition = std::move(fn);
             return *this;
         }
 
-        // Default clear value for every owned color attachment.
+        // Default clear value for every owned color attachment
         RenderPass& SetClearColor(const glm::vec4& color)
         {
             m_ClearColor = color;
             return *this;
         }
 
-        // Per-attachment clear value, overriding the pass clear color.
-        // attachmentIndex is the color-attachment index returned by Output().
+        // AttachmentIndex is the color-attachment index returned by Output()
         RenderPass& SetClearValue(unsigned int attachmentIndex, const glm::vec4& value)
         {
             m_ClearValues[attachmentIndex] = value;
             return *this;
         }
 
-        // attachmentIndex is the color-attachment index returned by Output().
+        // AttachmentIndex is the color-attachment index returned by Output()
         RenderPass& SetClearInt(unsigned int attachmentIndex, int value)
         {
             m_ClearInts[attachmentIndex] = value;
             return *this;
         }
 
-        // Skip clearing entirely; for passes whose draws cover every pixel of
-        // every attachment (fullscreen filters).
         RenderPass& DisableClear()
         {
             m_ClearDisabled = true;
@@ -193,8 +172,6 @@ namespace Engine
         float GetSizeScale() const { return m_SizeScale; }
         const PipelineState& GetPipelineState() const { return m_PipelineState; }
         bool IsClearDisabled() const { return m_ClearDisabled; }
-        // Clear value for a color attachment: the per-attachment override when
-        // set, otherwise the pass clear color.
         const glm::vec4& GetClearValue(unsigned int attachmentIndex) const
         {
             auto it = m_ClearValues.find(attachmentIndex);
@@ -203,15 +180,10 @@ namespace Engine
         const std::unordered_map<unsigned int, int>& GetClearInts() const { return m_ClearInts; }
         bool HasCondition() const { return static_cast<bool>(m_Condition); }
 
-        // The pass's framebuffer, composed by the graph at compile time from the
-        // textures of its outputs (plus a read-only depth input, when declared).
+        // The pass's framebuffer, composed by the graph at compile time from the textures of its outputs (plus a read-only depth input, when declared)
         const Shared<Framebuffer>& GetFramebuffer() const { return m_Framebuffer; }
 
     protected:
-        // Bind a declared input's texture to a sampler slot. The texture is resolved
-        // at compile time and always exists while the pass is in the execution order,
-        // even when its producer was skipped this frame. No-op for inputs that failed
-        // to resolve.
         void BindInput(InputHandle input, unsigned int slot) const
         {
             const Shared<RenderTarget>& target = m_CompiledInputs[input];
@@ -225,7 +197,6 @@ namespace Engine
             return target ? target->GetID() : 0;
         }
 
-        // Current size of a declared input's texture (zero when unresolved).
         glm::uvec2 GetInputSize(InputHandle input) const
         {
             const Shared<RenderTarget>& target = m_CompiledInputs[input];
@@ -234,9 +205,6 @@ namespace Engine
             return { spec.width, spec.height };
         }
 
-        // Draw items as instanced batches of consecutive runs sharing a mesh (and a
-        // material when bindMaterials), uploading per-batch transforms through the
-        // frame's InstancePool.
         void DrawBatched(RenderContext& ctx, const std::vector<DrawCommand>& renderItems, bool bindMaterials)
         {
             size_t i = 0;

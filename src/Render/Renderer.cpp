@@ -33,9 +33,7 @@ namespace Engine
         RenderCommand::Init();
         ShaderLibrary::Init();
 
-        // Build the env-independent BRDF integration LUT and fallback cubemap once
-        // now, while no graph framebuffer is bound. Both render into their own
-        // targets, so building them mid-pass would clobber the bound framebuffer.
+        // Build the env-independent BRDF integration LUT and fallback cubemap once now while no graph framebuffer is bound
         EnvironmentMap::GetBRDFLUT();
         EnvironmentMap::GetFallbackCubemap();
 
@@ -126,8 +124,7 @@ namespace Engine
 
     void Renderer::DrawCircle(const glm::vec3 &center, float radius, const glm::vec4 &color, uint32_t segments)
     {
-        // Screen-facing: derive world-space screen right/up from the view-projection
-        // so the circle outline always lies parallel to the camera plane.
+        // Screen-facing: derive world-space screen right/up from the view-projection so the circle outline always lies parallel to the camera plane
         glm::mat4 invViewProj = glm::inverse(s_SceneData.context.ViewProjection);
         auto unproject = [&](float x, float y) {
             glm::vec4 p = invViewProj * glm::vec4(x, y, 0.0f, 1.0f);

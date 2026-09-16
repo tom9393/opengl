@@ -25,26 +25,24 @@ namespace Engine
         unsigned int mips = 1; // number of mip levels to allocate
     };
 
-    // A sampleable texture that can also be rendered into (it owns an internal
-    // framebuffer). Unlike the render-graph Framebuffer - which is composed from
-    // graph-owned RenderTargets drawn as a whole - a RenderTexture targets a
-    // single color image one cube face / mip level at a time. It backs offscreen
-    // sub-renderers such as the bloom mip chain and the IBL cubemaps.
+    // Sampleable texture that can be rendered into (owns an internal framebuffer)
+    // Render graph Framebuffer -> graph owned RenderTargets drawn as a whole
+    // RenderTexture -> single color image one cube face / mip level at a time
+    // Backs offscreen sub renderers such as the bloom mip chain and the IBL cubemaps
     class RenderTexture
     {
     public:
         virtual ~RenderTexture() = default;
 
-        // Make this the active render target. For a cubemap, selects the face;
-        // for a 2D texture the face is ignored. Attaches the chosen mip level and
-        // sets the viewport to that mip's size.
+        // For cubemap selects the face, ignored for 2D textures
+        // Attaches chosen mip level and sets the viewport to that mip's size
         virtual void BindAsTarget(unsigned int face = 0, unsigned int mip = 0) = 0;
         virtual void Unbind() const = 0;
 
-        // Bind the underlying texture to a sampler slot.
+        // Bind to a sampler slot
         virtual void BindAsTexture(unsigned int slot) const = 0;
 
-        // Regenerate the mip chain from mip 0 (no-op for single-mip textures).
+        // Regenerate the mip chain from mip 0 (no-op for single-mip textures)
         virtual void GenerateMips() = 0;
 
         virtual unsigned int GetID() const = 0;

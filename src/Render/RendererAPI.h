@@ -31,23 +31,19 @@ namespace Engine
         virtual void SetAdditiveBlend(bool enabled) = 0;
         virtual void SetAlphaBlend(bool enabled) = 0;
 
-        // Bind a 2D texture (by renderer id) to a sampler slot.
         virtual void BindTexture2D(unsigned int slot, unsigned int rendererID) = 0;
         virtual void BindTextureCube(unsigned int slot, unsigned int rendererID) = 0;
-        // Bind a texture of any target type (array, cubemap, ...) to a sampler slot.
         virtual void BindTexture(unsigned int slot, unsigned int rendererID, BufferTextureType type) = 0;
 
-        // Annotate a span of GL commands for debuggers like RenderDoc.
         virtual void PushDebugGroup(const char* name) = 0;
         virtual void PopDebugGroup() = 0;
 
-        // GPU elapsed-time queries (one may be active at a time; they don't nest).
+        // Only one active at a time
         virtual unsigned int CreateTimerQuery() = 0;
         virtual void DeleteTimerQuery(unsigned int id) = 0;
         virtual void BeginTimerQuery(unsigned int id) = 0;
         virtual void EndTimerQuery() = 0;
-        // Non-blocking; returns true and writes the elapsed time when the result
-        // is available.
+        // Non-blocking; returns true and writes the elapsed time when the result is available
         virtual bool GetTimerQueryResult(unsigned int id, uint64_t& nanoseconds) = 0;
 
         virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray) = 0;

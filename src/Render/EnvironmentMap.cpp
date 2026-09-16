@@ -49,8 +49,7 @@ namespace Engine
 
         s_Fallback = CreateCubemap(1, 1);
 
-        // glTexStorage leaves contents undefined; clear each face to black so the
-        // samplers never read NaNs when no environment is set.
+        // Clear so that samplers never read NaN when no environment is set
         RenderCommand::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
         for (unsigned int i = 0; i < 6; ++i)
         {
@@ -98,10 +97,9 @@ namespace Engine
             return nullptr;
         }
 
-        GetBRDFLUT(); // ensure the shared LUT exists
+        // Ensure the shared LUT exists
+        GetBRDFLUT();
 
-        // The bake renders a cube from the inside, so cull/depth must not discard
-        // it. Culling is never enabled elsewhere, so it stays off afterwards.
         RenderCommand::SetFaceCulling(false);
         RenderCommand::SetDepthTest(false);
 
@@ -177,7 +175,7 @@ namespace Engine
 
         result->m_PrefilterMap->Unbind();
 
-        RenderCommand::SetDepthTest(true); // restore the global default
+        RenderCommand::SetDepthTest(true);
 
         return result;
     }

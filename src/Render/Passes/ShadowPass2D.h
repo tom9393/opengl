@@ -24,9 +24,6 @@ namespace Engine {
             if (!m_Shader) m_Shader = ShaderLibrary::Get("ShadowShader");
             m_Shader->Bind();
 
-            // The whole array stays attached (layered framebuffer, so the graph's
-            // depth clear hits every layer); the geometry stage routes each caster
-            // to its layer via gl_Layer.
             size_t layer = 0;
             auto renderCaster = [&](const auto& caster) {
                 if (layer >= (size_t)MaxShadowCasters2D) return;

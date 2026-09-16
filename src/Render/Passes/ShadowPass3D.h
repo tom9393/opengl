@@ -36,8 +36,7 @@ namespace Engine {
                 std::array<glm::mat4, 6> shadowTransforms;
                 for (int i = 0; i < 6; ++i) shadowTransforms[i] = shadowProj * glm::lookAt(lightPos, lightPos + dirs[i], ups[i]);
 
-                // Per-light face matrices go through the frame's pool as a UBO
-                // (binding 2; 0/1 are the camera and light blocks).
+                // Per-light face matrices go through the frame's pool as a UBO (binding 2; 0/1 are the camera and light blocks)
                 Allocation alloc = ctx.InstancePool->Allocate(shadowTransforms.data(), sizeof(shadowTransforms));
                 if (alloc.Size == 0) continue;
                 ctx.InstancePool->BindAsUBO(2, alloc.Offset, alloc.Size);

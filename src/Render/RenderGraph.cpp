@@ -11,9 +11,6 @@
 namespace Engine
 {
 
-	// A misdeclared graph is a programming error; abort loudly at compile time
-	// (typically startup) in every build configuration instead of limping on
-	// with a broken frame.
 	[[noreturn]] static void GraphError(const std::string& message)
 	{
 	    std::cerr << "RenderGraph: " << message << std::endl;
@@ -49,21 +46,17 @@ namespace Engine
 	            auto existing = m_Resources.find(out.name);
 	            if (existing != m_Resources.end())
 	            {
-	                GraphError("resource '" + out.name + "' declared as output by both '"
-	                           + existing->second.producer->GetName() + "' and '" + pass->GetName() + "'.");
+	                GraphError("resource '" + out.name + "' declared as output by both '" + existing->second.producer->GetName() + "' and '" + pass->GetName() + "'.");
 	            }
 	            ResourceInfo info;
 	            info.producer = pass;
 	            if (!out.aliasOf.empty())
 	            {
-	                // Alias outputs share the source resource's texture. Passes are
-	                // registered in insertion order, so the source must come from an
-	                // earlier-added pass. Chains resolve to the owning root.
+	                // Alias outputs share the source resource's texture. Passes are registered in insertion order so the source must come from an earlier pass
 	                auto src = m_Resources.find(out.aliasOf);
 	                if (src == m_Resources.end())
 	                {
-	                    GraphError("pass '" + pass->GetName() + "' aliases unknown resource '"
-	                               + out.aliasOf + "'.");
+	                    GraphError("pass '" + pass->GetName() + "' aliases unknown resource '" + out.aliasOf + "'.");
 	                }
 	                info.aliasOf = src->second.aliasOf.empty() ? out.aliasOf : src->second.aliasOf;
 	                info.format = src->second.format;
@@ -85,20 +78,19 @@ namespace Engine
 
 	    BuildResourceMap();
 
-	    // Validate inputs have producers.
+	    // Validate inputs have producers
 	    for (auto& passPtr : m_Passes)
 	    {
 	        for (auto& inputName : passPtr->GetInputs())
 	        {
 	            if (m_Resources.find(inputName) == m_Resources.end())
 	            {
-	                GraphError("pass '" + passPtr->GetName() + "' declares input '"
-	                           + inputName + "' but no pass produces it.");
+	                GraphError("pass '" + passPtr->GetName() + "' declares input '" + inputName + "' but no pass produces it.");
 	            }
 	        }
 	    }
 
-	    // Build adjacency (producer -> consumers) and in-degree counts.
+	    // Build adjacency (producer -> consumers) and in-degree counts
 	    std::unordered_map<RenderPass*, std::vector<RenderPass*>> adj;
 	    std::unordered_map<RenderPass*, int> inDegree;
 	    std::set<std::pair<RenderPass*, RenderPass*>> edges;
@@ -107,6 +99,7 @@ namespace Engine
 	        inDegree[p.get()] = 0;
 	        adj[p.get()];
 	    }
+
 	    auto addEdge = [&](RenderPass* from, RenderPass* to)
 	    {
 	        if (from == to) return;
@@ -115,7 +108,7 @@ namespace Engine
 	        inDegree[to]++;
 	    };
 
-	    // Read-after-write: a consumer runs after the producer of each input.
+	    // Read-after-write: a consumer runs after the producer of each input
 	    for (auto& passPtr : m_Passes)
 	    {
 	        RenderPass* consumer = passPtr.get();
@@ -123,13 +116,11 @@ namespace Engine
 	        {
 	            auto it = m_Resources.find(inputName);
 	            if (it == m_Resources.end()) continue;
-	            addEdge(it->second.producer, consumer);
+	            addEdge(it->second.producer, consumer); // From producer to consumer as above
 	        }
 	    }
 
-	    // Write-after-read: a pass that renders in place into another resource
-	    // must wait for every other reader of that resource, or those readers
-	    // would sample the overwritten contents.
+	    // Write-after-read: a pass that renders in place into another resource must wait for every other reader of that resource; otherwise contents would be overwritten
 	    for (auto& passPtr : m_Passes)
 	    {
 	        RenderPass* writer = passPtr.get();
@@ -143,14 +134,14 @@ namespace Engine
 	                for (auto& inputName : reader->GetInputs())
 	                {
 	                    if (inputName != out.aliasOf) continue;
-	                    addEdge(reader, writer);
+	                    addEdge(reader, writer); // From reader to writer as above
 	                    break;
 	                }
 	            }
 	        }
 	    }
 
-	    // Kahn's topological sort, seeded in insertion order for stability.
+	    // Kahn's topological sort, seeded in insertion order for stability
 	    std::vector<RenderPass*> sorted;
 	    sorted.reserve(m_Passes.size());
 	    std::queue<RenderPass*> ready;
@@ -158,6 +149,7 @@ namespace Engine
 	    {
 	        if (inDegree[p.get()] == 0) ready.push(p.get());
 	    }
+
 	    while (!ready.empty())
 	    {
 	        RenderPass* p = ready.front(); ready.pop();
@@ -173,7 +165,7 @@ namespace Engine
 	        GraphError("cycle detected during topological sort.");
 	    }
 
-	    // Cull: reverse-walk from presented resources.
+	    // Cull: reverse-walk from presented resources
 	    std::unordered_set<RenderPass*> required;
 	    std::queue<RenderPass*> rq;
 	    for (auto& name : m_Presented)
@@ -185,6 +177,7 @@ namespace Engine
 	        }
 	        if (required.insert(it->second.producer).second) rq.push(it->second.producer);
 	    }
+
 	    while (!rq.empty())
 	    {
 	        RenderPass* p = rq.front(); rq.pop();
@@ -199,7 +192,7 @@ namespace Engine
 	    m_ExecutionOrder.clear();
 	    if (m_Presented.empty())
 	    {
-	        // No present markers: run every pass (back-compat).
+	        // No present markers: run every pass
 	        m_ExecutionOrder = sorted;
 	    }
 	    else
@@ -240,11 +233,10 @@ namespace Engine
 
 	        info.target = RenderTarget::Create(spec);
 	        if (!info.target)
-	            std::cerr << "RenderGraph: failed to create texture for resource '"
-	                      << kv.first << "'." << std::endl;
+	            std::cerr << "RenderGraph: failed to create texture for resource '" << kv.first << "'." << std::endl;
 	    }
 
-	    // Alias resources share their root's texture.
+	    // Alias resources share their root's texture
 	    for (auto& kv : m_Resources)
 	    {
 	        ResourceInfo& info = kv.second;
@@ -266,8 +258,6 @@ namespace Engine
 	            spec.attachments.push_back(it->second.target);
 	        }
 
-	        // A declared depth input becomes the pass's depth attachment; Execute masks
-	        // depth writes while the pass runs, so it stays read-only.
 	        if (pass->HasDepthInput())
 	        {
 	            auto it = m_Resources.find(pass->GetDepthInput());
@@ -277,10 +267,9 @@ namespace Engine
 
 	        pass->m_Framebuffer = Framebuffer::Create(spec);
 	        if (!pass->m_Framebuffer)
-	            std::cerr << "RenderGraph: failed to create framebuffer for pass '"
-	                      << pass->GetName() << "'." << std::endl;
+	            std::cerr << "RenderGraph: failed to create framebuffer for pass '" << pass->GetName() << "'." << std::endl;
 
-	        // Resolve declared inputs to their textures.
+	        // Resolve declared inputs to their textures
 	        pass->m_CompiledInputs.assign(pass->GetInputs().size(), nullptr);
 	        for (size_t i = 0; i < pass->GetInputs().size(); i++)
 	        {
@@ -296,7 +285,7 @@ namespace Engine
 	    RenderCommand::SetDepthWrite(state.depthWrite);
 	    switch (state.blend)
 	    {
-	        case PassBlend::Off:      RenderCommand::SetAdditiveBlend(false); break; // disables blending
+	        case PassBlend::Off:      RenderCommand::SetAdditiveBlend(false); break;
 	        case PassBlend::Alpha:    RenderCommand::SetAlphaBlend(true);     break;
 	        case PassBlend::Additive: RenderCommand::SetAdditiveBlend(true);  break;
 	    }
@@ -325,8 +314,7 @@ namespace Engine
 	        const Shared<Framebuffer>& fb = pass->GetFramebuffer();
 	        if (!fb) continue;
 
-	        // Harvest the elapsed time recorded in this slot a few frames ago,
-	        // then reuse its query for this frame.
+	        // Harvest the elapsed time recorded in this slot a few frames ago, then reuse its query for this frame
 	        PassTimerQueries& timer = m_PassTimers[pass];
 	        unsigned int& query = timer.ids[timer.next];
 	        if (query == 0) query = RenderCommand::CreateTimerQuery();
@@ -340,16 +328,14 @@ namespace Engine
 
 	        fb->Bind();
 
-	        // The declared state is the pass's baseline; a declared depth input is
-	        // attached read-only, so depth writes are forced off, which both
-	        // protects the producer's depth and keeps sampling it legal.
+			// A declared depth input is attached read only so depth writes are forced off, both protecting producer's depth and keeping sampling it legal
 	        PipelineState state = pass->GetPipelineState();
 	        if (pass->HasDepthInput()) state.depthWrite = false;
 	        ApplyPipelineState(state);
 
-	        // Owning passes clear their attachments individually; aliased outputs
-	        // load the existing contents, and an externally attached depth is
-	        // never cleared (it isn't an output).
+			// Owning passes clear their attachments individually
+			// Aliased outputs load the existing contents
+			// Externally attached depth is never cleared as it isn't an output
 	        if (pass->OwnsAnOutput() && !pass->IsClearDisabled())
 	        {
 	            unsigned int colorIdx = 0;
@@ -382,8 +368,6 @@ namespace Engine
 	        fb->Unbind();
 	    }
 
-	    // Leave the context in the default state for whatever renders next
-	    // (UI, offscreen bakes).
 	    ApplyPipelineState(PipelineState{});
 	}
 
@@ -393,17 +377,17 @@ namespace Engine
 	    m_Width = width;
 	    m_Height = height;
 
-	    // Texture storage is respecified in place (ids stay stable), so the composed
-	    // framebuffers don't need rebuilding. Fixed-size targets (shadow maps) are
-	    // untouched; scaled targets follow at their scale; aliases follow their root.
+		// Texture storage is respecified in place, composed framebuffers don't need rebuilding
+		// Fixed size targets such as shadowmaps are untouched
+		// Scaled targets follow at their scale
+		// Aliases follow their root
 	    for (auto& kv : m_Resources)
 	    {
 	        ResourceInfo& info = kv.second;
 	        if (!info.aliasOf.empty() || !info.target) continue;
 	        if (info.producer->GetWidth() > 0) continue;
 	        float scale = info.producer->GetSizeScale();
-	        info.target->Resize(std::max(1u, (unsigned int)((float)width * scale)),
-	                            std::max(1u, (unsigned int)((float)height * scale)));
+	        info.target->Resize(std::max(1u, (unsigned int)((float)width * scale)), std::max(1u, (unsigned int)((float)height * scale)));
 	    }
 	}
 

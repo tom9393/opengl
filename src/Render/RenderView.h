@@ -20,7 +20,7 @@ namespace Engine {
 
     class Texture2D;
 
-    // GPU layout for one billboard; must match the std430 SSBO in particle.vert.
+    // GPU layout for one billboard; must match the std430 SSBO in particle.vert
     struct ParticleInstance
     {
         glm::vec3 Position;
@@ -28,7 +28,7 @@ namespace Engine {
         glm::vec4 Color;
     };
 
-    // One draw per emitter: instances share a texture and blend mode.
+    // One draw per emitter: instances share a texture and blend mode
     struct ParticleBatch
     {
         Shared<Texture2D> Texture; // null = procedural soft circle

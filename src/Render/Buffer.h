@@ -113,9 +113,7 @@ namespace Engine
         unsigned int samples = 1;
     };
 
-    // An attachment texture owned by the render graph. Passes attach render targets
-    // to framebuffers and bind them as sampler inputs. Resize respecifies the storage
-    // in place, so the renderer id stays stable for the target's lifetime.
+    // An attachment texture owned by the render graph. Passes attach render targets to framebuffers and bind them as sampler inputs
     class RenderTarget
     {
         public:
@@ -131,13 +129,11 @@ namespace Engine
     struct FramebufferSpecification
     {
         // Attachments in declaration order: color targets become GL_COLOR_ATTACHMENT0..n
-        // in order, and at most one depth-format target becomes the depth attachment.
-        // All attachments must share the same size.
+        // At most one depth attachment
+        // All attachments must share the same size
         std::vector<Shared<RenderTarget>> attachments;
     };
 
-    // A framebuffer composed from existing render targets; it owns no texture storage.
-    // Bind() sets the viewport from the attachments' current size.
     class Framebuffer
     {
         public:
@@ -146,13 +142,11 @@ namespace Engine
         virtual void Bind() const = 0;
         virtual void Unbind() const = 0;
 
-        // Only valid for RED_INTEGER attachments (entity picking).
+        // Only valid for RED_INTEGER
         virtual int ReadPixel(unsigned int attachmentIdx, int x, int y) = 0;
         virtual void ClearAttachment(unsigned int attachmentIdx, int value) = 0;
-        // Clear a single color attachment to the given value (float formats).
         virtual void ClearColorAttachment(unsigned int attachmentIdx, const glm::vec4& value) = 0;
-        // Clear the depth (and stencil, when present) attachment. For layered
-        // attachments (arrays, cubemaps) every layer is cleared.
+        // For layered attachments (arrays, cubemaps) every layer is cleared
         virtual void ClearDepthAttachment() = 0;
 
         static Shared<Framebuffer> Create(const FramebufferSpecification& specification);

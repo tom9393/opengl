@@ -14,20 +14,18 @@ namespace Engine {
         void Setup(RenderGraph& graph) override {
             m_RenderGraph = &graph;
             SetTargetType(BufferTextureType::Texture2D);
-            // HDR target: lighting outputs linear radiance; tonemap is in the post pass.
+            // HDR target: lighting outputs linear radiance; tonemap is in the post pass
             Output("SceneColor", FramebufferTextureFormat::RGBA16F);
             m_Normal = Input("GBuffer.Normal");
             m_Albedo = Input("GBuffer.Albedo");
             m_PBR    = Input("GBuffer.PBR");
-            // Sampled for world-position reconstruction, and attached (read-only) so
-            // forward geometry after the lighting quad is depth tested against the scene.
+            // Sampled for world-position reconstruction, and attached (read-only) so forward geometry after the lighting quad is depth tested against the scene
             m_Depth  = SetDepthInput("GBuffer.Depth");
             m_Shadow2D    = Input("ShadowMap2D");
             m_ShadowPoint = Input("PointShadowMap");
             SetClearColor({ 0.2f, 0.2f, 0.2f, 1.0f });
 
-            // The lighting quad shades every pixel, so the baseline skips the
-            // depth test; debug geometry re-enables it mid-pass.
+            // The lighting quad shades every pixel, so the baseline skips the depth test; debug geometry re-enables it mid-pass
             PipelineState state;
             state.depthTest = false;
             SetPipelineState(state);
@@ -42,14 +40,9 @@ namespace Engine {
             BindInput(m_Albedo, 1);
             BindInput(m_PBR,    2);
             BindInput(m_Depth,  3);
-
-            // Always bound (type-correct even when the shadow passes were skipped this
-            // frame); lights only carry shadow indices when a caster was extracted, so
-            // stale contents are never sampled.
             BindInput(m_Shadow2D,    4);
             BindInput(m_ShadowPoint, 5);
 
-            // --- Image-based lighting ---
             const EnvironmentRenderData& env = view.Environment;
 
             m_Shader->SetBool("u_HasEnvironment", env.Valid);
@@ -65,8 +58,6 @@ namespace Engine {
 
             Renderer::DrawFullscreenQuad();
 
-            // Debug geometry draws after lighting, depth tested against the scene
-            // (depth writes stay masked by the graph).
             RenderCommand::SetDepthTest(true);
             PhysicsEngine::RenderDebug(ctx.ViewProjection);
         }
